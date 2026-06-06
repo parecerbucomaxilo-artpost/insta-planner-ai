@@ -571,6 +571,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             carrossel={tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean) : []}
             tipo={tipo}
             perfil={perfil}
+            network={visibleLegendaTab}
           />
         </div>
       )}
