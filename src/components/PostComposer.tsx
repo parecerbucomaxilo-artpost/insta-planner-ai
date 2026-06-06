@@ -287,7 +287,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               id="watermark"
               checked={watermark}
               onCheckedChange={(v) => setWatermark(Boolean(v))}
-              disabled={!perfil?.url_logo}
+              disabled={!watermarkLogo}
               className="mt-0.5"
             />
             <div className="flex-1">
@@ -295,13 +295,13 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                 <Stamp className="h-3.5 w-3.5" /> Inserir marca d'água/logo na imagem
               </Label>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {perfil?.url_logo
-                  ? "A logo do perfil será aplicada no canto inferior direito das imagens geradas."
-                  : "Salve uma logo em Configurações do Perfil para habilitar."}
+                {watermarkLogo
+                  ? `Usará a logo de ${NETWORK_META[networks[0] ?? "instagram"].label} (canto inferior direito).`
+                  : "Salve uma foto/logo em Configurações do Perfil para habilitar."}
               </p>
             </div>
-            {perfil?.url_logo && (
-              <img src={perfil.url_logo} alt="" className="h-8 w-8 rounded border object-cover" />
+            {watermarkLogo && (
+              <img src={watermarkLogo} alt="" className="h-8 w-8 rounded border object-cover" />
             )}
           </div>
         </Card>
