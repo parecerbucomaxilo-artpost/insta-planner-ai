@@ -10,11 +10,15 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Twitter } from "lucide-react";
+import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Twitter, Stamp } from "lucide-react";
 import { toast } from "sonner";
 import { PostPreview } from "./PostPreview";
 import { cn } from "@/lib/utils";
 import type { Network } from "@/lib/posts-types";
+import type { Perfil } from "@/components/ProfileSettings";
+import { applyWatermark } from "@/lib/watermark";
+import { Checkbox } from "@/components/ui/checkbox";
+
 
 type Tipo = "Post Único" | "Carrossel";
 type Estilo = "Padrão" | "Estilo X";
@@ -35,15 +39,19 @@ const NETWORK_META: Record<Network, { label: string; Icon: typeof Instagram; col
   x: { label: "X (Twitter)", Icon: Twitter, color: "from-neutral-700 to-black" },
 };
 
-export function PostComposer({ onCreated }: { onCreated: () => void }) {
+export function PostComposer({ onCreated, perfil }: { onCreated: () => void; perfil: Perfil | null }) {
   const genImage = useServerFn(generateImage);
   const genIdea = useServerFn(suggestIdea);
 
   // Redes
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
 
+  // Marca d'água com a logo do perfil
+  const [watermark, setWatermark] = useState(false);
+
   const [tipo, setTipo] = useState<Tipo>("Post Único");
   const [estilo, setEstilo] = useState<Estilo>("Padrão");
+
 
   // Legendas por rede
   const [legendaIg, setLegendaIg] = useState("");
@@ -115,12 +123,23 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     }
   };
 
+  const maybeWatermark = async (src: string): Promise<string> => {
+    if (!watermark || !perfil?.url_logo) return src;
+    try {
+      return await applyWatermark(src, perfil.url_logo);
+    } catch {
+      toast.error("Falha ao aplicar marca d'água — salvando sem.");
+      return src;
+    }
+  };
+
   const handleGenerateSingle = async () => {
     if (!prompt.trim()) return toast.error("Escreva um prompt primeiro");
     setLoadingAi(true);
     try {
       const { dataUrl } = await genImage({ data: { prompt } });
-      setImagem(dataUrl);
+      const finalUrl = await maybeWatermark(dataUrl);
+      setImagem(finalUrl);
       toast.success("Imagem gerada via Gemini!");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar");
@@ -135,12 +154,14 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     setLoadingPage(index);
     try {
       const { dataUrl } = await genImage({ data: { prompt: p } });
+      const finalUrl = await maybeWatermark(dataUrl);
       setCarrossel((arr) => {
         const next = [...arr];
-        next[index] = dataUrl;
+        next[index] = finalUrl;
         return next;
       });
       toast.success(`Página ${index + 1} gerada!`);
+
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar");
     } finally {
@@ -247,7 +268,32 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
               );
             })}
           </div>
+
+          {/* Marca d'água */}
+          <div className="mt-4 pt-4 border-t flex items-start gap-3">
+            <Checkbox
+              id="watermark"
+              checked={watermark}
+              onCheckedChange={(v) => setWatermark(Boolean(v))}
+              disabled={!perfil?.url_logo}
+              className="mt-0.5"
+            />
+            <div className="flex-1">
+              <Label htmlFor="watermark" className="flex items-center gap-1.5 cursor-pointer text-sm">
+                <Stamp className="h-3.5 w-3.5" /> Inserir marca d'água/logo na imagem
+              </Label>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {perfil?.url_logo
+                  ? "A logo do perfil será aplicada no canto inferior direito das imagens geradas."
+                  : "Salve uma logo em Configurações do Perfil para habilitar."}
+              </p>
+            </div>
+            {perfil?.url_logo && (
+              <img src={perfil.url_logo} alt="" className="h-8 w-8 rounded border object-cover" />
+            )}
+          </div>
         </Card>
+
 
         {/* Ideia com IA — Nicho fixo */}
         <Card className="p-5 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
@@ -512,6 +558,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
             imagem={tipo === "Post Único" ? imagem : enforcedCarrossel.filter(Boolean)[0] ?? null}
             carrossel={tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean) : []}
             tipo={tipo}
+            perfil={perfil}
           />
         </div>
       )}
