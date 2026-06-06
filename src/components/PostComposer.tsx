@@ -18,6 +18,7 @@ import type { Network, FormatoMidia } from "@/lib/posts-types";
 import type { Perfil } from "@/components/ProfileSettings";
 import { applyWatermark } from "@/lib/watermark";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 
 
 type Tipo = "Post Único" | "Carrossel";
