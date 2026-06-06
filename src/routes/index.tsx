@@ -13,10 +13,10 @@ import type { PostRow } from "@/lib/posts-types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Planner IG — Agendamento de Posts" },
-      { name: "description", content: "Crie, agende e visualize posts do Instagram com IA Gemini e calendário visual." },
-      { property: "og:title", content: "Planner IG — Agendamento de Posts" },
-      { property: "og:description", content: "Crie, agende e visualize posts do Instagram com IA Gemini e calendário visual." },
+      { title: "Planner Chico — Agendamento de Posts" },
+      { name: "description", content: "Planner Chico: crie, agende e visualize posts com IA Gemini, focado em Odontologia (CTBMF e Hospitalar)." },
+      { property: "og:title", content: "Planner Chico — Agendamento de Posts" },
+      { property: "og:description", content: "Planner Chico: crie, agende e visualize posts com IA Gemini, focado em Odontologia (CTBMF e Hospitalar)." },
     ],
   }),
   component: Dashboard,
