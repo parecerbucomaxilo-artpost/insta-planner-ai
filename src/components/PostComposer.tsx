@@ -451,19 +451,62 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             {/* POST ÚNICO */}
             <TabsContent value="Post Único" className="mt-4 space-y-4">
               {formato === "Imagem" ? (
-                <div className="space-y-2 rounded-lg border bg-accent/30 p-4">
+                <div className="space-y-3 rounded-lg border bg-accent/30 p-4">
                   <Label className="flex items-center gap-2 text-sm">
-                    <Sparkles className="h-4 w-4 text-primary" /> Prompt da Imagem
+                    <Sparkles className="h-4 w-4 text-primary" /> Geração de Imagem
                     <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">
                       100% Google Gemini
                     </span>
                   </Label>
-                  <Textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    rows={2}
-                    placeholder="Ex: pôr do sol sobre montanhas, estilo cinematográfico"
-                  />
+
+                  {/* Seletor de modo */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { id: "auto", label: "Gerar Automaticamente por IA", hint: "Usa a legenda do post." },
+                      { id: "manual", label: "Fornecer Minhas Orientações", hint: "Você descreve em PT." },
+                    ] as const).map((m) => {
+                      const active = imageMode === m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setImageMode(m.id)}
+                          className={cn(
+                            "flex flex-col items-start text-left p-3 rounded-lg border-2 transition-all",
+                            active ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40",
+                          )}
+                        >
+                          <span className="text-xs font-semibold">{m.label}</span>
+                          <span className="text-[10px] text-muted-foreground mt-0.5">{m.hint}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {imageMode === "auto" ? (
+                    <div className="space-y-1">
+                      <p className="text-[11px] text-muted-foreground">
+                        Prompt automático (somente leitura) — gerado a partir da legenda da rede ativa.
+                      </p>
+                      <Textarea
+                        value={buildAutoPrompt(legendaIg || legendaLi || legendaX)}
+                        readOnly
+                        rows={3}
+                        className="bg-muted/40 text-xs cursor-not-allowed"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <Label className="text-xs">Suas orientações</Label>
+                      <Textarea
+                        value={orientacoes}
+                        onChange={(e) => setOrientacoes(e.target.value)}
+                        rows={3}
+                        placeholder="Digite o que você quer ver na imagem (ex: cores, elementos, estilo)"
+                      />
+                    </div>
+                  )}
+
                   <Button onClick={handleGenerateSingle} disabled={loadingAi} className="w-full">
                     {loadingAi ? (
                       <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando via Gemini...</>
