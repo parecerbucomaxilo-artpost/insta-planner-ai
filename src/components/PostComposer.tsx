@@ -76,8 +76,13 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
 
   // Garante que aba ativa esteja entre as selecionadas
-  const visibleLegendaTab = useMemo<Network>(
-    () => (networks.includes(activeLegendaTab) ? activeLegendaTab : networks[0]),
+  const visibleLegendaTab = useMemo<Network | null>(
+    () =>
+      networks.length === 0
+        ? null
+        : networks.includes(activeLegendaTab)
+        ? activeLegendaTab
+        : networks[0],
     [networks, activeLegendaTab],
   );
 
@@ -86,6 +91,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const enforcedPrompts = useMemo(() => carouselPrompts.slice(0, maxCarousel), [carouselPrompts, maxCarousel]);
 
   const handleSuggestIdea = async () => {
+    if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
     setLoadingIdea(true);
     try {
       const r = await genIdea({ data: { networks } });
