@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      perfil_usuario: {
+        Row: {
+          arroba_usuario: string
+          created_at: string
+          id: string
+          nome_profissional: string
+          updated_at: string
+          url_logo: string | null
+        }
+        Insert: {
+          arroba_usuario?: string
+          created_at?: string
+          id?: string
+          nome_profissional?: string
+          updated_at?: string
+          url_logo?: string | null
+        }
+        Update: {
+          arroba_usuario?: string
+          created_at?: string
+          id?: string
+          nome_profissional?: string
+          updated_at?: string
+          url_logo?: string | null
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           created_at: string
