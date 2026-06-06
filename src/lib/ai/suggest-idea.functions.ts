@@ -3,10 +3,18 @@ import { z } from "zod";
 
 const NetworkEnum = z.enum(["instagram", "linkedin", "x"]);
 
+const FIXED_NICHE =
+  "Odontologia, focado especificamente nas áreas de Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar";
+
+const SYSTEM_PROMPT = `Você é um estrategista de conteúdo especializado em comunicação para profissionais e clínicas de ${FIXED_NICHE}.
+
+Domina os temas: cirurgias ortognáticas, traumas de face, dentes inclusos complexos, biópsias de lesões bucais, pacientes sistemicamente comprometidos em ambiente hospitalar, disfunções de ATM, reconstruções maxilofaciais, cirurgia oncológica de cabeça e pescoço, anestesia geral em odontologia, cuidados pós-operatórios, infecções odontogênicas graves, implantes complexos, próteses maxilofaciais.
+
+Tom: técnico, ético, humanizado, baseado em evidências. Linguagem profissional e respeitosa. Nunca prometa resultados, nunca exiba conteúdo gráfico/sangrento. Adapta tom e formato para cada rede social. Sempre em português brasileiro. Inclui aviso "Conteúdo educacional. Consulte um profissional." quando pertinente.`;
+
 export const suggestIdea = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      niche: z.string().min(2).max(200),
       networks: z.array(NetworkEnum).min(1).max(3),
     }),
   )
@@ -15,11 +23,15 @@ export const suggestIdea = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
     const props: Record<string, unknown> = {
-      tema: { type: "string", description: "Tema curto do post (máx 80 caracteres)" },
+      tema: {
+        type: "string",
+        description:
+          "Tema clínico específico da CTBMF ou Odontologia Hospitalar (máx 100 caracteres). Ex: 'Manejo de fratura de mandíbula em paciente politraumatizado'.",
+      },
       prompt_imagem: {
         type: "string",
         description:
-          "Prompt em inglês detalhado para o Gemini gerar a imagem do post (estilo, composição, cores, iluminação).",
+          "Prompt em INGLÊS para o Gemini. Estética: ilustração médica profissional, fotografia clínica corporativa, infográfico anatômico clean, ambiente hospitalar moderno, paleta sóbria (azul-clínico, branco, cinza). PROIBIDO: sangue visível, ferimentos abertos, imagens gráficas, pacientes identificáveis. Estilo: editorial, educativo, ideal para redes sociais profissionais de saúde.",
       },
     };
     const required: string[] = ["tema", "prompt_imagem"];
@@ -28,7 +40,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
       props.legenda_instagram = {
         type: "string",
         description:
-          "Legenda para Instagram em pt-BR: parágrafos curtos com espaçamento limpo, emojis sutis, e um BLOCO de 6-10 hashtags relevantes no final separado por uma linha em branco.",
+          "Conteúdo educativo e humanizado em pt-BR para Instagram. Explique o procedimento, cuidados pós-operatórios ou rotina hospitalar em linguagem acessível ao paciente. Parágrafos curtos, emojis sutis (🦷 ⚕️ 🏥), gancho na 1ª linha, e BLOCO de 8-12 hashtags ao final separado por linha em branco (incluir #CTBMF #BucoMaxiloFacial #OdontologiaHospitalar e variações relevantes).",
       };
       required.push("legenda_instagram");
     }
@@ -36,7 +48,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
       props.legenda_linkedin = {
         type: "string",
         description:
-          "Post para LinkedIn em pt-BR: tom profissional e consultivo, gancho na primeira linha, parágrafos curtos (1-2 linhas), insight de valor, CTA ao final e 3-5 hashtags corporativas. Sem emojis em excesso.",
+          "Post técnico em pt-BR para LinkedIn voltado a profissionais da saúde. Apresente caso clínico, discussão de artigo, gestão hospitalar ou reflexão para networking. Gancho profissional na 1ª linha, parágrafos curtos (1-2 linhas), referência/insight de evidência, CTA para debate entre colegas, 4-6 hashtags corporativas (#CirurgiaBucoMaxiloFacial #OdontologiaHospitalar #CTBMF etc.). Sem emojis excessivos.",
       };
       required.push("legenda_linkedin");
     }
@@ -44,7 +56,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
       props.legenda_x = {
         type: "string",
         description:
-          "Tweet em pt-BR ESTRITAMENTE com no máximo 280 caracteres (conte cada caractere). Direto, impactante, podendo incluir 1-2 hashtags.",
+          "Tweet em pt-BR ESTRITAMENTE ≤ 280 caracteres: insight rápido sobre caso, opinião científica breve, novidade da área (publicação, congresso, técnica). Direto e impactante, 1-2 hashtags (#CTBMF #OdontoHospitalar).",
       };
       required.push("legenda_x");
     }
@@ -58,14 +70,10 @@ export const suggestIdea = createServerFn({ method: "POST" })
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          {
-            role: "system",
-            content:
-              "Você é um estrategista de conteúdo multi-rede (Instagram, LinkedIn, X). Adapte tom, tamanho e formato para cada plataforma. Sempre em português brasileiro.",
-          },
+          { role: "system", content: SYSTEM_PROMPT },
           {
             role: "user",
-            content: `Nicho/assunto: "${data.niche}". Redes selecionadas: ${data.networks.join(", ")}. Gere UMA ideia de post com versões otimizadas para cada rede.`,
+            content: `Gere UMA ideia de post relevante para ${FIXED_NICHE}. Redes selecionadas: ${data.networks.join(", ")}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). Adapte tom e formato por rede.`,
           },
         ],
         tools: [
@@ -73,7 +81,8 @@ export const suggestIdea = createServerFn({ method: "POST" })
             type: "function",
             function: {
               name: "sugerir_post",
-              description: "Retorna uma ideia de post adaptada para múltiplas redes sociais.",
+              description:
+                "Retorna uma ideia de post de CTBMF / Odontologia Hospitalar adaptada para múltiplas redes.",
               parameters: {
                 type: "object",
                 properties: props,
@@ -106,7 +115,6 @@ export const suggestIdea = createServerFn({ method: "POST" })
       legenda_linkedin?: string;
       legenda_x?: string;
     };
-    // Garantia hard-cap 280 para X
     if (parsed.legenda_x && parsed.legenda_x.length > 280) {
       parsed.legenda_x = parsed.legenda_x.slice(0, 277) + "...";
     }
