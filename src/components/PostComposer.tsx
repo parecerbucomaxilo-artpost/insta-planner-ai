@@ -416,58 +416,65 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           </div>
 
           {/* LEGENDAS POR REDE */}
-          <div className="space-y-2">
-            <Label>Legendas por rede</Label>
-            <Tabs value={visibleLegendaTab} onValueChange={(v) => setActiveLegendaTab(v as Network)}>
-              <TabsList className="w-full" style={{ gridTemplateColumns: `repeat(${networks.length}, minmax(0, 1fr))`, display: "grid" }}>
-                {networks.map((n) => {
-                  const { label, Icon } = NETWORK_META[n];
-                  return (
-                    <TabsTrigger key={n} value={n} className="flex items-center gap-1.5">
-                      <Icon className="h-3.5 w-3.5" /> {label}
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
+          {networks.length === 0 ? (
+            <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+              Selecione ao menos uma rede social acima para editar legendas.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Legendas por rede</Label>
+              <Tabs value={visibleLegendaTab ?? undefined} onValueChange={(v) => setActiveLegendaTab(v as Network)}>
+                <TabsList className="w-full" style={{ gridTemplateColumns: `repeat(${networks.length}, minmax(0, 1fr))`, display: "grid" }}>
+                  {networks.map((n) => {
+                    const { label, Icon } = NETWORK_META[n];
+                    return (
+                      <TabsTrigger key={n} value={n} className="flex items-center gap-1.5">
+                        <Icon className="h-3.5 w-3.5" /> {label}
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
 
-              {networks.includes("instagram") && (
-                <TabsContent value="instagram" className="mt-3">
-                  <Textarea
-                    value={legendaIg}
-                    onChange={(e) => setLegendaIg(e.target.value)}
-                    rows={6}
-                    placeholder="Legenda do Instagram com hashtags ao final..."
-                  />
-                </TabsContent>
-              )}
-              {networks.includes("linkedin") && (
-                <TabsContent value="linkedin" className="mt-3">
-                  <Textarea
-                    value={legendaLi}
-                    onChange={(e) => setLegendaLi(e.target.value)}
-                    rows={6}
-                    placeholder="Post profissional para LinkedIn..."
-                  />
-                </TabsContent>
-              )}
-              {networks.includes("x") && (
-                <TabsContent value="x" className="mt-3 space-y-1">
-                  <Textarea
-                    value={legendaX}
-                    onChange={(e) => setLegendaX(e.target.value.slice(0, 280))}
-                    rows={4}
-                    placeholder="Tweet curto (máx 280)..."
-                  />
-                  <p className={cn(
-                    "text-xs text-right",
-                    legendaX.length > 260 ? "text-destructive font-medium" : "text-muted-foreground",
-                  )}>
-                    {legendaX.length}/280
-                  </p>
-                </TabsContent>
-              )}
-            </Tabs>
-          </div>
+                {networks.includes("instagram") && (
+                  <TabsContent value="instagram" className="mt-3">
+                    <Textarea
+                      value={legendaIg}
+                      onChange={(e) => setLegendaIg(e.target.value)}
+                      rows={6}
+                      placeholder="Legenda do Instagram com hashtags ao final..."
+                    />
+                  </TabsContent>
+                )}
+                {networks.includes("linkedin") && (
+                  <TabsContent value="linkedin" className="mt-3">
+                    <Textarea
+                      value={legendaLi}
+                      onChange={(e) => setLegendaLi(e.target.value)}
+                      rows={6}
+                      placeholder="Post profissional para LinkedIn..."
+                    />
+                  </TabsContent>
+                )}
+                {networks.includes("x") && (
+                  <TabsContent value="x" className="mt-3 space-y-1">
+                    <Textarea
+                      value={legendaX}
+                      onChange={(e) => setLegendaX(e.target.value.slice(0, 280))}
+                      rows={4}
+                      placeholder="Tweet curto (máx 280)..."
+                    />
+                    <p className={cn(
+                      "text-xs text-right",
+                      legendaX.length > 260 ? "text-destructive font-medium" : "text-muted-foreground",
+                    )}>
+                      {legendaX.length}/280
+                    </p>
+                  </TabsContent>
+                )}
+              </Tabs>
+            </div>
+          )}
+
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
