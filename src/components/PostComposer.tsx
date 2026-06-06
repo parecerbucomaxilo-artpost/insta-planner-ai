@@ -69,13 +69,11 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const maxCarousel = networks.includes("x") ? 4 : 10;
 
   const toggleNetwork = (n: Network) => {
-    setNetworks((prev) => {
-      const has = prev.includes(n);
-      const next = has ? prev.filter((x) => x !== n) : [...prev, n];
-      if (next.length === 0) return prev; // pelo menos 1
-      return next;
-    });
+    setNetworks((prev) =>
+      prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n],
+    );
   };
+
 
   // Garante que aba ativa esteja entre as selecionadas
   const visibleLegendaTab = useMemo<Network>(
