@@ -10,11 +10,15 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Twitter } from "lucide-react";
+import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Twitter, Stamp } from "lucide-react";
 import { toast } from "sonner";
 import { PostPreview } from "./PostPreview";
 import { cn } from "@/lib/utils";
 import type { Network } from "@/lib/posts-types";
+import type { Perfil } from "@/components/ProfileSettings";
+import { applyWatermark } from "@/lib/watermark";
+import { Checkbox } from "@/components/ui/checkbox";
+
 
 type Tipo = "Post Único" | "Carrossel";
 type Estilo = "Padrão" | "Estilo X";
