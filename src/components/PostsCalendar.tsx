@@ -47,16 +47,16 @@ export function PostsCalendar({ posts }: { posts: PostRow[] }) {
               const key = format(props.day.date, "yyyy-MM-dd");
               const dayItems = postsByDay.get(key) ?? [];
               return (
-                <button {...props} className={`${props.className ?? ""} relative`}>
-                  {props.children}
+                <div className="relative">
+                  <CalendarDayButton {...props} />
                   {dayItems.length > 0 && (
-                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                    <div className="pointer-events-none absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
                       {dayItems.slice(0, 3).map((p, i) => (
                         <span key={i} className={`h-1.5 w-1.5 rounded-full ${statusColor[p.status] ?? ""}`} />
                       ))}
                     </div>
                   )}
-                </button>
+                </div>
               );
             },
           }}
