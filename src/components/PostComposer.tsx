@@ -39,15 +39,19 @@ const NETWORK_META: Record<Network, { label: string; Icon: typeof Instagram; col
   x: { label: "X (Twitter)", Icon: Twitter, color: "from-neutral-700 to-black" },
 };
 
-export function PostComposer({ onCreated }: { onCreated: () => void }) {
+export function PostComposer({ onCreated, perfil }: { onCreated: () => void; perfil: Perfil | null }) {
   const genImage = useServerFn(generateImage);
   const genIdea = useServerFn(suggestIdea);
 
   // Redes
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
 
+  // Marca d'água com a logo do perfil
+  const [watermark, setWatermark] = useState(false);
+
   const [tipo, setTipo] = useState<Tipo>("Post Único");
   const [estilo, setEstilo] = useState<Estilo>("Padrão");
+
 
   // Legendas por rede
   const [legendaIg, setLegendaIg] = useState("");
