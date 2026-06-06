@@ -148,11 +148,50 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
   };
 
+  // Constrói um prompt visual médico/ético a partir da legenda da rede ativa.
+  const buildAutoPrompt = (baseText: string): string => {
+    const caption = (baseText || tema || "").trim().slice(0, 600);
+    const layoutHint = estilo === "Estilo X"
+      ? "Composição quadrada otimizada para card de tweet (Estilo X / Twitter)."
+      : "Composição quadrada otimizada para feed do Instagram / LinkedIn.";
+    return [
+      "Professional medical illustration / clean editorial photography for a dental social media post.",
+      "Specialty: Oral & Maxillofacial Surgery and Hospital Dentistry (CTBMF).",
+      "Aesthetic: modern hospital environment, clinical blue / white / soft grey palette, soft natural lighting, infographic-friendly, minimal and respectful.",
+      "STRICTLY FORBIDDEN: visible blood, open wounds, graphic surgery, identifiable patients, gore, distressing content.",
+      layoutHint,
+      `Conteúdo de referência (não escreva o texto na imagem, apenas inspire o visual): "${caption}"`,
+    ].join(" ");
+  };
+
+  const buildManualPrompt = (userText: string): string => {
+    const safe = (userText || "").trim().slice(0, 800);
+    const layoutHint = estilo === "Estilo X"
+      ? "Composição quadrada otimizada para card de tweet (Estilo X / Twitter)."
+      : "Composição quadrada otimizada para feed do Instagram / LinkedIn.";
+    return [
+      "Imagem profissional e ética para post de Odontologia (CTBMF / Hospitalar).",
+      "Sem sangue, sem ferimentos, sem pacientes identificáveis, estética clean e respeitosa.",
+      layoutHint,
+      `Orientações do usuário: ${safe}`,
+    ].join(" ");
+  };
+
   const handleGenerateSingle = async () => {
-    if (!prompt.trim()) return toast.error("Escreva um prompt primeiro");
+    const captionForAuto = legendaIg || legendaLi || legendaX;
+    if (imageMode === "auto" && !captionForAuto.trim() && !tema.trim()) {
+      return toast.error("Gere a legenda primeiro (ou troque para 'Fornecer Minhas Orientações').");
+    }
+    if (imageMode === "manual" && !orientacoes.trim()) {
+      return toast.error("Descreva o que você quer ver na imagem.");
+    }
+    const finalPrompt = imageMode === "auto"
+      ? buildAutoPrompt(captionForAuto)
+      : buildManualPrompt(orientacoes);
+    setPrompt(finalPrompt);
     setLoadingAi(true);
     try {
-      const { dataUrl } = await genImage({ data: { prompt } });
+      const { dataUrl } = await genImage({ data: { prompt: finalPrompt } });
       const finalUrl = await maybeWatermark(dataUrl);
       setImagem(finalUrl);
       toast.success("Imagem gerada via Gemini!");
@@ -164,11 +203,20 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   };
 
   const handleGeneratePage = async (index: number) => {
-    const p = carouselPrompts[index];
-    if (!p?.trim()) return toast.error(`Escreva o prompt da página ${index + 1}`);
+    const pageOrientation = carouselPrompts[index] ?? "";
+    const captionForAuto = legendaIg || legendaLi || legendaX;
+    if (imageMode === "manual" && !pageOrientation.trim()) {
+      return toast.error(`Descreva o que quer ver na página ${index + 1}.`);
+    }
+    if (imageMode === "auto" && !captionForAuto.trim() && !tema.trim()) {
+      return toast.error("Gere a legenda primeiro (ou troque para 'Fornecer Minhas Orientações').");
+    }
+    const finalPrompt = imageMode === "auto"
+      ? buildAutoPrompt(`${captionForAuto}\n\nPágina ${index + 1} do carrossel.`)
+      : buildManualPrompt(pageOrientation);
     setLoadingPage(index);
     try {
-      const { dataUrl } = await genImage({ data: { prompt: p } });
+      const { dataUrl } = await genImage({ data: { prompt: finalPrompt } });
       const finalUrl = await maybeWatermark(dataUrl);
       setCarrossel((arr) => {
         const next = [...arr];
