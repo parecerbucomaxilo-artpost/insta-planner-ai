@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Upload, User2, AtSign, X } from "lucide-react";
+import { Loader2, Upload, User2, AtSign, X, Instagram, Linkedin, Twitter } from "lucide-react";
 import { toast } from "sonner";
 
 export type Perfil = {
@@ -12,6 +12,12 @@ export type Perfil = {
   nome_profissional: string;
   arroba_usuario: string;
   url_logo: string | null;
+  instagram_arroba: string;
+  instagram_foto_url: string | null;
+  linkedin_nome: string;
+  linkedin_foto_url: string | null;
+  x_arroba: string;
+  x_foto_url: string | null;
 };
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -23,13 +29,96 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+type NetSectionProps = {
+  title: string;
+  Icon: typeof Instagram;
+  gradient: string;
+  nameLabel: string;
+  namePlaceholder: string;
+  nameValue: string;
+  onNameChange: (v: string) => void;
+  nameIsHandle?: boolean;
+  photo: string | null;
+  onPhoto: (v: string | null) => void;
+  description?: string;
+};
+
+function NetworkSection({
+  title, Icon, gradient, nameLabel, namePlaceholder, nameValue, onNameChange,
+  nameIsHandle, photo, onPhoto, description,
+}: NetSectionProps) {
+  const handleUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 2 * 1024 * 1024) {
+      toast.error("Arquivo grande demais (máx 2MB)");
+      e.target.value = "";
+      return;
+    }
+    onPhoto(await fileToDataUrl(f));
+    e.target.value = "";
+  };
+
+  return (
+    <Card className="p-5 space-y-4">
+      <div className="flex items-center gap-3">
+        <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center text-white`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <h3 className="font-semibold leading-tight">{title}</h3>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5 text-sm">
+          {nameIsHandle ? <AtSign className="h-3.5 w-3.5" /> : <User2 className="h-3.5 w-3.5" />}
+          {nameLabel}
+        </Label>
+        <Input value={nameValue} onChange={(e) => onNameChange(e.target.value)} placeholder={namePlaceholder} />
+        {nameIsHandle && <p className="text-[11px] text-muted-foreground">O @ é adicionado automaticamente.</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm">Foto / Logo</Label>
+        <div className="flex items-center gap-4">
+          <div className="h-16 w-16 rounded-full border-2 overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+            {photo ? (
+              <img src={photo} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <Icon className="h-6 w-6 text-muted-foreground" />
+            )}
+          </div>
+          <div className="flex-1 flex flex-col gap-2">
+            <label className="flex items-center justify-center gap-2 px-3 py-1.5 border-2 border-dashed rounded-md cursor-pointer hover:bg-accent text-xs">
+              <Upload className="h-3.5 w-3.5" />
+              {photo ? "Trocar imagem" : "Enviar imagem"}
+              <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+            </label>
+            {photo && (
+              <Button variant="ghost" size="sm" onClick={() => onPhoto(null)} className="text-destructive h-7">
+                <X className="h-3.5 w-3.5 mr-1" /> Remover
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [id, setId] = useState<string | null>(null);
-  const [nome, setNome] = useState("");
-  const [arroba, setArroba] = useState("");
-  const [logo, setLogo] = useState<string | null>(null);
+
+  const [igArroba, setIgArroba] = useState("");
+  const [igFoto, setIgFoto] = useState<string | null>(null);
+  const [liNome, setLiNome] = useState("");
+  const [liFoto, setLiFoto] = useState<string | null>(null);
+  const [xArroba, setXArroba] = useState("");
+  const [xFoto, setXFoto] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -40,35 +129,38 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
         .limit(1)
         .maybeSingle();
       if (data) {
-        setId(data.id);
-        setNome(data.nome_profissional ?? "");
-        setArroba(data.arroba_usuario ?? "");
-        setLogo(data.url_logo ?? null);
+        const d = data as unknown as Perfil & { arroba_usuario?: string; nome_profissional?: string; url_logo?: string | null };
+        setId(d.id);
+        setIgArroba(d.instagram_arroba ?? d.arroba_usuario ?? "");
+        setIgFoto(d.instagram_foto_url ?? d.url_logo ?? null);
+        setLiNome(d.linkedin_nome ?? d.nome_profissional ?? "");
+        setLiFoto(d.linkedin_foto_url ?? d.url_logo ?? null);
+        setXArroba(d.x_arroba ?? d.arroba_usuario ?? "");
+        setXFoto(d.x_foto_url ?? d.url_logo ?? null);
       }
       setLoading(false);
     })();
   }, []);
 
-  const handleUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (f.size > 2 * 1024 * 1024) {
-      toast.error("Arquivo grande demais (máx 2MB)");
-      e.target.value = "";
-      return;
-    }
-    setLogo(await fileToDataUrl(f));
-    e.target.value = "";
-  };
-
   const handleSave = async () => {
-    if (!nome.trim()) return toast.error("Informe o nome profissional");
-    const arrobaClean = arroba.trim().replace(/^@+/, "");
+    const ig = igArroba.trim().replace(/^@+/, "");
+    const xa = xArroba.trim().replace(/^@+/, "");
+    if (!liNome.trim() && !ig && !xa) {
+      return toast.error("Preencha ao menos uma rede");
+    }
     setSaving(true);
     const payload = {
-      nome_profissional: nome.trim(),
-      arroba_usuario: arrobaClean,
-      url_logo: logo,
+      // legados — mantidos sincronizados para retrocompatibilidade
+      nome_profissional: liNome.trim() || ig || xa,
+      arroba_usuario: ig || xa,
+      url_logo: igFoto ?? liFoto ?? xFoto,
+      // novos por rede
+      instagram_arroba: ig,
+      instagram_foto_url: igFoto,
+      linkedin_nome: liNome.trim(),
+      linkedin_foto_url: liFoto,
+      x_arroba: xa,
+      x_foto_url: xFoto,
     };
     let result;
     if (id) {
@@ -81,7 +173,7 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
     if (result.data) {
       setId(result.data.id);
       toast.success("Perfil salvo!");
-      onSaved?.(result.data as Perfil);
+      onSaved?.(result.data as unknown as Perfil);
     }
   };
 
@@ -94,65 +186,59 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <Card className="p-6 space-y-6">
-        <div>
-          <h2 className="text-xl font-bold">Configurações do Perfil</h2>
-          <p className="text-sm text-muted-foreground">
-            Estes dados aparecem automaticamente nos posts em "Estilo X" e podem ser usados como marca d'água.
-          </p>
-        </div>
+    <div className="max-w-2xl mx-auto space-y-5">
+      <div>
+        <h2 className="text-xl font-bold">Configurações do Perfil</h2>
+        <p className="text-sm text-muted-foreground">
+          Configure foto e identidade para cada rede social. Esses dados alimentam as prévias e a marca d'água.
+        </p>
+      </div>
 
-        <div className="space-y-2">
-          <Label className="flex items-center gap-1.5"><User2 className="h-3.5 w-3.5" /> Nome Profissional</Label>
-          <Input
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            placeholder="Ex: Dr. João Silva"
-          />
-        </div>
+      <NetworkSection
+        title="Instagram"
+        Icon={Instagram}
+        gradient="from-pink-500 via-rose-500 to-orange-400"
+        nameLabel="@ do Instagram"
+        namePlaceholder="dr.bucomaxilo"
+        nameValue={igArroba}
+        onNameChange={setIgArroba}
+        nameIsHandle
+        photo={igFoto}
+        onPhoto={setIgFoto}
+        description="Foto de perfil pública e @ usado na bio."
+      />
 
-        <div className="space-y-2">
-          <Label className="flex items-center gap-1.5"><AtSign className="h-3.5 w-3.5" /> @ Arroba</Label>
-          <Input
-            value={arroba}
-            onChange={(e) => setArroba(e.target.value)}
-            placeholder="dr.bucomaxilo"
-          />
-          <p className="text-[11px] text-muted-foreground">O @ é adicionado automaticamente.</p>
-        </div>
+      <NetworkSection
+        title="LinkedIn"
+        Icon={Linkedin}
+        gradient="from-sky-600 to-blue-700"
+        nameLabel="Nome Profissional Oficial"
+        namePlaceholder="Dr. João Silva, CD, MSc"
+        nameValue={liNome}
+        onNameChange={setLiNome}
+        photo={liFoto}
+        onPhoto={setLiFoto}
+        description="Use foto formal/corporativa e seu nome completo com títulos."
+      />
 
-        <div className="space-y-2">
-          <Label>Logo ou Foto de Perfil</Label>
-          <div className="flex items-center gap-4">
-            <div className="h-20 w-20 rounded-full border-2 overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-              {logo ? (
-                <img src={logo} alt="logo" className="h-full w-full object-cover" />
-              ) : (
-                <User2 className="h-8 w-8 text-muted-foreground" />
-              )}
-            </div>
-            <div className="flex-1 flex flex-col gap-2">
-              <label className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed rounded-md cursor-pointer hover:bg-accent text-sm">
-                <Upload className="h-4 w-4" />
-                {logo ? "Trocar imagem" : "Enviar imagem"}
-                <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-              </label>
-              {logo && (
-                <Button variant="ghost" size="sm" onClick={() => setLogo(null)} className="text-destructive">
-                  <X className="h-3.5 w-3.5 mr-1" /> Remover
-                </Button>
-              )}
-            </div>
-          </div>
-          <p className="text-[11px] text-muted-foreground">PNG/JPG até 2MB. Quadrada funciona melhor.</p>
-        </div>
+      <NetworkSection
+        title="X (Twitter)"
+        Icon={Twitter}
+        gradient="from-neutral-700 to-black"
+        nameLabel="@ do X"
+        namePlaceholder="dr_bucomax"
+        nameValue={xArroba}
+        onNameChange={setXArroba}
+        nameIsHandle
+        photo={xFoto}
+        onPhoto={setXFoto}
+        description="Avatar e @ exibidos no template do tweet."
+      />
 
-        <Button onClick={handleSave} disabled={saving} size="lg" className="w-full">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-          Salvar Perfil
-        </Button>
-      </Card>
+      <Button onClick={handleSave} disabled={saving} size="lg" className="w-full">
+        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        Salvar Perfil
+      </Button>
     </div>
   );
 }
