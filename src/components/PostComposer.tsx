@@ -184,7 +184,24 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
   const handleUploadSingle = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setImagem(await fileToDataUrl(file));
+    if (file) {
+      if (formato === "Vídeo/Reels" && !file.type.startsWith("video/")) {
+        toast.error("Envie um arquivo de vídeo (MP4).");
+        e.target.value = "";
+        return;
+      }
+      if (formato === "Imagem" && !file.type.startsWith("image/")) {
+        toast.error("Envie uma imagem.");
+        e.target.value = "";
+        return;
+      }
+      if (file.size > 25 * 1024 * 1024) {
+        toast.error("Arquivo grande demais (máx 25MB).");
+        e.target.value = "";
+        return;
+      }
+      setImagem(await fileToDataUrl(file));
+    }
     e.target.value = "";
   };
 
