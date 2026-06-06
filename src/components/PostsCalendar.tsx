@@ -47,9 +47,13 @@ export function PostsCalendar({ posts }: { posts: PostRow[] }) {
             DayButton: (props) => {
               const key = format(props.day.date, "yyyy-MM-dd");
               const dayItems = postsByDay.get(key) ?? [];
+              const hasReel = dayItems.some((p) => p.formato_midia === "Vídeo/Reels");
               return (
                 <div className="relative">
                   <CalendarDayButton {...props} />
+                  {hasReel && (
+                    <Film className="pointer-events-none absolute top-0.5 right-0.5 h-3 w-3 text-violet-500" />
+                  )}
                   {dayItems.length > 0 && (
                     <div className="pointer-events-none absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
                       {dayItems.slice(0, 3).map((p, i) => (
