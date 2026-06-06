@@ -88,10 +88,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const enforcedPrompts = useMemo(() => carouselPrompts.slice(0, maxCarousel), [carouselPrompts, maxCarousel]);
 
   const handleSuggestIdea = async () => {
-    if (!niche.trim()) return toast.error("Digite um nicho ou assunto");
     setLoadingIdea(true);
     try {
-      const r = await genIdea({ data: { niche, networks } });
+      const r = await genIdea({ data: { networks } });
       setTema(r.tema);
       if (r.legenda_instagram) setLegendaIg(r.legenda_instagram);
       if (r.legenda_linkedin) setLegendaLi(r.legenda_linkedin);
