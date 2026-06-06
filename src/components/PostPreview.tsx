@@ -29,7 +29,8 @@ function identityFor(network: Network | undefined, perfil?: Perfil | null): Iden
     return {
       nome: perfil.linkedin_nome || perfil.nome_profissional || h,
       handle: h,
-      foto: perfil.x_foto_url ?? perfil.url_logo ?? null,
+      // X SEMPRE usa a foto pessoal do X — nunca a logo corporativa.
+      foto: perfil.x_foto_url ?? null,
     };
   }
   // instagram (default)
