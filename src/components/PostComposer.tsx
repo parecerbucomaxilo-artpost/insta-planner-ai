@@ -196,7 +196,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     setLegendaIg(""); setLegendaLi(""); setLegendaX("");
     setPrompt(""); setImagem(null); setCarrossel([]);
     setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
-    setNiche(""); setTema("");
+    setTema("");
     onCreated();
   };
 
