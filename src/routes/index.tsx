@@ -97,6 +97,7 @@ function Dashboard() {
             <TabsTrigger value="criar"><PlusCircle className="h-4 w-4 mr-1.5" /> Criar</TabsTrigger>
             <TabsTrigger value="calendario"><CalendarIcon className="h-4 w-4 mr-1.5" /> Calendário</TabsTrigger>
             <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todos os posts</TabsTrigger>
+            <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" /> Insights de Performance</TabsTrigger>
             <TabsTrigger value="perfil"><Settings className="h-4 w-4 mr-1.5" /> Perfil</TabsTrigger>
           </TabsList>
 
@@ -108,6 +109,9 @@ function Dashboard() {
           </TabsContent>
           <TabsContent value="todos" className="mt-6">
             <PostsList posts={posts} onChange={load} />
+          </TabsContent>
+          <TabsContent value="insights" className="mt-6">
+            <InsightsPanel posts={posts} />
           </TabsContent>
           <TabsContent value="perfil" className="mt-6">
             <ProfileSettings onSaved={(p) => setPerfil(p)} />
