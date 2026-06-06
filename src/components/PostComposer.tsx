@@ -172,6 +172,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const primaryLegenda = legendaIg || legendaLi || legendaX || "";
 
   const handleSave = async () => {
+    if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
     if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
     const filledCarousel = enforcedCarrossel.filter(Boolean);
     if (tipo === "Carrossel" && filledCarousel.length === 0) return toast.error("Gere ao menos a Página 1");
