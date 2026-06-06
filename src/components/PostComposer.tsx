@@ -51,6 +51,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
   const [tipo, setTipo] = useState<Tipo>("Post Único");
   const [estilo, setEstilo] = useState<Estilo>("Padrão");
+  const [formato, setFormato] = useState<FormatoMidia>("Imagem");
 
 
   // Legendas por rede
