@@ -22,6 +22,12 @@ export type Database = {
           id: string
           imagens_carrossel: Json
           legenda: string
+          legenda_instagram: string | null
+          legenda_linkedin: string | null
+          legenda_x: string | null
+          postar_instagram: boolean
+          postar_linkedin: boolean
+          postar_x: boolean
           prompt_ia: string | null
           status: string
           tipo_post: string
@@ -35,6 +41,12 @@ export type Database = {
           id?: string
           imagens_carrossel?: Json
           legenda?: string
+          legenda_instagram?: string | null
+          legenda_linkedin?: string | null
+          legenda_x?: string | null
+          postar_instagram?: boolean
+          postar_linkedin?: boolean
+          postar_x?: boolean
           prompt_ia?: string | null
           status?: string
           tipo_post: string
@@ -48,6 +60,12 @@ export type Database = {
           id?: string
           imagens_carrossel?: Json
           legenda?: string
+          legenda_instagram?: string | null
+          legenda_linkedin?: string | null
+          legenda_x?: string | null
+          postar_instagram?: boolean
+          postar_linkedin?: boolean
+          postar_x?: boolean
           prompt_ia?: string | null
           status?: string
           tipo_post?: string
