@@ -354,10 +354,43 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
 
         <Card className="p-6 space-y-5">
+          {/* FORMATO DE MÍDIA */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Formato da mídia</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["Imagem", "Vídeo/Reels"] as FormatoMidia[]).map((f) => {
+                const Icon = f === "Vídeo/Reels" ? Film : PictureIcon;
+                const active = formato === f;
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => { setFormato(f); setImagem(null); if (f === "Vídeo/Reels") setTipo("Post Único"); }}
+                    className={cn(
+                      "flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-sm font-medium",
+                      active
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-card hover:border-primary/40",
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4", f === "Vídeo/Reels" && "text-violet-500")} />
+                    {f === "Imagem" ? "Imagem estática" : "Vídeo / Reels"}
+                  </button>
+                );
+              })}
+            </div>
+            {formato === "Vídeo/Reels" && (
+              <p className="text-[11px] text-muted-foreground rounded-md bg-violet-500/10 border border-violet-500/20 p-2.5 leading-relaxed">
+                <Film className="h-3 w-3 inline mr-1 text-violet-600" />
+                O arquivo MP4 será processado como <strong>Reels no Instagram</strong> e como <strong>postagem de vídeo no LinkedIn e X</strong>. Carrossel está desabilitado para vídeo.
+              </p>
+            )}
+          </div>
+
           <Tabs value={tipo} onValueChange={(v) => setTipo(v as Tipo)}>
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="Post Único">Post Único</TabsTrigger>
-              <TabsTrigger value="Carrossel">
+              <TabsTrigger value="Carrossel" disabled={formato === "Vídeo/Reels"}>
                 Carrossel
                 {networks.includes("x") && (
                   <span className="ml-2 text-[10px] uppercase text-muted-foreground">máx 4 (X)</span>
@@ -367,44 +400,78 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
             {/* POST ÚNICO */}
             <TabsContent value="Post Único" className="mt-4 space-y-4">
-              <div className="space-y-2 rounded-lg border bg-accent/30 p-4">
-                <Label className="flex items-center gap-2 text-sm">
-                  <Sparkles className="h-4 w-4 text-primary" /> Prompt da Imagem
-                  <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">
-                    100% Google Gemini
-                  </span>
-                </Label>
-                <Textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  rows={2}
-                  placeholder="Ex: pôr do sol sobre montanhas, estilo cinematográfico"
-                />
-                <Button onClick={handleGenerateSingle} disabled={loadingAi} className="w-full">
-                  {loadingAi ? (
-                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando via Gemini...</>
-                  ) : (
-                    <><Sparkles className="h-4 w-4 mr-2" /> Gerar Imagem via Gemini</>
-                  )}
-                </Button>
-              </div>
-
-              {imagem ? (
-                <div className="relative rounded-lg overflow-hidden border">
-                  <img src={imagem} alt="prévia" className="w-full aspect-square object-cover" />
-                  <Button size="icon" variant="destructive" className="absolute top-2 right-2 h-8 w-8" onClick={() => setImagem(null)}>
-                    <X className="h-4 w-4" />
+              {formato === "Imagem" ? (
+                <div className="space-y-2 rounded-lg border bg-accent/30 p-4">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <Sparkles className="h-4 w-4 text-primary" /> Prompt da Imagem
+                    <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">
+                      100% Google Gemini
+                    </span>
+                  </Label>
+                  <Textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    rows={2}
+                    placeholder="Ex: pôr do sol sobre montanhas, estilo cinematográfico"
+                  />
+                  <Button onClick={handleGenerateSingle} disabled={loadingAi} className="w-full">
+                    {loadingAi ? (
+                      <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando via Gemini...</>
+                    ) : (
+                      <><Sparkles className="h-4 w-4 mr-2" /> Gerar Imagem via Gemini</>
+                    )}
                   </Button>
                 </div>
               ) : (
+                <div className="rounded-lg border bg-violet-500/5 p-4 text-sm text-muted-foreground">
+                  <Film className="h-4 w-4 inline mr-1.5 text-violet-600" />
+                  Faça upload do arquivo MP4 abaixo. A geração via IA é exclusiva para imagens.
+                </div>
+              )}
+
+              {imagem ? (
+                <div className="relative rounded-lg overflow-hidden border">
+                  {formato === "Vídeo/Reels" ? (
+                    <video src={imagem} controls className="w-full aspect-square object-cover bg-black" />
+                  ) : (
+                    <img src={imagem} alt="prévia" className="w-full aspect-square object-cover" />
+                  )}
+                  <Button size="icon" variant="destructive" className="absolute top-2 right-2 h-8 w-8" onClick={() => setImagem(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                  {formato === "Vídeo/Reels" && (
+                    <Badge className="absolute top-2 left-2 bg-violet-500 hover:bg-violet-500 text-white">
+                      <Film className="h-3 w-3 mr-1" /> Reels
+                    </Badge>
+                  )}
+                </div>
+              ) : (
                 <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-lg cursor-pointer hover:bg-accent transition-colors">
-                  <ImgIcon className="h-10 w-10 text-muted-foreground mb-2" />
-                  <span className="text-sm text-muted-foreground">A imagem gerada aparecerá aqui</span>
-                  <span className="text-xs text-muted-foreground mt-1">ou clique para enviar manualmente</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleUploadSingle} />
+                  {formato === "Vídeo/Reels" ? (
+                    <>
+                      <Film className="h-10 w-10 text-violet-500 mb-2" />
+                      <span className="text-sm font-medium">Enviar vídeo (MP4)</span>
+                      <span className="text-xs text-muted-foreground mt-1 text-center px-4">
+                        Será publicado como Reels no Instagram e vídeo no LinkedIn / X.
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <ImgIcon className="h-10 w-10 text-muted-foreground mb-2" />
+                      <span className="text-sm text-muted-foreground">A imagem gerada aparecerá aqui</span>
+                      <span className="text-xs text-muted-foreground mt-1">ou clique para enviar manualmente</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept={formato === "Vídeo/Reels" ? "video/mp4,video/*" : "image/*"}
+                    className="hidden"
+                    onChange={handleUploadSingle}
+                  />
                 </label>
               )}
             </TabsContent>
+
 
             {/* CARROSSEL */}
             <TabsContent value="Carrossel" className="mt-4 space-y-3">
