@@ -19,25 +19,43 @@ export type Database = {
           arroba_usuario: string
           created_at: string
           id: string
+          instagram_arroba: string
+          instagram_foto_url: string | null
+          linkedin_foto_url: string | null
+          linkedin_nome: string
           nome_profissional: string
           updated_at: string
           url_logo: string | null
+          x_arroba: string
+          x_foto_url: string | null
         }
         Insert: {
           arroba_usuario?: string
           created_at?: string
           id?: string
+          instagram_arroba?: string
+          instagram_foto_url?: string | null
+          linkedin_foto_url?: string | null
+          linkedin_nome?: string
           nome_profissional?: string
           updated_at?: string
           url_logo?: string | null
+          x_arroba?: string
+          x_foto_url?: string | null
         }
         Update: {
           arroba_usuario?: string
           created_at?: string
           id?: string
+          instagram_arroba?: string
+          instagram_foto_url?: string | null
+          linkedin_foto_url?: string | null
+          linkedin_nome?: string
           nome_profissional?: string
           updated_at?: string
           url_logo?: string | null
+          x_arroba?: string
+          x_foto_url?: string | null
         }
         Relationships: []
       }

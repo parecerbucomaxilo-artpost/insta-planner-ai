@@ -123,10 +123,22 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
   };
 
+  // Escolhe a logo da primeira rede selecionada; usuário pode reordenar via toggle
+  const watermarkLogo = useMemo<string | null>(() => {
+    if (!perfil) return null;
+    const activeNet = networks[0];
+    const byNet =
+      activeNet === "linkedin" ? perfil.linkedin_foto_url :
+      activeNet === "x" ? perfil.x_foto_url :
+      activeNet === "instagram" ? perfil.instagram_foto_url :
+      null;
+    return byNet ?? perfil.instagram_foto_url ?? perfil.linkedin_foto_url ?? perfil.x_foto_url ?? perfil.url_logo ?? null;
+  }, [perfil, networks]);
+
   const maybeWatermark = async (src: string): Promise<string> => {
-    if (!watermark || !perfil?.url_logo) return src;
+    if (!watermark || !watermarkLogo) return src;
     try {
-      return await applyWatermark(src, perfil.url_logo);
+      return await applyWatermark(src, watermarkLogo);
     } catch {
       toast.error("Falha ao aplicar marca d'água — salvando sem.");
       return src;
@@ -275,7 +287,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               id="watermark"
               checked={watermark}
               onCheckedChange={(v) => setWatermark(Boolean(v))}
-              disabled={!perfil?.url_logo}
+              disabled={!watermarkLogo}
               className="mt-0.5"
             />
             <div className="flex-1">
@@ -283,13 +295,13 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                 <Stamp className="h-3.5 w-3.5" /> Inserir marca d'água/logo na imagem
               </Label>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {perfil?.url_logo
-                  ? "A logo do perfil será aplicada no canto inferior direito das imagens geradas."
-                  : "Salve uma logo em Configurações do Perfil para habilitar."}
+                {watermarkLogo
+                  ? `Usará a logo de ${NETWORK_META[networks[0] ?? "instagram"].label} (canto inferior direito).`
+                  : "Salve uma foto/logo em Configurações do Perfil para habilitar."}
               </p>
             </div>
-            {perfil?.url_logo && (
-              <img src={perfil.url_logo} alt="" className="h-8 w-8 rounded border object-cover" />
+            {watermarkLogo && (
+              <img src={watermarkLogo} alt="" className="h-8 w-8 rounded border object-cover" />
             )}
           </div>
         </Card>
@@ -559,6 +571,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             carrossel={tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean) : []}
             tipo={tipo}
             perfil={perfil}
+            network={visibleLegendaTab}
           />
         </div>
       )}
