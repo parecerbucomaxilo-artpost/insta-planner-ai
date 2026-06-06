@@ -62,6 +62,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const [activeLegendaTab, setActiveLegendaTab] = useState<Network>("instagram");
 
   const [prompt, setPrompt] = useState("");
+  const [imageMode, setImageMode] = useState<"auto" | "manual">("auto");
+  const [orientacoes, setOrientacoes] = useState("");
   const [imagem, setImagem] = useState<string | null>(null);
   const [carrossel, setCarrossel] = useState<string[]>([]);
   const [carouselPrompts, setCarouselPrompts] = useState<string[]>([""]);
