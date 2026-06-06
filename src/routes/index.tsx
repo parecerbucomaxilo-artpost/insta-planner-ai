@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
-import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, Stethoscope } from "lucide-react";
+import { toast } from "sonner";
+import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, Stethoscope, TrendingUp } from "lucide-react";
 import { PostComposer } from "@/components/PostComposer";
 import { PostsCalendar } from "@/components/PostsCalendar";
 import { PostsList } from "@/components/PostsList";
 import { ProfileSettings, type Perfil } from "@/components/ProfileSettings";
+import { InsightsPanel } from "@/components/InsightsPanel";
 import type { PostRow } from "@/lib/posts-types";
 
 export const Route = createFileRoute("/")({
