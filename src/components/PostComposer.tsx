@@ -390,7 +390,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               Odontologia — Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar
             </p>
             <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-              ✍️ Temas e legendas escritos pelo <strong>Claude-style premium GPT-5</strong> (OpenAI), com tom técnico para LinkedIn, humanizado para Instagram e curto/dinâmico para X. 🎨 Imagens geradas pelo <strong>Google Gemini</strong>.
+              ✍️ Temas, legendas e prompts de imagem escritos pelo <strong>GPT-5 (OpenAI)</strong> — tom técnico no LinkedIn, humanizado no Instagram, curto/dinâmico no X. 🎨 As imagens são geradas pelo <strong>Google Gemini</strong> a partir do prompt criado pelo GPT-5.
             </p>
           </div>
           <Button onClick={handleSuggestIdea} disabled={loadingIdea} className="w-full">
