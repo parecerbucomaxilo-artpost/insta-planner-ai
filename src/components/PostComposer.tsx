@@ -533,6 +533,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             imagem={tipo === "Post Único" ? imagem : enforcedCarrossel.filter(Boolean)[0] ?? null}
             carrossel={tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean) : []}
             tipo={tipo}
+            perfil={perfil}
           />
         </div>
       )}
