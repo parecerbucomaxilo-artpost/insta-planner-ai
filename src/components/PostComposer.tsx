@@ -303,7 +303,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setLegendaIg(""); setLegendaLi(""); setLegendaX("");
     setPrompt(""); setImagem(null); setCarrossel([]);
     setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
-    setTema(""); setFormato("Imagem");
+    setTema(""); setFormato("Imagem"); setOrientacoes("");
     onCreated();
   };
 
