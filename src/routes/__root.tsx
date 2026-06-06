@@ -77,14 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Planner Chico" },
+      { name: "description", content: "Planner Chico — agendamento de posts para Odontologia (CTBMF e Odontologia Hospitalar)." },
+      { name: "author", content: "Planner Chico" },
+      { property: "og:title", content: "Planner Chico" },
+      { property: "og:description", content: "Planner Chico — agendamento de posts para Odontologia (CTBMF e Odontologia Hospitalar)." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
