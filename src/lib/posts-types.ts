@@ -1,4 +1,5 @@
 export type Network = "instagram" | "linkedin" | "x";
+export type FormatoMidia = "Imagem" | "Vídeo/Reels";
 
 export type PostRow = {
   id: string;
@@ -18,4 +19,8 @@ export type PostRow = {
   prompt_ia: string | null;
   created_at: string;
   updated_at: string;
+  // Insights & Reels
+  visualizacoes: number;
+  aviso_500_atingido: boolean;
+  formato_midia: FormatoMidia;
 };

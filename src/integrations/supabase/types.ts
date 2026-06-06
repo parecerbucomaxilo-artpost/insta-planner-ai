@@ -61,9 +61,11 @@ export type Database = {
       }
       posts: {
         Row: {
+          aviso_500_atingido: boolean
           created_at: string
           data_agendamento: string | null
           estilo_layout: string
+          formato_midia: string
           id: string
           imagens_carrossel: Json
           legenda: string
@@ -78,11 +80,14 @@ export type Database = {
           tipo_post: string
           updated_at: string
           url_imagem: string | null
+          visualizacoes: number
         }
         Insert: {
+          aviso_500_atingido?: boolean
           created_at?: string
           data_agendamento?: string | null
           estilo_layout?: string
+          formato_midia?: string
           id?: string
           imagens_carrossel?: Json
           legenda?: string
@@ -97,11 +102,14 @@ export type Database = {
           tipo_post: string
           updated_at?: string
           url_imagem?: string | null
+          visualizacoes?: number
         }
         Update: {
+          aviso_500_atingido?: boolean
           created_at?: string
           data_agendamento?: string | null
           estilo_layout?: string
+          formato_midia?: string
           id?: string
           imagens_carrossel?: Json
           legenda?: string
@@ -116,6 +124,7 @@ export type Database = {
           tipo_post?: string
           updated_at?: string
           url_imagem?: string | null
+          visualizacoes?: number
         }
         Relationships: []
       }

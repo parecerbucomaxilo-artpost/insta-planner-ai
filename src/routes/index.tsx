@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
-import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, Stethoscope } from "lucide-react";
+import { toast } from "sonner";
+import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, Stethoscope, TrendingUp } from "lucide-react";
 import { PostComposer } from "@/components/PostComposer";
 import { PostsCalendar } from "@/components/PostsCalendar";
 import { PostsList } from "@/components/PostsList";
 import { ProfileSettings, type Perfil } from "@/components/ProfileSettings";
+import { InsightsPanel } from "@/components/InsightsPanel";
 import type { PostRow } from "@/lib/posts-types";
 
 export const Route = createFileRoute("/")({
@@ -44,6 +46,25 @@ function Dashboard() {
 
   useEffect(() => { load(); loadPerfil(); }, [load, loadPerfil]);
 
+  // Notificação interna para posts que atingiram 500+ views (e ainda não foram avisados)
+  const notifiedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const viral = posts.filter(
+      (p) => (p.visualizacoes ?? 0) >= 500 && !p.aviso_500_atingido && !notifiedRef.current.has(p.id),
+    );
+    if (viral.length === 0) return;
+    (async () => {
+      for (const p of viral) {
+        notifiedRef.current.add(p.id);
+        const titulo = (p.legenda_instagram || p.legenda || "Post sem título").split("\n")[0].slice(0, 60);
+        toast.success(`🔥 Parabéns! O post "${titulo}" atingiu 500 visualizações!`, {
+          duration: 8000,
+        });
+        await supabase.from("posts").update({ aviso_500_atingido: true }).eq("id", p.id);
+      }
+    })();
+  }, [posts]);
+
   return (
     <div className="min-h-screen bg-background">
       <Toaster richColors />
@@ -76,6 +97,7 @@ function Dashboard() {
             <TabsTrigger value="criar"><PlusCircle className="h-4 w-4 mr-1.5" /> Criar</TabsTrigger>
             <TabsTrigger value="calendario"><CalendarIcon className="h-4 w-4 mr-1.5" /> Calendário</TabsTrigger>
             <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todos os posts</TabsTrigger>
+            <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" /> Insights de Performance</TabsTrigger>
             <TabsTrigger value="perfil"><Settings className="h-4 w-4 mr-1.5" /> Perfil</TabsTrigger>
           </TabsList>
 
@@ -87,6 +109,9 @@ function Dashboard() {
           </TabsContent>
           <TabsContent value="todos" className="mt-6">
             <PostsList posts={posts} onChange={load} />
+          </TabsContent>
+          <TabsContent value="insights" className="mt-6">
+            <InsightsPanel posts={posts} />
           </TabsContent>
           <TabsContent value="perfil" className="mt-6">
             <ProfileSettings onSaved={(p) => setPerfil(p)} />
