@@ -86,16 +86,31 @@ export function PostsCalendar({ posts }: { posts: PostRow[] }) {
           <ul className="space-y-3">
             {dayPosts.map((p) => {
               const thumb = p.url_imagem ?? (Array.isArray(p.imagens_carrossel) ? p.imagens_carrossel[0] : null);
+              const isVideo = p.formato_midia === "Vídeo/Reels";
               return (
                 <li key={p.id} className="flex gap-3 p-3 rounded-lg border hover:bg-accent/40 transition-colors">
-                  {thumb ? (
-                    <img src={thumb} alt="" className="h-16 w-16 rounded-md object-cover" />
-                  ) : (
-                    <div className="h-16 w-16 rounded-md bg-muted" />
-                  )}
+                  <div className="h-16 w-16 rounded-md bg-muted overflow-hidden relative flex-shrink-0">
+                    {thumb ? (
+                      isVideo ? (
+                        <div className="h-full w-full bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center">
+                          <Film className="h-6 w-6 text-violet-700" />
+                        </div>
+                      ) : (
+                        <img src={thumb} alt="" className="h-full w-full object-cover" />
+                      )
+                    ) : null}
+                    {isVideo && (
+                      <Film className="absolute bottom-1 right-1 h-3.5 w-3.5 text-white drop-shadow" />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <Badge variant="outline" className="text-xs">{p.tipo_post}</Badge>
+                      {isVideo && (
+                        <Badge className="text-[10px] bg-violet-500 hover:bg-violet-500 text-white">
+                          <Film className="h-3 w-3 mr-0.5" /> Reels
+                        </Badge>
+                      )}
                       <Badge className={`text-xs text-white ${statusColor[p.status]}`}>{p.status}</Badge>
                     </div>
                     <p className="text-sm line-clamp-2">{p.legenda || <span className="text-muted-foreground">(sem legenda)</span>}</p>
