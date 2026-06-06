@@ -380,11 +380,17 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         <Card className="p-5 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
           <Label className="flex items-center gap-2 text-base font-semibold">
             <Wand2 className="h-5 w-5 text-primary" /> Gerar Ideia com IA
+            <span className="ml-auto text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+              Textos por GPT-5
+            </span>
           </Label>
           <div className="mt-2 mb-3 rounded-md border bg-card/60 p-3">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Especialidade fixa</span>
             <p className="text-sm font-medium mt-0.5 leading-snug">
               Odontologia — Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+              ✍️ Temas, legendas e prompts de imagem escritos pelo <strong>GPT-5 (OpenAI)</strong> — tom técnico no LinkedIn, humanizado no Instagram, curto/dinâmico no X. 🎨 As imagens são geradas pelo <strong>Google Gemini</strong> a partir do prompt criado pelo GPT-5.
             </p>
           </div>
           <Button onClick={handleSuggestIdea} disabled={loadingIdea} className="w-full">
