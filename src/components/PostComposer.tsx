@@ -233,6 +233,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     const { error } = await supabase.from("posts").insert({
       tipo_post: tipo,
       estilo_layout: estilo,
+      formato_midia: formato,
       legenda: primaryLegenda,
       legenda_instagram: networks.includes("instagram") ? legendaIg : null,
       legenda_linkedin: networks.includes("linkedin") ? legendaLi : null,
