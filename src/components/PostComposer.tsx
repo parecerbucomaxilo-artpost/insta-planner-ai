@@ -501,18 +501,21 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         </Card>
       </div>
 
-      <div className="lg:sticky lg:top-24 h-fit space-y-2">
-        <Label className="text-xs uppercase text-muted-foreground tracking-wider block">
-          Prévia ao vivo · {NETWORK_META[visibleLegendaTab].label}
-        </Label>
-        <PostPreview
-          estilo={visibleLegendaTab === "x" ? "Estilo X" : estilo}
-          legenda={previewLegenda}
-          imagem={tipo === "Post Único" ? imagem : enforcedCarrossel.filter(Boolean)[0] ?? null}
-          carrossel={tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean) : []}
-          tipo={tipo}
-        />
-      </div>
+      {visibleLegendaTab && (
+        <div className="lg:sticky lg:top-24 h-fit space-y-2">
+          <Label className="text-xs uppercase text-muted-foreground tracking-wider block">
+            Prévia ao vivo · {NETWORK_META[visibleLegendaTab].label}
+          </Label>
+          <PostPreview
+            estilo={visibleLegendaTab === "x" ? "Estilo X" : estilo}
+            legenda={previewLegenda}
+            imagem={tipo === "Post Único" ? imagem : enforcedCarrossel.filter(Boolean)[0] ?? null}
+            carrossel={tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean) : []}
+            tipo={tipo}
+          />
+        </div>
+      )}
+
     </div>
   );
 }
