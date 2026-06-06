@@ -3,10 +3,11 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
-import { Instagram, LayoutGrid, Calendar as CalendarIcon, PlusCircle } from "lucide-react";
+import { Instagram, LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings } from "lucide-react";
 import { PostComposer } from "@/components/PostComposer";
 import { PostsCalendar } from "@/components/PostsCalendar";
 import { PostsList } from "@/components/PostsList";
+import { ProfileSettings, type Perfil } from "@/components/ProfileSettings";
 import type { PostRow } from "@/lib/posts-types";
 
 export const Route = createFileRoute("/")({
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const [posts, setPosts] = useState<PostRow[]>([]);
+  const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [tab, setTab] = useState("criar");
 
   const load = useCallback(async () => {
@@ -30,7 +32,17 @@ function Dashboard() {
     if (!error && data) setPosts(data as unknown as PostRow[]);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadPerfil = useCallback(async () => {
+    const { data } = await supabase
+      .from("perfil_usuario")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (data) setPerfil(data as Perfil);
+  }, []);
+
+  useEffect(() => { load(); loadPerfil(); }, [load, loadPerfil]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,16 +68,20 @@ function Dashboard() {
             <TabsTrigger value="criar"><PlusCircle className="h-4 w-4 mr-1.5" /> Criar</TabsTrigger>
             <TabsTrigger value="calendario"><CalendarIcon className="h-4 w-4 mr-1.5" /> Calendário</TabsTrigger>
             <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todos os posts</TabsTrigger>
+            <TabsTrigger value="perfil"><Settings className="h-4 w-4 mr-1.5" /> Perfil</TabsTrigger>
           </TabsList>
 
           <TabsContent value="criar" className="mt-6">
-            <PostComposer onCreated={() => { load(); setTab("todos"); }} />
+            <PostComposer perfil={perfil} onCreated={() => { load(); setTab("todos"); }} />
           </TabsContent>
           <TabsContent value="calendario" className="mt-6">
             <PostsCalendar posts={posts} />
           </TabsContent>
           <TabsContent value="todos" className="mt-6">
             <PostsList posts={posts} onChange={load} />
+          </TabsContent>
+          <TabsContent value="perfil" className="mt-6">
+            <ProfileSettings onSaved={(p) => setPerfil(p)} />
           </TabsContent>
         </Tabs>
       </main>
