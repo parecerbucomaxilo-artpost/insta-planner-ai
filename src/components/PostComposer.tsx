@@ -61,7 +61,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const [loadingPage, setLoadingPage] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [niche, setNiche] = useState("");
+  
   const [tema, setTema] = useState("");
   const [loadingIdea, setLoadingIdea] = useState(false);
 
