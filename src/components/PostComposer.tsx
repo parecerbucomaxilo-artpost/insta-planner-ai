@@ -125,16 +125,15 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
   };
 
-  // Escolhe a logo da primeira rede selecionada; usuário pode reordenar via toggle
+  // Marca d'água por rede: X usa SEMPRE a foto pessoal do X (nunca a logo corporativa).
+  // Instagram/LinkedIn podem cair na logo corporativa quando não há foto específica.
   const watermarkLogo = useMemo<string | null>(() => {
     if (!perfil) return null;
     const activeNet = networks[0];
-    const byNet =
-      activeNet === "linkedin" ? perfil.linkedin_foto_url :
-      activeNet === "x" ? perfil.x_foto_url :
-      activeNet === "instagram" ? perfil.instagram_foto_url :
-      null;
-    return byNet ?? perfil.instagram_foto_url ?? perfil.linkedin_foto_url ?? perfil.x_foto_url ?? perfil.url_logo ?? null;
+    if (activeNet === "x") return perfil.x_foto_url ?? null;
+    if (activeNet === "linkedin") return perfil.linkedin_foto_url ?? perfil.url_logo ?? null;
+    if (activeNet === "instagram") return perfil.instagram_foto_url ?? perfil.url_logo ?? null;
+    return perfil.instagram_foto_url ?? perfil.linkedin_foto_url ?? perfil.url_logo ?? null;
   }, [perfil, networks]);
 
   const maybeWatermark = async (src: string): Promise<string> => {
