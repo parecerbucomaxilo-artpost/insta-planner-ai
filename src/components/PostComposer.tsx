@@ -123,16 +123,16 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
   };
 
-  // Escolhe a logo da rede que está sendo previewada — fallback para qualquer foto disponível
+  // Escolhe a logo da primeira rede selecionada; usuário pode reordenar via toggle
   const watermarkLogo = useMemo<string | null>(() => {
     if (!perfil) return null;
-    const activeNet = visibleLegendaTab ?? networks[0];
+    const activeNet = networks[0];
     const byNet =
       activeNet === "linkedin" ? perfil.linkedin_foto_url :
       activeNet === "x" ? perfil.x_foto_url :
-      perfil.instagram_foto_url;
+      activeNet === "instagram" ? perfil.instagram_foto_url :
+      null;
     return byNet ?? perfil.instagram_foto_url ?? perfil.linkedin_foto_url ?? perfil.x_foto_url ?? perfil.url_logo ?? null;
-    // visibleLegendaTab will be defined below before use — JS hoisting via useMemo is safe at call time
   }, [perfil, networks]);
 
   const maybeWatermark = async (src: string): Promise<string> => {
