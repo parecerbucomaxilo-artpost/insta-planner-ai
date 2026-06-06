@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, isSameDay } from "date-fns";
