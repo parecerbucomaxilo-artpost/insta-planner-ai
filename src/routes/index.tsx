@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
-import { Instagram, LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings } from "lucide-react";
+import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, Stethoscope } from "lucide-react";
 import { PostComposer } from "@/components/PostComposer";
 import { PostsCalendar } from "@/components/PostsCalendar";
 import { PostsList } from "@/components/PostsList";
@@ -13,10 +13,10 @@ import type { PostRow } from "@/lib/posts-types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Planner IG — Agendamento de Posts" },
-      { name: "description", content: "Crie, agende e visualize posts do Instagram com IA Gemini e calendário visual." },
-      { property: "og:title", content: "Planner IG — Agendamento de Posts" },
-      { property: "og:description", content: "Crie, agende e visualize posts do Instagram com IA Gemini e calendário visual." },
+      { title: "Planner Chico — Agendamento de Posts" },
+      { name: "description", content: "Planner Chico: crie, agende e visualize posts com IA Gemini, focado em Odontologia (CTBMF e Hospitalar)." },
+      { property: "og:title", content: "Planner Chico — Agendamento de Posts" },
+      { property: "og:description", content: "Planner Chico: crie, agende e visualize posts com IA Gemini, focado em Odontologia (CTBMF e Hospitalar)." },
     ],
   }),
   component: Dashboard,
@@ -49,12 +49,20 @@ function Dashboard() {
       <Toaster richColors />
       <header className="border-b bg-card/50 backdrop-blur sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-tr from-[var(--instagram-from)] via-[var(--instagram-via)] to-[var(--instagram-to)] flex items-center justify-center">
-            <Instagram className="h-5 w-5 text-white" />
+          <div className="h-10 w-10 rounded-full overflow-hidden ring-2 ring-primary/30 bg-gradient-to-br from-sky-500 to-cyan-400 flex items-center justify-center flex-shrink-0">
+            {perfil?.instagram_foto_url || perfil?.url_logo ? (
+              <img
+                src={perfil.instagram_foto_url ?? perfil.url_logo ?? ""}
+                alt="Foto do perfil"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <Stethoscope className="h-5 w-5 text-white" />
+            )}
           </div>
           <div>
-            <h1 className="text-lg font-bold leading-tight">Planner IG</h1>
-            <p className="text-xs text-muted-foreground">Dashboard de agendamento de posts</p>
+            <h1 className="text-lg font-bold leading-tight">Planner Chico</h1>
+            <p className="text-xs text-muted-foreground">Agendamento de posts · Odontologia CTBMF & Hospitalar</p>
           </div>
           <div className="ml-auto text-sm text-muted-foreground">
             {posts.length} {posts.length === 1 ? "post" : "posts"}
