@@ -69,17 +69,20 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const maxCarousel = networks.includes("x") ? 4 : 10;
 
   const toggleNetwork = (n: Network) => {
-    setNetworks((prev) => {
-      const has = prev.includes(n);
-      const next = has ? prev.filter((x) => x !== n) : [...prev, n];
-      if (next.length === 0) return prev; // pelo menos 1
-      return next;
-    });
+    setNetworks((prev) =>
+      prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n],
+    );
   };
 
+
   // Garante que aba ativa esteja entre as selecionadas
-  const visibleLegendaTab = useMemo<Network>(
-    () => (networks.includes(activeLegendaTab) ? activeLegendaTab : networks[0]),
+  const visibleLegendaTab = useMemo<Network | null>(
+    () =>
+      networks.length === 0
+        ? null
+        : networks.includes(activeLegendaTab)
+        ? activeLegendaTab
+        : networks[0],
     [networks, activeLegendaTab],
   );
 
@@ -88,6 +91,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const enforcedPrompts = useMemo(() => carouselPrompts.slice(0, maxCarousel), [carouselPrompts, maxCarousel]);
 
   const handleSuggestIdea = async () => {
+    if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
     setLoadingIdea(true);
     try {
       const r = await genIdea({ data: { networks } });
@@ -168,6 +172,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const primaryLegenda = legendaIg || legendaLi || legendaX || "";
 
   const handleSave = async () => {
+    if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
     if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
     const filledCarousel = enforcedCarrossel.filter(Boolean);
     if (tipo === "Carrossel" && filledCarousel.length === 0) return toast.error("Gere ao menos a Página 1");
@@ -411,58 +416,65 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           </div>
 
           {/* LEGENDAS POR REDE */}
-          <div className="space-y-2">
-            <Label>Legendas por rede</Label>
-            <Tabs value={visibleLegendaTab} onValueChange={(v) => setActiveLegendaTab(v as Network)}>
-              <TabsList className="w-full" style={{ gridTemplateColumns: `repeat(${networks.length}, minmax(0, 1fr))`, display: "grid" }}>
-                {networks.map((n) => {
-                  const { label, Icon } = NETWORK_META[n];
-                  return (
-                    <TabsTrigger key={n} value={n} className="flex items-center gap-1.5">
-                      <Icon className="h-3.5 w-3.5" /> {label}
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
+          {networks.length === 0 ? (
+            <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+              Selecione ao menos uma rede social acima para editar legendas.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Legendas por rede</Label>
+              <Tabs value={visibleLegendaTab ?? undefined} onValueChange={(v) => setActiveLegendaTab(v as Network)}>
+                <TabsList className="w-full" style={{ gridTemplateColumns: `repeat(${networks.length}, minmax(0, 1fr))`, display: "grid" }}>
+                  {networks.map((n) => {
+                    const { label, Icon } = NETWORK_META[n];
+                    return (
+                      <TabsTrigger key={n} value={n} className="flex items-center gap-1.5">
+                        <Icon className="h-3.5 w-3.5" /> {label}
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
 
-              {networks.includes("instagram") && (
-                <TabsContent value="instagram" className="mt-3">
-                  <Textarea
-                    value={legendaIg}
-                    onChange={(e) => setLegendaIg(e.target.value)}
-                    rows={6}
-                    placeholder="Legenda do Instagram com hashtags ao final..."
-                  />
-                </TabsContent>
-              )}
-              {networks.includes("linkedin") && (
-                <TabsContent value="linkedin" className="mt-3">
-                  <Textarea
-                    value={legendaLi}
-                    onChange={(e) => setLegendaLi(e.target.value)}
-                    rows={6}
-                    placeholder="Post profissional para LinkedIn..."
-                  />
-                </TabsContent>
-              )}
-              {networks.includes("x") && (
-                <TabsContent value="x" className="mt-3 space-y-1">
-                  <Textarea
-                    value={legendaX}
-                    onChange={(e) => setLegendaX(e.target.value.slice(0, 280))}
-                    rows={4}
-                    placeholder="Tweet curto (máx 280)..."
-                  />
-                  <p className={cn(
-                    "text-xs text-right",
-                    legendaX.length > 260 ? "text-destructive font-medium" : "text-muted-foreground",
-                  )}>
-                    {legendaX.length}/280
-                  </p>
-                </TabsContent>
-              )}
-            </Tabs>
-          </div>
+                {networks.includes("instagram") && (
+                  <TabsContent value="instagram" className="mt-3">
+                    <Textarea
+                      value={legendaIg}
+                      onChange={(e) => setLegendaIg(e.target.value)}
+                      rows={6}
+                      placeholder="Legenda do Instagram com hashtags ao final..."
+                    />
+                  </TabsContent>
+                )}
+                {networks.includes("linkedin") && (
+                  <TabsContent value="linkedin" className="mt-3">
+                    <Textarea
+                      value={legendaLi}
+                      onChange={(e) => setLegendaLi(e.target.value)}
+                      rows={6}
+                      placeholder="Post profissional para LinkedIn..."
+                    />
+                  </TabsContent>
+                )}
+                {networks.includes("x") && (
+                  <TabsContent value="x" className="mt-3 space-y-1">
+                    <Textarea
+                      value={legendaX}
+                      onChange={(e) => setLegendaX(e.target.value.slice(0, 280))}
+                      rows={4}
+                      placeholder="Tweet curto (máx 280)..."
+                    />
+                    <p className={cn(
+                      "text-xs text-right",
+                      legendaX.length > 260 ? "text-destructive font-medium" : "text-muted-foreground",
+                    )}>
+                      {legendaX.length}/280
+                    </p>
+                  </TabsContent>
+                )}
+              </Tabs>
+            </div>
+          )}
+
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
@@ -489,18 +501,21 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         </Card>
       </div>
 
-      <div className="lg:sticky lg:top-24 h-fit space-y-2">
-        <Label className="text-xs uppercase text-muted-foreground tracking-wider block">
-          Prévia ao vivo · {NETWORK_META[visibleLegendaTab].label}
-        </Label>
-        <PostPreview
-          estilo={visibleLegendaTab === "x" ? "Estilo X" : estilo}
-          legenda={previewLegenda}
-          imagem={tipo === "Post Único" ? imagem : enforcedCarrossel.filter(Boolean)[0] ?? null}
-          carrossel={tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean) : []}
-          tipo={tipo}
-        />
-      </div>
+      {visibleLegendaTab && (
+        <div className="lg:sticky lg:top-24 h-fit space-y-2">
+          <Label className="text-xs uppercase text-muted-foreground tracking-wider block">
+            Prévia ao vivo · {NETWORK_META[visibleLegendaTab].label}
+          </Label>
+          <PostPreview
+            estilo={visibleLegendaTab === "x" ? "Estilo X" : estilo}
+            legenda={previewLegenda}
+            imagem={tipo === "Post Único" ? imagem : enforcedCarrossel.filter(Boolean)[0] ?? null}
+            carrossel={tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean) : []}
+            tipo={tipo}
+          />
+        </div>
+      )}
+
     </div>
   );
 }
