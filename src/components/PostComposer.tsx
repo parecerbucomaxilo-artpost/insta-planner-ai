@@ -123,12 +123,23 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
   };
 
+  const maybeWatermark = async (src: string): Promise<string> => {
+    if (!watermark || !perfil?.url_logo) return src;
+    try {
+      return await applyWatermark(src, perfil.url_logo);
+    } catch {
+      toast.error("Falha ao aplicar marca d'água — salvando sem.");
+      return src;
+    }
+  };
+
   const handleGenerateSingle = async () => {
     if (!prompt.trim()) return toast.error("Escreva um prompt primeiro");
     setLoadingAi(true);
     try {
       const { dataUrl } = await genImage({ data: { prompt } });
-      setImagem(dataUrl);
+      const finalUrl = await maybeWatermark(dataUrl);
+      setImagem(finalUrl);
       toast.success("Imagem gerada via Gemini!");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar");
@@ -143,12 +154,14 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setLoadingPage(index);
     try {
       const { dataUrl } = await genImage({ data: { prompt: p } });
+      const finalUrl = await maybeWatermark(dataUrl);
       setCarrossel((arr) => {
         const next = [...arr];
-        next[index] = dataUrl;
+        next[index] = finalUrl;
         return next;
       });
       toast.success(`Página ${index + 1} gerada!`);
+
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar");
     } finally {
