@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useState, useMemo, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateImage } from "@/lib/ai/generate-image.functions";
 import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
@@ -10,9 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Upload, X, Loader2, Plus, Wand2, Image as ImgIcon } from "lucide-react";
+import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Twitter } from "lucide-react";
 import { toast } from "sonner";
 import { PostPreview } from "./PostPreview";
+import { cn } from "@/lib/utils";
+import type { Network } from "@/lib/posts-types";
 
 type Tipo = "Post Único" | "Carrossel";
 type Estilo = "Padrão" | "Estilo X";
@@ -27,13 +29,28 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+const NETWORK_META: Record<Network, { label: string; Icon: typeof Instagram; color: string }> = {
+  instagram: { label: "Instagram", Icon: Instagram, color: "from-pink-500 to-purple-500" },
+  linkedin: { label: "LinkedIn", Icon: Linkedin, color: "from-sky-600 to-blue-700" },
+  x: { label: "X (Twitter)", Icon: Twitter, color: "from-neutral-700 to-black" },
+};
+
 export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const genImage = useServerFn(generateImage);
   const genIdea = useServerFn(suggestIdea);
 
+  // Redes
+  const [networks, setNetworks] = useState<Network[]>(["instagram"]);
+
   const [tipo, setTipo] = useState<Tipo>("Post Único");
   const [estilo, setEstilo] = useState<Estilo>("Padrão");
-  const [legenda, setLegenda] = useState("");
+
+  // Legendas por rede
+  const [legendaIg, setLegendaIg] = useState("");
+  const [legendaLi, setLegendaLi] = useState("");
+  const [legendaX, setLegendaX] = useState("");
+  const [activeLegendaTab, setActiveLegendaTab] = useState<Network>("instagram");
+
   const [prompt, setPrompt] = useState("");
   const [imagem, setImagem] = useState<string | null>(null);
   const [carrossel, setCarrossel] = useState<string[]>([]);
@@ -44,18 +61,41 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const [loadingPage, setLoadingPage] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Ideia com IA
   const [niche, setNiche] = useState("");
   const [tema, setTema] = useState("");
   const [loadingIdea, setLoadingIdea] = useState(false);
+
+  // Limite de imagens do carrossel: 4 se X selecionado, senão 10
+  const maxCarousel = networks.includes("x") ? 4 : 10;
+
+  const toggleNetwork = (n: Network) => {
+    setNetworks((prev) => {
+      const has = prev.includes(n);
+      const next = has ? prev.filter((x) => x !== n) : [...prev, n];
+      if (next.length === 0) return prev; // pelo menos 1
+      return next;
+    });
+  };
+
+  // Garante que aba ativa esteja entre as selecionadas
+  const visibleLegendaTab = useMemo<Network>(
+    () => (networks.includes(activeLegendaTab) ? activeLegendaTab : networks[0]),
+    [networks, activeLegendaTab],
+  );
+
+  // Se X está selecionado, trim carrossel para 4
+  const enforcedCarrossel = useMemo(() => carrossel.slice(0, maxCarousel), [carrossel, maxCarousel]);
+  const enforcedPrompts = useMemo(() => carouselPrompts.slice(0, maxCarousel), [carouselPrompts, maxCarousel]);
 
   const handleSuggestIdea = async () => {
     if (!niche.trim()) return toast.error("Digite um nicho ou assunto");
     setLoadingIdea(true);
     try {
-      const r = await genIdea({ data: { niche } });
+      const r = await genIdea({ data: { niche, networks } });
       setTema(r.tema);
-      setLegenda(r.legenda);
+      if (r.legenda_instagram) setLegendaIg(r.legenda_instagram);
+      if (r.legenda_linkedin) setLegendaLi(r.legenda_linkedin);
+      if (r.legenda_x) setLegendaX(r.legenda_x);
       setPrompt(r.prompt_imagem);
       if (tipo === "Carrossel") {
         setCarouselPrompts((arr) => {
@@ -64,7 +104,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           return next;
         });
       }
-      toast.success("Ideia gerada!");
+      toast.success("Ideia adaptada para cada rede!");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar ideia");
     } finally {
@@ -112,7 +152,8 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   };
 
   const addCarouselPage = () => {
-    if (carouselPrompts.length >= 10) return toast.error("Máximo 10 páginas");
+    if (carouselPrompts.length >= maxCarousel)
+      return toast.error(`Máximo ${maxCarousel} páginas${networks.includes("x") ? " (limite do X)" : ""}`);
     setCarouselPrompts((p) => [...p, ""]);
   };
 
@@ -125,40 +166,92 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     setCarouselPrompts((p) => p.map((x, idx) => (idx === i ? v : x)));
   };
 
+  const primaryLegenda = legendaIg || legendaLi || legendaX || "";
+
   const handleSave = async () => {
     if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
-    const filledCarousel = carrossel.filter(Boolean);
+    const filledCarousel = enforcedCarrossel.filter(Boolean);
     if (tipo === "Carrossel" && filledCarousel.length === 0) return toast.error("Gere ao menos a Página 1");
+    if (networks.includes("x") && legendaX.length > 280) return toast.error("Texto do X excede 280 caracteres");
+
     setSaving(true);
     const { error } = await supabase.from("posts").insert({
       tipo_post: tipo,
       estilo_layout: estilo,
-      legenda,
+      legenda: primaryLegenda,
+      legenda_instagram: networks.includes("instagram") ? legendaIg : null,
+      legenda_linkedin: networks.includes("linkedin") ? legendaLi : null,
+      legenda_x: networks.includes("x") ? legendaX : null,
+      postar_instagram: networks.includes("instagram"),
+      postar_linkedin: networks.includes("linkedin"),
+      postar_x: networks.includes("x"),
       url_imagem: tipo === "Post Único" ? imagem : null,
       imagens_carrossel: tipo === "Carrossel" ? filledCarousel : [],
       data_agendamento: data ? new Date(data).toISOString() : null,
       status: data && status === "Rascunho" ? "Agendado" : status,
-      prompt_ia: tipo === "Carrossel" ? carouselPrompts.join("\n---\n") : prompt || null,
+      prompt_ia: tipo === "Carrossel" ? enforcedPrompts.join("\n---\n") : prompt || null,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Post salvo!");
-    setLegenda(""); setPrompt(""); setImagem(null); setCarrossel([]);
+    setLegendaIg(""); setLegendaLi(""); setLegendaX("");
+    setPrompt(""); setImagem(null); setCarrossel([]);
     setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
     setNiche(""); setTema("");
     onCreated();
   };
 
+  // Para a prévia escolher legenda da rede ativa
+  const previewLegenda =
+    visibleLegendaTab === "instagram" ? legendaIg :
+    visibleLegendaTab === "linkedin" ? legendaLi :
+    legendaX;
+
   return (
     <div className="grid lg:grid-cols-[1fr_400px] gap-6">
       <div className="space-y-6">
+        {/* SELETOR DE REDES */}
+        <Card className="p-5">
+          <Label className="text-sm font-semibold">Onde publicar?</Label>
+          <p className="text-xs text-muted-foreground mt-0.5 mb-3">
+            Selecione uma ou mais redes — a IA adapta cada texto.
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {(Object.keys(NETWORK_META) as Network[]).map((n) => {
+              const { label, Icon, color } = NETWORK_META[n];
+              const active = networks.includes(n);
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => toggleNetwork(n)}
+                  className={cn(
+                    "relative flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all",
+                    active
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-card hover:border-primary/40",
+                  )}
+                >
+                  <div className={cn("h-8 w-8 rounded-md bg-gradient-to-br flex items-center justify-center text-white", color)}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <span className="text-xs font-medium">{label}</span>
+                  {active && (
+                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+
         {/* Ideia com IA */}
         <Card className="p-5 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
           <Label className="flex items-center gap-2 text-base font-semibold">
             <Wand2 className="h-5 w-5 text-primary" /> Gerar Ideia com IA
           </Label>
           <p className="text-xs text-muted-foreground mt-1 mb-3">
-            Diga o nicho — a IA cria tema, legenda com hashtags e prompt de imagem.
+            A IA cria tema, prompt de imagem e uma legenda otimizada para cada rede selecionada.
           </p>
           <div className="flex gap-2">
             <Input
@@ -184,7 +277,12 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           <Tabs value={tipo} onValueChange={(v) => setTipo(v as Tipo)}>
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="Post Único">Post Único</TabsTrigger>
-              <TabsTrigger value="Carrossel">Carrossel</TabsTrigger>
+              <TabsTrigger value="Carrossel">
+                Carrossel
+                {networks.includes("x") && (
+                  <span className="ml-2 text-[10px] uppercase text-muted-foreground">máx 4 (X)</span>
+                )}
+              </TabsTrigger>
             </TabsList>
 
             {/* POST ÚNICO */}
@@ -232,21 +330,21 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
             <TabsContent value="Carrossel" className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">
-                  Gere cada página do carrossel com um prompt diferente — todas via Gemini.
+                  Gere cada página com um prompt diferente — todas via Gemini.
                 </p>
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {carouselPrompts.length}/10
+                  {enforcedPrompts.length}/{maxCarousel}
                 </span>
               </div>
 
-              {carouselPrompts.map((p, i) => (
+              {enforcedPrompts.map((p, i) => (
                 <Card key={i} className="p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
                       {i + 1}
                     </span>
                     <span className="text-sm font-medium">Página {i + 1}</span>
-                    {carouselPrompts.length > 1 && (
+                    {enforcedPrompts.length > 1 && (
                       <Button
                         size="icon"
                         variant="ghost"
@@ -266,8 +364,8 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
                   />
 
                   <div className="flex gap-2 items-start">
-                    {carrossel[i] ? (
-                      <img src={carrossel[i]} alt="" className="h-20 w-20 rounded-md object-cover border" />
+                    {enforcedCarrossel[i] ? (
+                      <img src={enforcedCarrossel[i]} alt="" className="h-20 w-20 rounded-md object-cover border" />
                     ) : (
                       <div className="h-20 w-20 rounded-md border-2 border-dashed flex items-center justify-center text-muted-foreground">
                         <ImgIcon className="h-5 w-5" />
@@ -276,24 +374,29 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
                     <Button
                       onClick={() => handleGeneratePage(i)}
                       disabled={loadingPage === i}
-                      variant={carrossel[i] ? "outline" : "default"}
+                      variant={enforcedCarrossel[i] ? "outline" : "default"}
                       className="flex-1"
                       size="sm"
                     >
                       {loadingPage === i ? (
                         <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando...</>
                       ) : (
-                        <><Sparkles className="h-4 w-4 mr-2" /> {carrossel[i] ? "Regerar via Gemini" : `Gerar Página ${i + 1} via Gemini`}</>
+                        <><Sparkles className="h-4 w-4 mr-2" /> {enforcedCarrossel[i] ? "Regerar via Gemini" : `Gerar Página ${i + 1} via Gemini`}</>
                       )}
                     </Button>
                   </div>
                 </Card>
               ))}
 
-              {carouselPrompts.length < 10 && (
+              {enforcedPrompts.length < maxCarousel && (
                 <Button variant="outline" onClick={addCarouselPage} className="w-full">
-                  <Plus className="h-4 w-4 mr-2" /> Adicionar página {carouselPrompts.length + 1}
+                  <Plus className="h-4 w-4 mr-2" /> Adicionar página {enforcedPrompts.length + 1}
                 </Button>
+              )}
+              {networks.includes("x") && (
+                <p className="text-[11px] text-muted-foreground text-center">
+                  Limite de 4 imagens imposto pelo X (Twitter).
+                </p>
               )}
             </TabsContent>
           </Tabs>
@@ -309,9 +412,58 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
             </Select>
           </div>
 
+          {/* LEGENDAS POR REDE */}
           <div className="space-y-2">
-            <Label>Legenda</Label>
-            <Textarea value={legenda} onChange={(e) => setLegenda(e.target.value)} rows={5} placeholder="Escreva sua legenda..." />
+            <Label>Legendas por rede</Label>
+            <Tabs value={visibleLegendaTab} onValueChange={(v) => setActiveLegendaTab(v as Network)}>
+              <TabsList className="w-full" style={{ gridTemplateColumns: `repeat(${networks.length}, minmax(0, 1fr))`, display: "grid" }}>
+                {networks.map((n) => {
+                  const { label, Icon } = NETWORK_META[n];
+                  return (
+                    <TabsTrigger key={n} value={n} className="flex items-center gap-1.5">
+                      <Icon className="h-3.5 w-3.5" /> {label}
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+
+              {networks.includes("instagram") && (
+                <TabsContent value="instagram" className="mt-3">
+                  <Textarea
+                    value={legendaIg}
+                    onChange={(e) => setLegendaIg(e.target.value)}
+                    rows={6}
+                    placeholder="Legenda do Instagram com hashtags ao final..."
+                  />
+                </TabsContent>
+              )}
+              {networks.includes("linkedin") && (
+                <TabsContent value="linkedin" className="mt-3">
+                  <Textarea
+                    value={legendaLi}
+                    onChange={(e) => setLegendaLi(e.target.value)}
+                    rows={6}
+                    placeholder="Post profissional para LinkedIn..."
+                  />
+                </TabsContent>
+              )}
+              {networks.includes("x") && (
+                <TabsContent value="x" className="mt-3 space-y-1">
+                  <Textarea
+                    value={legendaX}
+                    onChange={(e) => setLegendaX(e.target.value.slice(0, 280))}
+                    rows={4}
+                    placeholder="Tweet curto (máx 280)..."
+                  />
+                  <p className={cn(
+                    "text-xs text-right",
+                    legendaX.length > 260 ? "text-destructive font-medium" : "text-muted-foreground",
+                  )}>
+                    {legendaX.length}/280
+                  </p>
+                </TabsContent>
+              )}
+            </Tabs>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -339,13 +491,15 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         </Card>
       </div>
 
-      <div className="lg:sticky lg:top-24 h-fit">
-        <Label className="text-xs uppercase text-muted-foreground tracking-wider mb-2 block">Prévia ao vivo</Label>
+      <div className="lg:sticky lg:top-24 h-fit space-y-2">
+        <Label className="text-xs uppercase text-muted-foreground tracking-wider block">
+          Prévia ao vivo · {NETWORK_META[visibleLegendaTab].label}
+        </Label>
         <PostPreview
-          estilo={estilo}
-          legenda={legenda}
-          imagem={tipo === "Post Único" ? imagem : carrossel.filter(Boolean)[0] ?? null}
-          carrossel={tipo === "Carrossel" ? carrossel.filter(Boolean) : []}
+          estilo={visibleLegendaTab === "x" ? "Estilo X" : estilo}
+          legenda={previewLegenda}
+          imagem={tipo === "Post Único" ? imagem : enforcedCarrossel.filter(Boolean)[0] ?? null}
+          carrossel={tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean) : []}
           tipo={tipo}
         />
       </div>
