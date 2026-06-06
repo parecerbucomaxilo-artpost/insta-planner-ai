@@ -570,7 +570,9 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             <TabsContent value="Carrossel" className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">
-                  Gere cada página com um prompt diferente — todas via Gemini.
+                  {imageMode === "auto"
+                    ? "Modo automático: cada página usa a legenda como base."
+                    : "Modo manual: descreva o que quer ver em cada página."}
                 </p>
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   {enforcedPrompts.length}/{maxCarousel}
@@ -596,12 +598,21 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                     )}
                   </div>
 
-                  <Textarea
-                    value={p}
-                    onChange={(e) => updatePagePrompt(i, e.target.value)}
-                    rows={2}
-                    placeholder={`Prompt da página ${i + 1}...`}
-                  />
+                  {imageMode === "auto" ? (
+                    <Textarea
+                      value={buildAutoPrompt(`${legendaIg || legendaLi || legendaX}\n\nPágina ${i + 1} do carrossel.`)}
+                      readOnly
+                      rows={2}
+                      className="bg-muted/40 text-xs cursor-not-allowed"
+                    />
+                  ) : (
+                    <Textarea
+                      value={p}
+                      onChange={(e) => updatePagePrompt(i, e.target.value)}
+                      rows={2}
+                      placeholder={`O que mostrar na página ${i + 1}? (cores, elementos, estilo)`}
+                    />
+                  )}
 
                   <div className="flex gap-2 items-start">
                     {enforcedCarrossel[i] ? (
