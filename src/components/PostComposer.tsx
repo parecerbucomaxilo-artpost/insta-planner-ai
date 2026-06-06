@@ -123,10 +123,22 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
   };
 
+  // Escolhe a logo da rede que está sendo previewada — fallback para qualquer foto disponível
+  const watermarkLogo = useMemo<string | null>(() => {
+    if (!perfil) return null;
+    const activeNet = visibleLegendaTab ?? networks[0];
+    const byNet =
+      activeNet === "linkedin" ? perfil.linkedin_foto_url :
+      activeNet === "x" ? perfil.x_foto_url :
+      perfil.instagram_foto_url;
+    return byNet ?? perfil.instagram_foto_url ?? perfil.linkedin_foto_url ?? perfil.x_foto_url ?? perfil.url_logo ?? null;
+    // visibleLegendaTab will be defined below before use — JS hoisting via useMemo is safe at call time
+  }, [perfil, networks]);
+
   const maybeWatermark = async (src: string): Promise<string> => {
-    if (!watermark || !perfil?.url_logo) return src;
+    if (!watermark || !watermarkLogo) return src;
     try {
-      return await applyWatermark(src, perfil.url_logo);
+      return await applyWatermark(src, watermarkLogo);
     } catch {
       toast.error("Falha ao aplicar marca d'água — salvando sem.");
       return src;
