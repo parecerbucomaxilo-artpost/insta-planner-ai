@@ -46,6 +46,25 @@ function Dashboard() {
 
   useEffect(() => { load(); loadPerfil(); }, [load, loadPerfil]);
 
+  // Notificação interna para posts que atingiram 500+ views (e ainda não foram avisados)
+  const notifiedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const viral = posts.filter(
+      (p) => (p.visualizacoes ?? 0) >= 500 && !p.aviso_500_atingido && !notifiedRef.current.has(p.id),
+    );
+    if (viral.length === 0) return;
+    (async () => {
+      for (const p of viral) {
+        notifiedRef.current.add(p.id);
+        const titulo = (p.legenda_instagram || p.legenda || "Post sem título").split("\n")[0].slice(0, 60);
+        toast.success(`🔥 Parabéns! O post "${titulo}" atingiu 500 visualizações!`, {
+          duration: 8000,
+        });
+        await supabase.from("posts").update({ aviso_500_atingido: true }).eq("id", p.id);
+      }
+    })();
+  }, [posts]);
+
   return (
     <div className="min-h-screen bg-background">
       <Toaster richColors />
