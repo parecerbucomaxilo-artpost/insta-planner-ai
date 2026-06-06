@@ -61,7 +61,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const [loadingPage, setLoadingPage] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [niche, setNiche] = useState("");
+  
   const [tema, setTema] = useState("");
   const [loadingIdea, setLoadingIdea] = useState(false);
 
@@ -88,10 +88,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const enforcedPrompts = useMemo(() => carouselPrompts.slice(0, maxCarousel), [carouselPrompts, maxCarousel]);
 
   const handleSuggestIdea = async () => {
-    if (!niche.trim()) return toast.error("Digite um nicho ou assunto");
     setLoadingIdea(true);
     try {
-      const r = await genIdea({ data: { niche, networks } });
+      const r = await genIdea({ data: { networks } });
       setTema(r.tema);
       if (r.legenda_instagram) setLegendaIg(r.legenda_instagram);
       if (r.legenda_linkedin) setLegendaLi(r.legenda_linkedin);
@@ -197,7 +196,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     setLegendaIg(""); setLegendaLi(""); setLegendaX("");
     setPrompt(""); setImagem(null); setCarrossel([]);
     setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
-    setNiche(""); setTema("");
+    setTema("");
     onCreated();
   };
 
@@ -245,26 +244,24 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           </div>
         </Card>
 
-        {/* Ideia com IA */}
+        {/* Ideia com IA — Nicho fixo */}
         <Card className="p-5 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
           <Label className="flex items-center gap-2 text-base font-semibold">
             <Wand2 className="h-5 w-5 text-primary" /> Gerar Ideia com IA
           </Label>
-          <p className="text-xs text-muted-foreground mt-1 mb-3">
-            A IA cria tema, prompt de imagem e uma legenda otimizada para cada rede selecionada.
-          </p>
-          <div className="flex gap-2">
-            <Input
-              value={niche}
-              onChange={(e) => setNiche(e.target.value)}
-              placeholder="Ex: Moda, Finanças, Confeitaria..."
-              onKeyDown={(e) => e.key === "Enter" && handleSuggestIdea()}
-            />
-            <Button onClick={handleSuggestIdea} disabled={loadingIdea}>
-              {loadingIdea ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              <span className="ml-2 hidden sm:inline">Sugerir Tema e Legenda</span>
-            </Button>
+          <div className="mt-2 mb-3 rounded-md border bg-card/60 p-3">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Especialidade fixa</span>
+            <p className="text-sm font-medium mt-0.5 leading-snug">
+              Odontologia — Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar
+            </p>
           </div>
+          <Button onClick={handleSuggestIdea} disabled={loadingIdea} className="w-full">
+            {loadingIdea ? (
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando ideia clínica...</>
+            ) : (
+              <><Sparkles className="h-4 w-4 mr-2" /> Sugerir Tema e Legenda</>
+            )}
+          </Button>
           {tema && (
             <div className="mt-3 p-3 rounded-md bg-card border text-sm">
               <span className="text-xs uppercase text-muted-foreground">Tema sugerido</span>
@@ -272,6 +269,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
             </div>
           )}
         </Card>
+
 
         <Card className="p-6 space-y-5">
           <Tabs value={tipo} onValueChange={(v) => setTipo(v as Tipo)}>
