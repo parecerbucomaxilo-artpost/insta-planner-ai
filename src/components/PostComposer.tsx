@@ -62,6 +62,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const [activeLegendaTab, setActiveLegendaTab] = useState<Network>("instagram");
 
   const [prompt, setPrompt] = useState("");
+  const [imageMode, setImageMode] = useState<"auto" | "manual">("auto");
+  const [orientacoes, setOrientacoes] = useState("");
   const [imagem, setImagem] = useState<string | null>(null);
   const [carrossel, setCarrossel] = useState<string[]>([]);
   const [carouselPrompts, setCarouselPrompts] = useState<string[]>([""]);
@@ -146,11 +148,50 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
   };
 
+  // Constrói um prompt visual médico/ético a partir da legenda da rede ativa.
+  const buildAutoPrompt = (baseText: string): string => {
+    const caption = (baseText || tema || "").trim().slice(0, 600);
+    const layoutHint = estilo === "Estilo X"
+      ? "Composição quadrada otimizada para card de tweet (Estilo X / Twitter)."
+      : "Composição quadrada otimizada para feed do Instagram / LinkedIn.";
+    return [
+      "Professional medical illustration / clean editorial photography for a dental social media post.",
+      "Specialty: Oral & Maxillofacial Surgery and Hospital Dentistry (CTBMF).",
+      "Aesthetic: modern hospital environment, clinical blue / white / soft grey palette, soft natural lighting, infographic-friendly, minimal and respectful.",
+      "STRICTLY FORBIDDEN: visible blood, open wounds, graphic surgery, identifiable patients, gore, distressing content.",
+      layoutHint,
+      `Conteúdo de referência (não escreva o texto na imagem, apenas inspire o visual): "${caption}"`,
+    ].join(" ");
+  };
+
+  const buildManualPrompt = (userText: string): string => {
+    const safe = (userText || "").trim().slice(0, 800);
+    const layoutHint = estilo === "Estilo X"
+      ? "Composição quadrada otimizada para card de tweet (Estilo X / Twitter)."
+      : "Composição quadrada otimizada para feed do Instagram / LinkedIn.";
+    return [
+      "Imagem profissional e ética para post de Odontologia (CTBMF / Hospitalar).",
+      "Sem sangue, sem ferimentos, sem pacientes identificáveis, estética clean e respeitosa.",
+      layoutHint,
+      `Orientações do usuário: ${safe}`,
+    ].join(" ");
+  };
+
   const handleGenerateSingle = async () => {
-    if (!prompt.trim()) return toast.error("Escreva um prompt primeiro");
+    const captionForAuto = legendaIg || legendaLi || legendaX;
+    if (imageMode === "auto" && !captionForAuto.trim() && !tema.trim()) {
+      return toast.error("Gere a legenda primeiro (ou troque para 'Fornecer Minhas Orientações').");
+    }
+    if (imageMode === "manual" && !orientacoes.trim()) {
+      return toast.error("Descreva o que você quer ver na imagem.");
+    }
+    const finalPrompt = imageMode === "auto"
+      ? buildAutoPrompt(captionForAuto)
+      : buildManualPrompt(orientacoes);
+    setPrompt(finalPrompt);
     setLoadingAi(true);
     try {
-      const { dataUrl } = await genImage({ data: { prompt } });
+      const { dataUrl } = await genImage({ data: { prompt: finalPrompt } });
       const finalUrl = await maybeWatermark(dataUrl);
       setImagem(finalUrl);
       toast.success("Imagem gerada via Gemini!");
@@ -162,11 +203,20 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   };
 
   const handleGeneratePage = async (index: number) => {
-    const p = carouselPrompts[index];
-    if (!p?.trim()) return toast.error(`Escreva o prompt da página ${index + 1}`);
+    const pageOrientation = carouselPrompts[index] ?? "";
+    const captionForAuto = legendaIg || legendaLi || legendaX;
+    if (imageMode === "manual" && !pageOrientation.trim()) {
+      return toast.error(`Descreva o que quer ver na página ${index + 1}.`);
+    }
+    if (imageMode === "auto" && !captionForAuto.trim() && !tema.trim()) {
+      return toast.error("Gere a legenda primeiro (ou troque para 'Fornecer Minhas Orientações').");
+    }
+    const finalPrompt = imageMode === "auto"
+      ? buildAutoPrompt(`${captionForAuto}\n\nPágina ${index + 1} do carrossel.`)
+      : buildManualPrompt(pageOrientation);
     setLoadingPage(index);
     try {
-      const { dataUrl } = await genImage({ data: { prompt: p } });
+      const { dataUrl } = await genImage({ data: { prompt: finalPrompt } });
       const finalUrl = await maybeWatermark(dataUrl);
       setCarrossel((arr) => {
         const next = [...arr];
@@ -253,7 +303,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setLegendaIg(""); setLegendaLi(""); setLegendaX("");
     setPrompt(""); setImagem(null); setCarrossel([]);
     setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
-    setTema(""); setFormato("Imagem");
+    setTema(""); setFormato("Imagem"); setOrientacoes("");
     onCreated();
   };
 
@@ -401,19 +451,62 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             {/* POST ÚNICO */}
             <TabsContent value="Post Único" className="mt-4 space-y-4">
               {formato === "Imagem" ? (
-                <div className="space-y-2 rounded-lg border bg-accent/30 p-4">
+                <div className="space-y-3 rounded-lg border bg-accent/30 p-4">
                   <Label className="flex items-center gap-2 text-sm">
-                    <Sparkles className="h-4 w-4 text-primary" /> Prompt da Imagem
+                    <Sparkles className="h-4 w-4 text-primary" /> Geração de Imagem
                     <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">
                       100% Google Gemini
                     </span>
                   </Label>
-                  <Textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    rows={2}
-                    placeholder="Ex: pôr do sol sobre montanhas, estilo cinematográfico"
-                  />
+
+                  {/* Seletor de modo */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { id: "auto", label: "Gerar Automaticamente por IA", hint: "Usa a legenda do post." },
+                      { id: "manual", label: "Fornecer Minhas Orientações", hint: "Você descreve em PT." },
+                    ] as const).map((m) => {
+                      const active = imageMode === m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setImageMode(m.id)}
+                          className={cn(
+                            "flex flex-col items-start text-left p-3 rounded-lg border-2 transition-all",
+                            active ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40",
+                          )}
+                        >
+                          <span className="text-xs font-semibold">{m.label}</span>
+                          <span className="text-[10px] text-muted-foreground mt-0.5">{m.hint}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {imageMode === "auto" ? (
+                    <div className="space-y-1">
+                      <p className="text-[11px] text-muted-foreground">
+                        Prompt automático (somente leitura) — gerado a partir da legenda da rede ativa.
+                      </p>
+                      <Textarea
+                        value={buildAutoPrompt(legendaIg || legendaLi || legendaX)}
+                        readOnly
+                        rows={3}
+                        className="bg-muted/40 text-xs cursor-not-allowed"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <Label className="text-xs">Suas orientações</Label>
+                      <Textarea
+                        value={orientacoes}
+                        onChange={(e) => setOrientacoes(e.target.value)}
+                        rows={3}
+                        placeholder="Digite o que você quer ver na imagem (ex: cores, elementos, estilo)"
+                      />
+                    </div>
+                  )}
+
                   <Button onClick={handleGenerateSingle} disabled={loadingAi} className="w-full">
                     {loadingAi ? (
                       <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando via Gemini...</>
@@ -477,7 +570,9 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             <TabsContent value="Carrossel" className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">
-                  Gere cada página com um prompt diferente — todas via Gemini.
+                  {imageMode === "auto"
+                    ? "Modo automático: cada página usa a legenda como base."
+                    : "Modo manual: descreva o que quer ver em cada página."}
                 </p>
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   {enforcedPrompts.length}/{maxCarousel}
@@ -503,12 +598,21 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                     )}
                   </div>
 
-                  <Textarea
-                    value={p}
-                    onChange={(e) => updatePagePrompt(i, e.target.value)}
-                    rows={2}
-                    placeholder={`Prompt da página ${i + 1}...`}
-                  />
+                  {imageMode === "auto" ? (
+                    <Textarea
+                      value={buildAutoPrompt(`${legendaIg || legendaLi || legendaX}\n\nPágina ${i + 1} do carrossel.`)}
+                      readOnly
+                      rows={2}
+                      className="bg-muted/40 text-xs cursor-not-allowed"
+                    />
+                  ) : (
+                    <Textarea
+                      value={p}
+                      onChange={(e) => updatePagePrompt(i, e.target.value)}
+                      rows={2}
+                      placeholder={`O que mostrar na página ${i + 1}? (cores, elementos, estilo)`}
+                    />
+                  )}
 
                   <div className="flex gap-2 items-start">
                     {enforcedCarrossel[i] ? (
