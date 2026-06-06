@@ -1,5 +1,6 @@
 import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, BadgeCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import type { Perfil } from "@/components/ProfileSettings";
 
 type Props = {
   estilo: "Padrão" | "Estilo X";
@@ -7,12 +8,14 @@ type Props = {
   imagem: string | null;
   carrossel: string[];
   tipo: "Post Único" | "Carrossel";
+  perfil?: Perfil | null;
 };
 
-export function PostPreview({ estilo, legenda, imagem, carrossel, tipo }: Props) {
-  if (estilo === "Estilo X") return <TweetPreview legenda={legenda} imagem={imagem} carrossel={carrossel} />;
-  return <InstagramPreview legenda={legenda} imagem={imagem} carrossel={carrossel} tipo={tipo} />;
+export function PostPreview({ estilo, legenda, imagem, carrossel, tipo, perfil }: Props) {
+  if (estilo === "Estilo X") return <TweetPreview legenda={legenda} imagem={imagem} carrossel={carrossel} perfil={perfil} />;
+  return <InstagramPreview legenda={legenda} imagem={imagem} carrossel={carrossel} tipo={tipo} perfil={perfil} />;
 }
+
 
 function InstagramPreview({ legenda, imagem, carrossel, tipo }: Omit<Props, "estilo">) {
   const images = tipo === "Carrossel" ? carrossel : imagem ? [imagem] : [];
