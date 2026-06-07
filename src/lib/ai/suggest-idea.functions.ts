@@ -16,9 +16,11 @@ export const suggestIdea = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       networks: z.array(NetworkEnum).min(1).max(2),
+      comando: z.string().trim().max(800).optional(),
     }),
   )
   .handler(async ({ data }) => {
+
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
@@ -65,8 +67,11 @@ export const suggestIdea = createServerFn({ method: "POST" })
           { role: "system", content: SYSTEM_PROMPT },
           {
             role: "user",
-            content: `Gere UMA ideia de post relevante para ${FIXED_NICHE}. Redes selecionadas: ${data.networks.join(", ")}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). Adapte tom e formato por rede.`,
+            content: data.comando && data.comando.length > 0
+              ? `O usuário escreveu o seguinte COMANDO para o post: "${data.comando}". Crie UMA ideia de post fiel a esse comando, sempre dentro do nicho ${FIXED_NICHE}. Enriqueça com profundidade clínica e tom adequado. Redes selecionadas: ${data.networks.join(", ")}. Adapte tom e formato por rede.`
+              : `Gere UMA ideia de post relevante para ${FIXED_NICHE}. Redes selecionadas: ${data.networks.join(", ")}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). Adapte tom e formato por rede.`,
           },
+
         ],
         tools: [
           {
