@@ -102,6 +102,7 @@ function Dashboard() {
             <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" /> Insights de Performance</TabsTrigger>
             <TabsTrigger value="perfil"><Settings className="h-4 w-4 mr-1.5" /> Perfil</TabsTrigger>
             <TabsTrigger value="chaves"><KeyRound className="h-4 w-4 mr-1.5" /> Chaves de Automação</TabsTrigger>
+            <TabsTrigger value="ia"><KeyRound className="h-4 w-4 mr-1.5" /> IA / Anthropic</TabsTrigger>
           </TabsList>
 
           <TabsContent value="criar" className="mt-6">
