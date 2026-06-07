@@ -272,12 +272,23 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
   const primaryLegenda = legendaIg || legendaLi || legendaX || "";
 
-  const handleSave = async () => {
+  const handleSave = async (forceAgendar = false) => {
     if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
     if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
     const filledCarousel = enforcedCarrossel.filter(Boolean);
     if (tipo === "Carrossel" && filledCarousel.length === 0) return toast.error("Gere ao menos a Página 1");
     if (networks.includes("x") && legendaX.length > 280) return toast.error("Texto do X excede 280 caracteres");
+
+    const agendamentoIso = data
+      ? new Date(data).toISOString()
+      : forceAgendar
+        ? new Date().toISOString()
+        : null;
+    const finalStatus: Status = forceAgendar
+      ? "Agendado"
+      : data && status === "Rascunho"
+        ? "Agendado"
+        : status;
 
     setSaving(true);
     const { error } = await supabase.from("posts").insert({
@@ -293,13 +304,13 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       postar_x: networks.includes("x"),
       url_imagem: tipo === "Post Único" ? imagem : null,
       imagens_carrossel: tipo === "Carrossel" ? filledCarousel : [],
-      data_agendamento: data ? new Date(data).toISOString() : null,
-      status: data && status === "Rascunho" ? "Agendado" : status,
+      data_agendamento: agendamentoIso,
+      status: finalStatus,
       prompt_ia: tipo === "Carrossel" ? enforcedPrompts.join("\n---\n") : prompt || null,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Post salvo!");
+    toast.success(forceAgendar ? "Post agendado!" : "Post salvo!");
     setLegendaIg(""); setLegendaLi(""); setLegendaX("");
     setPrompt(""); setImagem(null); setCarrossel([]);
     setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
@@ -748,9 +759,19 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             </div>
           </div>
 
-          <Button onClick={handleSave} disabled={saving} size="lg" className="w-full">
+          <Button onClick={() => handleSave(false)} disabled={saving} size="lg" variant="outline" className="w-full">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Salvar Post
+            Salvar como Rascunho
+          </Button>
+
+          <Button
+            onClick={() => handleSave(true)}
+            disabled={saving}
+            size="lg"
+            className="w-full h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+          >
+            {saving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+            Agendar Post
           </Button>
         </Card>
       </div>
