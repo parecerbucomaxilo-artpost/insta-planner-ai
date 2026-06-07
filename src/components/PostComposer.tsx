@@ -141,26 +141,47 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
   };
 
-  // Constrói um prompt visual médico/ético a partir da legenda da rede ativa.
+  // Estilos visuais ricos rotacionados por hash da legenda — variedade automática
+  const VISUAL_STYLES = [
+    "cinematic editorial photography, shot on Hasselblad H6D, 85mm prime lens at f/1.4, shallow depth of field, anamorphic bokeh, dramatic Rembrandt lighting, Kodak Portra 400 color grading, ultra-detailed micro-textures",
+    "modern minimal 3D illustration, isometric perspective, subsurface scattering, soft clinical pastel palette with one bold electric-violet accent, octane render quality, clean studio backdrop, generous negative space",
+    "high-end corporate editorial photography, magazine cover composition, controlled softbox lighting, 85mm f/1.4, blurred hospital architectural background, premium color grading, Vogue-business aesthetic",
+    "detailed medical infographic illustration, vector cross-section, anatomically accurate, clean typography-friendly layout, bold accent color over neutral charcoal background, award-winning information design",
+    "moody chiaroscuro studio photography, single rim light, deep teal-and-charcoal palette with surgical-steel highlights, hyperreal detail, Phase One IQ4 quality",
+  ];
+  const pickStyle = (seed: string) => {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+    return VISUAL_STYLES[Math.abs(h) % VISUAL_STYLES.length];
+  };
+
+  // Constrói um prompt visual médico/ético RICO e ARTÍSTICO a partir da legenda da rede ativa.
   const buildAutoPrompt = (baseText: string): string => {
     const caption = (baseText || tema || "").trim().slice(0, 600);
+    const visualStyle = pickStyle(caption || String(Date.now()));
     return [
-      "Professional medical illustration / clean editorial photography for a dental social media post.",
-      "Specialty: Oral & Maxillofacial Surgery and Hospital Dentistry (CTBMF).",
-      "Aesthetic: modern hospital environment, clinical blue / white / soft grey palette, soft natural lighting, infographic-friendly, minimal and respectful.",
-      "STRICTLY FORBIDDEN: visible blood, open wounds, graphic surgery, identifiable patients, gore, distressing content.",
-      "Composição quadrada otimizada para feed do Instagram / LinkedIn.",
-      `Conteúdo de referência (não escreva o texto na imagem, apenas inspire o visual): "${caption}"`,
+      `STYLE: ${visualStyle}.`,
+      "SUBJECT: Concept image for a high-end social media post about Oral & Maxillofacial Surgery / Hospital Dentistry (CTBMF). Modern hospital environment, premium medical aesthetic.",
+      "COMPOSITION: rule-of-thirds, intentional negative space on the right third for caption overlay, strong focal hierarchy, awwwards-quality framing.",
+      "PALETTE: cohesive clinical blue / pristine white / soft charcoal, with ONE saturated accent color used sparingly for emphasis.",
+      "LIGHTING: tridimensional, intentional, soft natural fill with a controlled key light — never flat.",
+      "FINISH: 8k, ultra-detailed, professional retouching, editorial-grade color grading, sharp where it matters with elegant micro-blur elsewhere.",
+      "STRICTLY FORBIDDEN: generic stock-photo look, visible blood, wounds, gore, identifiable patients, on-image text, watermarks, low-effort AI artifacts.",
+      `REFERENCE CONTENT (do NOT write any text on the image — only let it inspire mood and subject): "${caption}"`,
     ].join(" ");
   };
 
   const buildManualPrompt = (userText: string): string => {
     const safe = (userText || "").trim().slice(0, 800);
+    const visualStyle = pickStyle(safe || String(Date.now()));
     return [
-      "Imagem profissional e ética para post de Odontologia (CTBMF / Hospitalar).",
-      "Sem sangue, sem ferimentos, sem pacientes identificáveis, estética clean e respeitosa.",
-      "Composição quadrada otimizada para feed do Instagram / LinkedIn.",
-      `Orientações do usuário: ${safe}`,
+      `STYLE: ${visualStyle}.`,
+      "SUBJECT: Professional, ethical image for an Odontology (CTBMF / Hospital Dentistry) social post.",
+      "COMPOSITION: rule-of-thirds, generous negative space for caption overlay, premium editorial framing.",
+      "PALETTE: cohesive clinical blue / white / charcoal with one saturated accent — never flat or muddy.",
+      "FINISH: 8k, ultra-detailed, professional retouching, editorial color grading.",
+      "STRICTLY FORBIDDEN: stock-photo blandness, blood, wounds, identifiable patients, on-image text, watermarks.",
+      `USER DIRECTION: ${safe}`,
     ].join(" ");
   };
 
