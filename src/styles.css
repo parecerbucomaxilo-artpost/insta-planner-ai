@@ -36,42 +36,43 @@
   --color-instagram-via: var(--instagram-via);
   --color-instagram-to: var(--instagram-to);
 
-  --shadow-elegant: 0 1px 2px oklch(0.2 0.02 260 / 0.04), 0 4px 16px oklch(0.2 0.02 260 / 0.06);
-  --shadow-elevated: 0 2px 6px oklch(0.2 0.02 260 / 0.06), 0 12px 32px oklch(0.2 0.02 260 / 0.10);
+  --shadow-elegant: 0 1px 2px oklch(0.25 0.04 250 / 0.04), 0 8px 24px oklch(0.25 0.04 250 / 0.06);
+  --shadow-elevated: 0 2px 6px oklch(0.25 0.04 250 / 0.06), 0 18px 48px oklch(0.25 0.04 250 / 0.10);
 }
 
 :root {
-  /* Linear/Vercel-inspired: cool neutral surfaces, sharp ink, sober violet accent */
-  --radius: 0.75rem;
-  --background: oklch(0.992 0.002 260);
-  --foreground: oklch(0.16 0.02 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.16 0.02 260);
+  /* Premium Medical · Deep Navy + Slate + Pure White */
+  --radius: 0.75rem; /* 12px elegant rounding */
+  --background: oklch(0.985 0.004 250);          /* light slate canvas */
+  --foreground: oklch(0.20 0.04 250);            /* deep navy ink */
+  --card: oklch(1 0 0);                          /* pure white surfaces */
+  --card-foreground: oklch(0.20 0.04 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0.02 260);
-  --primary: oklch(0.42 0.18 270);
+  --popover-foreground: oklch(0.20 0.04 250);
+  --primary: oklch(0.32 0.09 255);               /* deep surgical navy */
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.97 0.003 260);
-  --secondary-foreground: oklch(0.22 0.02 260);
-  --muted: oklch(0.965 0.003 260);
-  --muted-foreground: oklch(0.48 0.015 260);
-  --accent: oklch(0.95 0.02 270);
-  --accent-foreground: oklch(0.22 0.02 260);
-  --destructive: oklch(0.6 0.22 25);
+  --secondary: oklch(0.97 0.005 250);
+  --secondary-foreground: oklch(0.25 0.04 250);
+  --muted: oklch(0.965 0.005 250);
+  --muted-foreground: oklch(0.50 0.02 250);
+  --accent: oklch(0.95 0.015 250);
+  --accent-foreground: oklch(0.25 0.04 250);
+  --destructive: oklch(0.58 0.20 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.92 0.005 260);
-  --input: oklch(0.92 0.005 260);
-  --ring: oklch(0.55 0.18 270);
+  --border: oklch(0.93 0.006 250);
+  --input: oklch(0.93 0.006 250);
+  --ring: oklch(0.45 0.10 255);
 
-  --status-draft: oklch(0.7 0.01 260);
-  --status-scheduled: oklch(0.55 0.18 255);
-  --status-published: oklch(0.6 0.16 155);
+  --status-draft: oklch(0.70 0.012 250);
+  --status-scheduled: oklch(0.50 0.12 255);
+  --status-published: oklch(0.55 0.14 160);
   --status-error: oklch(0.62 0.22 25);
 
   --instagram-from: oklch(0.7 0.22 50);
   --instagram-via: oklch(0.6 0.25 350);
   --instagram-to: oklch(0.55 0.22 290);
 }
+
 
 @layer base {
   * {
