@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon } from "lucide-react";
+import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon, Send } from "lucide-react";
 import { toast } from "sonner";
 import { PostPreview } from "./PostPreview";
 import { cn } from "@/lib/utils";
