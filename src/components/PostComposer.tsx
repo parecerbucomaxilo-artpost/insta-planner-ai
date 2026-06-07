@@ -2,6 +2,7 @@ import { useState, useMemo, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateImage } from "@/lib/ai/generate-image.functions";
 import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
+import { dispatchAlbato } from "@/lib/webhooks/albato.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,7 @@ const NETWORK_META: Record<Network, { label: string; Icon: typeof Instagram; col
 export function PostComposer({ onCreated, perfil }: { onCreated: () => void; perfil: Perfil | null }) {
   const genImage = useServerFn(generateImage);
   const genIdea = useServerFn(suggestIdea);
+  const sendAlbato = useServerFn(dispatchAlbato);
 
   // Redes
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
@@ -291,7 +293,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         : status;
 
     setSaving(true);
-    const { error } = await supabase.from("posts").insert({
+    const { data: inserted, error } = await supabase.from("posts").insert({
       tipo_post: tipo,
       estilo_layout: estilo,
       formato_midia: formato,
@@ -307,10 +309,29 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       data_agendamento: agendamentoIso,
       status: finalStatus,
       prompt_ia: tipo === "Carrossel" ? enforcedPrompts.join("\n---\n") : prompt || null,
-    });
+    }).select("id").maybeSingle();
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(forceAgendar ? "Post agendado!" : "Post salvo!");
+
+    // Dispara webhook Albato (não bloqueia o fluxo)
+    try {
+      const mediaUrl = tipo === "Post Único" ? imagem : filledCarousel[0] ?? null;
+      const r = await sendAlbato({
+        data: {
+          media_url: mediaUrl,
+          caption: primaryLegenda,
+          data_agendamento: agendamentoIso,
+          post_id: inserted?.id,
+          status: finalStatus,
+        },
+      });
+      if (r.ok) toast.success("Webhook Albato enviado ✓");
+      else toast.error(`Albato respondeu status ${r.status}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? `Albato: ${e.message}` : "Falha no webhook Albato");
+    }
+
     setLegendaIg(""); setLegendaLi(""); setLegendaX("");
     setPrompt(""); setImagem(null); setCarrossel([]);
     setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
