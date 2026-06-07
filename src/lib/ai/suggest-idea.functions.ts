@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const NetworkEnum = z.enum(["instagram", "linkedin", "x"]);
+const NetworkEnum = z.enum(["instagram", "linkedin"]);
 
 const FIXED_NICHE =
   "Odontologia, focado especificamente nas áreas de Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar";
@@ -15,7 +15,7 @@ Tom: técnico, ético, humanizado, baseado em evidências. Linguagem profissiona
 export const suggestIdea = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      networks: z.array(NetworkEnum).min(1).max(3),
+      networks: z.array(NetworkEnum).min(1).max(2),
     }),
   )
   .handler(async ({ data }) => {
@@ -51,14 +51,6 @@ export const suggestIdea = createServerFn({ method: "POST" })
           "Post técnico em pt-BR para LinkedIn voltado a profissionais da saúde. Apresente caso clínico, discussão de artigo, gestão hospitalar ou reflexão para networking. Gancho profissional na 1ª linha, parágrafos curtos (1-2 linhas), referência/insight de evidência, CTA para debate entre colegas, 4-6 hashtags corporativas (#CirurgiaBucoMaxiloFacial #OdontologiaHospitalar #CTBMF etc.). Sem emojis excessivos.",
       };
       required.push("legenda_linkedin");
-    }
-    if (data.networks.includes("x")) {
-      props.legenda_x = {
-        type: "string",
-        description:
-          "Tweet em pt-BR ESTRITAMENTE ≤ 280 caracteres: insight rápido sobre caso, opinião científica breve, novidade da área (publicação, congresso, técnica). Direto e impactante, 1-2 hashtags (#CTBMF #OdontoHospitalar).",
-      };
-      required.push("legenda_x");
     }
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -113,10 +105,6 @@ export const suggestIdea = createServerFn({ method: "POST" })
       prompt_imagem: string;
       legenda_instagram?: string;
       legenda_linkedin?: string;
-      legenda_x?: string;
     };
-    if (parsed.legenda_x && parsed.legenda_x.length > 280) {
-      parsed.legenda_x = parsed.legenda_x.slice(0, 277) + "...";
-    }
     return parsed;
   });

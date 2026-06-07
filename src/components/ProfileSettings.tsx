@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Upload, User2, AtSign, X, Instagram, Linkedin, Twitter } from "lucide-react";
+import { Loader2, Upload, User2, AtSign, X, Instagram, Linkedin } from "lucide-react";
 import { toast } from "sonner";
 
 export type Perfil = {
@@ -16,8 +16,6 @@ export type Perfil = {
   instagram_foto_url: string | null;
   linkedin_nome: string;
   linkedin_foto_url: string | null;
-  x_arroba: string;
-  x_foto_url: string | null;
 };
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -117,8 +115,6 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
   const [igFoto, setIgFoto] = useState<string | null>(null);
   const [liNome, setLiNome] = useState("");
   const [liFoto, setLiFoto] = useState<string | null>(null);
-  const [xArroba, setXArroba] = useState("");
-  const [xFoto, setXFoto] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -135,8 +131,6 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
         setIgFoto(d.instagram_foto_url ?? d.url_logo ?? null);
         setLiNome(d.linkedin_nome ?? d.nome_profissional ?? "");
         setLiFoto(d.linkedin_foto_url ?? d.url_logo ?? null);
-        setXArroba(d.x_arroba ?? d.arroba_usuario ?? "");
-        setXFoto(d.x_foto_url ?? d.url_logo ?? null);
       }
       setLoading(false);
     })();
@@ -144,23 +138,20 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
 
   const handleSave = async () => {
     const ig = igArroba.trim().replace(/^@+/, "");
-    const xa = xArroba.trim().replace(/^@+/, "");
-    if (!liNome.trim() && !ig && !xa) {
+    if (!liNome.trim() && !ig) {
       return toast.error("Preencha ao menos uma rede");
     }
     setSaving(true);
     const payload = {
       // legados — mantidos sincronizados para retrocompatibilidade
-      nome_profissional: liNome.trim() || ig || xa,
-      arroba_usuario: ig || xa,
-      url_logo: igFoto ?? liFoto ?? xFoto,
+      nome_profissional: liNome.trim() || ig,
+      arroba_usuario: ig,
+      url_logo: igFoto ?? liFoto,
       // novos por rede
       instagram_arroba: ig,
       instagram_foto_url: igFoto,
       linkedin_nome: liNome.trim(),
       linkedin_foto_url: liFoto,
-      x_arroba: xa,
-      x_foto_url: xFoto,
     };
     let result;
     if (id) {
@@ -219,20 +210,6 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
         photo={liFoto}
         onPhoto={setLiFoto}
         description="Use foto formal/corporativa e seu nome completo com títulos."
-      />
-
-      <NetworkSection
-        title="X (Twitter)"
-        Icon={Twitter}
-        gradient="from-neutral-700 to-black"
-        nameLabel="@ do X"
-        namePlaceholder="dr_bucomax"
-        nameValue={xArroba}
-        onNameChange={setXArroba}
-        nameIsHandle
-        photo={xFoto}
-        onPhoto={setXFoto}
-        description="Avatar e @ exibidos no template do tweet."
       />
 
       <Button onClick={handleSave} disabled={saving} size="lg" className="w-full">

@@ -1,17 +1,15 @@
-export type Network = "instagram" | "linkedin" | "x";
+export type Network = "instagram" | "linkedin";
 export type FormatoMidia = "Imagem" | "Vídeo/Reels";
 
 export type PostRow = {
   id: string;
   tipo_post: "Post Único" | "Carrossel";
-  estilo_layout: "Padrão" | "Estilo X";
+  estilo_layout: "Padrão";
   legenda: string;
   legenda_instagram: string | null;
   legenda_linkedin: string | null;
-  legenda_x: string | null;
   postar_instagram: boolean;
   postar_linkedin: boolean;
-  postar_x: boolean;
   url_imagem: string | null;
   imagens_carrossel: string[];
   data_agendamento: string | null;
