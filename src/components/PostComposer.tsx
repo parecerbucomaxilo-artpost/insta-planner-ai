@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon } from "lucide-react";
+import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon, Send } from "lucide-react";
 import { toast } from "sonner";
 import { PostPreview } from "./PostPreview";
 import { cn } from "@/lib/utils";
@@ -379,6 +379,70 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   // Para a prévia escolher legenda da rede ativa
   const previewLegenda =
     visibleLegendaTab === "instagram" ? legendaIg : legendaLi;
+
+  const filledCarouselPreview = enforcedCarrossel.filter(Boolean);
+  const hasContent =
+    networks.length > 0 &&
+    Boolean(primaryLegenda.trim()) &&
+    (tipo === "Post Único" ? Boolean(imagem) : filledCarouselPreview.length > 0);
+  const isGenerating = loadingIdea || loadingAi || loadingPage !== null;
+
+  const handlePostNow = async () => {
+    if (!hasContent) return toast.error("Gere a legenda e a imagem antes de publicar.");
+    if (saving) return;
+    const tId = toast.loading("Publicando agora nas redes integradas…");
+    setSaving(true);
+    const nowIso = new Date().toISOString();
+    try {
+      const mediaUrl = tipo === "Post Único" ? imagem : filledCarouselPreview[0] ?? null;
+      const { data: inserted, error } = await supabase
+        .from("posts")
+        .insert({
+          tipo_post: tipo,
+          estilo_layout: "Padrão",
+          formato_midia: formato,
+          legenda: primaryLegenda,
+          legenda_instagram: networks.includes("instagram") ? legendaIg : null,
+          legenda_linkedin: networks.includes("linkedin") ? legendaLi : null,
+          postar_instagram: networks.includes("instagram"),
+          postar_linkedin: networks.includes("linkedin"),
+          url_imagem: tipo === "Post Único" ? imagem : null,
+          imagens_carrossel: tipo === "Carrossel" ? filledCarouselPreview : [],
+          data_agendamento: nowIso,
+          status: "Publicado",
+          prompt_ia: tipo === "Carrossel" ? enforcedPrompts.join("\n---\n") : prompt || null,
+        })
+        .select("id")
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+
+      const r = await sendAlbato({
+        data: {
+          media_url: mediaUrl,
+          caption: primaryLegenda,
+          data_agendamento: nowIso,
+          post_id: inserted?.id,
+          status: "Publicado",
+        },
+      });
+      if (!r.ok) {
+        toast.error(`Salvo, mas webhook respondeu status ${r.status}`, { id: tId });
+      } else {
+        toast.success("✅ Post publicado agora!", { id: tId });
+      }
+
+      setLegendaIg(""); setLegendaLi("");
+      setPrompt(""); setImagem(null); setCarrossel([]);
+      setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
+      setTema(""); setFormato("Imagem"); setOrientacoes(""); setComando("");
+      onCreated();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao publicar", { id: tId });
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   return (
     <div className="grid lg:grid-cols-[1fr_400px] gap-6">
@@ -861,10 +925,36 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       </div>
 
       {visibleLegendaTab && (
-        <div className="lg:sticky lg:top-24 h-fit space-y-2">
-          <Label className="text-xs uppercase text-muted-foreground tracking-wider block">
-            Prévia ao vivo · {NETWORK_META[visibleLegendaTab].label}
-          </Label>
+        <div className="lg:sticky lg:top-24 h-fit space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-[10px] uppercase text-muted-foreground tracking-[0.14em] font-semibold block">
+              Prévia · {NETWORK_META[visibleLegendaTab].label}
+            </Label>
+            {isGenerating && (
+              <span className="flex items-center gap-1.5 text-[11px] text-primary font-medium">
+                <Loader2 className="h-3 w-3 animate-spin" /> Gerando…
+              </span>
+            )}
+          </div>
+
+          <Button
+            onClick={handlePostNow}
+            disabled={!hasContent || saving || isGenerating}
+            size="lg"
+            className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+          >
+            {saving ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publicando…</>
+            ) : (
+              <><Send className="h-4 w-4 mr-2" /> Postar Agora</>
+            )}
+          </Button>
+          {!hasContent && !isGenerating && (
+            <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+              Gere legenda e imagem para liberar a publicação imediata.
+            </p>
+          )}
+
           <PostPreview
             estilo="Padrão"
             legenda={previewLegenda}
@@ -873,9 +963,11 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             tipo={tipo}
             perfil={perfil}
             network={visibleLegendaTab}
+            loading={isGenerating}
           />
         </div>
       )}
+
 
     </div>
   );
