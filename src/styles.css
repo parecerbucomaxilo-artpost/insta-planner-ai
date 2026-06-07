@@ -35,33 +35,37 @@
   --color-instagram-from: var(--instagram-from);
   --color-instagram-via: var(--instagram-via);
   --color-instagram-to: var(--instagram-to);
+
+  --shadow-elegant: 0 1px 2px oklch(0.2 0.02 260 / 0.04), 0 4px 16px oklch(0.2 0.02 260 / 0.06);
+  --shadow-elevated: 0 2px 6px oklch(0.2 0.02 260 / 0.06), 0 12px 32px oklch(0.2 0.02 260 / 0.10);
 }
 
 :root {
+  /* Linear/Vercel-inspired: cool neutral surfaces, sharp ink, sober violet accent */
   --radius: 0.75rem;
-  --background: oklch(0.985 0.005 280);
-  --foreground: oklch(0.18 0.03 280);
+  --background: oklch(0.992 0.002 260);
+  --foreground: oklch(0.16 0.02 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.03 280);
+  --card-foreground: oklch(0.16 0.02 260);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.03 280);
-  --primary: oklch(0.55 0.22 330);
+  --popover-foreground: oklch(0.16 0.02 260);
+  --primary: oklch(0.42 0.18 270);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.01 280);
-  --secondary-foreground: oklch(0.22 0.03 280);
-  --muted: oklch(0.96 0.01 280);
-  --muted-foreground: oklch(0.5 0.02 280);
-  --accent: oklch(0.95 0.02 330);
-  --accent-foreground: oklch(0.22 0.03 280);
+  --secondary: oklch(0.97 0.003 260);
+  --secondary-foreground: oklch(0.22 0.02 260);
+  --muted: oklch(0.965 0.003 260);
+  --muted-foreground: oklch(0.48 0.015 260);
+  --accent: oklch(0.95 0.02 270);
+  --accent-foreground: oklch(0.22 0.02 260);
   --destructive: oklch(0.6 0.22 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.92 0.01 280);
-  --input: oklch(0.92 0.01 280);
-  --ring: oklch(0.55 0.22 330);
+  --border: oklch(0.92 0.005 260);
+  --input: oklch(0.92 0.005 260);
+  --ring: oklch(0.55 0.18 270);
 
-  --status-draft: oklch(0.7 0.02 280);
-  --status-scheduled: oklch(0.6 0.18 250);
-  --status-published: oklch(0.62 0.17 150);
+  --status-draft: oklch(0.7 0.01 260);
+  --status-scheduled: oklch(0.55 0.18 255);
+  --status-published: oklch(0.6 0.16 155);
   --status-error: oklch(0.62 0.22 25);
 
   --instagram-from: oklch(0.7 0.22 50);
@@ -70,6 +74,50 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
-  body { background-color: var(--color-background); color: var(--color-foreground); }
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "cv11", "ss01", "ss03";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Subtle, premium transitions across interactive surfaces */
+  button,
+  a,
+  [role="tab"],
+  [role="button"] {
+    transition:
+      background-color 180ms ease,
+      color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 200ms ease,
+      transform 160ms ease,
+      opacity 160ms ease;
+  }
+
+  /* Cards get a touch of elevation on hover by default */
+  .card-elevated {
+    box-shadow: var(--shadow-elegant);
+  }
+  .card-elevated:hover {
+    box-shadow: var(--shadow-elevated);
+    transform: translateY(-1px);
+  }
+
+  /* Focus ring tweak for that polished SaaS feel */
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+    border-radius: var(--radius);
+  }
+}
+
+@utility surface-glass {
+  background: color-mix(in oklab, var(--card) 80%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
 }
