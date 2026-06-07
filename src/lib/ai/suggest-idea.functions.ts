@@ -12,19 +12,41 @@ Domina os temas: cirurgias ortognáticas, traumas de face, dentes inclusos compl
 
 Tom: técnico, ético, humanizado, baseado em evidências. Linguagem profissional e respeitosa. Nunca prometa resultados, nunca exiba conteúdo gráfico/sangrento. Adapta tom e formato para cada rede social. Sempre em português brasileiro. Inclui aviso "Conteúdo educacional. Consulte um profissional." quando pertinente.`;
 
+function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string) {
+  const tema = comando?.trim()
+    ? `[SIMULAÇÃO] ${comando.trim().slice(0, 90)}`
+    : "[SIMULAÇÃO] Cirurgia ortognática: como o planejamento 3D melhora a respiração e a estética facial";
+  const base =
+    "⚠️ Conteúdo SIMULADO (modo demonstração — sem chave da Anthropic configurada).\n\n" +
+    "Este é um exemplo de legenda gerada para previsualização da interface. " +
+    "Configure sua ANTHROPIC_API_KEY em Configurações → Chave Anthropic para ativar o Claude 3.5 Sonnet com tom científico, humanizado e ético da CTBMF.\n\n" +
+    "Conteúdo educacional. Consulte um profissional.";
+  return {
+    tema,
+    prompt_imagem:
+      "professional medical editorial photography, luxury clinic interior, oral and maxillofacial surgeon in modern boutique consultório, deep navy and pristine white palette, matte gold accents, 85mm f/1.4 cinematic lens, shallow depth of field, elegant bokeh, warm cinematic lighting, photorealistic 8k, award-winning composition",
+    legenda_instagram: networks.includes("instagram") ? base + "\n\n#CTBMF #BucoMaxiloFacial #OdontologiaHospitalar #CirurgiaOrtognatica #SaudeOral" : undefined,
+    legenda_linkedin: networks.includes("linkedin") ? base : undefined,
+  };
+}
+
 export const suggestIdea = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       networks: z.array(NetworkEnum).min(1).max(2),
       comando: z.string().trim().max(800).optional(),
+      apiKey: z.string().trim().min(10).max(200).optional(),
     }),
   )
   .handler(async ({ data }) => {
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    const anthropicKey = data.apiKey || process.env.ANTHROPIC_API_KEY;
     const lovableKey = process.env.LOVABLE_API_KEY;
+
+    // Sem nenhuma chave: retorna mock para destravar a UI
     if (!anthropicKey && !lovableKey) {
-      throw new Error("Nenhuma chave de IA configurada (ANTHROPIC_API_KEY ou LOVABLE_API_KEY).");
+      return buildMock(data.networks, data.comando);
     }
+
 
     const props: Record<string, unknown> = {
       tema: {

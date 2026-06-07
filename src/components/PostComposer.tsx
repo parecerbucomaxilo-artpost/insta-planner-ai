@@ -109,7 +109,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setLoadingIdea(true);
     const tId = toast.loading(opts.comando ? "Interpretando seu comando…" : "Buscando tema-surpresa…");
     try {
-      const r = await genIdea({ data: { networks, comando: opts.comando } });
+      const apiKey = (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
+      const r = await genIdea({ data: { networks, comando: opts.comando, apiKey } });
       setTema(r.tema);
       if (r.legenda_instagram) setLegendaIg(r.legenda_instagram);
       if (r.legenda_linkedin) setLegendaLi(r.legenda_linkedin);

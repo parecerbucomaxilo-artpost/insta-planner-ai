@@ -11,6 +11,7 @@ import { PostsList } from "@/components/PostsList";
 import { ProfileSettings, type Perfil } from "@/components/ProfileSettings";
 import { InsightsPanel } from "@/components/InsightsPanel";
 import { AutomationKeys } from "@/components/AutomationKeys";
+import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
 import type { PostRow } from "@/lib/posts-types";
 
 export const Route = createFileRoute("/")({
@@ -101,6 +102,7 @@ function Dashboard() {
             <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" /> Insights de Performance</TabsTrigger>
             <TabsTrigger value="perfil"><Settings className="h-4 w-4 mr-1.5" /> Perfil</TabsTrigger>
             <TabsTrigger value="chaves"><KeyRound className="h-4 w-4 mr-1.5" /> Chaves de Automação</TabsTrigger>
+            <TabsTrigger value="ia"><KeyRound className="h-4 w-4 mr-1.5" /> IA / Anthropic</TabsTrigger>
           </TabsList>
 
           <TabsContent value="criar" className="mt-6">
@@ -120,6 +122,9 @@ function Dashboard() {
           </TabsContent>
           <TabsContent value="chaves" className="mt-6">
             <AutomationKeys />
+          </TabsContent>
+          <TabsContent value="ia" className="mt-6">
+            <AnthropicKeySettings />
           </TabsContent>
         </Tabs>
       </main>
