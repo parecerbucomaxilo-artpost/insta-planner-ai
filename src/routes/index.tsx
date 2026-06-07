@@ -123,6 +123,9 @@ function Dashboard() {
           <TabsContent value="chaves" className="mt-6">
             <AutomationKeys />
           </TabsContent>
+          <TabsContent value="ia" className="mt-6">
+            <AnthropicKeySettings />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
