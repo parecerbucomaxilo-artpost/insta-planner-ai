@@ -759,9 +759,19 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             </div>
           </div>
 
-          <Button onClick={handleSave} disabled={saving} size="lg" className="w-full">
+          <Button onClick={() => handleSave(false)} disabled={saving} size="lg" variant="outline" className="w-full">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Salvar Post
+            Salvar como Rascunho
+          </Button>
+
+          <Button
+            onClick={() => handleSave(true)}
+            disabled={saving}
+            size="lg"
+            className="w-full h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+          >
+            {saving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+            Agendar Post
           </Button>
         </Card>
       </div>
