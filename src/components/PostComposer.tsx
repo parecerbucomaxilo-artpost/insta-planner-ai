@@ -74,6 +74,9 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
   const [tema, setTema] = useState("");
   const [loadingIdea, setLoadingIdea] = useState(false);
+  const [comando, setComando] = useState("");
+  const [aiMode, setAiMode] = useState<"surpresa" | "comando">("surpresa");
+
 
   const maxCarousel = 10;
 
