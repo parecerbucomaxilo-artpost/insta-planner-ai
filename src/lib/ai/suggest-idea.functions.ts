@@ -20,9 +20,11 @@ export const suggestIdea = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    const lovableKey = process.env.LOVABLE_API_KEY;
+    if (!anthropicKey && !lovableKey) {
+      throw new Error("Nenhuma chave de IA configurada (ANTHROPIC_API_KEY ou LOVABLE_API_KEY).");
+    }
 
     const props: Record<string, unknown> = {
       tema: {
@@ -55,61 +57,107 @@ export const suggestIdea = createServerFn({ method: "POST" })
       required.push("legenda_linkedin");
     }
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-5",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: data.comando && data.comando.length > 0
-              ? `O usuário escreveu o seguinte COMANDO para o post: "${data.comando}". Crie UMA ideia de post fiel a esse comando, sempre dentro do nicho ${FIXED_NICHE}. Enriqueça com profundidade clínica e tom adequado. Redes selecionadas: ${data.networks.join(", ")}. Adapte tom e formato por rede.`
-              : `Gere UMA ideia de post relevante para ${FIXED_NICHE}. Redes selecionadas: ${data.networks.join(", ")}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). Adapte tom e formato por rede.`,
-          },
+    const userPrompt = data.comando && data.comando.length > 0
+      ? `O usuário escreveu o seguinte COMANDO para o post: "${data.comando}". Crie UMA ideia de post fiel a esse comando, sempre dentro do nicho ${FIXED_NICHE}. Enriqueça com profundidade clínica e tom adequado. Redes selecionadas: ${data.networks.join(", ")}. Adapte tom e formato por rede.`
+      : `Gere UMA ideia de post relevante para ${FIXED_NICHE}. Redes selecionadas: ${data.networks.join(", ")}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). Adapte tom e formato por rede.`;
 
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
+    let parsedArgs: string | undefined;
+
+    // === Preferência: Anthropic Claude 3.5 Sonnet ===
+    if (anthropicKey) {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 2048,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content: userPrompt }],
+          tools: [
+            {
               name: "sugerir_post",
               description:
                 "Retorna uma ideia de post de CTBMF / Odontologia Hospitalar adaptada para múltiplas redes.",
-              parameters: {
+              input_schema: {
                 type: "object",
                 properties: props,
                 required,
-                additionalProperties: false,
               },
             },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "sugerir_post" } },
-      }),
-    });
+          ],
+          tool_choice: { type: "tool", name: "sugerir_post" },
+        }),
+      });
 
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      if (res.status === 429) throw new Error("Limite de requisições atingido. Tente em instantes.");
-      if (res.status === 402) throw new Error("Créditos esgotados na workspace.");
-      throw new Error(`Falha na IA (${res.status}): ${t.slice(0, 200)}`);
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        if (res.status === 429) throw new Error("Limite de requisições atingido no Claude. Tente em instantes.");
+        if (res.status === 401) throw new Error("ANTHROPIC_API_KEY inválida.");
+        throw new Error(`Falha no Claude (${res.status}): ${t.slice(0, 200)}`);
+      }
+
+      const json = (await res.json()) as {
+        content?: Array<{ type: string; name?: string; input?: unknown }>;
+      };
+      const toolBlock = json.content?.find((b) => b.type === "tool_use");
+      if (!toolBlock?.input) throw new Error("Resposta do Claude sem sugestão.");
+      parsedArgs = JSON.stringify(toolBlock.input);
+    } else {
+      // === Fallback: Lovable AI Gateway ===
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-5",
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "sugerir_post",
+                description:
+                  "Retorna uma ideia de post de CTBMF / Odontologia Hospitalar adaptada para múltiplas redes.",
+                parameters: {
+                  type: "object",
+                  properties: props,
+                  required,
+                  additionalProperties: false,
+                },
+              },
+            },
+          ],
+          tool_choice: { type: "function", function: { name: "sugerir_post" } },
+        }),
+      });
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        if (res.status === 429) throw new Error("Limite de requisições atingido. Tente em instantes.");
+        if (res.status === 402) throw new Error("Créditos esgotados na workspace.");
+        throw new Error(`Falha na IA (${res.status}): ${t.slice(0, 200)}`);
+      }
+
+      const json = (await res.json()) as {
+        choices?: Array<{ message?: { tool_calls?: Array<{ function?: { arguments?: string } }> } }>;
+      };
+      parsedArgs = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     }
 
-    const json = (await res.json()) as {
-      choices?: Array<{ message?: { tool_calls?: Array<{ function?: { arguments?: string } }> } }>;
-    };
-    const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    if (!args) throw new Error("Resposta sem sugestão");
-    const parsed = JSON.parse(args) as {
+    if (!parsedArgs) throw new Error("Resposta sem sugestão");
+    return JSON.parse(parsedArgs) as {
       tema: string;
       prompt_imagem: string;
       legenda_instagram?: string;
       legenda_linkedin?: string;
     };
-    return parsed;
   });
