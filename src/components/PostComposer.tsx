@@ -925,10 +925,36 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       </div>
 
       {visibleLegendaTab && (
-        <div className="lg:sticky lg:top-24 h-fit space-y-2">
-          <Label className="text-xs uppercase text-muted-foreground tracking-wider block">
-            Prévia ao vivo · {NETWORK_META[visibleLegendaTab].label}
-          </Label>
+        <div className="lg:sticky lg:top-24 h-fit space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-[10px] uppercase text-muted-foreground tracking-[0.14em] font-semibold block">
+              Prévia · {NETWORK_META[visibleLegendaTab].label}
+            </Label>
+            {isGenerating && (
+              <span className="flex items-center gap-1.5 text-[11px] text-primary font-medium">
+                <Loader2 className="h-3 w-3 animate-spin" /> Gerando…
+              </span>
+            )}
+          </div>
+
+          <Button
+            onClick={handlePostNow}
+            disabled={!hasContent || saving || isGenerating}
+            size="lg"
+            className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+          >
+            {saving ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publicando…</>
+            ) : (
+              <><Send className="h-4 w-4 mr-2" /> Postar Agora</>
+            )}
+          </Button>
+          {!hasContent && !isGenerating && (
+            <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+              Gere legenda e imagem para liberar a publicação imediata.
+            </p>
+          )}
+
           <PostPreview
             estilo="Padrão"
             legenda={previewLegenda}
@@ -937,9 +963,11 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             tipo={tipo}
             perfil={perfil}
             network={visibleLegendaTab}
+            loading={isGenerating}
           />
         </div>
       )}
+
 
     </div>
   );
