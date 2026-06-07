@@ -272,12 +272,23 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
   const primaryLegenda = legendaIg || legendaLi || legendaX || "";
 
-  const handleSave = async () => {
+  const handleSave = async (forceAgendar = false) => {
     if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
     if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
     const filledCarousel = enforcedCarrossel.filter(Boolean);
     if (tipo === "Carrossel" && filledCarousel.length === 0) return toast.error("Gere ao menos a Página 1");
     if (networks.includes("x") && legendaX.length > 280) return toast.error("Texto do X excede 280 caracteres");
+
+    const agendamentoIso = data
+      ? new Date(data).toISOString()
+      : forceAgendar
+        ? new Date().toISOString()
+        : null;
+    const finalStatus: Status = forceAgendar
+      ? "Agendado"
+      : data && status === "Rascunho"
+        ? "Agendado"
+        : status;
 
     setSaving(true);
     const { error } = await supabase.from("posts").insert({
@@ -293,13 +304,13 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       postar_x: networks.includes("x"),
       url_imagem: tipo === "Post Único" ? imagem : null,
       imagens_carrossel: tipo === "Carrossel" ? filledCarousel : [],
-      data_agendamento: data ? new Date(data).toISOString() : null,
-      status: data && status === "Rascunho" ? "Agendado" : status,
+      data_agendamento: agendamentoIso,
+      status: finalStatus,
       prompt_ia: tipo === "Carrossel" ? enforcedPrompts.join("\n---\n") : prompt || null,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Post salvo!");
+    toast.success(forceAgendar ? "Post agendado!" : "Post salvo!");
     setLegendaIg(""); setLegendaLi(""); setLegendaX("");
     setPrompt(""); setImagem(null); setCarrossel([]);
     setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
