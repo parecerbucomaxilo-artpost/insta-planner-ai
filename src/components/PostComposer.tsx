@@ -741,28 +741,38 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           )}
 
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Data de Agendamento</Label>
-              <Input type="datetime-local" value={data} onChange={(e) => setData(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as Status)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Rascunho">Rascunho</SelectItem>
-                  <SelectItem value="Agendado">Agendado</SelectItem>
-                  <SelectItem value="Publicado">Publicado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as Status)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Rascunho">Rascunho</SelectItem>
+                <SelectItem value="Agendado">Agendado</SelectItem>
+                <SelectItem value="Publicado">Publicado</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <Button onClick={() => handleSave(false)} disabled={saving} size="lg" variant="outline" className="w-full">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Salvar como Rascunho
           </Button>
+
+          <div className="rounded-lg border-2 border-blue-500/40 bg-blue-500/5 p-4 space-y-2">
+            <Label htmlFor="data-agendamento" className="text-base font-semibold text-blue-700 dark:text-blue-300">
+              📅 Escolha o Dia e Horário da Postagem
+            </Label>
+            <Input
+              id="data-agendamento"
+              type="datetime-local"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              className="h-12 text-base"
+            />
+            <p className="text-xs text-muted-foreground">
+              Se deixar em branco, o post será agendado para o momento em que clicar abaixo.
+            </p>
+          </div>
 
           <Button
             onClick={() => handleSave(true)}
