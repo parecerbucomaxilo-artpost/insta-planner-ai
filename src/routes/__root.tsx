@@ -84,6 +84,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Planner Chico — agendamento de posts para Odontologia (CTBMF e Odontologia Hospitalar)." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Planner Chico" },
+      { name: "twitter:description", content: "Planner Chico — agendamento de posts para Odontologia (CTBMF e Odontologia Hospitalar)." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/dac1ab69-933f-4ec3-953e-d369e43bf84f/id-preview-b94742e2--221123ce-bfcc-41c2-ad79-e7560d18268d.lovable.app-1780793707751.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/dac1ab69-933f-4ec3-953e-d369e43bf84f/id-preview-b94742e2--221123ce-bfcc-41c2-ad79-e7560d18268d.lovable.app-1780793707751.png" },
     ],
     links: [
       {
