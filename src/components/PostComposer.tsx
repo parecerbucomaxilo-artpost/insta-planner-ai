@@ -380,6 +380,70 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const previewLegenda =
     visibleLegendaTab === "instagram" ? legendaIg : legendaLi;
 
+  const filledCarouselPreview = enforcedCarrossel.filter(Boolean);
+  const hasContent =
+    networks.length > 0 &&
+    Boolean(primaryLegenda.trim()) &&
+    (tipo === "Post Único" ? Boolean(imagem) : filledCarouselPreview.length > 0);
+  const isGenerating = loadingIdea || loadingAi || loadingPage !== null;
+
+  const handlePostNow = async () => {
+    if (!hasContent) return toast.error("Gere a legenda e a imagem antes de publicar.");
+    if (saving) return;
+    const tId = toast.loading("Publicando agora nas redes integradas…");
+    setSaving(true);
+    const nowIso = new Date().toISOString();
+    try {
+      const mediaUrl = tipo === "Post Único" ? imagem : filledCarouselPreview[0] ?? null;
+      const { data: inserted, error } = await supabase
+        .from("posts")
+        .insert({
+          tipo_post: tipo,
+          estilo_layout: "Padrão",
+          formato_midia: formato,
+          legenda: primaryLegenda,
+          legenda_instagram: networks.includes("instagram") ? legendaIg : null,
+          legenda_linkedin: networks.includes("linkedin") ? legendaLi : null,
+          postar_instagram: networks.includes("instagram"),
+          postar_linkedin: networks.includes("linkedin"),
+          url_imagem: tipo === "Post Único" ? imagem : null,
+          imagens_carrossel: tipo === "Carrossel" ? filledCarouselPreview : [],
+          data_agendamento: nowIso,
+          status: "Publicado",
+          prompt_ia: tipo === "Carrossel" ? enforcedPrompts.join("\n---\n") : prompt || null,
+        })
+        .select("id")
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+
+      const r = await sendAlbato({
+        data: {
+          media_url: mediaUrl,
+          caption: primaryLegenda,
+          data_agendamento: nowIso,
+          post_id: inserted?.id,
+          status: "Publicado",
+        },
+      });
+      if (!r.ok) {
+        toast.error(`Salvo, mas webhook respondeu status ${r.status}`, { id: tId });
+      } else {
+        toast.success("✅ Post publicado agora!", { id: tId });
+      }
+
+      setLegendaIg(""); setLegendaLi("");
+      setPrompt(""); setImagem(null); setCarrossel([]);
+      setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
+      setTema(""); setFormato("Imagem"); setOrientacoes(""); setComando("");
+      onCreated();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao publicar", { id: tId });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+
   return (
     <div className="grid lg:grid-cols-[1fr_400px] gap-6">
       <div className="space-y-6">
