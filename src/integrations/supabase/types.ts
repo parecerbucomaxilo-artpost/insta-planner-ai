@@ -26,8 +26,6 @@ export type Database = {
           nome_profissional: string
           updated_at: string
           url_logo: string | null
-          x_arroba: string
-          x_foto_url: string | null
         }
         Insert: {
           arroba_usuario?: string
@@ -40,8 +38,6 @@ export type Database = {
           nome_profissional?: string
           updated_at?: string
           url_logo?: string | null
-          x_arroba?: string
-          x_foto_url?: string | null
         }
         Update: {
           arroba_usuario?: string
@@ -54,8 +50,6 @@ export type Database = {
           nome_profissional?: string
           updated_at?: string
           url_logo?: string | null
-          x_arroba?: string
-          x_foto_url?: string | null
         }
         Relationships: []
       }
@@ -71,10 +65,8 @@ export type Database = {
           legenda: string
           legenda_instagram: string | null
           legenda_linkedin: string | null
-          legenda_x: string | null
           postar_instagram: boolean
           postar_linkedin: boolean
-          postar_x: boolean
           prompt_ia: string | null
           status: string
           tipo_post: string
@@ -93,10 +85,8 @@ export type Database = {
           legenda?: string
           legenda_instagram?: string | null
           legenda_linkedin?: string | null
-          legenda_x?: string | null
           postar_instagram?: boolean
           postar_linkedin?: boolean
-          postar_x?: boolean
           prompt_ia?: string | null
           status?: string
           tipo_post: string
@@ -115,10 +105,8 @@ export type Database = {
           legenda?: string
           legenda_instagram?: string | null
           legenda_linkedin?: string | null
-          legenda_x?: string | null
           postar_instagram?: boolean
           postar_linkedin?: boolean
-          postar_x?: boolean
           prompt_ia?: string | null
           status?: string
           tipo_post?: string
