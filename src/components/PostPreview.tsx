@@ -1,5 +1,6 @@
 import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Perfil } from "@/components/ProfileSettings";
 import type { Network } from "@/lib/posts-types";
 
@@ -11,7 +12,9 @@ type Props = {
   tipo: "Post Único" | "Carrossel";
   perfil?: Perfil | null;
   network?: Network;
+  loading?: boolean;
 };
+
 
 type Identity = { nome: string; handle: string; foto: string | null };
 
