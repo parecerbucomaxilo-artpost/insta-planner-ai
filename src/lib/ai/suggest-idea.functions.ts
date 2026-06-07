@@ -16,9 +16,11 @@ export const suggestIdea = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       networks: z.array(NetworkEnum).min(1).max(2),
+      comando: z.string().trim().max(800).optional(),
     }),
   )
   .handler(async ({ data }) => {
+
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
