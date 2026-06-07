@@ -101,11 +101,15 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const enforcedCarrossel = useMemo(() => carrossel.slice(0, maxCarousel), [carrossel]);
   const enforcedPrompts = useMemo(() => carouselPrompts.slice(0, maxCarousel), [carouselPrompts]);
 
-  const handleSuggestIdea = async () => {
+  const runIdeaFlow = async (opts: { comando?: string }) => {
     if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
+    if (opts.comando !== undefined && !opts.comando.trim()) {
+      return toast.error("Escreva seu comando antes de gerar.");
+    }
     setLoadingIdea(true);
+    const tId = toast.loading(opts.comando ? "Interpretando seu comando…" : "Buscando tema-surpresa…");
     try {
-      const r = await genIdea({ data: { networks } });
+      const r = await genIdea({ data: { networks, comando: opts.comando } });
       setTema(r.tema);
       if (r.legenda_instagram) setLegendaIg(r.legenda_instagram);
       if (r.legenda_linkedin) setLegendaLi(r.legenda_linkedin);
@@ -117,13 +121,35 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           return next;
         });
       }
-      toast.success("Ideia adaptada para cada rede!");
+      toast.loading("Gerando imagem Premium via Gemini…", { id: tId });
+      // Gera a imagem automaticamente para entregar tudo pronto
+      try {
+        const { dataUrl } = await genImage({ data: { prompt: r.prompt_imagem } });
+        const finalUrl = await maybeWatermark(dataUrl);
+        if (tipo === "Carrossel") {
+          setCarrossel((arr) => {
+            const next = [...arr];
+            next[0] = finalUrl;
+            return next;
+          });
+        } else {
+          setImagem(finalUrl);
+        }
+        toast.success("Ideia + legenda + imagem prontas! ✨", { id: tId });
+      } catch (e) {
+        toast.success("Ideia e legenda prontas. (Falha ao gerar imagem — tente novamente abaixo.)", { id: tId });
+        toast.error(e instanceof Error ? e.message : "Falha na imagem");
+      }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao gerar ideia");
+      toast.error(e instanceof Error ? e.message : "Erro ao gerar ideia", { id: tId });
     } finally {
       setLoadingIdea(false);
     }
   };
+
+  const handleSuggestIdea = () => runIdeaFlow({});
+  const handleGenerateFromCommand = () => runIdeaFlow({ comando });
+
 
   // Marca d'água por rede.
   const watermarkLogo = useMemo<string | null>(() => {
