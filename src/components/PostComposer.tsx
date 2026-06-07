@@ -141,13 +141,13 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
   };
 
-  // Estilos visuais ricos rotacionados por hash da legenda — variedade automática
+  // Estética "Médico Premium" — variações sutis dentro do mesmo padrão sofisticado.
   const VISUAL_STYLES = [
-    "cinematic editorial photography, shot on Hasselblad H6D, 85mm prime lens at f/1.4, shallow depth of field, anamorphic bokeh, dramatic Rembrandt lighting, Kodak Portra 400 color grading, ultra-detailed micro-textures",
-    "modern minimal 3D illustration, isometric perspective, subsurface scattering, soft clinical pastel palette with one bold electric-violet accent, octane render quality, clean studio backdrop, generous negative space",
-    "high-end corporate editorial photography, magazine cover composition, controlled softbox lighting, 85mm f/1.4, blurred hospital architectural background, premium color grading, Vogue-business aesthetic",
-    "detailed medical infographic illustration, vector cross-section, anatomically accurate, clean typography-friendly layout, bold accent color over neutral charcoal background, award-winning information design",
-    "moody chiaroscuro studio photography, single rim light, deep teal-and-charcoal palette with surgical-steel highlights, hyperreal detail, Phase One IQ4 quality",
+    "professional medical editorial photography, luxury boutique clinic interior, shot on Hasselblad H6D with 85mm f/1.4 prime lens, shallow depth of field, creamy bokeh background, soft diffused natural daylight through linen sheers, warm cinematic lighting, photorealistic 8k, award-winning composition",
+    "premium medical editorial photography, modern minimalist consultório with discreet marble surfaces and matte gold details, 85mm f/1.4 cinematic lens, elegantly blurred background, soft studio key light with gentle fill, photorealistic 8k, award-winning composition",
+    "high-end medical lifestyle photography, doctor and patient warm authentic interaction, luxury clinic with state-of-the-art equipment glowing subtly, 85mm f/1.4, shallow depth of field, champagne and platinum accents, soft warm cinematic lighting, photorealistic 8k, award-winning composition",
+    "editorial healthcare photography for a luxury private clinic, architectural interior with deep navy walls, surgical white, brushed matte gold details, 85mm f/1.4 anamorphic bokeh, soft diffused window light, photorealistic 8k, award-winning composition",
+    "premium medical brand photography, refined boutique clinic, discreet marble and platinum gray tones with subtle champagne highlights, 85mm f/1.4 cinematic depth of field, soft natural lighting like a luxury studio, photorealistic 8k, award-winning composition",
   ];
   const pickStyle = (seed: string) => {
     let h = 0;
@@ -155,18 +155,26 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     return VISUAL_STYLES[Math.abs(h) % VISUAL_STYLES.length];
   };
 
+  // Diretrizes universais "Médico Premium" injetadas em TODOS os prompts.
+  const PREMIUM_MEDICAL_DIRECTIVES = [
+    "AESTHETIC: 'Premium Medical' — sophistication, trust, advanced technology, innovation, and human warmth. Never cheap, cold, or stock-photo-like.",
+    "PALETTE: deep navy, surgical pristine white, subtle matte gold, champagne and platinum gray accents. Cohesive, refined, never oversaturated.",
+    "LIGHTING: clean, soft, diffused — professional studio softboxes or natural daylight through a luxury consultório window. Warm cinematic mood, never harsh.",
+    "PHOTOGRAPHY: shot on professional 85mm f/1.4 cinematic lens, shallow depth of field, elegant bokeh background, rule-of-thirds composition with intentional negative space for caption overlay.",
+    "PEOPLE: doctors and patients look natural, warm, welcoming, well-cared-for and genuinely happy — never stiff, scared or generic.",
+    "SETTING: high-end consultório, modern boutique clinic, minimalist design, discreet marble surfaces, state-of-the-art medical equipment with subtle glowing lights.",
+    "QUALITY KEYWORDS: professional medical editorial photography, luxury clinic interior, clean elegant composition, warm cinematic lighting, photorealistic 8k, award-winning composition.",
+    "STRICTLY FORBIDDEN: cheap stock-photo look, cold or sterile vibes, oversaturated colors, harsh neon blue, dark or scary hospital corridors, visible blood, wounds, gore, identifiable real patients, on-image text, watermarks, low-effort AI artifacts.",
+  ].join(" ");
+
   // Constrói um prompt visual médico/ético RICO e ARTÍSTICO a partir da legenda da rede ativa.
   const buildAutoPrompt = (baseText: string): string => {
     const caption = (baseText || tema || "").trim().slice(0, 600);
     const visualStyle = pickStyle(caption || String(Date.now()));
     return [
       `STYLE: ${visualStyle}.`,
-      "SUBJECT: Concept image for a high-end social media post about Oral & Maxillofacial Surgery / Hospital Dentistry (CTBMF). Modern hospital environment, premium medical aesthetic.",
-      "COMPOSITION: rule-of-thirds, intentional negative space on the right third for caption overlay, strong focal hierarchy, awwwards-quality framing.",
-      "PALETTE: cohesive clinical blue / pristine white / soft charcoal, with ONE saturated accent color used sparingly for emphasis.",
-      "LIGHTING: tridimensional, intentional, soft natural fill with a controlled key light — never flat.",
-      "FINISH: 8k, ultra-detailed, professional retouching, editorial-grade color grading, sharp where it matters with elegant micro-blur elsewhere.",
-      "STRICTLY FORBIDDEN: generic stock-photo look, visible blood, wounds, gore, identifiable patients, on-image text, watermarks, low-effort AI artifacts.",
+      "SUBJECT: Concept image for a high-end social media post about Oral & Maxillofacial Surgery / Hospital Dentistry (CTBMF) in a premium private clinic context.",
+      PREMIUM_MEDICAL_DIRECTIVES,
       `REFERENCE CONTENT (do NOT write any text on the image — only let it inspire mood and subject): "${caption}"`,
     ].join(" ");
   };
@@ -176,11 +184,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     const visualStyle = pickStyle(safe || String(Date.now()));
     return [
       `STYLE: ${visualStyle}.`,
-      "SUBJECT: Professional, ethical image for an Odontology (CTBMF / Hospital Dentistry) social post.",
-      "COMPOSITION: rule-of-thirds, generous negative space for caption overlay, premium editorial framing.",
-      "PALETTE: cohesive clinical blue / white / charcoal with one saturated accent — never flat or muddy.",
-      "FINISH: 8k, ultra-detailed, professional retouching, editorial color grading.",
-      "STRICTLY FORBIDDEN: stock-photo blandness, blood, wounds, identifiable patients, on-image text, watermarks.",
+      "SUBJECT: Professional, ethical image for an Odontology (CTBMF / Hospital Dentistry) social post in a luxury boutique clinic.",
+      PREMIUM_MEDICAL_DIRECTIVES,
       `USER DIRECTION: ${safe}`,
     ].join(" ");
   };
