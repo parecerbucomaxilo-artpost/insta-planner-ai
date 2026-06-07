@@ -44,6 +44,7 @@ const NETWORK_META: Record<Network, { label: string; Icon: typeof Instagram; col
 export function PostComposer({ onCreated, perfil }: { onCreated: () => void; perfil: Perfil | null }) {
   const genImage = useServerFn(generateImage);
   const genIdea = useServerFn(suggestIdea);
+  const sendAlbato = useServerFn(dispatchAlbato);
 
   // Redes
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
