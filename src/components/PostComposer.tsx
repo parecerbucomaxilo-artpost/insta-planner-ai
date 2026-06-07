@@ -443,37 +443,90 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         </Card>
 
 
-        {/* Ideia com IA — Nicho fixo */}
-        <Card className="p-5 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+        {/* Criação com IA — duas opções premium */}
+        <Card className="p-5 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent card-elevated">
           <Label className="flex items-center gap-2 text-base font-semibold">
-            <Wand2 className="h-5 w-5 text-primary" /> Gerar Ideia com IA
+            <Wand2 className="h-5 w-5 text-primary" /> Criar com Inteligência Artificial
             <span className="ml-auto text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-              Textos por GPT-5
+              Médico Premium
             </span>
           </Label>
-          <div className="mt-2 mb-3 rounded-md border bg-card/60 p-3">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Especialidade fixa</span>
-            <p className="text-sm font-medium mt-0.5 leading-snug">
-              Odontologia — Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-              ✍️ Temas, legendas e prompts de imagem escritos pelo <strong>GPT-5 (OpenAI)</strong> — tom técnico no LinkedIn, humanizado no Instagram. 🎨 As imagens são geradas pelo <strong>Google Gemini</strong> a partir do prompt criado pelo GPT-5.
-            </p>
-          </div>
-          <Button onClick={handleSuggestIdea} disabled={loadingIdea} className="w-full">
-            {loadingIdea ? (
-              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando ideia clínica...</>
-            ) : (
-              <><Sparkles className="h-4 w-4 mr-2" /> Sugerir Tema e Legenda</>
-            )}
-          </Button>
+          <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
+            Especialidade fixa: <strong>Cirurgia e Traumatologia Bucomaxilofacial · Odontologia Hospitalar</strong>. Texto pelo <strong>GPT-5</strong>, imagem pelo <strong>Gemini</strong> — sempre no padrão editorial de luxo.
+          </p>
+
+          <Tabs value={aiMode} onValueChange={(v) => setAiMode(v as "surpresa" | "comando")} className="mt-4">
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="surpresa" className="gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" /> Ideia Surpresa
+              </TabsTrigger>
+              <TabsTrigger value="comando" className="gap-1.5">
+                <Wand2 className="h-3.5 w-3.5" /> Seu Comando
+              </TabsTrigger>
+            </TabsList>
+
+            {/* OPÇÃO 1 — Surpresa automática */}
+            <TabsContent value="surpresa" className="mt-4 space-y-3">
+              <div className="rounded-md border bg-card/60 p-3">
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  🎲 A IA escolhe um tema de alta relevância em Bucomaxilo (ortognática, ATM, planejamento 3D, trauma facial, dentes inclusos…) e entrega <strong>tema + legenda + imagem premium</strong> prontos — sem você digitar nada.
+                </p>
+              </div>
+              <Button
+                onClick={handleSuggestIdea}
+                disabled={loadingIdea || loadingAi}
+                size="lg"
+                className="w-full h-12 font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all"
+              >
+                {loadingIdea ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando ideia completa…</>
+                ) : (
+                  <><Sparkles className="h-4 w-4 mr-2" /> Gerar Ideia com IA</>
+                )}
+              </Button>
+            </TabsContent>
+
+            {/* OPÇÃO 2 — Comando pessoal */}
+            <TabsContent value="comando" className="mt-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="comando-ia" className="text-sm font-medium">
+                  O que você quer postar hoje?
+                </Label>
+                <Textarea
+                  id="comando-ia"
+                  value={comando}
+                  onChange={(e) => setComando(e.target.value)}
+                  rows={4}
+                  placeholder="Ex: Um post sobre os benefícios da cirurgia ortognática na respiração…"
+                  className="resize-none"
+                />
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  ✨ Seu comando é automaticamente enriquecido com o padrão <strong>Médico Premium</strong>: tom ético, lentes 85mm, iluminação cinematográfica e estética boutique.
+                </p>
+              </div>
+              <Button
+                onClick={handleGenerateFromCommand}
+                disabled={loadingIdea || loadingAi || !comando.trim()}
+                size="lg"
+                className="w-full h-12 font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all"
+              >
+                {loadingIdea ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Criando seu post premium…</>
+                ) : (
+                  <><Wand2 className="h-4 w-4 mr-2" /> Gerar a partir do Comando</>
+                )}
+              </Button>
+            </TabsContent>
+          </Tabs>
+
           {tema && (
-            <div className="mt-3 p-3 rounded-md bg-card border text-sm">
-              <span className="text-xs uppercase text-muted-foreground">Tema sugerido</span>
-              <p className="font-medium mt-0.5">{tema}</p>
+            <div className="mt-4 p-3 rounded-md bg-card border text-sm card-elevated">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Tema gerado</span>
+              <p className="font-medium mt-0.5 leading-snug">{tema}</p>
             </div>
           )}
         </Card>
+
 
 
         <Card className="p-6 space-y-5">
