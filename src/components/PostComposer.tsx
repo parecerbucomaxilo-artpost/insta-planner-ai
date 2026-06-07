@@ -2,6 +2,7 @@ import { useState, useMemo, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateImage } from "@/lib/ai/generate-image.functions";
 import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
+import { dispatchAlbato } from "@/lib/webhooks/albato.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
