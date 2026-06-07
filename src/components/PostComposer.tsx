@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Twitter, Stamp, Film, Image as PictureIcon } from "lucide-react";
+import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon } from "lucide-react";
 import { toast } from "sonner";
 import { PostPreview } from "./PostPreview";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,6 @@ import { Badge } from "@/components/ui/badge";
 
 
 type Tipo = "Post Único" | "Carrossel";
-type Estilo = "Padrão" | "Estilo X";
 type Status = "Rascunho" | "Agendado" | "Publicado";
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -38,7 +37,6 @@ async function fileToDataUrl(file: File): Promise<string> {
 const NETWORK_META: Record<Network, { label: string; Icon: typeof Instagram; color: string }> = {
   instagram: { label: "Instagram", Icon: Instagram, color: "from-pink-500 to-purple-500" },
   linkedin: { label: "LinkedIn", Icon: Linkedin, color: "from-sky-600 to-blue-700" },
-  x: { label: "X (Twitter)", Icon: Twitter, color: "from-neutral-700 to-black" },
 };
 
 export function PostComposer({ onCreated, perfil }: { onCreated: () => void; perfil: Perfil | null }) {
@@ -53,14 +51,12 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const [watermark, setWatermark] = useState(false);
 
   const [tipo, setTipo] = useState<Tipo>("Post Único");
-  const [estilo, setEstilo] = useState<Estilo>("Padrão");
   const [formato, setFormato] = useState<FormatoMidia>("Imagem");
 
 
   // Legendas por rede
   const [legendaIg, setLegendaIg] = useState("");
   const [legendaLi, setLegendaLi] = useState("");
-  const [legendaX, setLegendaX] = useState("");
   const [activeLegendaTab, setActiveLegendaTab] = useState<Network>("instagram");
 
   const [prompt, setPrompt] = useState("");
@@ -75,12 +71,11 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const [loadingPage, setLoadingPage] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  
+
   const [tema, setTema] = useState("");
   const [loadingIdea, setLoadingIdea] = useState(false);
 
-  // Limite de imagens do carrossel: 4 se X selecionado, senão 10
-  const maxCarousel = networks.includes("x") ? 4 : 10;
+  const maxCarousel = 10;
 
   const toggleNetwork = (n: Network) => {
     setNetworks((prev) =>
@@ -100,9 +95,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     [networks, activeLegendaTab],
   );
 
-  // Se X está selecionado, trim carrossel para 4
-  const enforcedCarrossel = useMemo(() => carrossel.slice(0, maxCarousel), [carrossel, maxCarousel]);
-  const enforcedPrompts = useMemo(() => carouselPrompts.slice(0, maxCarousel), [carouselPrompts, maxCarousel]);
+  const enforcedCarrossel = useMemo(() => carrossel.slice(0, maxCarousel), [carrossel]);
+  const enforcedPrompts = useMemo(() => carouselPrompts.slice(0, maxCarousel), [carouselPrompts]);
 
   const handleSuggestIdea = async () => {
     if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
@@ -112,7 +106,6 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       setTema(r.tema);
       if (r.legenda_instagram) setLegendaIg(r.legenda_instagram);
       if (r.legenda_linkedin) setLegendaLi(r.legenda_linkedin);
-      if (r.legenda_x) setLegendaX(r.legenda_x);
       setPrompt(r.prompt_imagem);
       if (tipo === "Carrossel") {
         setCarouselPrompts((arr) => {
@@ -129,12 +122,10 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
   };
 
-  // Marca d'água por rede: X usa SEMPRE a foto pessoal do X (nunca a logo corporativa).
-  // Instagram/LinkedIn podem cair na logo corporativa quando não há foto específica.
+  // Marca d'água por rede.
   const watermarkLogo = useMemo<string | null>(() => {
     if (!perfil) return null;
     const activeNet = networks[0];
-    if (activeNet === "x") return perfil.x_foto_url ?? null;
     if (activeNet === "linkedin") return perfil.linkedin_foto_url ?? perfil.url_logo ?? null;
     if (activeNet === "instagram") return perfil.instagram_foto_url ?? perfil.url_logo ?? null;
     return perfil.instagram_foto_url ?? perfil.linkedin_foto_url ?? perfil.url_logo ?? null;
@@ -153,34 +144,28 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   // Constrói um prompt visual médico/ético a partir da legenda da rede ativa.
   const buildAutoPrompt = (baseText: string): string => {
     const caption = (baseText || tema || "").trim().slice(0, 600);
-    const layoutHint = estilo === "Estilo X"
-      ? "Composição quadrada otimizada para card de tweet (Estilo X / Twitter)."
-      : "Composição quadrada otimizada para feed do Instagram / LinkedIn.";
     return [
       "Professional medical illustration / clean editorial photography for a dental social media post.",
       "Specialty: Oral & Maxillofacial Surgery and Hospital Dentistry (CTBMF).",
       "Aesthetic: modern hospital environment, clinical blue / white / soft grey palette, soft natural lighting, infographic-friendly, minimal and respectful.",
       "STRICTLY FORBIDDEN: visible blood, open wounds, graphic surgery, identifiable patients, gore, distressing content.",
-      layoutHint,
+      "Composição quadrada otimizada para feed do Instagram / LinkedIn.",
       `Conteúdo de referência (não escreva o texto na imagem, apenas inspire o visual): "${caption}"`,
     ].join(" ");
   };
 
   const buildManualPrompt = (userText: string): string => {
     const safe = (userText || "").trim().slice(0, 800);
-    const layoutHint = estilo === "Estilo X"
-      ? "Composição quadrada otimizada para card de tweet (Estilo X / Twitter)."
-      : "Composição quadrada otimizada para feed do Instagram / LinkedIn.";
     return [
       "Imagem profissional e ética para post de Odontologia (CTBMF / Hospitalar).",
       "Sem sangue, sem ferimentos, sem pacientes identificáveis, estética clean e respeitosa.",
-      layoutHint,
+      "Composição quadrada otimizada para feed do Instagram / LinkedIn.",
       `Orientações do usuário: ${safe}`,
     ].join(" ");
   };
 
   const handleGenerateSingle = async () => {
-    const captionForAuto = legendaIg || legendaLi || legendaX;
+    const captionForAuto = legendaIg || legendaLi;
     if (imageMode === "auto" && !captionForAuto.trim() && !tema.trim()) {
       return toast.error("Gere a legenda primeiro (ou troque para 'Fornecer Minhas Orientações').");
     }
@@ -206,7 +191,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
   const handleGeneratePage = async (index: number) => {
     const pageOrientation = carouselPrompts[index] ?? "";
-    const captionForAuto = legendaIg || legendaLi || legendaX;
+    const captionForAuto = legendaIg || legendaLi;
     if (imageMode === "manual" && !pageOrientation.trim()) {
       return toast.error(`Descreva o que quer ver na página ${index + 1}.`);
     }
@@ -259,7 +244,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
   const addCarouselPage = () => {
     if (carouselPrompts.length >= maxCarousel)
-      return toast.error(`Máximo ${maxCarousel} páginas${networks.includes("x") ? " (limite do X)" : ""}`);
+      return toast.error(`Máximo ${maxCarousel} páginas`);
     setCarouselPrompts((p) => [...p, ""]);
   };
 
@@ -272,14 +257,13 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setCarouselPrompts((p) => p.map((x, idx) => (idx === i ? v : x)));
   };
 
-  const primaryLegenda = legendaIg || legendaLi || legendaX || "";
+  const primaryLegenda = legendaIg || legendaLi || "";
 
   const handleSave = async (forceAgendar = false) => {
     if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
     if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
     const filledCarousel = enforcedCarrossel.filter(Boolean);
     if (tipo === "Carrossel" && filledCarousel.length === 0) return toast.error("Gere ao menos a Página 1");
-    if (networks.includes("x") && legendaX.length > 280) return toast.error("Texto do X excede 280 caracteres");
 
     const agendamentoIso = data
       ? new Date(data).toISOString()
@@ -295,15 +279,13 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setSaving(true);
     const { data: inserted, error } = await supabase.from("posts").insert({
       tipo_post: tipo,
-      estilo_layout: estilo,
+      estilo_layout: "Padrão",
       formato_midia: formato,
       legenda: primaryLegenda,
       legenda_instagram: networks.includes("instagram") ? legendaIg : null,
       legenda_linkedin: networks.includes("linkedin") ? legendaLi : null,
-      legenda_x: networks.includes("x") ? legendaX : null,
       postar_instagram: networks.includes("instagram"),
       postar_linkedin: networks.includes("linkedin"),
-      postar_x: networks.includes("x"),
       url_imagem: tipo === "Post Único" ? imagem : null,
       imagens_carrossel: tipo === "Carrossel" ? filledCarousel : [],
       data_agendamento: agendamentoIso,
@@ -332,7 +314,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       toast.error(e instanceof Error ? `Albato: ${e.message}` : "Falha no webhook Albato");
     }
 
-    setLegendaIg(""); setLegendaLi(""); setLegendaX("");
+    setLegendaIg(""); setLegendaLi("");
     setPrompt(""); setImagem(null); setCarrossel([]);
     setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
     setTema(""); setFormato("Imagem"); setOrientacoes("");
@@ -341,9 +323,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
   // Para a prévia escolher legenda da rede ativa
   const previewLegenda =
-    visibleLegendaTab === "instagram" ? legendaIg :
-    visibleLegendaTab === "linkedin" ? legendaLi :
-    legendaX;
+    visibleLegendaTab === "instagram" ? legendaIg : legendaLi;
 
   return (
     <div className="grid lg:grid-cols-[1fr_400px] gap-6">
@@ -354,7 +334,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           <p className="text-xs text-muted-foreground mt-0.5 mb-3">
             Selecione uma ou mais redes — a IA adapta cada texto.
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {(Object.keys(NETWORK_META) as Network[]).map((n) => {
               const { label, Icon, color } = NETWORK_META[n];
               const active = networks.includes(n);
@@ -422,7 +402,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               Odontologia — Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar
             </p>
             <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-              ✍️ Temas, legendas e prompts de imagem escritos pelo <strong>GPT-5 (OpenAI)</strong> — tom técnico no LinkedIn, humanizado no Instagram, curto/dinâmico no X. 🎨 As imagens são geradas pelo <strong>Google Gemini</strong> a partir do prompt criado pelo GPT-5.
+              ✍️ Temas, legendas e prompts de imagem escritos pelo <strong>GPT-5 (OpenAI)</strong> — tom técnico no LinkedIn, humanizado no Instagram. 🎨 As imagens são geradas pelo <strong>Google Gemini</strong> a partir do prompt criado pelo GPT-5.
             </p>
           </div>
           <Button onClick={handleSuggestIdea} disabled={loadingIdea} className="w-full">
@@ -470,7 +450,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             {formato === "Vídeo/Reels" && (
               <p className="text-[11px] text-muted-foreground rounded-md bg-violet-500/10 border border-violet-500/20 p-2.5 leading-relaxed">
                 <Film className="h-3 w-3 inline mr-1 text-violet-600" />
-                O arquivo MP4 será processado como <strong>Reels no Instagram</strong> e como <strong>postagem de vídeo no LinkedIn e X</strong>. Carrossel está desabilitado para vídeo.
+                O arquivo MP4 será processado como <strong>Reels no Instagram</strong> e como <strong>postagem de vídeo no LinkedIn</strong>. Carrossel está desabilitado para vídeo.
               </p>
             )}
           </div>
@@ -480,9 +460,6 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               <TabsTrigger value="Post Único">Post Único</TabsTrigger>
               <TabsTrigger value="Carrossel" disabled={formato === "Vídeo/Reels"}>
                 Carrossel
-                {networks.includes("x") && (
-                  <span className="ml-2 text-[10px] uppercase text-muted-foreground">máx 4 (X)</span>
-                )}
               </TabsTrigger>
             </TabsList>
 
@@ -527,7 +504,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                         Prompt automático (somente leitura) — gerado a partir da legenda da rede ativa.
                       </p>
                       <Textarea
-                        value={buildAutoPrompt(legendaIg || legendaLi || legendaX)}
+                        value={buildAutoPrompt(legendaIg || legendaLi)}
                         readOnly
                         rows={3}
                         className="bg-muted/40 text-xs cursor-not-allowed"
@@ -583,7 +560,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                       <Film className="h-10 w-10 text-violet-500 mb-2" />
                       <span className="text-sm font-medium">Enviar vídeo (MP4)</span>
                       <span className="text-xs text-muted-foreground mt-1 text-center px-4">
-                        Será publicado como Reels no Instagram e vídeo no LinkedIn / X.
+                        Será publicado como Reels no Instagram e vídeo no LinkedIn.
                       </span>
                     </>
                   ) : (
@@ -638,7 +615,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
                   {imageMode === "auto" ? (
                     <Textarea
-                      value={buildAutoPrompt(`${legendaIg || legendaLi || legendaX}\n\nPágina ${i + 1} do carrossel.`)}
+                      value={buildAutoPrompt(`${legendaIg || legendaLi}\n\nPágina ${i + 1} do carrossel.`)}
                       readOnly
                       rows={2}
                       className="bg-muted/40 text-xs cursor-not-allowed"
@@ -682,24 +659,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                   <Plus className="h-4 w-4 mr-2" /> Adicionar página {enforcedPrompts.length + 1}
                 </Button>
               )}
-              {networks.includes("x") && (
-                <p className="text-[11px] text-muted-foreground text-center">
-                  Limite de 4 imagens imposto pelo X (Twitter).
-                </p>
-              )}
             </TabsContent>
           </Tabs>
-
-          <div className="space-y-2">
-            <Label>Estilo do Layout</Label>
-            <Select value={estilo} onValueChange={(v) => setEstilo(v as Estilo)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Padrão">Padrão (Instagram)</SelectItem>
-                <SelectItem value="Estilo X">Estilo X (Twitter)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* LEGENDAS POR REDE */}
           {networks.length === 0 ? (
@@ -739,22 +700,6 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                       rows={6}
                       placeholder="Post profissional para LinkedIn..."
                     />
-                  </TabsContent>
-                )}
-                {networks.includes("x") && (
-                  <TabsContent value="x" className="mt-3 space-y-1">
-                    <Textarea
-                      value={legendaX}
-                      onChange={(e) => setLegendaX(e.target.value.slice(0, 280))}
-                      rows={4}
-                      placeholder="Tweet curto (máx 280)..."
-                    />
-                    <p className={cn(
-                      "text-xs text-right",
-                      legendaX.length > 260 ? "text-destructive font-medium" : "text-muted-foreground",
-                    )}>
-                      {legendaX.length}/280
-                    </p>
                   </TabsContent>
                 )}
               </Tabs>
@@ -813,7 +758,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             Prévia ao vivo · {NETWORK_META[visibleLegendaTab].label}
           </Label>
           <PostPreview
-            estilo={visibleLegendaTab === "x" ? "Estilo X" : estilo}
+            estilo="Padrão"
             legenda={previewLegenda}
             imagem={tipo === "Post Único" ? imagem : enforcedCarrossel.filter(Boolean)[0] ?? null}
             carrossel={tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean) : []}
