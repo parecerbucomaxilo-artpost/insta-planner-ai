@@ -100,6 +100,7 @@ function Dashboard() {
             <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todos os posts</TabsTrigger>
             <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" /> Insights de Performance</TabsTrigger>
             <TabsTrigger value="perfil"><Settings className="h-4 w-4 mr-1.5" /> Perfil</TabsTrigger>
+            <TabsTrigger value="chaves"><KeyRound className="h-4 w-4 mr-1.5" /> Chaves de Automação</TabsTrigger>
           </TabsList>
 
           <TabsContent value="criar" className="mt-6">
@@ -116,6 +117,9 @@ function Dashboard() {
           </TabsContent>
           <TabsContent value="perfil" className="mt-6">
             <ProfileSettings onSaved={(p) => setPerfil(p)} />
+          </TabsContent>
+          <TabsContent value="chaves" className="mt-6">
+            <AutomationKeys />
           </TabsContent>
         </Tabs>
       </main>
