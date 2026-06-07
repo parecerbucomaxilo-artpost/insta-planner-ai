@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
           const { data, error } = await supabaseAdmin
             .from("posts")
             .select(
-              "id, tipo_post, url_imagem, legenda_instagram, legenda_linkedin, legenda_x, data_agendamento"
+              "id, tipo_post, url_imagem, legenda_instagram, legenda_linkedin, data_agendamento"
             )
             .eq("status", "Agendado")
             .lte("data_agendamento", nowIso)
@@ -58,7 +58,6 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
               url_imagem: data.url_imagem,
               legenda_instagram: data.legenda_instagram,
               legenda_linkedin: data.legenda_linkedin,
-              legenda_x: data.legenda_x,
             }),
             {
               status: 200,
