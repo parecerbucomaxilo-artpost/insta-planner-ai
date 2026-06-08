@@ -456,7 +456,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         toast.success("✅ Post publicado agora!", { id: tId });
       }
 
-      setLegendaIg(""); setLegendaLi("");
+      setLegendaIg(""); setLegendaLi(""); setTextoX("");
       setPrompt(""); setImagem(null); setCarrossel([]);
       setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
       setTema(""); setFormato("Imagem"); setOrientacoes(""); setComando("");
