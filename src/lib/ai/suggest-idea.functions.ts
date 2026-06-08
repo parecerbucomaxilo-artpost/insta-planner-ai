@@ -145,7 +145,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
         body: JSON.stringify({
           model: "claude-3-5-sonnet-20241022",
           max_tokens: 2048,
-          system: SYSTEM_PROMPT,
+          system: system,
           messages: [{ role: "user", content: userPrompt }],
           tools: [
             {
@@ -187,7 +187,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
         body: JSON.stringify({
           model: "openai/gpt-5",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: system },
             { role: "user", content: userPrompt },
           ],
           tools: [
