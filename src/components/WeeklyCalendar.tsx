@@ -153,15 +153,17 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
       const results = await Promise.allSettled(
         r.dias.map((d) => genImage({ data: { prompt: d.prompt_imagem, aspect: "1:1" } })),
       );
-      setDias((arr) =>
-        arr.map((d, i) => {
+      setDias((arr) => {
+        const updated = arr.map((d, i) => {
           const res = results[i];
           if (res && res.status === "fulfilled") {
-            return { ...d, imagem: res.value.dataUrl, status: "pronto" };
+            return { ...d, imagem: res.value.dataUrl, status: "pronto" as const };
           }
-          return { ...d, status: "pronto" };
-        }),
-      );
+          return { ...d, status: "pronto" as const };
+        });
+        writeWeekCache(weekStart.toISOString(), updated);
+        return updated;
+      });
       // aplica badge do médico se houver
       if (perfil?.nome_profissional || perfil?.cro_uf) {
         const next = await Promise.all(
@@ -177,7 +179,11 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
             }
           }),
         );
-        setDias((arr) => arr.map((d, i) => ({ ...d, imagem: next[i] ?? d.imagem })));
+        setDias((arr) => {
+          const updated = arr.map((d, i) => ({ ...d, imagem: next[i] ?? d.imagem }));
+          writeWeekCache(weekStart.toISOString(), updated);
+          return updated;
+        });
       }
       toast.success("Cronograma da semana pronto! ✨", { id: tId });
     } catch (e) {
