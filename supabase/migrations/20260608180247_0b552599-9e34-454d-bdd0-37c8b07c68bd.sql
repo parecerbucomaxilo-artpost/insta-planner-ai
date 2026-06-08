@@ -1,0 +1,4 @@
+ALTER TABLE public.perfil_usuario
+  ADD COLUMN IF NOT EXISTS cro_uf TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS subespecialidades TEXT[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS tom_voz TEXT NOT NULL DEFAULT 'Científico';
