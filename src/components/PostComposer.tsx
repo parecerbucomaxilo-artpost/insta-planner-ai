@@ -284,7 +284,16 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setPrompt(finalPrompt);
     setLoadingAi(true);
     try {
-      const { dataUrl } = await genImage({ data: { prompt: finalPrompt } });
+      const { dataUrl } = await genImage({
+        data: {
+          prompt: finalPrompt,
+          slideRole: "single",
+          title: tema || extractFirstLine(captionForAuto) || "",
+          subtitle: extractFirstLine(captionForAuto.replace(extractFirstLine(captionForAuto), "")) || "",
+          doctorName: perfil?.nome_profissional ?? "",
+          cro: perfil?.cro_uf ?? "",
+        },
+      });
       const finalUrl = await maybeWatermark(dataUrl);
       setImagem(finalUrl);
       toast.success("Imagem gerada via Gemini!");
