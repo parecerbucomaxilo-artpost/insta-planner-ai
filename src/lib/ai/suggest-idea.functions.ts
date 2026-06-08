@@ -147,8 +147,9 @@ export const suggestIdea = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
-          max_tokens: 2048,
+          // PERF: Haiku é ~3x mais rápido que Sonnet para texto curto estruturado
+          model: "claude-3-5-haiku-20241022",
+          max_tokens: 1024,
           system: system,
           messages: [{ role: "user", content: userPrompt }],
           tools: [
