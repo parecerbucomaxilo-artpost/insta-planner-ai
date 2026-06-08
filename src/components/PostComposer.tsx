@@ -68,6 +68,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const [data, setData] = useState("");
   const [status, setStatus] = useState<Status>("Rascunho");
   const [loadingAi, setLoadingAi] = useState(false);
+  const [loadingImage, setLoadingImage] = useState(false); // PERF: skeleton independente da imagem
   const [loadingPage, setLoadingPage] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
