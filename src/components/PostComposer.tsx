@@ -106,7 +106,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const enforcedPrompts = useMemo(() => carouselPrompts.slice(0, maxCarousel), [carouselPrompts]);
 
   const runIdeaFlow = async (opts: { comando?: string }) => {
-    if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
+    const isX = modoCriacao === "x";
+    if (!isX && networks.length === 0) return toast.error("Selecione ao menos uma rede social");
     if (opts.comando !== undefined && !opts.comando.trim()) {
       return toast.error("Escreva seu comando antes de gerar.");
     }
@@ -114,24 +115,31 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     const tId = toast.loading(opts.comando ? "Interpretando seu comando…" : "Buscando tema-surpresa…");
     try {
       const apiKey = (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
-      const r = await genIdea({ data: { networks, comando: opts.comando, apiKey } });
+      const r = await genIdea({
+        data: { networks, comando: opts.comando, apiKey, estilo: isX ? "x" : "padrao" },
+      });
       setTema(r.tema);
-      if (r.legenda_instagram) setLegendaIg(r.legenda_instagram);
-      if (r.legenda_linkedin) setLegendaLi(r.legenda_linkedin);
+      if (isX) {
+        if (r.texto_x) setTextoX(r.texto_x.slice(0, X_MAX));
+      } else {
+        if (r.legenda_instagram) setLegendaIg(r.legenda_instagram);
+        if (r.legenda_linkedin) setLegendaLi(r.legenda_linkedin);
+      }
       setPrompt(r.prompt_imagem);
-      if (tipo === "Carrossel") {
+      if (!isX && tipo === "Carrossel") {
         setCarouselPrompts((arr) => {
           const next = [...arr];
           next[0] = r.prompt_imagem;
           return next;
         });
       }
-      toast.loading("Gerando imagem Premium via Gemini…", { id: tId });
-      // Gera a imagem automaticamente para entregar tudo pronto
+      toast.loading(isX ? "Gerando imagem conceitual 16:9…" : "Gerando imagem Premium via Gemini…", { id: tId });
       try {
-        const { dataUrl } = await genImage({ data: { prompt: r.prompt_imagem } });
+        const { dataUrl } = await genImage({
+          data: { prompt: r.prompt_imagem, aspect: isX ? "16:9" : "1:1", conceptual: isX },
+        });
         const finalUrl = await maybeWatermark(dataUrl);
-        if (tipo === "Carrossel") {
+        if (!isX && tipo === "Carrossel") {
           setCarrossel((arr) => {
             const next = [...arr];
             next[0] = finalUrl;
@@ -140,9 +148,9 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         } else {
           setImagem(finalUrl);
         }
-        toast.success("Ideia + legenda + imagem prontas! ✨", { id: tId });
+        toast.success(isX ? "Tweet + imagem 16:9 prontos! ⚡" : "Ideia + legenda + imagem prontas! ✨", { id: tId });
       } catch (e) {
-        toast.success("Ideia e legenda prontas. (Falha ao gerar imagem — tente novamente abaixo.)", { id: tId });
+        toast.success("Texto pronto. (Falha ao gerar imagem — tente novamente abaixo.)", { id: tId });
         toast.error(e instanceof Error ? e.message : "Falha na imagem");
       }
     } catch (e) {
