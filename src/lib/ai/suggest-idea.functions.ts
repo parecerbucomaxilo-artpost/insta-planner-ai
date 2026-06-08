@@ -230,5 +230,6 @@ export const suggestIdea = createServerFn({ method: "POST" })
       legenda_instagram?: string;
       legenda_linkedin?: string;
       texto_x?: string;
+      mensagem_direct?: string;
     };
   });
