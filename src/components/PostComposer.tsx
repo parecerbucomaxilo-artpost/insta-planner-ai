@@ -77,6 +77,10 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const [comando, setComando] = useState("");
   const [aiMode, setAiMode] = useState<"surpresa" | "comando">("surpresa");
 
+  // ===== Modo de criação: Padrão (IG/LinkedIn) vs Estilo X (Twitter) =====
+  const [modoCriacao, setModoCriacao] = useState<"padrao" | "x">("padrao");
+  const [textoX, setTextoX] = useState("");
+  const X_MAX = 280;
 
   const maxCarousel = 10;
 
