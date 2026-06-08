@@ -397,13 +397,19 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
   // Para a prévia escolher legenda da rede ativa
   const previewLegenda =
-    visibleLegendaTab === "instagram" ? legendaIg : legendaLi;
+    modoCriacao === "x"
+      ? textoX
+      : visibleLegendaTab === "instagram"
+      ? legendaIg
+      : legendaLi;
 
   const filledCarouselPreview = enforcedCarrossel.filter(Boolean);
   const hasContent =
-    networks.length > 0 &&
-    Boolean(primaryLegenda.trim()) &&
-    (tipo === "Post Único" ? Boolean(imagem) : filledCarouselPreview.length > 0);
+    modoCriacao === "x"
+      ? Boolean(textoX.trim()) && textoX.length <= X_MAX
+      : networks.length > 0 &&
+        Boolean(primaryLegenda.trim()) &&
+        (tipo === "Post Único" ? Boolean(imagem) : filledCarouselPreview.length > 0);
   const isGenerating = loadingIdea || loadingAi || loadingPage !== null;
 
   const handlePostNow = async () => {
