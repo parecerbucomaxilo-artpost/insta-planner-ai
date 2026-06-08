@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { weeklyPlan } from "@/lib/ai/weekly-plan.functions";
@@ -26,6 +26,24 @@ type DiaPlano = {
 };
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"] as const;
+
+// PERF: cache local do cronograma por semana (chave = ISO da segunda-feira)
+const WEEK_CACHE_PREFIX = "planner_weekly_cache_v1:";
+type CachedDia = Omit<DiaPlano, "date"> & { dateIso: string };
+function readWeekCache(weekStartIso: string): CachedDia[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(WEEK_CACHE_PREFIX + weekStartIso);
+    return raw ? (JSON.parse(raw) as CachedDia[]) : null;
+  } catch { return null; }
+}
+function writeWeekCache(weekStartIso: string, dias: DiaPlano[]) {
+  if (typeof window === "undefined") return;
+  try {
+    const payload: CachedDia[] = dias.map(({ date, ...rest }) => ({ ...rest, dateIso: date.toISOString() }));
+    window.localStorage.setItem(WEEK_CACHE_PREFIX + weekStartIso, JSON.stringify(payload));
+  } catch { /* ignore quota */ }
+}
 
 function startOfWeek(d: Date): Date {
   const x = new Date(d);
@@ -86,6 +104,14 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
     setDias(rebuildEmpty(next));
   };
 
+  // PERF: hidrata o cronograma do cache local sempre que a semana muda
+  useEffect(() => {
+    const cached = readWeekCache(weekStart.toISOString());
+    if (cached && cached.length === 5) {
+      setDias(cached.map((c) => ({ ...c, date: new Date(c.dateIso) })));
+    }
+  }, [weekStart]);
+
   const rangeLabel = useMemo(() => {
     const end = new Date(weekStart);
     end.setDate(end.getDate() + 4);
@@ -127,15 +153,17 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
       const results = await Promise.allSettled(
         r.dias.map((d) => genImage({ data: { prompt: d.prompt_imagem, aspect: "1:1" } })),
       );
-      setDias((arr) =>
-        arr.map((d, i) => {
+      setDias((arr) => {
+        const updated = arr.map((d, i) => {
           const res = results[i];
           if (res && res.status === "fulfilled") {
-            return { ...d, imagem: res.value.dataUrl, status: "pronto" };
+            return { ...d, imagem: res.value.dataUrl, status: "pronto" as const };
           }
-          return { ...d, status: "pronto" };
-        }),
-      );
+          return { ...d, status: "pronto" as const };
+        });
+        writeWeekCache(weekStart.toISOString(), updated);
+        return updated;
+      });
       // aplica badge do médico se houver
       if (perfil?.nome_profissional || perfil?.cro_uf) {
         const next = await Promise.all(
@@ -151,7 +179,11 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
             }
           }),
         );
-        setDias((arr) => arr.map((d, i) => ({ ...d, imagem: next[i] ?? d.imagem })));
+        setDias((arr) => {
+          const updated = arr.map((d, i) => ({ ...d, imagem: next[i] ?? d.imagem }));
+          writeWeekCache(weekStart.toISOString(), updated);
+          return updated;
+        });
       }
       toast.success("Cronograma da semana pronto! ✨", { id: tId });
     } catch (e) {

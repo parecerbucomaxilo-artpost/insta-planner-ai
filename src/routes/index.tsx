@@ -27,9 +27,22 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
+const PERFIL_CACHE_KEY = "planner_perfil_cache_v1";
+
+function readPerfilCache(): Perfil | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(PERFIL_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as Perfil) : null;
+  } catch {
+    return null;
+  }
+}
+
 function Dashboard() {
   const [posts, setPosts] = useState<PostRow[]>([]);
-  const [perfil, setPerfil] = useState<Perfil | null>(null);
+  // PERF: hidrata perfil do cache imediatamente — DB só atualiza em background
+  const [perfil, setPerfil] = useState<Perfil | null>(() => readPerfilCache());
   const [tab, setTab] = useState("criar");
 
   const load = useCallback(async () => {
@@ -44,7 +57,10 @@ function Dashboard() {
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
-    if (data) setPerfil(data as Perfil);
+    if (data) {
+      setPerfil(data as Perfil);
+      try { window.localStorage.setItem(PERFIL_CACHE_KEY, JSON.stringify(data)); } catch { /* ignore */ }
+    }
   }, []);
 
   useEffect(() => { load(); loadPerfil(); }, [load, loadPerfil]);
@@ -123,7 +139,10 @@ function Dashboard() {
             <InsightsPanel posts={posts} />
           </TabsContent>
           <TabsContent value="perfil" className="mt-6">
-            <ProfileSettings onSaved={(p) => setPerfil(p)} />
+            <ProfileSettings onSaved={(p) => {
+              setPerfil(p);
+              try { window.localStorage.setItem(PERFIL_CACHE_KEY, JSON.stringify(p)); } catch { /* ignore */ }
+            }} />
           </TabsContent>
           <TabsContent value="chaves" className="mt-6">
             <AutomationKeys />

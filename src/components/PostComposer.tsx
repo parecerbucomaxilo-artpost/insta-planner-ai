@@ -68,6 +68,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const [data, setData] = useState("");
   const [status, setStatus] = useState<Status>("Rascunho");
   const [loadingAi, setLoadingAi] = useState(false);
+  const [loadingImage, setLoadingImage] = useState(false); // PERF: skeleton independente da imagem
   const [loadingPage, setLoadingPage] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -118,6 +119,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       const r = await genIdea({
         data: { networks, comando: opts.comando, apiKey, estilo: isX ? "x" : "padrao" },
       });
+      // PERF: texto aparece IMEDIATAMENTE — não esperamos a imagem
       setTema(r.tema);
       if (isX) {
         if (r.texto_x) setTextoX(r.texto_x.slice(0, X_MAX));
@@ -133,29 +135,35 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           return next;
         });
       }
-      toast.loading(isX ? "Gerando imagem conceitual 16:9…" : "Gerando imagem Premium via Gemini…", { id: tId });
-      try {
-        const { dataUrl } = await genImage({
-          data: { prompt: r.prompt_imagem, aspect: isX ? "16:9" : "1:1", conceptual: isX },
-        });
-        const finalUrl = await maybeWatermark(dataUrl);
-        if (!isX && tipo === "Carrossel") {
-          setCarrossel((arr) => {
-            const next = [...arr];
-            next[0] = finalUrl;
-            return next;
+      setLoadingIdea(false);
+      toast.success(isX ? "Tweet pronto! Gerando imagem…" : "Legenda pronta! Gerando imagem…", { id: tId });
+
+      // PERF: imagem roda em background com skeleton próprio (não bloqueia UI)
+      setLoadingImage(true);
+      void (async () => {
+        try {
+          const { dataUrl } = await genImage({
+            data: { prompt: r.prompt_imagem, aspect: isX ? "16:9" : "1:1", conceptual: isX },
           });
-        } else {
-          setImagem(finalUrl);
+          const finalUrl = await maybeWatermark(dataUrl);
+          if (!isX && tipo === "Carrossel") {
+            setCarrossel((arr) => {
+              const next = [...arr];
+              next[0] = finalUrl;
+              return next;
+            });
+          } else {
+            setImagem(finalUrl);
+          }
+          toast.success("Imagem pronta ✨");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Falha ao gerar imagem");
+        } finally {
+          setLoadingImage(false);
         }
-        toast.success(isX ? "Tweet + imagem 16:9 prontos! ⚡" : "Ideia + legenda + imagem prontas! ✨", { id: tId });
-      } catch (e) {
-        toast.success("Texto pronto. (Falha ao gerar imagem — tente novamente abaixo.)", { id: tId });
-        toast.error(e instanceof Error ? e.message : "Falha na imagem");
-      }
+      })();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar ideia", { id: tId });
-    } finally {
       setLoadingIdea(false);
     }
   };
@@ -410,7 +418,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       : networks.length > 0 &&
         Boolean(primaryLegenda.trim()) &&
         (tipo === "Post Único" ? Boolean(imagem) : filledCarouselPreview.length > 0);
-  const isGenerating = loadingIdea || loadingAi || loadingPage !== null;
+  const isGenerating = loadingIdea || loadingAi || loadingImage || loadingPage !== null;
 
   const handlePostNow = async () => {
     if (!hasContent) return toast.error("Gere a legenda e a imagem antes de publicar.");
@@ -766,6 +774,12 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                     </Badge>
                   )}
                 </div>
+              ) : loadingImage ? (
+                <div className="relative aspect-square rounded-lg overflow-hidden border bg-gradient-to-br from-muted via-muted/60 to-muted animate-pulse flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="text-xs text-muted-foreground font-medium">Gerando imagem Premium…</span>
+                  <span className="text-[10px] text-muted-foreground">A legenda já está acima ↑</span>
+                </div>
               ) : (
                 <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-lg cursor-pointer hover:bg-accent transition-colors">
                   {formato === "Vídeo/Reels" ? (
@@ -1094,11 +1108,16 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               </div>
             </div>
             <p className="text-sm whitespace-pre-wrap leading-relaxed min-h-[80px]">
-              {textoX || (isGenerating ? "Gerando texto…" : "Seu tweet aparecerá aqui.")}
+              {textoX || (loadingIdea ? "Gerando texto…" : "Seu tweet aparecerá aqui.")}
             </p>
-            {imagem && (
+            {imagem ? (
               <img src={imagem} alt="" className="rounded-xl border border-slate-800 w-full aspect-video object-cover" />
-            )}
+            ) : loadingImage ? (
+              <div className="rounded-xl border border-slate-800 w-full aspect-video bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 animate-pulse flex items-center justify-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
+                <span className="text-xs text-slate-400">Renderizando 16:9…</span>
+              </div>
+            ) : null}
           </Card>
         </div>
       )}
