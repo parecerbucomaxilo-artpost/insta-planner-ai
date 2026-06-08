@@ -142,8 +142,26 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       setLoadingImage(true);
       void (async () => {
         try {
+          const doctorName = perfil?.nome_profissional ?? "";
+          const cro = perfil?.cro_uf ?? "";
+          const isCarousel = !isX && tipo === "Carrossel";
           const { dataUrl } = await genImage({
-            data: { prompt: r.prompt_imagem, aspect: isX ? "16:9" : "1:1", conceptual: isX },
+            data: {
+              prompt: r.prompt_imagem,
+              aspect: isX ? "16:9" : "1:1",
+              conceptual: isX,
+              slideRole: isX
+                ? "conceptual"
+                : isCarousel
+                ? "carousel-hook"
+                : "single",
+              title: r.tema,
+              subtitle: extractFirstLine(isX ? "" : (r.legenda_instagram || r.legenda_linkedin || "")),
+              doctorName,
+              cro,
+              slideIndex: isCarousel ? 0 : undefined,
+              totalSlides: isCarousel ? Math.max(1, enforcedPrompts.length) : undefined,
+            },
           });
           const finalUrl = await maybeWatermark(dataUrl);
           if (!isX && tipo === "Carrossel") {
