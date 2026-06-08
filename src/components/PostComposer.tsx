@@ -388,7 +388,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       toast.error(e instanceof Error ? `Albato: ${e.message}` : "Falha no webhook Albato");
     }
 
-    setLegendaIg(""); setLegendaLi("");
+    setLegendaIg(""); setLegendaLi(""); setTextoX("");
     setPrompt(""); setImagem(null); setCarrossel([]);
     setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
     setTema(""); setFormato("Imagem"); setOrientacoes("");
