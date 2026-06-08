@@ -11,12 +11,27 @@ const NEGATIVE =
   "amateur stock photo, bright background, white background, warm color palette, yellow/red/orange dominant, blood, gore, scary hospital, low resolution, cartoon, illustration";
 
 export const generateImage = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ prompt: z.string().min(2).max(2000) }))
+  .inputValidator(
+    z.object({
+      prompt: z.string().min(2).max(2000),
+      aspect: z.enum(["1:1", "16:9"]).optional().default("1:1"),
+      conceptual: z.boolean().optional().default(false),
+    }),
+  )
   .handler(async ({ data }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
-    const finalPrompt = `${STYLE_PREFIX}${data.prompt}${STYLE_SUFFIX} Negative: ${NEGATIVE}.`;
+    const aspectClause =
+      data.aspect === "16:9"
+        ? " Strictly horizontal ultra-wide 16:9 aspect ratio composition."
+        : " Square 1:1 composition.";
+
+    const conceptualClause = data.conceptual
+      ? " PURELY CONCEPTUAL: no human faces, no people, no text, no HUD typography — focus on a single isolated subject (translucent metallic blue glass anatomical skull OR digital facial planning wireframe mesh) floating on dark medical abstract background."
+      : "";
+
+    const finalPrompt = `${STYLE_PREFIX}${data.prompt}${STYLE_SUFFIX}${aspectClause}${conceptualClause} Negative: ${NEGATIVE}.`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
       method: "POST",

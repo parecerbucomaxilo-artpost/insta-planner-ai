@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon, Send } from "lucide-react";
+import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon, Send, Twitter } from "lucide-react";
 import { toast } from "sonner";
 import { PostPreview } from "./PostPreview";
 import { cn } from "@/lib/utils";
@@ -77,6 +77,10 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const [comando, setComando] = useState("");
   const [aiMode, setAiMode] = useState<"surpresa" | "comando">("surpresa");
 
+  // ===== Modo de criação: Padrão (IG/LinkedIn) vs Estilo X (Twitter) =====
+  const [modoCriacao, setModoCriacao] = useState<"padrao" | "x">("padrao");
+  const [textoX, setTextoX] = useState("");
+  const X_MAX = 280;
 
   const maxCarousel = 10;
 
@@ -102,7 +106,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const enforcedPrompts = useMemo(() => carouselPrompts.slice(0, maxCarousel), [carouselPrompts]);
 
   const runIdeaFlow = async (opts: { comando?: string }) => {
-    if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
+    const isX = modoCriacao === "x";
+    if (!isX && networks.length === 0) return toast.error("Selecione ao menos uma rede social");
     if (opts.comando !== undefined && !opts.comando.trim()) {
       return toast.error("Escreva seu comando antes de gerar.");
     }
@@ -110,24 +115,31 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     const tId = toast.loading(opts.comando ? "Interpretando seu comando…" : "Buscando tema-surpresa…");
     try {
       const apiKey = (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
-      const r = await genIdea({ data: { networks, comando: opts.comando, apiKey } });
+      const r = await genIdea({
+        data: { networks, comando: opts.comando, apiKey, estilo: isX ? "x" : "padrao" },
+      });
       setTema(r.tema);
-      if (r.legenda_instagram) setLegendaIg(r.legenda_instagram);
-      if (r.legenda_linkedin) setLegendaLi(r.legenda_linkedin);
+      if (isX) {
+        if (r.texto_x) setTextoX(r.texto_x.slice(0, X_MAX));
+      } else {
+        if (r.legenda_instagram) setLegendaIg(r.legenda_instagram);
+        if (r.legenda_linkedin) setLegendaLi(r.legenda_linkedin);
+      }
       setPrompt(r.prompt_imagem);
-      if (tipo === "Carrossel") {
+      if (!isX && tipo === "Carrossel") {
         setCarouselPrompts((arr) => {
           const next = [...arr];
           next[0] = r.prompt_imagem;
           return next;
         });
       }
-      toast.loading("Gerando imagem Premium via Gemini…", { id: tId });
-      // Gera a imagem automaticamente para entregar tudo pronto
+      toast.loading(isX ? "Gerando imagem conceitual 16:9…" : "Gerando imagem Premium via Gemini…", { id: tId });
       try {
-        const { dataUrl } = await genImage({ data: { prompt: r.prompt_imagem } });
+        const { dataUrl } = await genImage({
+          data: { prompt: r.prompt_imagem, aspect: isX ? "16:9" : "1:1", conceptual: isX },
+        });
         const finalUrl = await maybeWatermark(dataUrl);
-        if (tipo === "Carrossel") {
+        if (!isX && tipo === "Carrossel") {
           setCarrossel((arr) => {
             const next = [...arr];
             next[0] = finalUrl;
@@ -136,9 +148,9 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         } else {
           setImagem(finalUrl);
         }
-        toast.success("Ideia + legenda + imagem prontas! ✨", { id: tId });
+        toast.success(isX ? "Tweet + imagem 16:9 prontos! ⚡" : "Ideia + legenda + imagem prontas! ✨", { id: tId });
       } catch (e) {
-        toast.success("Ideia e legenda prontas. (Falha ao gerar imagem — tente novamente abaixo.)", { id: tId });
+        toast.success("Texto pronto. (Falha ao gerar imagem — tente novamente abaixo.)", { id: tId });
         toast.error(e instanceof Error ? e.message : "Falha na imagem");
       }
     } catch (e) {
@@ -313,13 +325,19 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setCarouselPrompts((p) => p.map((x, idx) => (idx === i ? v : x)));
   };
 
-  const primaryLegenda = legendaIg || legendaLi || "";
+  const primaryLegenda = modoCriacao === "x" ? textoX : (legendaIg || legendaLi || "");
 
   const handleSave = async (forceAgendar = false) => {
-    if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
-    if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
+    if (modoCriacao === "x") {
+      if (!textoX.trim()) return toast.error("Escreva ou gere o texto do tweet.");
+      if (textoX.length > X_MAX) return toast.error(`Texto excede ${X_MAX} caracteres.`);
+    } else {
+      if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
+      if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
+      const filledCarousel = enforcedCarrossel.filter(Boolean);
+      if (tipo === "Carrossel" && filledCarousel.length === 0) return toast.error("Gere ao menos a Página 1");
+    }
     const filledCarousel = enforcedCarrossel.filter(Boolean);
-    if (tipo === "Carrossel" && filledCarousel.length === 0) return toast.error("Gere ao menos a Página 1");
 
     const agendamentoIso = data
       ? new Date(data).toISOString()
@@ -370,7 +388,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       toast.error(e instanceof Error ? `Albato: ${e.message}` : "Falha no webhook Albato");
     }
 
-    setLegendaIg(""); setLegendaLi("");
+    setLegendaIg(""); setLegendaLi(""); setTextoX("");
     setPrompt(""); setImagem(null); setCarrossel([]);
     setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
     setTema(""); setFormato("Imagem"); setOrientacoes("");
@@ -379,13 +397,19 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
   // Para a prévia escolher legenda da rede ativa
   const previewLegenda =
-    visibleLegendaTab === "instagram" ? legendaIg : legendaLi;
+    modoCriacao === "x"
+      ? textoX
+      : visibleLegendaTab === "instagram"
+      ? legendaIg
+      : legendaLi;
 
   const filledCarouselPreview = enforcedCarrossel.filter(Boolean);
   const hasContent =
-    networks.length > 0 &&
-    Boolean(primaryLegenda.trim()) &&
-    (tipo === "Post Único" ? Boolean(imagem) : filledCarouselPreview.length > 0);
+    modoCriacao === "x"
+      ? Boolean(textoX.trim()) && textoX.length <= X_MAX
+      : networks.length > 0 &&
+        Boolean(primaryLegenda.trim()) &&
+        (tipo === "Post Único" ? Boolean(imagem) : filledCarouselPreview.length > 0);
   const isGenerating = loadingIdea || loadingAi || loadingPage !== null;
 
   const handlePostNow = async () => {
@@ -432,7 +456,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         toast.success("✅ Post publicado agora!", { id: tId });
       }
 
-      setLegendaIg(""); setLegendaLi("");
+      setLegendaIg(""); setLegendaLi(""); setTextoX("");
       setPrompt(""); setImagem(null); setCarrossel([]);
       setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
       setTema(""); setFormato("Imagem"); setOrientacoes(""); setComando("");
@@ -448,6 +472,22 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   return (
     <div className="grid lg:grid-cols-[1fr_400px] gap-6">
       <div className="space-y-6">
+        {/* MODO DE CRIAÇÃO */}
+        <Card className="p-2">
+          <Tabs value={modoCriacao} onValueChange={(v) => setModoCriacao(v as "padrao" | "x")}>
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="padrao" className="gap-1.5">
+                <Instagram className="h-3.5 w-3.5" /> Padrão (IG / LinkedIn)
+              </TabsTrigger>
+              <TabsTrigger value="x" className="gap-1.5">
+                <Twitter className="h-3.5 w-3.5" /> Post estilo X (Twitter)
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </Card>
+
+        {modoCriacao === "padrao" && (
+        <>
         {/* SELETOR DE REDES */}
         <Card className="p-5">
           <Label className="text-sm font-semibold">Onde publicar?</Label>
@@ -923,9 +963,147 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             Agendar Post
           </Button>
         </Card>
+        </>
+        )}
+
+        {modoCriacao === "x" && (
+          <Card className="p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-md bg-gradient-to-br from-slate-800 to-black flex items-center justify-center text-white">
+                <Twitter className="h-4 w-4" />
+              </div>
+              <div>
+                <Label className="text-sm font-semibold">Post estilo X (Twitter)</Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Texto curto, autoridade científica rápida. Imagem 16:9 conceitual.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="texto-x" className="text-sm">Texto do tweet</Label>
+                <span
+                  className={cn(
+                    "text-[11px] font-mono",
+                    textoX.length > X_MAX
+                      ? "text-destructive"
+                      : textoX.length > X_MAX - 30
+                      ? "text-amber-600"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {textoX.length}/{X_MAX}
+                </span>
+              </div>
+              <Textarea
+                id="texto-x"
+                value={textoX}
+                onChange={(e) => setTextoX(e.target.value.slice(0, X_MAX))}
+                rows={5}
+                placeholder={
+                  "Gancho forte na 1ª linha.\n\nDado técnico ou benefício clínico.\n\nUma pergunta curta? #CTBMF"
+                }
+                className="resize-none font-medium leading-relaxed"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Use o botão <strong>Gerar Ideia com IA</strong> acima para preencher automaticamente via Claude.
+              </p>
+            </div>
+
+            {imagem && (
+              <div className="relative rounded-lg overflow-hidden border">
+                <img src={imagem} alt="prévia" className="w-full aspect-video object-cover" />
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  className="absolute top-2 right-2 h-8 w-8"
+                  onClick={() => setImagem(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <Badge className="absolute top-2 left-2 bg-slate-900/80 text-white">16:9 conceitual</Badge>
+              </div>
+            )}
+
+            <Button onClick={() => handleSave(false)} disabled={saving} size="lg" variant="outline" className="w-full">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Salvar como Rascunho
+            </Button>
+
+            <div className="rounded-lg border-2 border-blue-500/40 bg-blue-500/5 p-4 space-y-2">
+              <Label htmlFor="data-x" className="text-base font-semibold text-blue-700 dark:text-blue-300">
+                📅 Agendar
+              </Label>
+              <Input
+                id="data-x"
+                type="datetime-local"
+                value={data}
+                onChange={(e) => setData(e.target.value)}
+                className="h-12 text-base"
+              />
+            </div>
+
+            <Button
+              onClick={() => handleSave(true)}
+              disabled={saving}
+              size="lg"
+              className="w-full h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+            >
+              {saving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+              Agendar Post
+            </Button>
+          </Card>
+        )}
       </div>
 
-      {visibleLegendaTab && (
+      {modoCriacao === "x" && (
+        <div className="lg:sticky lg:top-24 h-fit space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-[10px] uppercase text-muted-foreground tracking-[0.14em] font-semibold block">
+              Prévia · X (Twitter)
+            </Label>
+            {isGenerating && (
+              <span className="flex items-center gap-1.5 text-[11px] text-primary font-medium">
+                <Loader2 className="h-3 w-3 animate-spin" /> Gerando…
+              </span>
+            )}
+          </div>
+
+          <Button
+            onClick={handlePostNow}
+            disabled={!hasContent || saving || isGenerating}
+            size="lg"
+            className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+          >
+            {saving ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publicando…</>
+            ) : (
+              <><Send className="h-4 w-4 mr-2" /> Postar Agora</>
+            )}
+          </Button>
+
+          <Card className="p-4 space-y-3 bg-slate-950 text-slate-100 border-slate-800">
+            <div className="flex items-center gap-2">
+              <div className="h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center">
+                <Twitter className="h-4 w-4" />
+              </div>
+              <div className="text-xs">
+                <div className="font-semibold">{perfil?.nome_profissional ?? "Seu perfil"}</div>
+                <div className="text-slate-400">@{perfil?.arroba_usuario ?? "ctbmf"} · agora</div>
+              </div>
+            </div>
+            <p className="text-sm whitespace-pre-wrap leading-relaxed min-h-[80px]">
+              {textoX || (isGenerating ? "Gerando texto…" : "Seu tweet aparecerá aqui.")}
+            </p>
+            {imagem && (
+              <img src={imagem} alt="" className="rounded-xl border border-slate-800 w-full aspect-video object-cover" />
+            )}
+          </Card>
+        </div>
+      )}
+
+      {modoCriacao === "padrao" && visibleLegendaTab && (
         <div className="lg:sticky lg:top-24 h-fit space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-[10px] uppercase text-muted-foreground tracking-[0.14em] font-semibold block">
