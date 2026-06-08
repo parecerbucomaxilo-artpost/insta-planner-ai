@@ -325,7 +325,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setCarouselPrompts((p) => p.map((x, idx) => (idx === i ? v : x)));
   };
 
-  const primaryLegenda = legendaIg || legendaLi || "";
+  const primaryLegenda = modoCriacao === "x" ? textoX : (legendaIg || legendaLi || "");
 
   const handleSave = async (forceAgendar = false) => {
     if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
