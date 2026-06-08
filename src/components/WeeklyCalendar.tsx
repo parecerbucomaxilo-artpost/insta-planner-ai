@@ -27,6 +27,24 @@ type DiaPlano = {
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"] as const;
 
+// PERF: cache local do cronograma por semana (chave = ISO da segunda-feira)
+const WEEK_CACHE_PREFIX = "planner_weekly_cache_v1:";
+type CachedDia = Omit<DiaPlano, "date"> & { dateIso: string };
+function readWeekCache(weekStartIso: string): CachedDia[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(WEEK_CACHE_PREFIX + weekStartIso);
+    return raw ? (JSON.parse(raw) as CachedDia[]) : null;
+  } catch { return null; }
+}
+function writeWeekCache(weekStartIso: string, dias: DiaPlano[]) {
+  if (typeof window === "undefined") return;
+  try {
+    const payload: CachedDia[] = dias.map(({ date, ...rest }) => ({ ...rest, dateIso: date.toISOString() }));
+    window.localStorage.setItem(WEEK_CACHE_PREFIX + weekStartIso, JSON.stringify(payload));
+  } catch { /* ignore quota */ }
+}
+
 function startOfWeek(d: Date): Date {
   const x = new Date(d);
   const day = x.getDay(); // 0 dom, 1 seg…
