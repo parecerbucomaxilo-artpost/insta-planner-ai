@@ -3,14 +3,28 @@ import { z } from "zod";
 
 const NetworkEnum = z.enum(["instagram", "linkedin"]);
 
+const PerfilSchema = z
+  .object({
+    nome: z.string().max(120).optional(),
+    cro_uf: z.string().max(40).optional(),
+    subespecialidades: z.array(z.string().max(60)).max(20).optional(),
+    tom_voz: z.enum(["Científico", "Humanizado", "Editorial"]).optional(),
+  })
+  .optional();
+
 const FIXED_NICHE =
   "Odontologia, focado especificamente nas áreas de Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar";
 
-const SYSTEM_PROMPT = `Você é um estrategista de conteúdo especializado em comunicação para profissionais e clínicas de ${FIXED_NICHE}.
+function buildSystem(perfil?: z.infer<typeof PerfilSchema>) {
+  const ctx = perfil
+    ? `\n\nCONTEXTO DO ESPECIALISTA (memória da IA — adapte tudo a este perfil, cite-o quando natural):\n- Nome: ${perfil.nome || "(não informado)"}\n- Registro: ${perfil.cro_uf || "(não informado)"}\n- Subespecialidades: ${(perfil.subespecialidades || []).join(", ") || "(não informado)"}\n- Tom de voz preferido: ${perfil.tom_voz || "Científico"}`
+    : "";
+  return `Você é um estrategista de conteúdo especializado em comunicação para profissionais e clínicas de ${FIXED_NICHE}.
 
 Domina os temas: cirurgias ortognáticas, traumas de face, dentes inclusos complexos, biópsias de lesões bucais, pacientes sistemicamente comprometidos em ambiente hospitalar, disfunções de ATM, reconstruções maxilofaciais, cirurgia oncológica de cabeça e pescoço, anestesia geral em odontologia, cuidados pós-operatórios, infecções odontogênicas graves, implantes complexos, próteses maxilofaciais.
 
-Tom: técnico, ético, humanizado, baseado em evidências. Linguagem profissional e respeitosa. Nunca prometa resultados, nunca exiba conteúdo gráfico/sangrento. Adapta tom e formato para cada rede social. Sempre em português brasileiro. Inclui aviso "Conteúdo educacional. Consulte um profissional." quando pertinente.`;
+Tom: técnico, ético, humanizado, baseado em evidências. Linguagem profissional e respeitosa. Nunca prometa resultados, nunca exiba conteúdo gráfico/sangrento. Adapta tom e formato para cada rede social. Sempre em português brasileiro. Inclui aviso "Conteúdo educacional. Consulte um profissional." quando pertinente.${ctx}`;
+}
 
 function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, estilo: "padrao" | "x" = "padrao") {
   const tema = comando?.trim()
