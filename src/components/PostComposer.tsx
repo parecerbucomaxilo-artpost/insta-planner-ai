@@ -34,6 +34,18 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+function extractFirstLine(s: string): string {
+  return (s || "").split(/\n+/).map((l) => l.trim()).find(Boolean)?.slice(0, 140) ?? "";
+}
+
+function extractBullets(s: string, max = 3): string[] {
+  const lines = (s || "").split(/\n+/).map((l) => l.trim()).filter(Boolean);
+  return lines
+    .filter((l) => /^([-•*]|\d+[.)])\s+/.test(l))
+    .map((l) => l.replace(/^([-•*]|\d+[.)])\s+/, "").slice(0, 80))
+    .slice(0, max);
+}
+
 const NETWORK_META: Record<Network, { label: string; Icon: typeof Instagram; color: string }> = {
   instagram: { label: "Instagram", Icon: Instagram, color: "from-pink-500 to-purple-500" },
   linkedin: { label: "LinkedIn", Icon: Linkedin, color: "from-sky-600 to-blue-700" },
