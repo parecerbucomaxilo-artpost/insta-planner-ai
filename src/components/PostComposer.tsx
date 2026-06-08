@@ -774,6 +774,12 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                     </Badge>
                   )}
                 </div>
+              ) : loadingImage ? (
+                <div className="relative aspect-square rounded-lg overflow-hidden border bg-gradient-to-br from-muted via-muted/60 to-muted animate-pulse flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="text-xs text-muted-foreground font-medium">Gerando imagem Premium…</span>
+                  <span className="text-[10px] text-muted-foreground">A legenda já está acima ↑</span>
+                </div>
               ) : (
                 <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-lg cursor-pointer hover:bg-accent transition-colors">
                   {formato === "Vídeo/Reels" ? (
