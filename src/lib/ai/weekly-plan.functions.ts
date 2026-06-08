@@ -90,8 +90,9 @@ export const weeklyPlan = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
-          max_tokens: 4096,
+          // PERF: Haiku é ~3x mais rápido para o cronograma de 5 dias
+          model: "claude-3-5-haiku-20241022",
+          max_tokens: 3072,
           system,
           messages: [{ role: "user", content: userPrompt }],
           tools: [
