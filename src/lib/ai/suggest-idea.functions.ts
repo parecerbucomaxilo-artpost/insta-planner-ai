@@ -24,7 +24,7 @@ function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string) 
   return {
     tema,
     prompt_imagem:
-      "professional medical editorial photography, luxury clinic interior, oral and maxillofacial surgeon in modern boutique consultório, deep navy and pristine white palette, matte gold accents, 85mm f/1.4 cinematic lens, shallow depth of field, elegant bokeh, warm cinematic lighting, photorealistic 8k, award-winning composition",
+      "3/4 view portrait of a human face with translucent 3D wireframe mesh overlay highlighting jawline and TMJ, stylized metallic blue glass skull accent, glowing cyan neon light beams, deep navy and graphite background, dark medical abstract scene, cinematic dramatic lighting, hyperrealistic 8k, photorealistic, medical sci-fi aesthetic, professional studio photography, award-winning composition",
     legenda_instagram: networks.includes("instagram") ? base + "\n\n#CTBMF #BucoMaxiloFacial #OdontologiaHospitalar #CirurgiaOrtognatica #SaudeOral" : undefined,
     legenda_linkedin: networks.includes("linkedin") ? base : undefined,
   };
