@@ -318,7 +318,29 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       : buildManualPrompt(pageOrientation);
     setLoadingPage(index);
     try {
-      const { dataUrl } = await genImage({ data: { prompt: finalPrompt } });
+      const total = Math.max(1, enforcedPrompts.length);
+      const isHook = index === 0;
+      const isCta = index === total - 1 && total > 1;
+      const slideRole: "carousel-hook" | "carousel-middle" | "carousel-cta" = isHook
+        ? "carousel-hook"
+        : isCta
+        ? "carousel-cta"
+        : "carousel-middle";
+      const bullets = extractBullets(captionForAuto);
+      const { dataUrl } = await genImage({
+        data: {
+          prompt: finalPrompt,
+          slideRole,
+          title: isHook ? (tema || extractFirstLine(captionForAuto)) : `Ponto ${index + 1}`,
+          subtitle: isHook ? extractFirstLine(captionForAuto) : "",
+          bullets: slideRole === "carousel-middle" ? bullets : undefined,
+          cta: isCta ? "Agende sua consulta" : undefined,
+          doctorName: perfil?.nome_profissional ?? "",
+          cro: perfil?.cro_uf ?? "",
+          slideIndex: index,
+          totalSlides: total,
+        },
+      });
       const finalUrl = await maybeWatermark(dataUrl);
       setCarrossel((arr) => {
         const next = [...arr];
@@ -326,6 +348,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         return next;
       });
       toast.success(`Página ${index + 1} gerada!`);
+
 
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar");
