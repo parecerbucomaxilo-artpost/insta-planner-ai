@@ -1089,8 +1089,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                 <Twitter className="h-4 w-4" />
               </div>
               <div className="text-xs">
-                <div className="font-semibold">{perfil?.nome ?? "Seu perfil"}</div>
-                <div className="text-slate-400">@ctbmf · agora</div>
+                <div className="font-semibold">{perfil?.nome_profissional ?? "Seu perfil"}</div>
+                <div className="text-slate-400">@{perfil?.arroba_usuario ?? "ctbmf"} · agora</div>
               </div>
             </div>
             <p className="text-sm whitespace-pre-wrap leading-relaxed min-h-[80px]">
