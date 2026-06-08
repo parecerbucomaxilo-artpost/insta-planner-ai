@@ -963,6 +963,98 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             Agendar Post
           </Button>
         </Card>
+        </>
+        )}
+
+        {modoCriacao === "x" && (
+          <Card className="p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-md bg-gradient-to-br from-slate-800 to-black flex items-center justify-center text-white">
+                <Twitter className="h-4 w-4" />
+              </div>
+              <div>
+                <Label className="text-sm font-semibold">Post estilo X (Twitter)</Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Texto curto, autoridade científica rápida. Imagem 16:9 conceitual.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="texto-x" className="text-sm">Texto do tweet</Label>
+                <span
+                  className={cn(
+                    "text-[11px] font-mono",
+                    textoX.length > X_MAX
+                      ? "text-destructive"
+                      : textoX.length > X_MAX - 30
+                      ? "text-amber-600"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {textoX.length}/{X_MAX}
+                </span>
+              </div>
+              <Textarea
+                id="texto-x"
+                value={textoX}
+                onChange={(e) => setTextoX(e.target.value.slice(0, X_MAX))}
+                rows={5}
+                placeholder={
+                  "Gancho forte na 1ª linha.\n\nDado técnico ou benefício clínico.\n\nUma pergunta curta? #CTBMF"
+                }
+                className="resize-none font-medium leading-relaxed"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Use o botão <strong>Gerar Ideia com IA</strong> acima para preencher automaticamente via Claude.
+              </p>
+            </div>
+
+            {imagem && (
+              <div className="relative rounded-lg overflow-hidden border">
+                <img src={imagem} alt="prévia" className="w-full aspect-video object-cover" />
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  className="absolute top-2 right-2 h-8 w-8"
+                  onClick={() => setImagem(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <Badge className="absolute top-2 left-2 bg-slate-900/80 text-white">16:9 conceitual</Badge>
+              </div>
+            )}
+
+            <Button onClick={() => handleSave(false)} disabled={saving} size="lg" variant="outline" className="w-full">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Salvar como Rascunho
+            </Button>
+
+            <div className="rounded-lg border-2 border-blue-500/40 bg-blue-500/5 p-4 space-y-2">
+              <Label htmlFor="data-x" className="text-base font-semibold text-blue-700 dark:text-blue-300">
+                📅 Agendar
+              </Label>
+              <Input
+                id="data-x"
+                type="datetime-local"
+                value={data}
+                onChange={(e) => setData(e.target.value)}
+                className="h-12 text-base"
+              />
+            </div>
+
+            <Button
+              onClick={() => handleSave(true)}
+              disabled={saving}
+              size="lg"
+              className="w-full h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+            >
+              {saving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+              Agendar Post
+            </Button>
+          </Card>
+        )}
       </div>
 
       {visibleLegendaTab && (
