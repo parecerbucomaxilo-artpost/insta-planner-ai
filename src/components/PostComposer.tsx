@@ -34,6 +34,18 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+function extractFirstLine(s: string): string {
+  return (s || "").split(/\n+/).map((l) => l.trim()).find(Boolean)?.slice(0, 140) ?? "";
+}
+
+function extractBullets(s: string, max = 3): string[] {
+  const lines = (s || "").split(/\n+/).map((l) => l.trim()).filter(Boolean);
+  return lines
+    .filter((l) => /^([-•*]|\d+[.)])\s+/.test(l))
+    .map((l) => l.replace(/^([-•*]|\d+[.)])\s+/, "").slice(0, 80))
+    .slice(0, max);
+}
+
 const NETWORK_META: Record<Network, { label: string; Icon: typeof Instagram; color: string }> = {
   instagram: { label: "Instagram", Icon: Instagram, color: "from-pink-500 to-purple-500" },
   linkedin: { label: "LinkedIn", Icon: Linkedin, color: "from-sky-600 to-blue-700" },
@@ -142,8 +154,26 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       setLoadingImage(true);
       void (async () => {
         try {
+          const doctorName = perfil?.nome_profissional ?? "";
+          const cro = perfil?.cro_uf ?? "";
+          const isCarousel = !isX && tipo === "Carrossel";
           const { dataUrl } = await genImage({
-            data: { prompt: r.prompt_imagem, aspect: isX ? "16:9" : "1:1", conceptual: isX },
+            data: {
+              prompt: r.prompt_imagem,
+              aspect: isX ? "16:9" : "1:1",
+              conceptual: isX,
+              slideRole: isX
+                ? "conceptual"
+                : isCarousel
+                ? "carousel-hook"
+                : "single",
+              title: r.tema,
+              subtitle: extractFirstLine(isX ? "" : (r.legenda_instagram || r.legenda_linkedin || "")),
+              doctorName,
+              cro,
+              slideIndex: isCarousel ? 0 : undefined,
+              totalSlides: isCarousel ? Math.max(1, enforcedPrompts.length) : undefined,
+            },
           });
           const finalUrl = await maybeWatermark(dataUrl);
           if (!isX && tipo === "Carrossel") {
@@ -254,7 +284,16 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setPrompt(finalPrompt);
     setLoadingAi(true);
     try {
-      const { dataUrl } = await genImage({ data: { prompt: finalPrompt } });
+      const { dataUrl } = await genImage({
+        data: {
+          prompt: finalPrompt,
+          slideRole: "single",
+          title: tema || extractFirstLine(captionForAuto) || "",
+          subtitle: extractFirstLine(captionForAuto.replace(extractFirstLine(captionForAuto), "")) || "",
+          doctorName: perfil?.nome_profissional ?? "",
+          cro: perfil?.cro_uf ?? "",
+        },
+      });
       const finalUrl = await maybeWatermark(dataUrl);
       setImagem(finalUrl);
       toast.success("Imagem gerada via Gemini!");
@@ -279,7 +318,29 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       : buildManualPrompt(pageOrientation);
     setLoadingPage(index);
     try {
-      const { dataUrl } = await genImage({ data: { prompt: finalPrompt } });
+      const total = Math.max(1, enforcedPrompts.length);
+      const isHook = index === 0;
+      const isCta = index === total - 1 && total > 1;
+      const slideRole: "carousel-hook" | "carousel-middle" | "carousel-cta" = isHook
+        ? "carousel-hook"
+        : isCta
+        ? "carousel-cta"
+        : "carousel-middle";
+      const bullets = extractBullets(captionForAuto);
+      const { dataUrl } = await genImage({
+        data: {
+          prompt: finalPrompt,
+          slideRole,
+          title: isHook ? (tema || extractFirstLine(captionForAuto)) : `Ponto ${index + 1}`,
+          subtitle: isHook ? extractFirstLine(captionForAuto) : "",
+          bullets: slideRole === "carousel-middle" ? bullets : undefined,
+          cta: isCta ? "Agende sua consulta" : undefined,
+          doctorName: perfil?.nome_profissional ?? "",
+          cro: perfil?.cro_uf ?? "",
+          slideIndex: index,
+          totalSlides: total,
+        },
+      });
       const finalUrl = await maybeWatermark(dataUrl);
       setCarrossel((arr) => {
         const next = [...arr];
@@ -287,6 +348,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         return next;
       });
       toast.success(`Página ${index + 1} gerada!`);
+
 
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar");
