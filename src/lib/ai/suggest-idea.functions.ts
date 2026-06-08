@@ -3,14 +3,28 @@ import { z } from "zod";
 
 const NetworkEnum = z.enum(["instagram", "linkedin"]);
 
+const PerfilSchema = z
+  .object({
+    nome: z.string().max(120).optional(),
+    cro_uf: z.string().max(40).optional(),
+    subespecialidades: z.array(z.string().max(60)).max(20).optional(),
+    tom_voz: z.enum(["Científico", "Humanizado", "Editorial"]).optional(),
+  })
+  .optional();
+
 const FIXED_NICHE =
   "Odontologia, focado especificamente nas áreas de Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar";
 
-const SYSTEM_PROMPT = `Você é um estrategista de conteúdo especializado em comunicação para profissionais e clínicas de ${FIXED_NICHE}.
+function buildSystem(perfil?: z.infer<typeof PerfilSchema>) {
+  const ctx = perfil
+    ? `\n\nCONTEXTO DO ESPECIALISTA (memória da IA — adapte tudo a este perfil, cite-o quando natural):\n- Nome: ${perfil.nome || "(não informado)"}\n- Registro: ${perfil.cro_uf || "(não informado)"}\n- Subespecialidades: ${(perfil.subespecialidades || []).join(", ") || "(não informado)"}\n- Tom de voz preferido: ${perfil.tom_voz || "Científico"}`
+    : "";
+  return `Você é um estrategista de conteúdo especializado em comunicação para profissionais e clínicas de ${FIXED_NICHE}.
 
 Domina os temas: cirurgias ortognáticas, traumas de face, dentes inclusos complexos, biópsias de lesões bucais, pacientes sistemicamente comprometidos em ambiente hospitalar, disfunções de ATM, reconstruções maxilofaciais, cirurgia oncológica de cabeça e pescoço, anestesia geral em odontologia, cuidados pós-operatórios, infecções odontogênicas graves, implantes complexos, próteses maxilofaciais.
 
-Tom: técnico, ético, humanizado, baseado em evidências. Linguagem profissional e respeitosa. Nunca prometa resultados, nunca exiba conteúdo gráfico/sangrento. Adapta tom e formato para cada rede social. Sempre em português brasileiro. Inclui aviso "Conteúdo educacional. Consulte um profissional." quando pertinente.`;
+Tom: técnico, ético, humanizado, baseado em evidências. Linguagem profissional e respeitosa. Nunca prometa resultados, nunca exiba conteúdo gráfico/sangrento. Adapta tom e formato para cada rede social. Sempre em português brasileiro. Inclui aviso "Conteúdo educacional. Consulte um profissional." quando pertinente.${ctx}`;
+}
 
 function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, estilo: "padrao" | "x" = "padrao") {
   const tema = comando?.trim()
@@ -21,6 +35,8 @@ function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, 
     "Este é um exemplo de legenda gerada para previsualização da interface. " +
     "Configure sua ANTHROPIC_API_KEY em Configurações → Chave Anthropic para ativar o Claude 3.5 Sonnet com tom científico, humanizado e ético da CTBMF.\n\n" +
     "Conteúdo educacional. Consulte um profissional.";
+  const mensagem_direct =
+    "Olá! Que bom ter você por aqui. Posso te enviar mais detalhes sobre esse procedimento e tirar dúvidas iniciais por mensagem. Se preferir, agendamos uma avaliação presencial — qual é o melhor canal para falar com você?";
   if (estilo === "x") {
     return {
       tema,
@@ -28,6 +44,7 @@ function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, 
         "ultra-wide horizontal 16:9 composition, a single translucent metallic blue glass anatomical skull floating, glowing cyan neon edges, dark medical abstract background, cinematic dramatic lighting with blue light beams, hyperrealistic 8k, photorealistic, medical sci-fi aesthetic, professional studio photography, award-winning composition, no humans, no text",
       texto_x:
         "Planejamento 3D na ortognática reduz tempo cirúrgico em até 30%.\n\nMenos anestesia, recuperação mais previsível.\n\nSeu serviço já incorporou? #CTBMF",
+      mensagem_direct,
     };
   }
   return {
@@ -36,6 +53,7 @@ function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, 
       "3/4 view portrait of a human face with translucent 3D wireframe mesh overlay highlighting jawline and TMJ, stylized metallic blue glass skull accent, glowing cyan neon light beams, deep navy and graphite background, dark medical abstract scene, cinematic dramatic lighting, hyperrealistic 8k, photorealistic, medical sci-fi aesthetic, professional studio photography, award-winning composition",
     legenda_instagram: networks.includes("instagram") ? base + "\n\n#CTBMF #BucoMaxiloFacial #OdontologiaHospitalar #CirurgiaOrtognatica #SaudeOral" : undefined,
     legenda_linkedin: networks.includes("linkedin") ? base : undefined,
+    mensagem_direct,
   };
 }
 
@@ -46,11 +64,13 @@ export const suggestIdea = createServerFn({ method: "POST" })
       comando: z.string().trim().max(800).optional(),
       apiKey: z.string().trim().min(10).max(200).optional(),
       estilo: z.enum(["padrao", "x"]).optional().default("padrao"),
+      perfil: PerfilSchema,
     }),
   )
   .handler(async ({ data }) => {
     const anthropicKey = data.apiKey || process.env.ANTHROPIC_API_KEY;
     const lovableKey = process.env.LOVABLE_API_KEY;
+    const system = buildSystem(data.perfil);
 
     // Sem nenhuma chave: retorna mock para destravar a UI
     if (!anthropicKey && !lovableKey) {
@@ -102,10 +122,18 @@ export const suggestIdea = createServerFn({ method: "POST" })
       }
     }
 
+    // Mensagem de Direct (sempre acompanha)
+    props.mensagem_direct = {
+      type: "string",
+      description:
+        "Mensagem curta em pt-BR (até 400 caracteres) acolhedora e profissional para a SECRETÁRIA ou o médico responderem QUEM comentar/chamar no Direct sobre este post. Estrutura: cumprimento caloroso, reconhecimento do interesse, oferta de informação ou agendamento, encerramento gentil. Sem promessas de cura. Sem usar dados pessoais do paciente. Pode iniciar com 'Olá!' ou 'Oi, tudo bem?'.",
+    };
+    required.push("mensagem_direct");
+
     const audienceLabel = isX ? "rede X (Twitter), formato tweet curto" : `Redes selecionadas: ${data.networks.join(", ") || "nenhuma"}`;
     const userPrompt = data.comando && data.comando.length > 0
-      ? `O usuário escreveu o seguinte COMANDO para o post: "${data.comando}". Crie UMA ideia de post fiel a esse comando, sempre dentro do nicho ${FIXED_NICHE}. Enriqueça com profundidade clínica e tom adequado. ${audienceLabel}. ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."}`
-      : `Gere UMA ideia de post relevante para ${FIXED_NICHE}. ${audienceLabel}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."}`;
+      ? `O usuário escreveu o seguinte COMANDO para o post: "${data.comando}". Crie UMA ideia de post fiel a esse comando, sempre dentro do nicho ${FIXED_NICHE}. Enriqueça com profundidade clínica e tom adequado. ${audienceLabel}. ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."} Inclua também a mensagem_direct.`
+      : `Gere UMA ideia de post relevante para ${FIXED_NICHE}. ${audienceLabel}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."} Inclua também a mensagem_direct.`;
 
     let parsedArgs: string | undefined;
 
@@ -121,7 +149,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
         body: JSON.stringify({
           model: "claude-3-5-sonnet-20241022",
           max_tokens: 2048,
-          system: SYSTEM_PROMPT,
+          system: system,
           messages: [{ role: "user", content: userPrompt }],
           tools: [
             {
@@ -163,7 +191,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
         body: JSON.stringify({
           model: "openai/gpt-5",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: system },
             { role: "user", content: userPrompt },
           ],
           tools: [
@@ -206,5 +234,6 @@ export const suggestIdea = createServerFn({ method: "POST" })
       legenda_instagram?: string;
       legenda_linkedin?: string;
       texto_x?: string;
+      mensagem_direct?: string;
     };
   });

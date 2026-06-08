@@ -18,36 +18,45 @@ export type Database = {
         Row: {
           arroba_usuario: string
           created_at: string
+          cro_uf: string
           id: string
           instagram_arroba: string
           instagram_foto_url: string | null
           linkedin_foto_url: string | null
           linkedin_nome: string
           nome_profissional: string
+          subespecialidades: string[]
+          tom_voz: string
           updated_at: string
           url_logo: string | null
         }
         Insert: {
           arroba_usuario?: string
           created_at?: string
+          cro_uf?: string
           id?: string
           instagram_arroba?: string
           instagram_foto_url?: string | null
           linkedin_foto_url?: string | null
           linkedin_nome?: string
           nome_profissional?: string
+          subespecialidades?: string[]
+          tom_voz?: string
           updated_at?: string
           url_logo?: string | null
         }
         Update: {
           arroba_usuario?: string
           created_at?: string
+          cro_uf?: string
           id?: string
           instagram_arroba?: string
           instagram_foto_url?: string | null
           linkedin_foto_url?: string | null
           linkedin_nome?: string
           nome_profissional?: string
+          subespecialidades?: string[]
+          tom_voz?: string
           updated_at?: string
           url_logo?: string | null
         }
