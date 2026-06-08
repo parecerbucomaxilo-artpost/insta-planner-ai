@@ -139,7 +139,10 @@ function Dashboard() {
             <InsightsPanel posts={posts} />
           </TabsContent>
           <TabsContent value="perfil" className="mt-6">
-            <ProfileSettings onSaved={(p) => setPerfil(p)} />
+            <ProfileSettings onSaved={(p) => {
+              setPerfil(p);
+              try { window.localStorage.setItem(PERFIL_CACHE_KEY, JSON.stringify(p)); } catch { /* ignore */ }
+            }} />
           </TabsContent>
           <TabsContent value="chaves" className="mt-6">
             <AutomationKeys />
