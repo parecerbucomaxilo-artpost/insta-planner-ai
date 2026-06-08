@@ -12,7 +12,7 @@ Domina os temas: cirurgias ortognáticas, traumas de face, dentes inclusos compl
 
 Tom: técnico, ético, humanizado, baseado em evidências. Linguagem profissional e respeitosa. Nunca prometa resultados, nunca exiba conteúdo gráfico/sangrento. Adapta tom e formato para cada rede social. Sempre em português brasileiro. Inclui aviso "Conteúdo educacional. Consulte um profissional." quando pertinente.`;
 
-function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string) {
+function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, estilo: "padrao" | "x" = "padrao") {
   const tema = comando?.trim()
     ? `[SIMULAÇÃO] ${comando.trim().slice(0, 90)}`
     : "[SIMULAÇÃO] Cirurgia ortognática: como o planejamento 3D melhora a respiração e a estética facial";
@@ -21,6 +21,15 @@ function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string) 
     "Este é um exemplo de legenda gerada para previsualização da interface. " +
     "Configure sua ANTHROPIC_API_KEY em Configurações → Chave Anthropic para ativar o Claude 3.5 Sonnet com tom científico, humanizado e ético da CTBMF.\n\n" +
     "Conteúdo educacional. Consulte um profissional.";
+  if (estilo === "x") {
+    return {
+      tema,
+      prompt_imagem:
+        "ultra-wide horizontal 16:9 composition, a single translucent metallic blue glass anatomical skull floating, glowing cyan neon edges, dark medical abstract background, cinematic dramatic lighting with blue light beams, hyperrealistic 8k, photorealistic, medical sci-fi aesthetic, professional studio photography, award-winning composition, no humans, no text",
+      texto_x:
+        "Planejamento 3D na ortognática reduz tempo cirúrgico em até 30%.\n\nMenos anestesia, recuperação mais previsível.\n\nSeu serviço já incorporou? #CTBMF",
+    };
+  }
   return {
     tema,
     prompt_imagem:
