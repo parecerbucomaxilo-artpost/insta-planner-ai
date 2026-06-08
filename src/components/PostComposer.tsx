@@ -328,10 +328,16 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const primaryLegenda = modoCriacao === "x" ? textoX : (legendaIg || legendaLi || "");
 
   const handleSave = async (forceAgendar = false) => {
-    if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
-    if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
+    if (modoCriacao === "x") {
+      if (!textoX.trim()) return toast.error("Escreva ou gere o texto do tweet.");
+      if (textoX.length > X_MAX) return toast.error(`Texto excede ${X_MAX} caracteres.`);
+    } else {
+      if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
+      if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
+      const filledCarousel = enforcedCarrossel.filter(Boolean);
+      if (tipo === "Carrossel" && filledCarousel.length === 0) return toast.error("Gere ao menos a Página 1");
+    }
     const filledCarousel = enforcedCarrossel.filter(Boolean);
-    if (tipo === "Carrossel" && filledCarousel.length === 0) return toast.error("Gere ao menos a Página 1");
 
     const agendamentoIso = data
       ? new Date(data).toISOString()
