@@ -119,6 +119,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       const r = await genIdea({
         data: { networks, comando: opts.comando, apiKey, estilo: isX ? "x" : "padrao" },
       });
+      // PERF: texto aparece IMEDIATAMENTE — não esperamos a imagem
       setTema(r.tema);
       if (isX) {
         if (r.texto_x) setTextoX(r.texto_x.slice(0, X_MAX));
@@ -134,29 +135,35 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           return next;
         });
       }
-      toast.loading(isX ? "Gerando imagem conceitual 16:9…" : "Gerando imagem Premium via Gemini…", { id: tId });
-      try {
-        const { dataUrl } = await genImage({
-          data: { prompt: r.prompt_imagem, aspect: isX ? "16:9" : "1:1", conceptual: isX },
-        });
-        const finalUrl = await maybeWatermark(dataUrl);
-        if (!isX && tipo === "Carrossel") {
-          setCarrossel((arr) => {
-            const next = [...arr];
-            next[0] = finalUrl;
-            return next;
+      setLoadingIdea(false);
+      toast.success(isX ? "Tweet pronto! Gerando imagem…" : "Legenda pronta! Gerando imagem…", { id: tId });
+
+      // PERF: imagem roda em background com skeleton próprio (não bloqueia UI)
+      setLoadingImage(true);
+      void (async () => {
+        try {
+          const { dataUrl } = await genImage({
+            data: { prompt: r.prompt_imagem, aspect: isX ? "16:9" : "1:1", conceptual: isX },
           });
-        } else {
-          setImagem(finalUrl);
+          const finalUrl = await maybeWatermark(dataUrl);
+          if (!isX && tipo === "Carrossel") {
+            setCarrossel((arr) => {
+              const next = [...arr];
+              next[0] = finalUrl;
+              return next;
+            });
+          } else {
+            setImagem(finalUrl);
+          }
+          toast.success("Imagem pronta ✨");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Falha ao gerar imagem");
+        } finally {
+          setLoadingImage(false);
         }
-        toast.success(isX ? "Tweet + imagem 16:9 prontos! ⚡" : "Ideia + legenda + imagem prontas! ✨", { id: tId });
-      } catch (e) {
-        toast.success("Texto pronto. (Falha ao gerar imagem — tente novamente abaixo.)", { id: tId });
-        toast.error(e instanceof Error ? e.message : "Falha na imagem");
-      }
+      })();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar ideia", { id: tId });
-    } finally {
       setLoadingIdea(false);
     }
   };
