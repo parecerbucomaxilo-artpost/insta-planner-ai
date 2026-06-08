@@ -49,6 +49,9 @@ export const suggestIdea = createServerFn({ method: "POST" })
     }
 
 
+    // ===== ESTILO X (Twitter): texto curto + imagem 16:9 conceitual =====
+    const isX = data.estilo === "x";
+
     const props: Record<string, unknown> = {
       tema: {
         type: "string",
@@ -57,32 +60,43 @@ export const suggestIdea = createServerFn({ method: "POST" })
       },
       prompt_imagem: {
         type: "string",
-        description:
-          "Prompt EM INGLÊS para gerar uma imagem no padrão 'Premium Medical Sci-Fi'. Estilo: premium editorial medical photography fundida com clinical technology translúcida e renderizações 3D diagnósticas de alta precisão. PALETA OBRIGATÓRIA: deep navy blue dominante, glowing cyan neon (tech accents), dark graphite gray e pristine surgical white. FUNDO: sempre dark medical abstract background minimalista — NUNCA fundo claro nem colorido. ILUMINAÇÃO: cinematic dramatic directional lighting com glowing blue neon light beams cruzando a cena. ELEMENTOS: overlays tecnológicos translúcidos, 3D wireframe mesh sobre rostos humanos, crânios anatômicos estilizados em metallic blue glass, digital medical line graphics, HUD data accents. COMPOSIÇÃO: enquadramento limpo e centralizado, retrato em perfil ou 3/4 view focando estrutura facial, mandíbula, ATM, crânio. Sempre incluir literalmente: 'hyperrealistic 8k, photorealistic, medical sci-fi aesthetic, professional studio photography, award-winning composition'. PROIBIDO: fundos claros/coloridos, banco de imagens amador, cores quentes (amarelo, vermelho, laranja) em excesso, sangue, gore, hospital assustador, watermarks, texto na imagem, pacientes identificáveis.",
+        description: isX
+          ? "Prompt EM INGLÊS para gerar uma imagem HORIZONTAL 16:9 PURAMENTE CONCEITUAL no padrão 'Premium Medical Sci-Fi'. OBRIGATÓRIO: composição ultra-wide horizontal 16:9, foco em UM ÚNICO elemento conceitual — APENAS um crânio anatômico 3D translúcido em vidro azul metálico flutuando OU APENAS uma malha digital wireframe de planejamento facial flutuando, sobre dark medical abstract background. PALETA: deep navy blue, glowing cyan neon, dark graphite. Cinematic dramatic lighting com feixes neon azulados. Hyperrealistic 8k, photorealistic, medical sci-fi aesthetic, professional studio photography, award-winning composition, clean surgical visual. PROIBIDO: rostos humanos, pessoas, texto na imagem, HUD com tipografia, fundos claros, cores quentes, sangue."
+          : "Prompt EM INGLÊS para gerar uma imagem no padrão 'Premium Medical Sci-Fi'. Estilo: premium editorial medical photography fundida com clinical technology translúcida e renderizações 3D diagnósticas de alta precisão. PALETA OBRIGATÓRIA: deep navy blue dominante, glowing cyan neon (tech accents), dark graphite gray e pristine surgical white. FUNDO: sempre dark medical abstract background minimalista — NUNCA fundo claro nem colorido. ILUMINAÇÃO: cinematic dramatic directional lighting com glowing blue neon light beams cruzando a cena. ELEMENTOS: overlays tecnológicos translúcidos, 3D wireframe mesh sobre rostos humanos, crânios anatômicos estilizados em metallic blue glass, digital medical line graphics, HUD data accents. COMPOSIÇÃO: enquadramento limpo e centralizado, retrato em perfil ou 3/4 view focando estrutura facial, mandíbula, ATM, crânio. Sempre incluir literalmente: 'hyperrealistic 8k, photorealistic, medical sci-fi aesthetic, professional studio photography, award-winning composition'. PROIBIDO: fundos claros/coloridos, banco de imagens amador, cores quentes (amarelo, vermelho, laranja) em excesso, sangue, gore, hospital assustador, watermarks, texto na imagem, pacientes identificáveis.",
       },
     };
     const required: string[] = ["tema", "prompt_imagem"];
 
-    if (data.networks.includes("instagram")) {
-      props.legenda_instagram = {
+    if (isX) {
+      props.texto_x = {
         type: "string",
         description:
-          "Conteúdo educativo e humanizado em pt-BR para Instagram. Explique o procedimento, cuidados pós-operatórios ou rotina hospitalar em linguagem acessível ao paciente. Parágrafos curtos, emojis sutis (🦷 ⚕️ 🏥), gancho na 1ª linha, e BLOCO de 8-12 hashtags ao final separado por linha em branco (incluir #CTBMF #BucoMaxiloFacial #OdontologiaHospitalar e variações relevantes).",
+          "Texto em pt-BR para a rede X (Twitter), ESTILO 'Autoridade Científica Rápida'. ESTRITAMENTE até 280 caracteres TOTAIS (contando hashtags, quebras e espaços). Estrutura obrigatória em 3 blocos separados por LINHA EM BRANCO: (1) gancho — uma afirmação forte e direta na 1ª linha; (2) um dado técnico, número ou benefício clínico no meio; (3) uma pergunta curta provocativa no fim. Use NO MÁXIMO 1 ou 2 hashtags ultra-específicas (ex: #CTBMF, #CirurgiaOrtognatica). Tom técnico-humanizado, sem emojis em excesso (no máx 1). Nada de thread, é um único tweet de alto engajamento.",
       };
-      required.push("legenda_instagram");
-    }
-    if (data.networks.includes("linkedin")) {
-      props.legenda_linkedin = {
-        type: "string",
-        description:
-          "Post técnico em pt-BR para LinkedIn voltado a profissionais da saúde. Apresente caso clínico, discussão de artigo, gestão hospitalar ou reflexão para networking. Gancho profissional na 1ª linha, parágrafos curtos (1-2 linhas), referência/insight de evidência, CTA para debate entre colegas, 4-6 hashtags corporativas (#CirurgiaBucoMaxiloFacial #OdontologiaHospitalar #CTBMF etc.). Sem emojis excessivos.",
-      };
-      required.push("legenda_linkedin");
+      required.push("texto_x");
+    } else {
+      if (data.networks.includes("instagram")) {
+        props.legenda_instagram = {
+          type: "string",
+          description:
+            "Conteúdo educativo e humanizado em pt-BR para Instagram. Explique o procedimento, cuidados pós-operatórios ou rotina hospitalar em linguagem acessível ao paciente. Parágrafos curtos, emojis sutis (🦷 ⚕️ 🏥), gancho na 1ª linha, e BLOCO de 8-12 hashtags ao final separado por linha em branco (incluir #CTBMF #BucoMaxiloFacial #OdontologiaHospitalar e variações relevantes).",
+        };
+        required.push("legenda_instagram");
+      }
+      if (data.networks.includes("linkedin")) {
+        props.legenda_linkedin = {
+          type: "string",
+          description:
+            "Post técnico em pt-BR para LinkedIn voltado a profissionais da saúde. Apresente caso clínico, discussão de artigo, gestão hospitalar ou reflexão para networking. Gancho profissional na 1ª linha, parágrafos curtos (1-2 linhas), referência/insight de evidência, CTA para debate entre colegas, 4-6 hashtags corporativas (#CirurgiaBucoMaxiloFacial #OdontologiaHospitalar #CTBMF etc.). Sem emojis excessivos.",
+        };
+        required.push("legenda_linkedin");
+      }
     }
 
+    const audienceLabel = isX ? "rede X (Twitter), formato tweet curto" : `Redes selecionadas: ${data.networks.join(", ") || "nenhuma"}`;
     const userPrompt = data.comando && data.comando.length > 0
-      ? `O usuário escreveu o seguinte COMANDO para o post: "${data.comando}". Crie UMA ideia de post fiel a esse comando, sempre dentro do nicho ${FIXED_NICHE}. Enriqueça com profundidade clínica e tom adequado. Redes selecionadas: ${data.networks.join(", ")}. Adapte tom e formato por rede.`
-      : `Gere UMA ideia de post relevante para ${FIXED_NICHE}. Redes selecionadas: ${data.networks.join(", ")}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). Adapte tom e formato por rede.`;
+      ? `O usuário escreveu o seguinte COMANDO para o post: "${data.comando}". Crie UMA ideia de post fiel a esse comando, sempre dentro do nicho ${FIXED_NICHE}. Enriqueça com profundidade clínica e tom adequado. ${audienceLabel}. ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."}`
+      : `Gere UMA ideia de post relevante para ${FIXED_NICHE}. ${audienceLabel}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."}`;
 
     let parsedArgs: string | undefined;
 
