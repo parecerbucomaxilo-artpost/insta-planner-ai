@@ -1108,11 +1108,16 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               </div>
             </div>
             <p className="text-sm whitespace-pre-wrap leading-relaxed min-h-[80px]">
-              {textoX || (isGenerating ? "Gerando texto…" : "Seu tweet aparecerá aqui.")}
+              {textoX || (loadingIdea ? "Gerando texto…" : "Seu tweet aparecerá aqui.")}
             </p>
-            {imagem && (
+            {imagem ? (
               <img src={imagem} alt="" className="rounded-xl border border-slate-800 w-full aspect-video object-cover" />
-            )}
+            ) : loadingImage ? (
+              <div className="rounded-xl border border-slate-800 w-full aspect-video bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 animate-pulse flex items-center justify-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
+                <span className="text-xs text-slate-400">Renderizando 16:9…</span>
+              </div>
+            ) : null}
           </Card>
         </div>
       )}
