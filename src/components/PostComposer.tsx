@@ -472,6 +472,22 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   return (
     <div className="grid lg:grid-cols-[1fr_400px] gap-6">
       <div className="space-y-6">
+        {/* MODO DE CRIAÇÃO */}
+        <Card className="p-2">
+          <Tabs value={modoCriacao} onValueChange={(v) => setModoCriacao(v as "padrao" | "x")}>
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="padrao" className="gap-1.5">
+                <Instagram className="h-3.5 w-3.5" /> Padrão (IG / LinkedIn)
+              </TabsTrigger>
+              <TabsTrigger value="x" className="gap-1.5">
+                <Twitter className="h-3.5 w-3.5" /> Post estilo X (Twitter)
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </Card>
+
+        {modoCriacao === "padrao" && (
+        <>
         {/* SELETOR DE REDES */}
         <Card className="p-5">
           <Label className="text-sm font-semibold">Onde publicar?</Label>
