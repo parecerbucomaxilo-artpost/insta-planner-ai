@@ -118,10 +118,18 @@ export const suggestIdea = createServerFn({ method: "POST" })
       }
     }
 
+    // Mensagem de Direct (sempre acompanha)
+    props.mensagem_direct = {
+      type: "string",
+      description:
+        "Mensagem curta em pt-BR (até 400 caracteres) acolhedora e profissional para a SECRETÁRIA ou o médico responderem QUEM comentar/chamar no Direct sobre este post. Estrutura: cumprimento caloroso, reconhecimento do interesse, oferta de informação ou agendamento, encerramento gentil. Sem promessas de cura. Sem usar dados pessoais do paciente. Pode iniciar com 'Olá!' ou 'Oi, tudo bem?'.",
+    };
+    required.push("mensagem_direct");
+
     const audienceLabel = isX ? "rede X (Twitter), formato tweet curto" : `Redes selecionadas: ${data.networks.join(", ") || "nenhuma"}`;
     const userPrompt = data.comando && data.comando.length > 0
-      ? `O usuário escreveu o seguinte COMANDO para o post: "${data.comando}". Crie UMA ideia de post fiel a esse comando, sempre dentro do nicho ${FIXED_NICHE}. Enriqueça com profundidade clínica e tom adequado. ${audienceLabel}. ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."}`
-      : `Gere UMA ideia de post relevante para ${FIXED_NICHE}. ${audienceLabel}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."}`;
+      ? `O usuário escreveu o seguinte COMANDO para o post: "${data.comando}". Crie UMA ideia de post fiel a esse comando, sempre dentro do nicho ${FIXED_NICHE}. Enriqueça com profundidade clínica e tom adequado. ${audienceLabel}. ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."} Inclua também a mensagem_direct.`
+      : `Gere UMA ideia de post relevante para ${FIXED_NICHE}. ${audienceLabel}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."} Inclua também a mensagem_direct.`;
 
     let parsedArgs: string | undefined;
 
