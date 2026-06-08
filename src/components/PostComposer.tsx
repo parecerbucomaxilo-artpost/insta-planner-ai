@@ -418,7 +418,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       : networks.length > 0 &&
         Boolean(primaryLegenda.trim()) &&
         (tipo === "Post Único" ? Boolean(imagem) : filledCarouselPreview.length > 0);
-  const isGenerating = loadingIdea || loadingAi || loadingPage !== null;
+  const isGenerating = loadingIdea || loadingAi || loadingImage || loadingPage !== null;
 
   const handlePostNow = async () => {
     if (!hasContent) return toast.error("Gere a legenda e a imagem antes de publicar.");
