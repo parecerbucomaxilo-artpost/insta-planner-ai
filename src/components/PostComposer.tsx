@@ -1057,7 +1057,53 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         )}
       </div>
 
-      {visibleLegendaTab && (
+      {modoCriacao === "x" && (
+        <div className="lg:sticky lg:top-24 h-fit space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-[10px] uppercase text-muted-foreground tracking-[0.14em] font-semibold block">
+              Prévia · X (Twitter)
+            </Label>
+            {isGenerating && (
+              <span className="flex items-center gap-1.5 text-[11px] text-primary font-medium">
+                <Loader2 className="h-3 w-3 animate-spin" /> Gerando…
+              </span>
+            )}
+          </div>
+
+          <Button
+            onClick={handlePostNow}
+            disabled={!hasContent || saving || isGenerating}
+            size="lg"
+            className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+          >
+            {saving ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publicando…</>
+            ) : (
+              <><Send className="h-4 w-4 mr-2" /> Postar Agora</>
+            )}
+          </Button>
+
+          <Card className="p-4 space-y-3 bg-slate-950 text-slate-100 border-slate-800">
+            <div className="flex items-center gap-2">
+              <div className="h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center">
+                <Twitter className="h-4 w-4" />
+              </div>
+              <div className="text-xs">
+                <div className="font-semibold">{perfil?.nome ?? "Seu perfil"}</div>
+                <div className="text-slate-400">@ctbmf · agora</div>
+              </div>
+            </div>
+            <p className="text-sm whitespace-pre-wrap leading-relaxed min-h-[80px]">
+              {textoX || (isGenerating ? "Gerando texto…" : "Seu tweet aparecerá aqui.")}
+            </p>
+            {imagem && (
+              <img src={imagem} alt="" className="rounded-xl border border-slate-800 w-full aspect-video object-cover" />
+            )}
+          </Card>
+        </div>
+      )}
+
+      {modoCriacao === "padrao" && visibleLegendaTab && (
         <div className="lg:sticky lg:top-24 h-fit space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-[10px] uppercase text-muted-foreground tracking-[0.14em] font-semibold block">
