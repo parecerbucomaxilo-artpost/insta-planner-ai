@@ -54,7 +54,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
 
     // Sem nenhuma chave: retorna mock para destravar a UI
     if (!anthropicKey && !lovableKey) {
-      return buildMock(data.networks, data.comando);
+      return buildMock(data.networks, data.comando, data.estilo);
     }
 
 
