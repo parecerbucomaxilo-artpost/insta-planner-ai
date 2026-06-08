@@ -60,11 +60,13 @@ export const suggestIdea = createServerFn({ method: "POST" })
       comando: z.string().trim().max(800).optional(),
       apiKey: z.string().trim().min(10).max(200).optional(),
       estilo: z.enum(["padrao", "x"]).optional().default("padrao"),
+      perfil: PerfilSchema,
     }),
   )
   .handler(async ({ data }) => {
     const anthropicKey = data.apiKey || process.env.ANTHROPIC_API_KEY;
     const lovableKey = process.env.LOVABLE_API_KEY;
+    const system = buildSystem(data.perfil);
 
     // Sem nenhuma chave: retorna mock para destravar a UI
     if (!anthropicKey && !lovableKey) {
