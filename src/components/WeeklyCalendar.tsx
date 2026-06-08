@@ -104,6 +104,14 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
     setDias(rebuildEmpty(next));
   };
 
+  // PERF: hidrata o cronograma do cache local sempre que a semana muda
+  useEffect(() => {
+    const cached = readWeekCache(weekStart.toISOString());
+    if (cached && cached.length === 5) {
+      setDias(cached.map((c) => ({ ...c, date: new Date(c.dateIso) })));
+    }
+  }, [weekStart]);
+
   const rangeLabel = useMemo(() => {
     const end = new Date(weekStart);
     end.setDate(end.getDate() + 4);
