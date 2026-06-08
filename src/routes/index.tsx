@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, Stethoscope, TrendingUp, KeyRound } from "lucide-react";
+import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, Stethoscope, TrendingUp, KeyRound, CalendarDays } from "lucide-react";
 import { PostComposer } from "@/components/PostComposer";
 import { PostsCalendar } from "@/components/PostsCalendar";
 import { PostsList } from "@/components/PostsList";
@@ -12,6 +12,7 @@ import { ProfileSettings, type Perfil } from "@/components/ProfileSettings";
 import { InsightsPanel } from "@/components/InsightsPanel";
 import { AutomationKeys } from "@/components/AutomationKeys";
 import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
+import { WeeklyCalendar } from "@/components/WeeklyCalendar";
 import type { PostRow } from "@/lib/posts-types";
 
 export const Route = createFileRoute("/")({
@@ -97,6 +98,7 @@ function Dashboard() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="criar"><PlusCircle className="h-4 w-4 mr-1.5" /> Criar</TabsTrigger>
+            <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" /> Semana</TabsTrigger>
             <TabsTrigger value="calendario"><CalendarIcon className="h-4 w-4 mr-1.5" /> Calendário</TabsTrigger>
             <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todos os posts</TabsTrigger>
             <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" /> Insights de Performance</TabsTrigger>
@@ -107,6 +109,9 @@ function Dashboard() {
 
           <TabsContent value="criar" className="mt-6">
             <PostComposer perfil={perfil} onCreated={() => { load(); setTab("todos"); }} />
+          </TabsContent>
+          <TabsContent value="semana" className="mt-6">
+            <WeeklyCalendar perfil={perfil} onCreated={load} />
           </TabsContent>
           <TabsContent value="calendario" className="mt-6">
             <PostsCalendar posts={posts} />
