@@ -35,6 +35,8 @@ function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, 
     "Este é um exemplo de legenda gerada para previsualização da interface. " +
     "Configure sua ANTHROPIC_API_KEY em Configurações → Chave Anthropic para ativar o Claude 3.5 Sonnet com tom científico, humanizado e ético da CTBMF.\n\n" +
     "Conteúdo educacional. Consulte um profissional.";
+  const mensagem_direct =
+    "Olá! Que bom ter você por aqui. Posso te enviar mais detalhes sobre esse procedimento e tirar dúvidas iniciais por mensagem. Se preferir, agendamos uma avaliação presencial — qual é o melhor canal para falar com você?";
   if (estilo === "x") {
     return {
       tema,
@@ -42,6 +44,7 @@ function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, 
         "ultra-wide horizontal 16:9 composition, a single translucent metallic blue glass anatomical skull floating, glowing cyan neon edges, dark medical abstract background, cinematic dramatic lighting with blue light beams, hyperrealistic 8k, photorealistic, medical sci-fi aesthetic, professional studio photography, award-winning composition, no humans, no text",
       texto_x:
         "Planejamento 3D na ortognática reduz tempo cirúrgico em até 30%.\n\nMenos anestesia, recuperação mais previsível.\n\nSeu serviço já incorporou? #CTBMF",
+      mensagem_direct,
     };
   }
   return {
@@ -50,6 +53,7 @@ function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, 
       "3/4 view portrait of a human face with translucent 3D wireframe mesh overlay highlighting jawline and TMJ, stylized metallic blue glass skull accent, glowing cyan neon light beams, deep navy and graphite background, dark medical abstract scene, cinematic dramatic lighting, hyperrealistic 8k, photorealistic, medical sci-fi aesthetic, professional studio photography, award-winning composition",
     legenda_instagram: networks.includes("instagram") ? base + "\n\n#CTBMF #BucoMaxiloFacial #OdontologiaHospitalar #CirurgiaOrtognatica #SaudeOral" : undefined,
     legenda_linkedin: networks.includes("linkedin") ? base : undefined,
+    mensagem_direct,
   };
 }
 
