@@ -33,9 +33,10 @@ function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string) 
 export const suggestIdea = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      networks: z.array(NetworkEnum).min(1).max(2),
+      networks: z.array(NetworkEnum).max(2).default([]),
       comando: z.string().trim().max(800).optional(),
       apiKey: z.string().trim().min(10).max(200).optional(),
+      estilo: z.enum(["padrao", "x"]).optional().default("padrao"),
     }),
   )
   .handler(async ({ data }) => {
