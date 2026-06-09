@@ -1,10 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, Stethoscope, TrendingUp, KeyRound, CalendarDays } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, Stethoscope, TrendingUp, KeyRound, CalendarDays, LogOut } from "lucide-react";
 import { PostComposer } from "@/components/PostComposer";
 import { PostsCalendar } from "@/components/PostsCalendar";
 import { PostsList } from "@/components/PostsList";
@@ -13,6 +15,7 @@ import { InsightsPanel } from "@/components/InsightsPanel";
 import { AutomationKeys } from "@/components/AutomationKeys";
 import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar";
+import { claimLegacyData } from "@/lib/claim-legacy.functions";
 import type { PostRow } from "@/lib/posts-types";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -40,10 +43,12 @@ function readPerfilCache(): Perfil | null {
 }
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<PostRow[]>([]);
   // PERF: hidrata perfil do cache imediatamente — DB só atualiza em background
   const [perfil, setPerfil] = useState<Perfil | null>(() => readPerfilCache());
   const [tab, setTab] = useState("criar");
+  const claim = useServerFn(claimLegacyData);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false });
@@ -63,7 +68,16 @@ function Dashboard() {
     }
   }, []);
 
-  useEffect(() => { load(); loadPerfil(); }, [load, loadPerfil]);
+  // Primeiro usuário a entrar herda os dados legados (one-shot, idempotente).
+  useEffect(() => {
+    claim().then(() => { load(); loadPerfil(); }).catch(() => { load(); loadPerfil(); });
+  }, [claim, load, loadPerfil]);
+
+  const handleSignOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    try { window.localStorage.removeItem(PERFIL_CACHE_KEY); } catch { /* ignore */ }
+    navigate({ to: "/auth", replace: true });
+  }, [navigate]);
 
   // Notificação interna para posts que atingiram 500+ views (e ainda não foram avisados)
   const notifiedRef = useRef<Set<string>>(new Set());
