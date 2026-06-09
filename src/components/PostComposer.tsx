@@ -204,19 +204,18 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const handleGenerateFromCommand = () => runIdeaFlow({ comando });
 
 
-  // Marca d'água por rede.
-  const watermarkLogo = useMemo<string | null>(() => {
-    if (!perfil) return null;
-    const activeNet = networks[0];
-    if (activeNet === "linkedin") return perfil.linkedin_foto_url ?? perfil.url_logo ?? null;
-    if (activeNet === "instagram") return perfil.instagram_foto_url ?? perfil.url_logo ?? null;
-    return perfil.instagram_foto_url ?? perfil.linkedin_foto_url ?? perfil.url_logo ?? null;
-  }, [perfil, networks]);
+  // Marca d'água da marca (logo transparente) — discreta, canto inferior direito.
+  const watermarkLogo = brandLogo.url;
 
   const maybeWatermark = async (src: string): Promise<string> => {
-    if (!watermark || !watermarkLogo) return src;
+    if (!watermark) return src;
     try {
-      return await applyWatermark(src, watermarkLogo);
+      return await applyWatermark(src, watermarkLogo, {
+        position: "br",
+        sizeRatio: 0.10,
+        opacity: 0.85,
+        background: false,
+      });
     } catch {
       toast.error("Falha ao aplicar marca d'água — salvando sem.");
       return src;
