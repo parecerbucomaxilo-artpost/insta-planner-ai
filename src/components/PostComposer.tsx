@@ -95,7 +95,9 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   // ===== Modo de criação: Padrão (IG/LinkedIn) vs Estilo X (Twitter) =====
   const [modoCriacao, setModoCriacao] = useState<"padrao" | "x">("padrao");
   const [textoX, setTextoX] = useState("");
+  const [xSlides, setXSlides] = useState<1 | 2 | 3>(1); // X publicado no Instagram: até 3 slides
   const X_MAX = 280;
+  const X_MAX_SLIDES = 3;
 
   const maxCarousel = 10;
 
