@@ -472,6 +472,17 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setCarouselPrompts((p) => [...p, ""]);
   };
 
+  // Quando entra em modo Carrossel, garante mínimo de 4 slides automaticamente
+  useMemo(() => {
+    if (tipo === "Carrossel" && carouselPrompts.length < minCarousel) {
+      setCarouselPrompts((p) => {
+        const arr = [...p];
+        while (arr.length < minCarousel) arr.push("");
+        return arr;
+      });
+    }
+  }, [tipo]);
+
   const removeCarouselPage = (i: number) => {
     setCarouselPrompts((p) => p.filter((_, idx) => idx !== i));
     setCarrossel((p) => p.filter((_, idx) => idx !== i));
