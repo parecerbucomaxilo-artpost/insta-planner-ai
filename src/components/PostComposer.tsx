@@ -97,7 +97,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const [textoX, setTextoX] = useState("");
   const [xSlides, setXSlides] = useState<1 | 2 | 3>(1); // X publicado no Instagram: até 3 slides
   const X_MAX = 280;
-  const X_MAX_SLIDES = 3; void X_MAX_SLIDES;
+  
 
   const maxCarousel = 10;
 
