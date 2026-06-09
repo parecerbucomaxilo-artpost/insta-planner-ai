@@ -164,6 +164,7 @@ export const generateImage = createServerFn({ method: "POST" })
 
     const finalPrompt = `${STYLE_PREFIX}${data.prompt}${STYLE_SUFFIX}${aspectClause}${typographyClause} Negative: ${NEGATIVE}.`;
 
+    const size = data.aspect === "16:9" ? "1536x1024" : "1024x1024";
     const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
       method: "POST",
       headers: {
@@ -171,9 +172,11 @@ export const generateImage = createServerFn({ method: "POST" })
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
-        messages: [{ role: "user", content: finalPrompt }],
-        modalities: ["image", "text"],
+        model: "openai/gpt-image-2",
+        prompt: finalPrompt,
+        size,
+        quality: "high",
+        n: 1,
       }),
     });
 
