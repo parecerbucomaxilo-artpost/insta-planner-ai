@@ -161,35 +161,61 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           const doctorName = perfil?.nome_profissional ?? "";
           const cro = perfil?.cro_uf ?? "";
           const isCarousel = !isX && tipo === "Carrossel";
-          const { dataUrl } = await genImage({
-            data: {
-              prompt: r.prompt_imagem,
-              aspect: isX ? "16:9" : "1:1",
-              conceptual: isX,
-              slideRole: isX
-                ? "conceptual"
-                : isCarousel
-                ? "carousel-hook"
-                : "single",
-              title: r.tema,
-              subtitle: extractFirstLine(isX ? "" : (r.legenda_instagram || r.legenda_linkedin || "")),
-              doctorName,
-              cro,
-              slideIndex: isCarousel ? 0 : undefined,
-              totalSlides: isCarousel ? Math.max(1, enforcedPrompts.length) : undefined,
-            },
-          });
-          const finalUrl = await maybeWatermark(dataUrl);
-          if (!isX && tipo === "Carrossel") {
-            setCarrossel((arr) => {
-              const next = [...arr];
-              next[0] = finalUrl;
-              return next;
-            });
+
+          if (isX && xSlides > 1) {
+            // X publicado no Instagram como carrossel — gera N slides 16:9 conceituais em paralelo
+            const total = xSlides;
+            const results = await Promise.all(
+              Array.from({ length: total }, (_, idx) =>
+                genImage({
+                  data: {
+                    prompt: `${r.prompt_imagem} — slide ${idx + 1} de ${total} (variação conceitual sutil, manter mesma estética)`,
+                    aspect: "16:9",
+                    conceptual: true,
+                    slideRole: "conceptual",
+                    title: r.tema,
+                    doctorName,
+                    cro,
+                    slideIndex: idx,
+                    totalSlides: total,
+                  },
+                }).then(({ dataUrl }) => maybeWatermark(dataUrl)),
+              ),
+            );
+            setCarrossel(results);
+            setImagem(results[0] ?? null);
+            toast.success(`${total} slides prontos ✨`);
           } else {
-            setImagem(finalUrl);
+            const { dataUrl } = await genImage({
+              data: {
+                prompt: r.prompt_imagem,
+                aspect: isX ? "16:9" : "1:1",
+                conceptual: isX,
+                slideRole: isX
+                  ? "conceptual"
+                  : isCarousel
+                  ? "carousel-hook"
+                  : "single",
+                title: r.tema,
+                subtitle: extractFirstLine(isX ? "" : (r.legenda_instagram || r.legenda_linkedin || "")),
+                doctorName,
+                cro,
+                slideIndex: isCarousel ? 0 : undefined,
+                totalSlides: isCarousel ? Math.max(1, enforcedPrompts.length) : undefined,
+              },
+            });
+            const finalUrl = await maybeWatermark(dataUrl);
+            if (!isX && tipo === "Carrossel") {
+              setCarrossel((arr) => {
+                const next = [...arr];
+                next[0] = finalUrl;
+                return next;
+              });
+            } else {
+              setImagem(finalUrl);
+            }
+            toast.success("Imagem pronta ✨");
           }
-          toast.success("Imagem pronta ✨");
         } catch (e) {
           toast.error(e instanceof Error ? e.message : "Falha ao gerar imagem");
         } finally {
