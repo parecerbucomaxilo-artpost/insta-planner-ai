@@ -358,6 +358,62 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
   };
 
+  const handleGenerateAllPages = async () => {
+    const captionForAuto = legendaIg || legendaLi;
+    const total = Math.max(1, enforcedPrompts.length);
+
+    if (imageMode === "auto" && !captionForAuto.trim() && !tema.trim()) {
+      return toast.error("Gere a legenda primeiro (ou troque para 'Fornecer Minhas Orientações').");
+    }
+    if (imageMode === "manual") {
+      const missing = enforcedPrompts.findIndex((p) => !p.trim());
+      if (missing >= 0) {
+        return toast.error(`Descreva o que quer ver na página ${missing + 1}.`);
+      }
+    }
+
+    setLoadingPage(-1); // -1 = "todas"
+    const bullets = extractBullets(captionForAuto);
+
+    try {
+      const results = await Promise.all(
+        enforcedPrompts.map(async (pageOrientation, index) => {
+          const finalPrompt = imageMode === "auto"
+            ? buildAutoPrompt(`${captionForAuto}\n\nPágina ${index + 1} do carrossel.`)
+            : buildManualPrompt(pageOrientation);
+          const isHook = index === 0;
+          const isCta = index === total - 1 && total > 1;
+          const slideRole: "carousel-hook" | "carousel-middle" | "carousel-cta" = isHook
+            ? "carousel-hook"
+            : isCta
+            ? "carousel-cta"
+            : "carousel-middle";
+          const { dataUrl } = await genImage({
+            data: {
+              prompt: finalPrompt,
+              slideRole,
+              title: isHook ? (tema || extractFirstLine(captionForAuto)) : `Ponto ${index + 1}`,
+              subtitle: isHook ? extractFirstLine(captionForAuto) : "",
+              bullets: slideRole === "carousel-middle" ? bullets : undefined,
+              cta: isCta ? "Agende sua consulta" : undefined,
+              doctorName: perfil?.nome_profissional ?? "",
+              cro: perfil?.cro_uf ?? "",
+              slideIndex: index,
+              totalSlides: total,
+            },
+          });
+          return await maybeWatermark(dataUrl);
+        }),
+      );
+      setCarrossel(results);
+      toast.success(`${total} páginas geradas!`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao gerar todas as páginas");
+    } finally {
+      setLoadingPage(null);
+    }
+  };
+
   const handleUploadSingle = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
