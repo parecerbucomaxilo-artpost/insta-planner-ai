@@ -1,14 +1,15 @@
 /**
  * Compõe a logo como marca d'água sobre uma imagem (data URL),
  * retornando um novo data URL PNG.
- * Posição padrão: canto inferior direito; tamanho ~18% da menor dimensão.
+ * Padrão: canto inferior direito, ~10% da menor dimensão, sem caixa branca,
+ * com leve sombra para legibilidade — discreta para não tampar a arte.
  */
 export async function applyWatermark(
   baseImageDataUrl: string,
   logoDataUrl: string,
-  opts: { position?: "br" | "bl" | "tr" | "tl"; sizeRatio?: number; opacity?: number } = {},
+  opts: { position?: "br" | "bl" | "tr" | "tl"; sizeRatio?: number; opacity?: number; background?: boolean } = {},
 ): Promise<string> {
-  const { position = "br", sizeRatio = 0.18, opacity = 0.92 } = opts;
+  const { position = "br", sizeRatio = 0.10, opacity = 0.85, background = false } = opts;
 
   const load = (src: string) =>
     new Promise<HTMLImageElement>((resolve, reject) => {
@@ -35,30 +36,38 @@ export async function applyWatermark(
   const w = ratio >= 1 ? target : Math.round(target * ratio);
   const h = ratio >= 1 ? Math.round(target / ratio) : target;
 
-  const pad = Math.round(minSide * 0.035);
+  const pad = Math.round(minSide * 0.04);
   let x = 0, y = 0;
   if (position === "br") { x = canvas.width - w - pad; y = canvas.height - h - pad; }
   else if (position === "bl") { x = pad; y = canvas.height - h - pad; }
   else if (position === "tr") { x = canvas.width - w - pad; y = pad; }
   else { x = pad; y = pad; }
 
-  // Fundo translúcido para legibilidade
-  const bgPad = Math.round(target * 0.08);
-  ctx.fillStyle = "rgba(255,255,255,0.75)";
-  ctx.beginPath();
-  const r = Math.round(target * 0.12);
-  const bx = x - bgPad, by = y - bgPad, bw = w + bgPad * 2, bh = h + bgPad * 2;
-  ctx.moveTo(bx + r, by);
-  ctx.arcTo(bx + bw, by, bx + bw, by + bh, r);
-  ctx.arcTo(bx + bw, by + bh, bx, by + bh, r);
-  ctx.arcTo(bx, by + bh, bx, by, r);
-  ctx.arcTo(bx, by, bx + bw, by, r);
-  ctx.closePath();
-  ctx.fill();
+  if (background) {
+    const bgPad = Math.round(target * 0.08);
+    ctx.fillStyle = "rgba(255,255,255,0.75)";
+    const r = Math.round(target * 0.12);
+    const bx = x - bgPad, by = y - bgPad, bw = w + bgPad * 2, bh = h + bgPad * 2;
+    ctx.beginPath();
+    ctx.moveTo(bx + r, by);
+    ctx.arcTo(bx + bw, by, bx + bw, by + bh, r);
+    ctx.arcTo(bx + bw, by + bh, bx, by + bh, r);
+    ctx.arcTo(bx, by + bh, bx, by, r);
+    ctx.arcTo(bx, by, bx + bw, by, r);
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    ctx.shadowColor = "rgba(0,0,0,0.35)";
+    ctx.shadowBlur = Math.round(target * 0.08);
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = Math.round(target * 0.02);
+  }
 
   ctx.globalAlpha = opacity;
   ctx.drawImage(logo, x, y, w, h);
   ctx.globalAlpha = 1;
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
 
   return canvas.toDataURL("image/png");
 }
@@ -98,7 +107,6 @@ export async function applyDoctorBadge(
   const barH = Math.round(H * 0.075);
   const barY = H - barH;
 
-  // Faixa navy translúcida
   const grad = ctx.createLinearGradient(0, barY, 0, H);
   grad.addColorStop(0, "rgba(7, 16, 38, 0)");
   grad.addColorStop(0.4, "rgba(7, 16, 38, 0.55)");
@@ -106,11 +114,9 @@ export async function applyDoctorBadge(
   ctx.fillStyle = grad;
   ctx.fillRect(0, barY - Math.round(barH * 0.4), W, barH + Math.round(barH * 0.4));
 
-  // Linha cyan finíssima superior
   ctx.fillStyle = "rgba(125, 211, 252, 0.55)";
   ctx.fillRect(0, barY, W, Math.max(1, Math.round(H * 0.002)));
 
-  // Texto
   const pad = Math.round(W * 0.04);
   const fontPx = Math.round(barH * 0.42);
   ctx.fillStyle = "rgba(255,255,255,0.96)";
