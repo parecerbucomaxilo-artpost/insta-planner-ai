@@ -95,7 +95,9 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   // ===== Modo de criação: Padrão (IG/LinkedIn) vs Estilo X (Twitter) =====
   const [modoCriacao, setModoCriacao] = useState<"padrao" | "x">("padrao");
   const [textoX, setTextoX] = useState("");
+  const [xSlides, setXSlides] = useState<1 | 2 | 3>(1); // X publicado no Instagram: até 3 slides
   const X_MAX = 280;
+  
 
   const maxCarousel = 10;
 
@@ -159,35 +161,61 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           const doctorName = perfil?.nome_profissional ?? "";
           const cro = perfil?.cro_uf ?? "";
           const isCarousel = !isX && tipo === "Carrossel";
-          const { dataUrl } = await genImage({
-            data: {
-              prompt: r.prompt_imagem,
-              aspect: isX ? "16:9" : "1:1",
-              conceptual: isX,
-              slideRole: isX
-                ? "conceptual"
-                : isCarousel
-                ? "carousel-hook"
-                : "single",
-              title: r.tema,
-              subtitle: extractFirstLine(isX ? "" : (r.legenda_instagram || r.legenda_linkedin || "")),
-              doctorName,
-              cro,
-              slideIndex: isCarousel ? 0 : undefined,
-              totalSlides: isCarousel ? Math.max(1, enforcedPrompts.length) : undefined,
-            },
-          });
-          const finalUrl = await maybeWatermark(dataUrl);
-          if (!isX && tipo === "Carrossel") {
-            setCarrossel((arr) => {
-              const next = [...arr];
-              next[0] = finalUrl;
-              return next;
-            });
+
+          if (isX && xSlides > 1) {
+            // X publicado no Instagram como carrossel — gera N slides 16:9 conceituais em paralelo
+            const total = xSlides;
+            const results = await Promise.all(
+              Array.from({ length: total }, (_, idx) =>
+                genImage({
+                  data: {
+                    prompt: `${r.prompt_imagem} — slide ${idx + 1} de ${total} (variação conceitual sutil, manter mesma estética)`,
+                    aspect: "16:9",
+                    conceptual: true,
+                    slideRole: "conceptual",
+                    title: r.tema,
+                    doctorName,
+                    cro,
+                    slideIndex: idx,
+                    totalSlides: total,
+                  },
+                }).then(({ dataUrl }) => maybeWatermark(dataUrl)),
+              ),
+            );
+            setCarrossel(results);
+            setImagem(results[0] ?? null);
+            toast.success(`${total} slides prontos ✨`);
           } else {
-            setImagem(finalUrl);
+            const { dataUrl } = await genImage({
+              data: {
+                prompt: r.prompt_imagem,
+                aspect: isX ? "16:9" : "1:1",
+                conceptual: isX,
+                slideRole: isX
+                  ? "conceptual"
+                  : isCarousel
+                  ? "carousel-hook"
+                  : "single",
+                title: r.tema,
+                subtitle: extractFirstLine(isX ? "" : (r.legenda_instagram || r.legenda_linkedin || "")),
+                doctorName,
+                cro,
+                slideIndex: isCarousel ? 0 : undefined,
+                totalSlides: isCarousel ? Math.max(1, enforcedPrompts.length) : undefined,
+              },
+            });
+            const finalUrl = await maybeWatermark(dataUrl);
+            if (!isX && tipo === "Carrossel") {
+              setCarrossel((arr) => {
+                const next = [...arr];
+                next[0] = finalUrl;
+                return next;
+              });
+            } else {
+              setImagem(finalUrl);
+            }
+            toast.success("Imagem pronta ✨");
           }
-          toast.success("Imagem pronta ✨");
         } catch (e) {
           toast.error(e instanceof Error ? e.message : "Falha ao gerar imagem");
         } finally {
@@ -455,9 +483,14 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const primaryLegenda = modoCriacao === "x" ? textoX : (legendaIg || legendaLi || "");
 
   const handleSave = async (forceAgendar = false) => {
-    if (modoCriacao === "x") {
+    const isX = modoCriacao === "x";
+    if (isX) {
       if (!textoX.trim()) return toast.error("Escreva ou gere o texto do tweet.");
       if (textoX.length > X_MAX) return toast.error(`Texto excede ${X_MAX} caracteres.`);
+      if (xSlides > 1 && enforcedCarrossel.filter(Boolean).length < xSlides) {
+        return toast.error(`Gere as ${xSlides} imagens antes de salvar.`);
+      }
+      if (xSlides === 1 && !imagem) return toast.error("Gere a imagem do tweet.");
     } else {
       if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
       if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
@@ -477,24 +510,29 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         ? "Agendado"
         : status;
 
+    // X mode: publica no Instagram (único ou carrossel até 3 slides)
+    const effectiveTipo: "Post Único" | "Carrossel" =
+      isX ? (xSlides > 1 ? "Carrossel" : "Post Único") : tipo;
+    const xCarousel = isX ? filledCarousel.slice(0, xSlides) : [];
+
     setSaving(true);
     let uid: string;
     try { uid = await getAuthedUserId(); } catch (e) { setSaving(false); return toast.error(e instanceof Error ? e.message : "Sessão expirada"); }
     const { data: inserted, error } = await supabase.from("posts").insert({
       user_id: uid,
-      tipo_post: tipo,
-      estilo_layout: "Padrão",
+      tipo_post: effectiveTipo,
+      estilo_layout: isX ? "X" : "Padrão",
       formato_midia: formato,
       legenda: primaryLegenda,
-      legenda_instagram: networks.includes("instagram") ? legendaIg : null,
-      legenda_linkedin: networks.includes("linkedin") ? legendaLi : null,
-      postar_instagram: networks.includes("instagram"),
-      postar_linkedin: networks.includes("linkedin"),
-      url_imagem: tipo === "Post Único" ? imagem : null,
-      imagens_carrossel: tipo === "Carrossel" ? filledCarousel : [],
+      legenda_instagram: isX ? textoX : (networks.includes("instagram") ? legendaIg : null),
+      legenda_linkedin: isX ? null : (networks.includes("linkedin") ? legendaLi : null),
+      postar_instagram: isX ? true : networks.includes("instagram"),
+      postar_linkedin: isX ? false : networks.includes("linkedin"),
+      url_imagem: effectiveTipo === "Post Único" ? imagem : null,
+      imagens_carrossel: effectiveTipo === "Carrossel" ? (isX ? xCarousel : filledCarousel) : [],
       data_agendamento: agendamentoIso,
       status: finalStatus,
-      prompt_ia: tipo === "Carrossel" ? enforcedPrompts.join("\n---\n") : prompt || null,
+      prompt_ia: effectiveTipo === "Carrossel" ? (isX ? prompt : enforcedPrompts.join("\n---\n")) : prompt || null,
     }).select("id").maybeSingle();
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -536,7 +574,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const filledCarouselPreview = enforcedCarrossel.filter(Boolean);
   const hasContent =
     modoCriacao === "x"
-      ? Boolean(textoX.trim()) && textoX.length <= X_MAX
+      ? Boolean(textoX.trim()) && textoX.length <= X_MAX &&
+        (xSlides > 1 ? filledCarouselPreview.length >= xSlides : Boolean(imagem))
       : networks.length > 0 &&
         Boolean(primaryLegenda.trim()) &&
         (tipo === "Post Único" ? Boolean(imagem) : filledCarouselPreview.length > 0);
@@ -1122,11 +1161,31 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               <div className="h-8 w-8 rounded-md bg-gradient-to-br from-slate-800 to-black flex items-center justify-center text-white">
                 <Twitter className="h-4 w-4" />
               </div>
-              <div>
-                <Label className="text-sm font-semibold">Post estilo X (Twitter)</Label>
+              <div className="flex-1">
+                <Label className="text-sm font-semibold">Post estilo X → Instagram</Label>
                 <p className="text-[11px] text-muted-foreground">
-                  Texto curto, autoridade científica rápida. Imagem 16:9 conceitual.
+                  Texto curto e autoridade. Publicado no Instagram (até 3 slides 16:9).
                 </p>
+              </div>
+            </div>
+
+            {/* Quantidade de slides (1 a 3) — X publicado como carrossel do Instagram */}
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Slides no estilo X (máx. 3)
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3].map((n) => (
+                  <Button
+                    key={n}
+                    type="button"
+                    variant={xSlides === n ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setXSlides(n as 1 | 2 | 3)}
+                  >
+                    {n} {n === 1 ? "slide" : "slides"}
+                  </Button>
+                ))}
               </div>
             </div>
 
@@ -1219,19 +1278,38 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             </div>
 
 
-            {imagem && (
-              <div className="relative rounded-lg overflow-hidden border">
-                <img src={imagem} alt="prévia" className="w-full aspect-video object-cover" />
-                <Button
-                  size="icon"
-                  variant="destructive"
-                  className="absolute top-2 right-2 h-8 w-8"
-                  onClick={() => setImagem(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                <Badge className="absolute top-2 left-2 bg-slate-900/80 text-white">16:9 conceitual</Badge>
-              </div>
+            {xSlides > 1 ? (
+              filledCarouselPreview.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {Array.from({ length: xSlides }, (_, i) => (
+                    <div key={i} className="relative rounded-lg overflow-hidden border bg-muted">
+                      {filledCarouselPreview[i] ? (
+                        <img src={filledCarouselPreview[i]} alt={`slide ${i + 1}`} className="w-full aspect-video object-cover" />
+                      ) : (
+                        <div className="w-full aspect-video flex items-center justify-center text-xs text-muted-foreground">
+                          {loadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : `Slide ${i + 1}`}
+                        </div>
+                      )}
+                      <Badge className="absolute top-1 left-1 bg-slate-900/80 text-white text-[10px]">{i + 1}/{xSlides}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              imagem && (
+                <div className="relative rounded-lg overflow-hidden border">
+                  <img src={imagem} alt="prévia" className="w-full aspect-video object-cover" />
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute top-2 right-2 h-8 w-8"
+                    onClick={() => setImagem(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Badge className="absolute top-2 left-2 bg-slate-900/80 text-white">16:9 conceitual</Badge>
+                </div>
+              )
             )}
 
             <Button onClick={() => handleSave(false)} disabled={saving} size="lg" variant="outline" className="w-full">
