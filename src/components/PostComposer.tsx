@@ -493,10 +493,12 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setSaving(true);
     const nowIso = new Date().toISOString();
     try {
+      const uid = await getAuthedUserId();
       const mediaUrl = tipo === "Post Único" ? imagem : filledCarouselPreview[0] ?? null;
       const { data: inserted, error } = await supabase
         .from("posts")
         .insert({
+          user_id: uid,
           tipo_post: tipo,
           estilo_layout: "Padrão",
           formato_midia: formato,

@@ -1,5 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthedUserId } from "@/lib/auth-utils";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -181,7 +182,10 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
       return toast.error("Preencha ao menos o nome profissional ou uma rede");
     }
     setSaving(true);
+    let uid: string;
+    try { uid = await getAuthedUserId(); } catch (e) { setSaving(false); return toast.error(e instanceof Error ? e.message : "Sessão expirada"); }
     const payload = {
+      user_id: uid,
       nome_profissional: nome.trim() || liNome.trim() || ig,
       arroba_usuario: ig,
       url_logo: igFoto ?? liFoto,
