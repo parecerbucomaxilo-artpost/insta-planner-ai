@@ -99,7 +99,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const X_MAX = 280;
   
 
-  const maxCarousel = 10;
+  const maxCarousel = 7;
+  const minCarousel = 4;
 
   const toggleNetwork = (n: Network) => {
     setNetworks((prev) =>
