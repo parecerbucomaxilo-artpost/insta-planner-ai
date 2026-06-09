@@ -1062,6 +1062,63 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               </div>
             </div>
 
+            {/* Geração com IA dentro do modo X */}
+            <div className="rounded-lg border bg-gradient-to-br from-primary/5 to-transparent p-3 space-y-3">
+              <Tabs value={aiMode} onValueChange={(v) => setAiMode(v as "surpresa" | "comando")}>
+                <TabsList className="grid grid-cols-2 w-full">
+                  <TabsTrigger value="surpresa" className="gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5" /> Ideia Surpresa
+                  </TabsTrigger>
+                  <TabsTrigger value="comando" className="gap-1.5">
+                    <Wand2 className="h-3.5 w-3.5" /> Seu Comando
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="surpresa" className="mt-3">
+                  <Button
+                    onClick={handleSuggestIdea}
+                    disabled={loadingIdea || loadingAi}
+                    size="lg"
+                    className="w-full h-12 font-semibold"
+                  >
+                    {loadingIdea ? (
+                      <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando tweet…</>
+                    ) : (
+                      <><Sparkles className="h-4 w-4 mr-2" /> Gerar Tweet com IA</>
+                    )}
+                  </Button>
+                </TabsContent>
+
+                <TabsContent value="comando" className="mt-3 space-y-2">
+                  <Textarea
+                    value={comando}
+                    onChange={(e) => setComando(e.target.value)}
+                    rows={3}
+                    placeholder="Ex: Um tweet curto sobre ATM e dor orofacial…"
+                    className="resize-none"
+                  />
+                  <Button
+                    onClick={handleGenerateFromCommand}
+                    disabled={loadingIdea || loadingAi || !comando.trim()}
+                    size="lg"
+                    className="w-full h-12 font-semibold"
+                  >
+                    {loadingIdea ? (
+                      <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Criando tweet…</>
+                    ) : (
+                      <><Wand2 className="h-4 w-4 mr-2" /> Gerar do Comando</>
+                    )}
+                  </Button>
+                </TabsContent>
+              </Tabs>
+              {tema && (
+                <div className="p-2 rounded-md bg-card border text-xs">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Tema</span>
+                  <p className="font-medium mt-0.5">{tema}</p>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="texto-x" className="text-sm">Texto do tweet</Label>
@@ -1089,9 +1146,10 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                 className="resize-none font-medium leading-relaxed"
               />
               <p className="text-[11px] text-muted-foreground">
-                Use o botão <strong>Gerar Ideia com IA</strong> acima para preencher automaticamente via Claude.
+                Você também pode escrever manualmente ou editar o texto gerado pela IA.
               </p>
             </div>
+
 
             {imagem && (
               <div className="relative rounded-lg overflow-hidden border">
