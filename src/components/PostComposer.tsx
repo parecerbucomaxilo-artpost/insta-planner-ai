@@ -48,6 +48,60 @@ function extractBullets(s: string, max = 3): string[] {
     .slice(0, max);
 }
 
+// Divide a legenda em N segmentos significativos — um por slide.
+// Prioriza bullets/parágrafos numerados; se não houver, divide por parágrafos / frases.
+function splitCaptionIntoSlides(caption: string, n: number): string[] {
+  const raw = (caption || "").trim();
+  if (!raw || n <= 1) return [raw];
+  // 1) bullets / itens numerados
+  const bulletLines = raw
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter((l) => /^([-•*]|\d+[.)])\s+/.test(l))
+    .map((l) => l.replace(/^([-•*]|\d+[.)])\s+/, ""));
+  if (bulletLines.length >= n) return bulletLines.slice(0, n);
+  // 2) parágrafos
+  const paragraphs = raw.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  if (paragraphs.length >= n) return paragraphs.slice(0, n);
+  // 3) frases
+  const sentences = raw
+    .replace(/\s+/g, " ")
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (sentences.length >= n) {
+    // distribui frases igualmente entre N slides
+    const out: string[] = [];
+    const per = Math.ceil(sentences.length / n);
+    for (let i = 0; i < n; i++) {
+      out.push(sentences.slice(i * per, (i + 1) * per).join(" "));
+    }
+    return out.filter(Boolean);
+  }
+  // fallback: repete a legenda
+  return Array.from({ length: n }, () => raw);
+}
+
+// Mapeia o texto do slide para um SUJEITO FOTOGRÁFICO realista e específico.
+function buildSlideVisualSubject(slideText: string): string {
+  const t = (slideText || "").toLowerCase();
+  const subjects: string[] = [];
+  if (/atm|temporomandibular|mandíbula|mandibula|maxilar/.test(t))
+    subjects.push("realistic lateral close-up of a human jaw / TMJ region, anatomical accuracy");
+  if (/nevralgia|trigêmeo|trigemeo|nervo|dor facial|dor na face/.test(t))
+    subjects.push("realistic close-up of a male patient's face holding the cheek / temple area in pain, subtle red glow over trigeminal nerve path");
+  if (/dente siso|terceiro molar|extração|extracao|cirurgia/.test(t))
+    subjects.push("realistic surgeon in scrubs performing maxillofacial procedure, sterile hospital lighting");
+  if (/diagnóstico|diagnostico|tomografia|raio-?x|exame|imagem/.test(t))
+    subjects.push("realistic photo of a surgeon analyzing a 3D CT scan of skull/jaw on a medical monitor");
+  if (/consulta|avaliação|avaliacao|paciente/.test(t))
+    subjects.push("realistic photo of a male oral and maxillofacial surgeon in white coat speaking with a patient in a modern clinic");
+  if (subjects.length === 0)
+    subjects.push("realistic editorial medical photography of an oral and maxillofacial surgeon in a modern hospital-grade clinic, anatomical 3D skull or jaw visible on a screen behind");
+  return subjects.join("; ");
+}
+
+
 const NETWORK_META: Record<Network, { label: string; Icon: typeof Instagram; color: string }> = {
   instagram: { label: "Instagram", Icon: Instagram, color: "from-pink-500 to-purple-500" },
   linkedin: { label: "LinkedIn", Icon: Linkedin, color: "from-sky-600 to-blue-700" },
@@ -278,16 +332,20 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   ].join(" ");
 
   // Constrói um prompt visual médico/ético RICO e ARTÍSTICO a partir da legenda da rede ativa.
-  const buildAutoPrompt = (baseText: string): string => {
-    const caption = (baseText || tema || "").trim().slice(0, 600);
-    const visualStyle = pickStyle(caption || String(Date.now()));
+  const buildAutoPrompt = (baseText: string, slideText?: string): string => {
+    const caption = (baseText || tema || "").trim().slice(0, 400);
+    const slide = (slideText || baseText || tema || "").trim().slice(0, 400);
+    const visualStyle = pickStyle(slide || caption || String(Date.now()));
+    const subject = buildSlideVisualSubject(slide);
     return [
       `STYLE: ${visualStyle}.`,
-      "SUBJECT: Concept image for a high-end social media post about Oral & Maxillofacial Surgery / Hospital Dentistry (CTBMF) in a premium private clinic context.",
+      `SUBJECT (must be visually depicted, realistic photography): ${subject}.`,
+      `THIS SLIDE COMMUNICATES: "${slide}". The image must visually represent THIS specific message — not a generic clinic scene.`,
       PREMIUM_MEDICAL_DIRECTIVES,
-      `REFERENCE CONTENT (do NOT write any text on the image — only let it inspire mood and subject): "${caption}"`,
+      `OVERALL POST CONTEXT (for tone only): "${caption}".`,
     ].join(" ");
   };
+
 
   const buildManualPrompt = (userText: string): string => {
     const safe = (userText || "").trim().slice(0, 800);
@@ -343,12 +401,14 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     if (imageMode === "auto" && !captionForAuto.trim() && !tema.trim()) {
       return toast.error("Gere a legenda primeiro (ou troque para 'Fornecer Minhas Orientações').");
     }
+    const total = Math.max(1, enforcedPrompts.length);
+    const slides = splitCaptionIntoSlides(captionForAuto, total);
+    const slideText = slides[index] || captionForAuto;
     const finalPrompt = imageMode === "auto"
-      ? buildAutoPrompt(`${captionForAuto}\n\nPágina ${index + 1} do carrossel.`)
+      ? buildAutoPrompt(captionForAuto, slideText)
       : buildManualPrompt(pageOrientation);
     setLoadingPage(index);
     try {
-      const total = Math.max(1, enforcedPrompts.length);
       const isHook = index === 0;
       const isCta = index === total - 1 && total > 1;
       const slideRole: "carousel-hook" | "carousel-middle" | "carousel-cta" = isHook
@@ -356,14 +416,21 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         : isCta
         ? "carousel-cta"
         : "carousel-middle";
-      const bullets = extractBullets(captionForAuto);
+      const slideTitle = isHook
+        ? (tema || extractFirstLine(slideText) || extractFirstLine(captionForAuto))
+        : extractFirstLine(slideText).slice(0, 60) || `Ponto ${index + 1}`;
+      const slideSubtitle = slideText.replace(extractFirstLine(slideText), "").trim().slice(0, 140)
+        || extractFirstLine(slideText);
+      const slideBullets = slideRole === "carousel-middle"
+        ? (extractBullets(slideText).length ? extractBullets(slideText) : [slideText.slice(0, 80)])
+        : undefined;
       const { dataUrl } = await genImage({
         data: {
           prompt: finalPrompt,
           slideRole,
-          title: isHook ? (tema || extractFirstLine(captionForAuto)) : `Ponto ${index + 1}`,
-          subtitle: isHook ? extractFirstLine(captionForAuto) : "",
-          bullets: slideRole === "carousel-middle" ? bullets : undefined,
+          title: slideTitle,
+          subtitle: slideSubtitle,
+          bullets: slideBullets,
           cta: isCta ? "Salve · Marque um colega · Comente" : undefined,
           doctorName: perfil?.nome_profissional ?? "",
           cro: perfil?.cro_uf ?? "",
@@ -402,13 +469,14 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
 
     setLoadingPage(-1); // -1 = "todas"
-    const bullets = extractBullets(captionForAuto);
+    const slides = splitCaptionIntoSlides(captionForAuto, total);
 
     try {
       const results = await Promise.all(
         enforcedPrompts.map(async (pageOrientation, index) => {
+          const slideText = slides[index] || captionForAuto;
           const finalPrompt = imageMode === "auto"
-            ? buildAutoPrompt(`${captionForAuto}\n\nPágina ${index + 1} do carrossel.`)
+            ? buildAutoPrompt(captionForAuto, slideText)
             : buildManualPrompt(pageOrientation);
           const isHook = index === 0;
           const isCta = index === total - 1 && total > 1;
@@ -417,13 +485,21 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             : isCta
             ? "carousel-cta"
             : "carousel-middle";
+          const slideTitle = isHook
+            ? (tema || extractFirstLine(slideText) || extractFirstLine(captionForAuto))
+            : extractFirstLine(slideText).slice(0, 60) || `Ponto ${index + 1}`;
+          const slideSubtitle = slideText.replace(extractFirstLine(slideText), "").trim().slice(0, 140)
+            || extractFirstLine(slideText);
+          const slideBullets = slideRole === "carousel-middle"
+            ? (extractBullets(slideText).length ? extractBullets(slideText) : [slideText.slice(0, 80)])
+            : undefined;
           const { dataUrl } = await genImage({
             data: {
               prompt: finalPrompt,
               slideRole,
-              title: isHook ? (tema || extractFirstLine(captionForAuto)) : `Ponto ${index + 1}`,
-              subtitle: isHook ? extractFirstLine(captionForAuto) : "",
-              bullets: slideRole === "carousel-middle" ? bullets : undefined,
+              title: slideTitle,
+              subtitle: slideSubtitle,
+              bullets: slideBullets,
               cta: isCta ? "Salve · Marque um colega · Comente" : undefined,
               doctorName: perfil?.nome_profissional ?? "",
               cro: perfil?.cro_uf ?? "",
