@@ -136,7 +136,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
         props.legenda_instagram = {
           type: "string",
           description:
-            "Conteúdo educativo e humanizado em pt-BR para Instagram. Explique o procedimento, cuidados pós-operatórios ou rotina hospitalar em linguagem acessível ao paciente. Parágrafos curtos, emojis sutis (🦷 ⚕️ 🏥), gancho na 1ª linha, e BLOCO de 8-12 hashtags ao final separado por linha em branco (incluir #CTBMF #BucoMaxiloFacial #OdontologiaHospitalar e variações relevantes).",
+            "Legenda Instagram pt-BR: tom HUMANIZADO, storytelling, visual impactante, soluções práticas do dia a dia. Gancho forte na 1ª linha, parágrafos curtos, emojis sutis (🦷 ⚕️ 🏥). Termine com CTA de ENGAJAMENTO (comentário/salvar/compartilhar). PROIBIDO 'Agende sua consulta' ou variações comerciais. Encerre com bloco de 8-12 hashtags ultra-específicas após linha em branco.",
         };
         required.push("legenda_instagram");
       }
@@ -144,7 +144,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
         props.legenda_linkedin = {
           type: "string",
           description:
-            "Post técnico em pt-BR para LinkedIn voltado a profissionais da saúde. Apresente caso clínico, discussão de artigo, gestão hospitalar ou reflexão para networking. Gancho profissional na 1ª linha, parágrafos curtos (1-2 linhas), referência/insight de evidência, CTA para debate entre colegas, 4-6 hashtags corporativas (#CirurgiaBucoMaxiloFacial #OdontologiaHospitalar #CTBMF etc.). Sem emojis excessivos.",
+            "Post LinkedIn pt-BR: tom CORPORATIVO e TÉCNICO, thought leadership, análise de mercado/tendências do setor, maturidade profissional (sem ser frio nem puramente acadêmico). Gancho profissional, parágrafos de 1-2 linhas, insight de evidência, CTA de DEBATE entre colegas (nunca comercial). PROIBIDO 'Agende' / 'Contrate' / 'Link na bio'. 4-6 hashtags corporativas.",
         };
         required.push("legenda_linkedin");
       }
