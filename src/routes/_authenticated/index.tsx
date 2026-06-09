@@ -45,8 +45,9 @@ function readPerfilCache(): Perfil | null {
 function Dashboard() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<PostRow[]>([]);
-  // PERF: hidrata perfil do cache imediatamente — DB só atualiza em background
-  const [perfil, setPerfil] = useState<Perfil | null>(() => readPerfilCache());
+  // Hidrata do cache só depois do mount para evitar hydration mismatch (SSR não tem localStorage)
+  const [perfil, setPerfil] = useState<Perfil | null>(null);
+  useEffect(() => { const c = readPerfilCache(); if (c) setPerfil(c); }, []);
   const [tab, setTab] = useState("criar");
   const claim = useServerFn(claimLegacyData);
 
