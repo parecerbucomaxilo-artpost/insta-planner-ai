@@ -1005,6 +1005,18 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                 </Card>
               ))}
 
+              <Button
+                onClick={handleGenerateAllPages}
+                disabled={loadingPage !== null}
+                className="w-full bg-gradient-to-r from-sky-500 to-cyan-400 text-white hover:opacity-90"
+              >
+                {loadingPage === -1 ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando todas as páginas...</>
+                ) : (
+                  <><Sparkles className="h-4 w-4 mr-2" /> Gerar TODAS as páginas de uma vez</>
+                )}
+              </Button>
+
               {enforcedPrompts.length < maxCarousel && (
                 <Button variant="outline" onClick={addCarouselPage} className="w-full">
                   <Plus className="h-4 w-4 mr-2" /> Adicionar página {enforcedPrompts.length + 1}
