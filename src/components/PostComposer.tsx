@@ -483,9 +483,14 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const primaryLegenda = modoCriacao === "x" ? textoX : (legendaIg || legendaLi || "");
 
   const handleSave = async (forceAgendar = false) => {
-    if (modoCriacao === "x") {
+    const isX = modoCriacao === "x";
+    if (isX) {
       if (!textoX.trim()) return toast.error("Escreva ou gere o texto do tweet.");
       if (textoX.length > X_MAX) return toast.error(`Texto excede ${X_MAX} caracteres.`);
+      if (xSlides > 1 && enforcedCarrossel.filter(Boolean).length < xSlides) {
+        return toast.error(`Gere as ${xSlides} imagens antes de salvar.`);
+      }
+      if (xSlides === 1 && !imagem) return toast.error("Gere a imagem do tweet.");
     } else {
       if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
       if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
@@ -505,24 +510,29 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         ? "Agendado"
         : status;
 
+    // X mode: publica no Instagram (único ou carrossel até 3 slides)
+    const effectiveTipo: "Post Único" | "Carrossel" =
+      isX ? (xSlides > 1 ? "Carrossel" : "Post Único") : tipo;
+    const xCarousel = isX ? filledCarousel.slice(0, xSlides) : [];
+
     setSaving(true);
     let uid: string;
     try { uid = await getAuthedUserId(); } catch (e) { setSaving(false); return toast.error(e instanceof Error ? e.message : "Sessão expirada"); }
     const { data: inserted, error } = await supabase.from("posts").insert({
       user_id: uid,
-      tipo_post: tipo,
-      estilo_layout: "Padrão",
+      tipo_post: effectiveTipo,
+      estilo_layout: isX ? "X" : "Padrão",
       formato_midia: formato,
       legenda: primaryLegenda,
-      legenda_instagram: networks.includes("instagram") ? legendaIg : null,
-      legenda_linkedin: networks.includes("linkedin") ? legendaLi : null,
-      postar_instagram: networks.includes("instagram"),
-      postar_linkedin: networks.includes("linkedin"),
-      url_imagem: tipo === "Post Único" ? imagem : null,
-      imagens_carrossel: tipo === "Carrossel" ? filledCarousel : [],
+      legenda_instagram: isX ? textoX : (networks.includes("instagram") ? legendaIg : null),
+      legenda_linkedin: isX ? null : (networks.includes("linkedin") ? legendaLi : null),
+      postar_instagram: isX ? true : networks.includes("instagram"),
+      postar_linkedin: isX ? false : networks.includes("linkedin"),
+      url_imagem: effectiveTipo === "Post Único" ? imagem : null,
+      imagens_carrossel: effectiveTipo === "Carrossel" ? (isX ? xCarousel : filledCarousel) : [],
       data_agendamento: agendamentoIso,
       status: finalStatus,
-      prompt_ia: tipo === "Carrossel" ? enforcedPrompts.join("\n---\n") : prompt || null,
+      prompt_ia: effectiveTipo === "Carrossel" ? (isX ? prompt : enforcedPrompts.join("\n---\n")) : prompt || null,
     }).select("id").maybeSingle();
     setSaving(false);
     if (error) return toast.error(error.message);
