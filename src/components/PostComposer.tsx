@@ -1278,19 +1278,38 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             </div>
 
 
-            {imagem && (
-              <div className="relative rounded-lg overflow-hidden border">
-                <img src={imagem} alt="prévia" className="w-full aspect-video object-cover" />
-                <Button
-                  size="icon"
-                  variant="destructive"
-                  className="absolute top-2 right-2 h-8 w-8"
-                  onClick={() => setImagem(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                <Badge className="absolute top-2 left-2 bg-slate-900/80 text-white">16:9 conceitual</Badge>
-              </div>
+            {xSlides > 1 ? (
+              filledCarouselPreview.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {Array.from({ length: xSlides }, (_, i) => (
+                    <div key={i} className="relative rounded-lg overflow-hidden border bg-muted">
+                      {filledCarouselPreview[i] ? (
+                        <img src={filledCarouselPreview[i]} alt={`slide ${i + 1}`} className="w-full aspect-video object-cover" />
+                      ) : (
+                        <div className="w-full aspect-video flex items-center justify-center text-xs text-muted-foreground">
+                          {loadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : `Slide ${i + 1}`}
+                        </div>
+                      )}
+                      <Badge className="absolute top-1 left-1 bg-slate-900/80 text-white text-[10px]">{i + 1}/{xSlides}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              imagem && (
+                <div className="relative rounded-lg overflow-hidden border">
+                  <img src={imagem} alt="prévia" className="w-full aspect-video object-cover" />
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute top-2 right-2 h-8 w-8"
+                    onClick={() => setImagem(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Badge className="absolute top-2 left-2 bg-slate-900/80 text-white">16:9 conceitual</Badge>
+                </div>
+              )
             )}
 
             <Button onClick={() => handleSave(false)} disabled={saving} size="lg" variant="outline" className="w-full">
