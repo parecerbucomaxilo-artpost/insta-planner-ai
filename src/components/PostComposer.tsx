@@ -364,7 +364,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           title: isHook ? (tema || extractFirstLine(captionForAuto)) : `Ponto ${index + 1}`,
           subtitle: isHook ? extractFirstLine(captionForAuto) : "",
           bullets: slideRole === "carousel-middle" ? bullets : undefined,
-          cta: isCta ? "Agende sua consulta" : undefined,
+          cta: isCta ? "Salve · Marque um colega · Comente" : undefined,
           doctorName: perfil?.nome_profissional ?? "",
           cro: perfil?.cro_uf ?? "",
           slideIndex: index,
