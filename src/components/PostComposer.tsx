@@ -469,13 +469,14 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     }
 
     setLoadingPage(-1); // -1 = "todas"
-    const bullets = extractBullets(captionForAuto);
+    const slides = splitCaptionIntoSlides(captionForAuto, total);
 
     try {
       const results = await Promise.all(
         enforcedPrompts.map(async (pageOrientation, index) => {
+          const slideText = slides[index] || captionForAuto;
           const finalPrompt = imageMode === "auto"
-            ? buildAutoPrompt(`${captionForAuto}\n\nPágina ${index + 1} do carrossel.`)
+            ? buildAutoPrompt(captionForAuto, slideText)
             : buildManualPrompt(pageOrientation);
           const isHook = index === 0;
           const isCta = index === total - 1 && total > 1;
@@ -484,13 +485,21 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             : isCta
             ? "carousel-cta"
             : "carousel-middle";
+          const slideTitle = isHook
+            ? (tema || extractFirstLine(slideText) || extractFirstLine(captionForAuto))
+            : extractFirstLine(slideText).slice(0, 60) || `Ponto ${index + 1}`;
+          const slideSubtitle = slideText.replace(extractFirstLine(slideText), "").trim().slice(0, 140)
+            || extractFirstLine(slideText);
+          const slideBullets = slideRole === "carousel-middle"
+            ? (extractBullets(slideText).length ? extractBullets(slideText) : [slideText.slice(0, 80)])
+            : undefined;
           const { dataUrl } = await genImage({
             data: {
               prompt: finalPrompt,
               slideRole,
-              title: isHook ? (tema || extractFirstLine(captionForAuto)) : `Ponto ${index + 1}`,
-              subtitle: isHook ? extractFirstLine(captionForAuto) : "",
-              bullets: slideRole === "carousel-middle" ? bullets : undefined,
+              title: slideTitle,
+              subtitle: slideSubtitle,
+              bullets: slideBullets,
               cta: isCta ? "Salve · Marque um colega · Comente" : undefined,
               doctorName: perfil?.nome_profissional ?? "",
               cro: perfil?.cro_uf ?? "",
