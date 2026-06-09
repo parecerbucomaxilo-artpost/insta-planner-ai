@@ -241,8 +241,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     try {
       return await applyWatermark(src, watermarkLogo, {
         position: "br",
-        sizeRatio: 0.10,
-        opacity: 0.85,
+        sizeRatio: 0.05,
+        opacity: 0.65,
         background: false,
       });
     } catch {
