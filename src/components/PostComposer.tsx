@@ -1,4 +1,4 @@
-import { useState, useMemo, type ChangeEvent } from "react";
+import { useState, useMemo, useEffect, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { generateImage } from "@/lib/ai/generate-image.functions";
