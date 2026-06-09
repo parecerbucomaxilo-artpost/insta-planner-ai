@@ -1161,11 +1161,31 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               <div className="h-8 w-8 rounded-md bg-gradient-to-br from-slate-800 to-black flex items-center justify-center text-white">
                 <Twitter className="h-4 w-4" />
               </div>
-              <div>
-                <Label className="text-sm font-semibold">Post estilo X (Twitter)</Label>
+              <div className="flex-1">
+                <Label className="text-sm font-semibold">Post estilo X → Instagram</Label>
                 <p className="text-[11px] text-muted-foreground">
-                  Texto curto, autoridade científica rápida. Imagem 16:9 conceitual.
+                  Texto curto e autoridade. Publicado no Instagram (até 3 slides 16:9).
                 </p>
+              </div>
+            </div>
+
+            {/* Quantidade de slides (1 a 3) — X publicado como carrossel do Instagram */}
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Slides no estilo X (máx. 3)
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3].map((n) => (
+                  <Button
+                    key={n}
+                    type="button"
+                    variant={xSlides === n ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setXSlides(n as 1 | 2 | 3)}
+                  >
+                    {n} {n === 1 ? "slide" : "slides"}
+                  </Button>
+                ))}
               </div>
             </div>
 
