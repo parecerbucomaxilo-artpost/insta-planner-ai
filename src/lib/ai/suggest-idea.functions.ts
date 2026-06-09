@@ -15,15 +15,43 @@ const PerfilSchema = z
 const FIXED_NICHE =
   "Odontologia, focado especificamente nas áreas de Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar";
 
+// Biblioteca de formatos para rotação (combate à repetição)
+const FORMATOS = [
+  "post educativo (explica um conceito clínico de forma acessível)",
+  "estudo de caso anonimizado (situação clínica + raciocínio + desfecho)",
+  "quebra de mito (afirmação comum vs. evidência atual)",
+  "lista de ferramentas/recursos (3-5 itens úteis ao público)",
+  "reflexão de bastidores (rotina hospitalar, decisão clínica difícil)",
+  "checklist prático (sinais de alerta, cuidados pós-operatórios)",
+  "comparativo técnico (técnica A vs B, prós/contras)",
+  "responder pergunta frequente do paciente",
+];
+
+function pickFormato(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  return FORMATOS[Math.abs(h) % FORMATOS.length];
+}
+
 function buildSystem(perfil?: z.infer<typeof PerfilSchema>) {
   const ctx = perfil
-    ? `\n\nCONTEXTO DO ESPECIALISTA (memória da IA — adapte tudo a este perfil, cite-o quando natural):\n- Nome: ${perfil.nome || "(não informado)"}\n- Registro: ${perfil.cro_uf || "(não informado)"}\n- Subespecialidades: ${(perfil.subespecialidades || []).join(", ") || "(não informado)"}\n- Tom de voz preferido: ${perfil.tom_voz || "Científico"}`
+    ? `\n\nCONTEXTO DO ESPECIALISTA:\n- Nome: ${perfil.nome || "(n/d)"}\n- Registro: ${perfil.cro_uf || "(n/d)"}\n- Subespecialidades: ${(perfil.subespecialidades || []).join(", ") || "(n/d)"}\n- Tom preferido: ${perfil.tom_voz || "Científico"}`
     : "";
-  return `Você é um estrategista de conteúdo especializado em comunicação para profissionais e clínicas de ${FIXED_NICHE}.
+  return `Você é estrategista sênior de conteúdo para ${FIXED_NICHE}.
 
-Domina os temas: cirurgias ortognáticas, traumas de face, dentes inclusos complexos, biópsias de lesões bucais, pacientes sistemicamente comprometidos em ambiente hospitalar, disfunções de ATM, reconstruções maxilofaciais, cirurgia oncológica de cabeça e pescoço, anestesia geral em odontologia, cuidados pós-operatórios, infecções odontogênicas graves, implantes complexos, próteses maxilofaciais.
+OBJETIVO OCULTO: atrair consultas e agendamentos SEM jamais soar comercial. Gere valor massivo, identifique dores latentes e demonstre autoridade. A conversão acontece como consequência orgânica.
 
-Tom: técnico, ético, humanizado, baseado em evidências. Linguagem profissional e respeitosa. Nunca prometa resultados, nunca exiba conteúdo gráfico/sangrento. Adapta tom e formato para cada rede social. Sempre em português brasileiro. Inclui aviso "Conteúdo educacional. Consulte um profissional." quando pertinente.${ctx}`;
+PROIBIDO TERMINANTEMENTE qualquer frase de venda explícita: "Agende sua consulta", "Marque sua avaliação", "Agende agora", "Compre", "Contrate", "Entre em contato para orçamento", "Fale conosco", "WhatsApp na bio", "Link na bio", "Clique aqui". NÃO usar essas frases em hipótese alguma.
+
+CTA OBRIGATÓRIA = engajamento ou reflexão. Exemplos válidos: "Como você lida com isso na sua rotina? Comenta aqui", "Envie este post para alguém que precisa ver isso hoje", "Salve para consultar depois", "Conhecia esse detalhe? Conta nos comentários", "Marque um colega que vai se identificar".
+
+ADAPTAÇÃO POR REDE — siga estritamente:
+• Instagram → tom visual impactante, linguagem humanizada, storytelling, soluções práticas do dia a dia, frases curtas, emojis sutis.
+• LinkedIn → tom corporativo e técnico, thought leadership, análises de mercado, tendências do setor, maturidade profissional. Sem ser frio nem puramente acadêmico.
+
+VARIABILIDADE: alterne formato a cada chamada (nunca repetir a introdução). Use formato sugerido como guia. Varie sinônimos, ganchos e estruturas.
+
+Tom: técnico, ético, humanizado, baseado em evidência. Sem promessas de resultado. Sem conteúdo gráfico. Português brasileiro com acentos corretos.${ctx}`;
 }
 
 function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, estilo: "padrao" | "x" = "padrao") {
