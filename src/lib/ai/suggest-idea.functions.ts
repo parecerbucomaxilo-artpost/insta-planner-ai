@@ -15,15 +15,43 @@ const PerfilSchema = z
 const FIXED_NICHE =
   "Odontologia, focado especificamente nas áreas de Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar";
 
+// Biblioteca de formatos para rotação (combate à repetição)
+const FORMATOS = [
+  "post educativo (explica um conceito clínico de forma acessível)",
+  "estudo de caso anonimizado (situação clínica + raciocínio + desfecho)",
+  "quebra de mito (afirmação comum vs. evidência atual)",
+  "lista de ferramentas/recursos (3-5 itens úteis ao público)",
+  "reflexão de bastidores (rotina hospitalar, decisão clínica difícil)",
+  "checklist prático (sinais de alerta, cuidados pós-operatórios)",
+  "comparativo técnico (técnica A vs B, prós/contras)",
+  "responder pergunta frequente do paciente",
+];
+
+function pickFormato(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  return FORMATOS[Math.abs(h) % FORMATOS.length];
+}
+
 function buildSystem(perfil?: z.infer<typeof PerfilSchema>) {
   const ctx = perfil
-    ? `\n\nCONTEXTO DO ESPECIALISTA (memória da IA — adapte tudo a este perfil, cite-o quando natural):\n- Nome: ${perfil.nome || "(não informado)"}\n- Registro: ${perfil.cro_uf || "(não informado)"}\n- Subespecialidades: ${(perfil.subespecialidades || []).join(", ") || "(não informado)"}\n- Tom de voz preferido: ${perfil.tom_voz || "Científico"}`
+    ? `\n\nCONTEXTO DO ESPECIALISTA:\n- Nome: ${perfil.nome || "(n/d)"}\n- Registro: ${perfil.cro_uf || "(n/d)"}\n- Subespecialidades: ${(perfil.subespecialidades || []).join(", ") || "(n/d)"}\n- Tom preferido: ${perfil.tom_voz || "Científico"}`
     : "";
-  return `Você é um estrategista de conteúdo especializado em comunicação para profissionais e clínicas de ${FIXED_NICHE}.
+  return `Você é estrategista sênior de conteúdo para ${FIXED_NICHE}.
 
-Domina os temas: cirurgias ortognáticas, traumas de face, dentes inclusos complexos, biópsias de lesões bucais, pacientes sistemicamente comprometidos em ambiente hospitalar, disfunções de ATM, reconstruções maxilofaciais, cirurgia oncológica de cabeça e pescoço, anestesia geral em odontologia, cuidados pós-operatórios, infecções odontogênicas graves, implantes complexos, próteses maxilofaciais.
+OBJETIVO OCULTO: atrair consultas e agendamentos SEM jamais soar comercial. Gere valor massivo, identifique dores latentes e demonstre autoridade. A conversão acontece como consequência orgânica.
 
-Tom: técnico, ético, humanizado, baseado em evidências. Linguagem profissional e respeitosa. Nunca prometa resultados, nunca exiba conteúdo gráfico/sangrento. Adapta tom e formato para cada rede social. Sempre em português brasileiro. Inclui aviso "Conteúdo educacional. Consulte um profissional." quando pertinente.${ctx}`;
+PROIBIDO TERMINANTEMENTE qualquer frase de venda explícita: "Agende sua consulta", "Marque sua avaliação", "Agende agora", "Compre", "Contrate", "Entre em contato para orçamento", "Fale conosco", "WhatsApp na bio", "Link na bio", "Clique aqui". NÃO usar essas frases em hipótese alguma.
+
+CTA OBRIGATÓRIA = engajamento ou reflexão. Exemplos válidos: "Como você lida com isso na sua rotina? Comenta aqui", "Envie este post para alguém que precisa ver isso hoje", "Salve para consultar depois", "Conhecia esse detalhe? Conta nos comentários", "Marque um colega que vai se identificar".
+
+ADAPTAÇÃO POR REDE — siga estritamente:
+• Instagram → tom visual impactante, linguagem humanizada, storytelling, soluções práticas do dia a dia, frases curtas, emojis sutis.
+• LinkedIn → tom corporativo e técnico, thought leadership, análises de mercado, tendências do setor, maturidade profissional. Sem ser frio nem puramente acadêmico.
+
+VARIABILIDADE: alterne formato a cada chamada (nunca repetir a introdução). Use formato sugerido como guia. Varie sinônimos, ganchos e estruturas.
+
+Tom: técnico, ético, humanizado, baseado em evidência. Sem promessas de resultado. Sem conteúdo gráfico. Português brasileiro com acentos corretos.${ctx}`;
 }
 
 function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, estilo: "padrao" | "x" = "padrao") {
@@ -108,7 +136,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
         props.legenda_instagram = {
           type: "string",
           description:
-            "Conteúdo educativo e humanizado em pt-BR para Instagram. Explique o procedimento, cuidados pós-operatórios ou rotina hospitalar em linguagem acessível ao paciente. Parágrafos curtos, emojis sutis (🦷 ⚕️ 🏥), gancho na 1ª linha, e BLOCO de 8-12 hashtags ao final separado por linha em branco (incluir #CTBMF #BucoMaxiloFacial #OdontologiaHospitalar e variações relevantes).",
+            "Legenda Instagram pt-BR: tom HUMANIZADO, storytelling, visual impactante, soluções práticas do dia a dia. Gancho forte na 1ª linha, parágrafos curtos, emojis sutis (🦷 ⚕️ 🏥). Termine com CTA de ENGAJAMENTO (comentário/salvar/compartilhar). PROIBIDO 'Agende sua consulta' ou variações comerciais. Encerre com bloco de 8-12 hashtags ultra-específicas após linha em branco.",
         };
         required.push("legenda_instagram");
       }
@@ -116,7 +144,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
         props.legenda_linkedin = {
           type: "string",
           description:
-            "Post técnico em pt-BR para LinkedIn voltado a profissionais da saúde. Apresente caso clínico, discussão de artigo, gestão hospitalar ou reflexão para networking. Gancho profissional na 1ª linha, parágrafos curtos (1-2 linhas), referência/insight de evidência, CTA para debate entre colegas, 4-6 hashtags corporativas (#CirurgiaBucoMaxiloFacial #OdontologiaHospitalar #CTBMF etc.). Sem emojis excessivos.",
+            "Post LinkedIn pt-BR: tom CORPORATIVO e TÉCNICO, thought leadership, análise de mercado/tendências do setor, maturidade profissional (sem ser frio nem puramente acadêmico). Gancho profissional, parágrafos de 1-2 linhas, insight de evidência, CTA de DEBATE entre colegas (nunca comercial). PROIBIDO 'Agende' / 'Contrate' / 'Link na bio'. 4-6 hashtags corporativas.",
         };
         required.push("legenda_linkedin");
       }
@@ -126,14 +154,18 @@ export const suggestIdea = createServerFn({ method: "POST" })
     props.mensagem_direct = {
       type: "string",
       description:
-        "Mensagem curta em pt-BR (até 400 caracteres) acolhedora e profissional para a SECRETÁRIA ou o médico responderem QUEM comentar/chamar no Direct sobre este post. Estrutura: cumprimento caloroso, reconhecimento do interesse, oferta de informação ou agendamento, encerramento gentil. Sem promessas de cura. Sem usar dados pessoais do paciente. Pode iniciar com 'Olá!' ou 'Oi, tudo bem?'.",
+        "Mensagem curta em pt-BR (até 400 caracteres) acolhedora e profissional para a secretária/médico responderem quem comentar/chamar no Direct. SEM frases de venda explícita (nada de 'Agende sua consulta'). Acolha, ofereça informação útil, convide para conversa.",
     };
     required.push("mensagem_direct");
 
-    const audienceLabel = isX ? "rede X (Twitter), formato tweet curto" : `Redes selecionadas: ${data.networks.join(", ") || "nenhuma"}`;
+    const formatoSugerido = pickFormato((data.comando || "") + Date.now().toString());
+    const ctaRule = "CTA DE FECHAMENTO obrigatória do tipo engajamento/reflexão (ex.: 'Como você lida com isso? Comenta', 'Envie para quem precisa ver', 'Salve para depois'). NUNCA escreva 'Agende sua consulta', 'Marque sua avaliação', 'Compre', 'Contrate', 'Link na bio' ou variações comerciais.";
+    const audienceLabel = isX
+      ? "rede X (Twitter), tweet curto"
+      : `Redes: ${data.networks.join(", ") || "nenhuma"} — adapte: Instagram = humanizado/storytelling/prático; LinkedIn = corporativo/thought leadership/análise.`;
     const userPrompt = data.comando && data.comando.length > 0
-      ? `O usuário escreveu o seguinte COMANDO para o post: "${data.comando}". Crie UMA ideia de post fiel a esse comando, sempre dentro do nicho ${FIXED_NICHE}. Enriqueça com profundidade clínica e tom adequado. ${audienceLabel}. ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."} Inclua também a mensagem_direct.`
-      : `Gere UMA ideia de post relevante para ${FIXED_NICHE}. ${audienceLabel}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."} Inclua também a mensagem_direct.`;
+      ? `COMANDO do usuário: "${data.comando}". Crie UMA ideia fiel ao comando, dentro de ${FIXED_NICHE}. Formato sugerido: ${formatoSugerido}. ${audienceLabel}. ${ctaRule} ${isX ? "Tweet até 280 chars, gancho+dado+pergunta, máx 2 hashtags." : "Adapte tom por rede."} Inclua mensagem_direct.`
+      : `Gere UMA ideia inédita para ${FIXED_NICHE}. Formato sugerido: ${formatoSugerido}. Varie tema e introdução (nunca repetir abertura). ${audienceLabel}. ${ctaRule} ${isX ? "Tweet até 280 chars, gancho+dado+pergunta, máx 2 hashtags." : "Adapte tom por rede."} Inclua mensagem_direct.`;
 
     let parsedArgs: string | undefined;
 
@@ -149,7 +181,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
         body: JSON.stringify({
           // PERF: Haiku é ~3x mais rápido que Sonnet para texto curto estruturado
           model: "claude-3-5-haiku-20241022",
-          max_tokens: 1024,
+          max_tokens: 700,
           system: system,
           messages: [{ role: "user", content: userPrompt }],
           tools: [
@@ -190,7 +222,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "openai/gpt-5",
+          model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: system },
             { role: "user", content: userPrompt },

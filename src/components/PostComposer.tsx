@@ -1,4 +1,4 @@
-import { useState, useMemo, type ChangeEvent } from "react";
+import { useState, useMemo, useEffect, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { generateImage } from "@/lib/ai/generate-image.functions";
@@ -99,7 +99,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const X_MAX = 280;
   
 
-  const maxCarousel = 10;
+  const maxCarousel = 7;
+  const minCarousel = 4;
 
   const toggleNetwork = (n: Network) => {
     setNetworks((prev) =>
@@ -240,8 +241,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     try {
       return await applyWatermark(src, watermarkLogo, {
         position: "br",
-        sizeRatio: 0.10,
-        opacity: 0.85,
+        sizeRatio: 0.05,
+        opacity: 0.65,
         background: false,
       });
     } catch {
@@ -363,7 +364,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           title: isHook ? (tema || extractFirstLine(captionForAuto)) : `Ponto ${index + 1}`,
           subtitle: isHook ? extractFirstLine(captionForAuto) : "",
           bullets: slideRole === "carousel-middle" ? bullets : undefined,
-          cta: isCta ? "Agende sua consulta" : undefined,
+          cta: isCta ? "Salve · Marque um colega · Comente" : undefined,
           doctorName: perfil?.nome_profissional ?? "",
           cro: perfil?.cro_uf ?? "",
           slideIndex: index,
@@ -423,7 +424,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               title: isHook ? (tema || extractFirstLine(captionForAuto)) : `Ponto ${index + 1}`,
               subtitle: isHook ? extractFirstLine(captionForAuto) : "",
               bullets: slideRole === "carousel-middle" ? bullets : undefined,
-              cta: isCta ? "Agende sua consulta" : undefined,
+              cta: isCta ? "Salve · Marque um colega · Comente" : undefined,
               doctorName: perfil?.nome_profissional ?? "",
               cro: perfil?.cro_uf ?? "",
               slideIndex: index,
@@ -470,6 +471,18 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       return toast.error(`Máximo ${maxCarousel} páginas`);
     setCarouselPrompts((p) => [...p, ""]);
   };
+
+  // Quando entra em modo Carrossel, garante mínimo de 4 slides automaticamente
+  useEffect(() => {
+    if (tipo === "Carrossel" && carouselPrompts.length < minCarousel) {
+      setCarouselPrompts((p) => {
+        const arr = [...p];
+        while (arr.length < minCarousel) arr.push("");
+        return arr;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipo]);
 
   const removeCarouselPage = (i: number) => {
     setCarouselPrompts((p) => p.filter((_, idx) => idx !== i));

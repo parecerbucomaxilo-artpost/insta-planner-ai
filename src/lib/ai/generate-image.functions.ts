@@ -109,10 +109,12 @@ ${signature}
 ${fontDirective} ${colorRule} ${layoutBullets}${slideCounter}`;
   }
 
-  // carousel-cta
-  return ` MANDATORY INTEGRATED TEXT — CAROUSEL FINAL SLIDE (CTA). Render EXACTLY (no typos):
-- BIG CTA: "${safeCta || safeTitle || "Agende sua consulta"}"
-- SUPPORT LINE (smaller, just below): "${safeSubtitle || "Ficou com alguma dúvida? Comente abaixo."}"
+  // carousel-cta — CTA de ENGAJAMENTO (jamais frase de venda)
+  const engagementCta = safeCta || "Salve este post · Marque um colega · Comente sua dúvida";
+  return ` MANDATORY INTEGRATED TEXT — CAROUSEL FINAL SLIDE (engagement CTA, NOT a sales pitch). Render EXACTLY (no typos):
+- BIG CTA: "${engagementCta}"
+- SUPPORT LINE (smaller, just below): "${safeSubtitle || "Compartilhe com quem precisa ver isso hoje."}"
+FORBIDDEN phrases anywhere on the slide: "Agende sua consulta", "Marque sua avaliação", "Compre", "Contrate", "Link na bio", "WhatsApp", "Fale conosco".
 ${signature || ' BOTTOM SIGNATURE BAR (mandatory): the doctor name and CRO registration rendered in clean uppercase sans-serif, white over a thin navy strip.'}
 ${fontDirective} ${colorRule} ${layoutCta}${slideCounter}`;
 }
