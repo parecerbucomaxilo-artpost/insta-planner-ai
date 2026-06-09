@@ -29,6 +29,7 @@ export type Database = {
           tom_voz: string
           updated_at: string
           url_logo: string | null
+          user_id: string | null
         }
         Insert: {
           arroba_usuario?: string
@@ -44,6 +45,7 @@ export type Database = {
           tom_voz?: string
           updated_at?: string
           url_logo?: string | null
+          user_id?: string | null
         }
         Update: {
           arroba_usuario?: string
@@ -59,6 +61,7 @@ export type Database = {
           tom_voz?: string
           updated_at?: string
           url_logo?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -81,6 +84,7 @@ export type Database = {
           tipo_post: string
           updated_at: string
           url_imagem: string | null
+          user_id: string | null
           visualizacoes: number
         }
         Insert: {
@@ -101,6 +105,7 @@ export type Database = {
           tipo_post: string
           updated_at?: string
           url_imagem?: string | null
+          user_id?: string | null
           visualizacoes?: number
         }
         Update: {
@@ -121,6 +126,7 @@ export type Database = {
           tipo_post?: string
           updated_at?: string
           url_imagem?: string | null
+          user_id?: string | null
           visualizacoes?: number
         }
         Relationships: []

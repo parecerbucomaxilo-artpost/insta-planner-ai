@@ -1,5 +1,6 @@
 import { useState, useMemo, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthedUserId } from "@/lib/auth-utils";
 import { generateImage } from "@/lib/ai/generate-image.functions";
 import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
 import { dispatchAlbato } from "@/lib/webhooks/albato.functions";
@@ -421,7 +422,10 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         : status;
 
     setSaving(true);
+    let uid: string;
+    try { uid = await getAuthedUserId(); } catch (e) { setSaving(false); return toast.error(e instanceof Error ? e.message : "Sessão expirada"); }
     const { data: inserted, error } = await supabase.from("posts").insert({
+      user_id: uid,
       tipo_post: tipo,
       estilo_layout: "Padrão",
       formato_midia: formato,
@@ -489,10 +493,12 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     setSaving(true);
     const nowIso = new Date().toISOString();
     try {
+      const uid = await getAuthedUserId();
       const mediaUrl = tipo === "Post Único" ? imagem : filledCarouselPreview[0] ?? null;
       const { data: inserted, error } = await supabase
         .from("posts")
         .insert({
+          user_id: uid,
           tipo_post: tipo,
           estilo_layout: "Padrão",
           formato_midia: formato,

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthedUserId } from "@/lib/auth-utils";
 import { useServerFn } from "@tanstack/react-start";
 import { weeklyPlan } from "@/lib/ai/weekly-plan.functions";
 import { generateImage } from "@/lib/ai/generate-image.functions";
@@ -198,7 +199,10 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
     if (!d.legenda.trim()) return toast.error("Texto vazio.");
     const data = new Date(d.date);
     data.setHours(9, 0, 0, 0);
+    let uid: string;
+    try { uid = await getAuthedUserId(); } catch (e) { return toast.error(e instanceof Error ? e.message : "Sessão expirada"); }
     const { error } = await supabase.from("posts").insert({
+      user_id: uid,
       tipo_post: "Post Único",
       estilo_layout: "Padrão",
       formato_midia: "Imagem",
