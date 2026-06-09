@@ -3,12 +3,12 @@ import { z } from "zod";
 
 // ===================== IDENTIDADE VISUAL FIXA =====================
 const STYLE_PREFIX =
-  "Premium editorial medical design layout fusing high-end studio photography, translucent 3D anatomical renders and crisp editorial typography. ";
+  "Premium editorial Instagram Feed post (1080x1080) for a Brazilian oral and maxillofacial surgeon positioning as a high-authority hospital-based specialist. Elegant medical office in São Paulo, modern clinic atmosphere, subtle hospital reference in the background, clean and trustworthy environment. A confident male dentist/surgeon figure in a pristine white coat, professional posture, natural calm expression, premium healthcare aesthetic. ";
 const STYLE_SUFFIX =
-  " Color palette: dominant deep navy blue, glowing cyan neon tech accents, dark graphite gray and pristine surgical white — strictly NO warm tones (no yellow, red or orange beyond subtle skin). Dark minimalist medical abstract background with cinematic directional lighting and blue neon light beams for depth. The 3D translucent skull / digital wireframe mesh is used ONLY as background or lateral element (never centered over the text area), leaving a clean dark zone with high contrast so the integrated typography stays perfectly legible. Hyperrealistic 8k, photorealistic medical sci-fi aesthetic, professional studio art-direction, award-winning editorial composition. Absolutely no light or colorful backgrounds, no cheap stock photography look, no blood, no scary surgical gore.";
+  " COMPOSITION: strong editorial layout — the expert slightly on the RIGHT, text block on the LEFT inside the safe zone. Protected margins: minimum 100px lateral and 200px vertical; all important text stays inside the central safe area. COLOR PALETTE: deep navy blue, pristine white, light gray, with a subtle GOLD accent for authority (thin gold underline / thin gold rule under the CTA). Clean high contrast, no visual pollution, no neon cyan, no sci-fi wireframe skulls, no warm skin-overpowering tones. TYPOGRAPHY: modern bold sans-serif (Montserrat / Inter / Helvetica Neue style), high readability, premium medical authority. MOOD: trust, expertise, hospital safety, academic authority, calm confidence. Hyperrealistic 8k professional photography blended with crisp editorial typography, award-winning composition.";
 
 const NEGATIVE =
-  "amateur stock photo, bright background, white background, warm color palette, yellow/red/orange dominant, blood, gore, scary hospital, low resolution, cartoon, illustration, misspelled text, gibberish letters, unreadable typography, lorem ipsum, watermark stripes covering text, fake brand logos";
+  "amateur stock photo, cluttered background, cartoon, illustration, neon cyan, sci-fi wireframe skull, glowing tech mesh, blood, gore, scary hospital, low resolution, misspelled text, gibberish letters, anglicized portuguese, missing accents, repeated copy, lorem ipsum, fake brand logos, female figure when male was requested, multiple people";
 
 // ===================== DIRETRIZES DE TIPOGRAFIA OBRIGATÓRIAS =====================
 function buildTypographyDirective(opts: {
@@ -53,7 +53,7 @@ function buildTypographyDirective(opts: {
     "TYPOGRAPHY: clean modern editorial sans-serif (Montserrat / Inter / Helvetica Neue style), perfectly legible, no script fonts, no serifs, no decorative fonts. Render text crisply embedded as part of the design — NOT as a flat overlay. Use generous letter-spacing on headings.";
 
   const colorRule =
-    "TEXT COLOR RULE: main title in pristine surgical white with 1-3 KEY WORDS highlighted in glowing cyan (#7DD3FC / #38BDF8). Secondary text in soft platinum gray (#CBD5E1). Never use warm colors for text.";
+    "TEXT COLOR RULE: main title in deep navy blue (#0B2545) over white/light-gray background OR pristine white over navy block — choose whichever yields strongest contrast. 1-3 KEY WORDS may be highlighted with a thin GOLD underline (#C9A24B). Secondary text in graphite gray (#475569). CTA rendered as a navy button with white text and a subtle gold border. Never use cyan, neon, or warm reds. ALL TEXT IN BRAZILIAN PORTUGUESE with correct accents — never anglicize, never omit accents, never repeat copy.";
 
   const layoutHook =
     "LAYOUT: large impactful HEADLINE positioned in the upper-left or upper-center, occupying ~30% of the canvas height. Strong negative space around it. The 3D skull / wireframe mesh sits in the right or lower portion of the frame as a background element, never overlapping the headline area.";
