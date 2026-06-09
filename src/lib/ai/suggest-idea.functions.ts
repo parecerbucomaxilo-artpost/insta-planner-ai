@@ -154,14 +154,18 @@ export const suggestIdea = createServerFn({ method: "POST" })
     props.mensagem_direct = {
       type: "string",
       description:
-        "Mensagem curta em pt-BR (até 400 caracteres) acolhedora e profissional para a SECRETÁRIA ou o médico responderem QUEM comentar/chamar no Direct sobre este post. Estrutura: cumprimento caloroso, reconhecimento do interesse, oferta de informação ou agendamento, encerramento gentil. Sem promessas de cura. Sem usar dados pessoais do paciente. Pode iniciar com 'Olá!' ou 'Oi, tudo bem?'.",
+        "Mensagem curta em pt-BR (até 400 caracteres) acolhedora e profissional para a secretária/médico responderem quem comentar/chamar no Direct. SEM frases de venda explícita (nada de 'Agende sua consulta'). Acolha, ofereça informação útil, convide para conversa.",
     };
     required.push("mensagem_direct");
 
-    const audienceLabel = isX ? "rede X (Twitter), formato tweet curto" : `Redes selecionadas: ${data.networks.join(", ") || "nenhuma"}`;
+    const formatoSugerido = pickFormato((data.comando || "") + Date.now().toString());
+    const ctaRule = "CTA DE FECHAMENTO obrigatória do tipo engajamento/reflexão (ex.: 'Como você lida com isso? Comenta', 'Envie para quem precisa ver', 'Salve para depois'). NUNCA escreva 'Agende sua consulta', 'Marque sua avaliação', 'Compre', 'Contrate', 'Link na bio' ou variações comerciais.";
+    const audienceLabel = isX
+      ? "rede X (Twitter), tweet curto"
+      : `Redes: ${data.networks.join(", ") || "nenhuma"} — adapte: Instagram = humanizado/storytelling/prático; LinkedIn = corporativo/thought leadership/análise.`;
     const userPrompt = data.comando && data.comando.length > 0
-      ? `O usuário escreveu o seguinte COMANDO para o post: "${data.comando}". Crie UMA ideia de post fiel a esse comando, sempre dentro do nicho ${FIXED_NICHE}. Enriqueça com profundidade clínica e tom adequado. ${audienceLabel}. ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."} Inclua também a mensagem_direct.`
-      : `Gere UMA ideia de post relevante para ${FIXED_NICHE}. ${audienceLabel}. Varie o tema a cada chamada (cirurgia ortognática, trauma facial, dentes inclusos, biópsia, ATM, paciente sistêmico hospitalar, infecção odontogênica, reconstrução, etc.). ${isX ? "Texto OBRIGATORIAMENTE até 280 caracteres totais, formato 'Autoridade Científica Rápida' (gancho + dado + pergunta) com no máx 2 hashtags." : "Adapte tom e formato por rede."} Inclua também a mensagem_direct.`;
+      ? `COMANDO do usuário: "${data.comando}". Crie UMA ideia fiel ao comando, dentro de ${FIXED_NICHE}. Formato sugerido: ${formatoSugerido}. ${audienceLabel}. ${ctaRule} ${isX ? "Tweet até 280 chars, gancho+dado+pergunta, máx 2 hashtags." : "Adapte tom por rede."} Inclua mensagem_direct.`
+      : `Gere UMA ideia inédita para ${FIXED_NICHE}. Formato sugerido: ${formatoSugerido}. Varie tema e introdução (nunca repetir abertura). ${audienceLabel}. ${ctaRule} ${isX ? "Tweet até 280 chars, gancho+dado+pergunta, máx 2 hashtags." : "Adapte tom por rede."} Inclua mensagem_direct.`;
 
     let parsedArgs: string | undefined;
 
