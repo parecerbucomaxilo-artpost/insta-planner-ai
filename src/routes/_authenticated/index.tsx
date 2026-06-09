@@ -118,8 +118,13 @@ function Dashboard() {
             <h1 className="text-lg font-bold leading-tight">Planner Chico</h1>
             <p className="text-xs text-muted-foreground">Agendamento de posts · Odontologia CTBMF & Hospitalar</p>
           </div>
-          <div className="ml-auto text-sm text-muted-foreground">
-            {posts.length} {posts.length === 1 ? "post" : "posts"}
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              {posts.length} {posts.length === 1 ? "post" : "posts"}
+            </span>
+            <Button variant="ghost" size="sm" onClick={handleSignOut} aria-label="Sair">
+              <LogOut className="h-4 w-4 mr-1.5" /> Sair
+            </Button>
           </div>
         </div>
       </header>
