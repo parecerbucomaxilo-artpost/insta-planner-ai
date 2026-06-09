@@ -473,7 +473,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   };
 
   // Quando entra em modo Carrossel, garante mínimo de 4 slides automaticamente
-  useMemo(() => {
+  useEffect(() => {
     if (tipo === "Carrossel" && carouselPrompts.length < minCarousel) {
       setCarouselPrompts((p) => {
         const arr = [...p];
@@ -481,6 +481,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
         return arr;
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tipo]);
 
   const removeCarouselPage = (i: number) => {
