@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import type { Network, FormatoMidia } from "@/lib/posts-types";
 import type { Perfil } from "@/components/ProfileSettings";
 import { applyWatermark } from "@/lib/watermark";
+import brandLogo from "@/assets/logo-planner.png.asset.json";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 
