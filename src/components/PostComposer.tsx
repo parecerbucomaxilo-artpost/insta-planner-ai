@@ -332,16 +332,20 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   ].join(" ");
 
   // Constrói um prompt visual médico/ético RICO e ARTÍSTICO a partir da legenda da rede ativa.
-  const buildAutoPrompt = (baseText: string): string => {
-    const caption = (baseText || tema || "").trim().slice(0, 600);
-    const visualStyle = pickStyle(caption || String(Date.now()));
+  const buildAutoPrompt = (baseText: string, slideText?: string): string => {
+    const caption = (baseText || tema || "").trim().slice(0, 400);
+    const slide = (slideText || baseText || tema || "").trim().slice(0, 400);
+    const visualStyle = pickStyle(slide || caption || String(Date.now()));
+    const subject = buildSlideVisualSubject(slide);
     return [
       `STYLE: ${visualStyle}.`,
-      "SUBJECT: Concept image for a high-end social media post about Oral & Maxillofacial Surgery / Hospital Dentistry (CTBMF) in a premium private clinic context.",
+      `SUBJECT (must be visually depicted, realistic photography): ${subject}.`,
+      `THIS SLIDE COMMUNICATES: "${slide}". The image must visually represent THIS specific message — not a generic clinic scene.`,
       PREMIUM_MEDICAL_DIRECTIVES,
-      `REFERENCE CONTENT (do NOT write any text on the image — only let it inspire mood and subject): "${caption}"`,
+      `OVERALL POST CONTEXT (for tone only): "${caption}".`,
     ].join(" ");
   };
+
 
   const buildManualPrompt = (userText: string): string => {
     const safe = (userText || "").trim().slice(0, 800);
