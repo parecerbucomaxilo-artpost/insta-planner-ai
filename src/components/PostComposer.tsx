@@ -574,7 +574,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const filledCarouselPreview = enforcedCarrossel.filter(Boolean);
   const hasContent =
     modoCriacao === "x"
-      ? Boolean(textoX.trim()) && textoX.length <= X_MAX
+      ? Boolean(textoX.trim()) && textoX.length <= X_MAX &&
+        (xSlides > 1 ? filledCarouselPreview.length >= xSlides : Boolean(imagem))
       : networks.length > 0 &&
         Boolean(primaryLegenda.trim()) &&
         (tipo === "Post Único" ? Boolean(imagem) : filledCarouselPreview.length > 0);
