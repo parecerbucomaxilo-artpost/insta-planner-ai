@@ -123,7 +123,7 @@ ${fontDirective} ${colorRule} ${layoutCta}${slideCounter}`;
 export const generateImage = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      prompt: z.string().min(2).max(2000),
+      prompt: z.string().min(2).max(8000),
       aspect: z.enum(["1:1", "16:9"]).optional().default("1:1"),
       conceptual: z.boolean().optional().default(false),
       slideRole: z
