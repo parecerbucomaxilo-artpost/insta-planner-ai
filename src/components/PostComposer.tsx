@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import type { Network, FormatoMidia } from "@/lib/posts-types";
 import type { Perfil } from "@/components/ProfileSettings";
 import { applyWatermark } from "@/lib/watermark";
+import brandLogo from "@/assets/logo-planner.png.asset.json";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 
@@ -203,19 +204,18 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
   const handleGenerateFromCommand = () => runIdeaFlow({ comando });
 
 
-  // Marca d'água por rede.
-  const watermarkLogo = useMemo<string | null>(() => {
-    if (!perfil) return null;
-    const activeNet = networks[0];
-    if (activeNet === "linkedin") return perfil.linkedin_foto_url ?? perfil.url_logo ?? null;
-    if (activeNet === "instagram") return perfil.instagram_foto_url ?? perfil.url_logo ?? null;
-    return perfil.instagram_foto_url ?? perfil.linkedin_foto_url ?? perfil.url_logo ?? null;
-  }, [perfil, networks]);
+  // Marca d'água da marca (logo transparente) — discreta, canto inferior direito.
+  const watermarkLogo = brandLogo.url;
 
   const maybeWatermark = async (src: string): Promise<string> => {
-    if (!watermark || !watermarkLogo) return src;
+    if (!watermark) return src;
     try {
-      return await applyWatermark(src, watermarkLogo);
+      return await applyWatermark(src, watermarkLogo, {
+        position: "br",
+        sizeRatio: 0.10,
+        opacity: 0.85,
+        background: false,
+      });
     } catch {
       toast.error("Falha ao aplicar marca d'água — salvando sem.");
       return src;
@@ -353,6 +353,62 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar");
+    } finally {
+      setLoadingPage(null);
+    }
+  };
+
+  const handleGenerateAllPages = async () => {
+    const captionForAuto = legendaIg || legendaLi;
+    const total = Math.max(1, enforcedPrompts.length);
+
+    if (imageMode === "auto" && !captionForAuto.trim() && !tema.trim()) {
+      return toast.error("Gere a legenda primeiro (ou troque para 'Fornecer Minhas Orientações').");
+    }
+    if (imageMode === "manual") {
+      const missing = enforcedPrompts.findIndex((p) => !p.trim());
+      if (missing >= 0) {
+        return toast.error(`Descreva o que quer ver na página ${missing + 1}.`);
+      }
+    }
+
+    setLoadingPage(-1); // -1 = "todas"
+    const bullets = extractBullets(captionForAuto);
+
+    try {
+      const results = await Promise.all(
+        enforcedPrompts.map(async (pageOrientation, index) => {
+          const finalPrompt = imageMode === "auto"
+            ? buildAutoPrompt(`${captionForAuto}\n\nPágina ${index + 1} do carrossel.`)
+            : buildManualPrompt(pageOrientation);
+          const isHook = index === 0;
+          const isCta = index === total - 1 && total > 1;
+          const slideRole: "carousel-hook" | "carousel-middle" | "carousel-cta" = isHook
+            ? "carousel-hook"
+            : isCta
+            ? "carousel-cta"
+            : "carousel-middle";
+          const { dataUrl } = await genImage({
+            data: {
+              prompt: finalPrompt,
+              slideRole,
+              title: isHook ? (tema || extractFirstLine(captionForAuto)) : `Ponto ${index + 1}`,
+              subtitle: isHook ? extractFirstLine(captionForAuto) : "",
+              bullets: slideRole === "carousel-middle" ? bullets : undefined,
+              cta: isCta ? "Agende sua consulta" : undefined,
+              doctorName: perfil?.nome_profissional ?? "",
+              cro: perfil?.cro_uf ?? "",
+              slideIndex: index,
+              totalSlides: total,
+            },
+          });
+          return await maybeWatermark(dataUrl);
+        }),
+      );
+      setCarrossel(results);
+      toast.success(`${total} páginas geradas!`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao gerar todas as páginas");
     } finally {
       setLoadingPage(null);
     }
@@ -948,6 +1004,18 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                   </div>
                 </Card>
               ))}
+
+              <Button
+                onClick={handleGenerateAllPages}
+                disabled={loadingPage !== null}
+                className="w-full bg-gradient-to-r from-sky-500 to-cyan-400 text-white hover:opacity-90"
+              >
+                {loadingPage === -1 ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando todas as páginas...</>
+                ) : (
+                  <><Sparkles className="h-4 w-4 mr-2" /> Gerar TODAS as páginas de uma vez</>
+                )}
+              </Button>
 
               {enforcedPrompts.length < maxCarousel && (
                 <Button variant="outline" onClick={addCarouselPage} className="w-full">
