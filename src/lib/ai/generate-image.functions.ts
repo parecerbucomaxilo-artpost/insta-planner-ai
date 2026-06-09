@@ -53,7 +53,7 @@ function buildTypographyDirective(opts: {
     "TYPOGRAPHY: clean modern editorial sans-serif (Montserrat / Inter / Helvetica Neue style), perfectly legible, no script fonts, no serifs, no decorative fonts. Render text crisply embedded as part of the design — NOT as a flat overlay. Use generous letter-spacing on headings.";
 
   const colorRule =
-    "TEXT COLOR RULE: main title in deep navy blue (#0B2545) over white/light-gray background OR pristine white over navy block — choose whichever yields strongest contrast. 1-3 KEY WORDS may be highlighted with a thin GOLD underline (#C9A24B). Secondary text in graphite gray (#475569). CTA rendered as a navy button with white text and a subtle gold border. Never use cyan, neon, or warm reds. ALL TEXT IN BRAZILIAN PORTUGUESE with correct accents — never anglicize, never omit accents, never repeat copy.";
+    "TEXT COLOR RULE: main title in deep medical blue (#0B2545) over white/light-gray background OR pristine white over deep navy block — choose whichever yields strongest contrast. 1-3 KEY WORDS may be highlighted in ELECTRIC BLUE (#1E90FF). Secondary text in graphite gray (#475569). CTA rendered as a deep navy button with white text. RED (#E63946) ONLY on anatomical pain/inflammation markers, never on copy. ALL TEXT IN BRAZILIAN PORTUGUESE with correct accents — never anglicize, never omit accents, never repeat copy, never translate, never rewrite.";
 
   const layoutHook =
     "LAYOUT: large impactful HEADLINE positioned in the upper-left or upper-center, occupying ~30% of the canvas height. Strong negative space around it. The 3D skull / wireframe mesh sits in the right or lower portion of the frame as a background element, never overlapping the headline area.";
