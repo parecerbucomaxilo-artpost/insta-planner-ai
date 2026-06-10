@@ -633,16 +633,14 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
     // Dispara webhook (Make)
     try {
-      const mediaRaw = tipo === "Post Único" ? imagem : filledCarousel[0] ?? null;
+      const mediaRaw = tipo === "Post Único" ? imagem : (enforcedCarrossel.filter(Boolean)[0] ?? null);
       let mediaUrl = mediaRaw;
       
-      // Se for base64, sobe para o storage antes
       if (mediaRaw && mediaRaw.startsWith("data:")) {
         try {
-          mediaUrl = await uploadToSupabase(mediaRaw, "post");
+          mediaUrl = await uploadToSupabase(mediaRaw, "post-schedule");
         } catch (uploadErr) {
-          console.error("Erro no upload automático:", uploadErr);
-          // Fallback para enviar o base64 se o storage falhar
+          console.error("Erro no upload automático ao agendar:", uploadErr);
         }
       }
 
@@ -719,12 +717,11 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
       let mediaUrl = mediaRaw;
       
-      // Upload para storage se for base64
       if (mediaRaw && mediaRaw.startsWith("data:")) {
         try {
           mediaUrl = await uploadToSupabase(mediaRaw, "post-now");
         } catch (uploadErr) {
-          console.error("Erro no upload automático:", uploadErr);
+          console.error("Erro no upload automático ao postar agora:", uploadErr);
         }
       }
 
