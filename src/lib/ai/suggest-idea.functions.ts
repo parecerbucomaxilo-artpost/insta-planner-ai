@@ -264,7 +264,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
           },
           signal: controller.signal,
           body: JSON.stringify({
-            model: "google/gemini-2.0-flash-exp", // Atualizado para Flash 2.0 p/ maior velocidade
+            model: "google/gemini-3-flash-preview",
             messages: [
               { role: "system", content: system },
               { role: "user", content: userPrompt },
