@@ -270,6 +270,11 @@ export const suggestIdea = createServerFn({ method: "POST" })
         const t = await res.text().catch(() => "");
         if (res.status === 429) throw new Error("Limite de requisições atingido. Tente em instantes.");
         if (res.status === 402) throw new Error("Créditos esgotados na workspace.");
+        // 5xx (502/503/504) costuma ser instabilidade transitória do gateway — devolve mock para não quebrar UI
+        if (res.status >= 500) {
+          console.error(`[suggestIdea] Gateway ${res.status}: ${t.slice(0, 200)}`);
+          return buildMock(data.networks, data.comando, data.estilo);
+        }
         throw new Error(`Falha na IA (${res.status}): ${t.slice(0, 200)}`);
       }
 
@@ -277,6 +282,11 @@ export const suggestIdea = createServerFn({ method: "POST" })
         choices?: Array<{ message?: { tool_calls?: Array<{ function?: { arguments?: string } }> } }>;
       };
       parsedArgs = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    }
+
+    if (!parsedArgs) {
+      console.error("[suggestIdea] Resposta sem tool_call — usando mock");
+      return buildMock(data.networks, data.comando, data.estilo);
     }
 
     if (!parsedArgs) throw new Error("Resposta sem sugestão");
