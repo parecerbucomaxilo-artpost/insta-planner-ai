@@ -134,7 +134,7 @@ function Dashboard() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="criar"><PlusCircle className="h-4 w-4 mr-1.5" /> Criar</TabsTrigger>
-            <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" /> Semana</TabsTrigger>
+            <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" /> Cronograma 7 Dias</TabsTrigger>
             <TabsTrigger value="calendario"><CalendarIcon className="h-4 w-4 mr-1.5" /> Calendário</TabsTrigger>
             <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todos os posts</TabsTrigger>
             <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" /> Insights de Performance</TabsTrigger>
