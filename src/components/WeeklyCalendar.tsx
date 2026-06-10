@@ -109,7 +109,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
 
   const autoGenTriggered = useRef(false);
   useEffect(() => {
-    if (autoGenerate && !autoGenTriggered.current && !loading && posts.every(p => p.status === "vazio")) {
+    if (autoGenerate && !autoGenTriggered.current && !loading) {
       autoGenTriggered.current = true;
       handleGerar();
     }
