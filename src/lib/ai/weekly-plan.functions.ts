@@ -157,11 +157,12 @@ export const weeklyPlan = createServerFn({ method: "POST" })
 
     if (!parsedArgs) throw new Error("Resposta sem cronograma.");
     return JSON.parse(parsedArgs) as {
-      dias: Array<{
+      posts: Array<{
         titulo: string;
         legenda_instagram: string;
         mensagem_direct: string;
         prompt_imagem: string;
+        hora_agendamento: string;
       }>;
     };
   });
