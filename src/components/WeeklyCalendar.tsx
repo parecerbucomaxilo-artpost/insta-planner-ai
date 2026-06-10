@@ -301,7 +301,6 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       }
 
       toast.success("Cronograma de 14 posts pronto! ✨", { id: tId });
-      toast.success("Cronograma de 14 posts pronto! ✨", { id: tId });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar cronograma", { id: tId });
     } finally {
