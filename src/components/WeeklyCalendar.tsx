@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Sparkles, Image as ImgIcon, Send, LayoutGrid, Smartphone } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Sparkles, Image as ImgIcon, Send, LayoutGrid, Smartphone, Video } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import type { Perfil } from "@/components/ProfileSettings";
@@ -27,7 +27,7 @@ type PostPlano = {
   mensagemDirect: string;
   promptImagem: string;
   horaAgendamento: string;
-  formato: "Feed" | "Stories";
+  formato: "Feed" | "Stories" | "Reels";
   imagem: string | null;
   status: "vazio" | "gerando" | "pronto";
 };
@@ -69,7 +69,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   const genPlan = useServerFn(weeklyPlan);
   const genImage = useServerFn(generateImage);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
-  const [formato, setFormato] = useState<"Feed" | "Stories">("Feed");
+  const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels">("Feed");
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState<PostPlano[]>(() =>
     DIAS.flatMap((label, i) => {
