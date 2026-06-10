@@ -1,0 +1,37 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+const MAKE_WEBHOOK_URL = "https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3";
+
+export const dispatchMakeWebhook = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      texto: z.string(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    console.log("[MakeServerFn] Iniciando disparo via servidor (evitando CORS)...");
+
+    try {
+      const response = await fetch(MAKE_WEBHOOK_URL, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          texto: data.texto
+        }),
+      });
+
+      console.log("[MakeServerFn] Resposta do Make:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`Make respondeu com erro: ${response.status}`);
+      }
+
+      return { success: true, status: response.status };
+    } catch (error) {
+      console.error("[MakeServerFn] Erro no disparo:", error);
+      throw error;
+    }
+  });
