@@ -471,6 +471,8 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
                         </button>
                       )}
                     </div>
+                  );
+                })}
               </div>
             </div>
           );
