@@ -680,75 +680,91 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
   // Função ISOLADA para o botão de postar agora, usando fetch nativo
   const handlePostNow = async () => {
-    // 1. Validações básicas (Imediato)
+    console.log("Iniciando handlePostNow...");
+    
     const isX = modoCriacao === "x";
     const currentLegenda = isX ? textoX : (legendaIg || legendaLi || "");
     const currentMedia = isX 
       ? (xSlides === 1 ? imagem : (enforcedCarrossel[0] || null)) 
       : (tipo === "Post Único" ? imagem : (enforcedCarrossel[0] || null));
 
-    if (!currentLegenda.trim()) return toast.error("A legenda está vazia.");
-    if (!currentMedia) return toast.error("Gere a imagem antes de postar.");
+    console.log("Dados atuais:", { isX, currentLegenda, hasMedia: !!currentMedia });
+
+    if (!currentLegenda.trim()) {
+      toast.error("A legenda está vazia.");
+      return;
+    }
+    if (!currentMedia) {
+      toast.error("Gere a imagem antes de postar.");
+      return;
+    }
     
-    if (saving) return;
+    if (saving) {
+      console.log("Já existe um salvamento em curso, ignorando clique.");
+      return;
+    }
+    
     setSaving(true);
-    const tId = toast.loading("Preparando envio...");
+    const tId = toast.loading("Preparando envio direto...");
 
     try {
-      // 2. Garantir URL Pública
-      // O usuário solicitou não usar o Supabase Storage devido a erros no Make.
-      // Substituindo por uma imagem pública genérica do Unsplash para garantir que o link seja sempre válido e acessível.
       const publicUrl = `https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800`;
-      console.log("Usando URL pública genérica para o Make:", publicUrl);
+      
+      const payload = {
+        texto_instagram: legendaIg || currentLegenda,
+        texto_linkedin: legendaLi || currentLegenda,
+        imagem_url: publicUrl,
+        timestamp: new Date().toISOString()
+      };
 
-      // 3. Fetch NATIVO direto do navegador para o Make (Evita 502 Bad Gateway interno)
-      toast.loading("Enviando para o Webhook do Make...", { id: tId });
+      console.log("Disparando fetch para o Make...", payload);
       
       const res = await fetch("https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          texto_instagram: legendaIg || currentLegenda,
-          texto_linkedin: legendaLi || currentLegenda,
-          imagem_url: publicUrl
-        })
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        mode: "cors", // Explicitamente habilitando CORS
+        body: JSON.stringify(payload)
       });
 
+      console.log("Resposta do Webhook:", { status: res.status, ok: res.ok });
+
       if (!res.ok) {
-        throw new Error(`Falha no Webhook (Status: ${res.status}). Verifique o Make.`);
+        throw new Error(`Erro no Webhook Make: ${res.status}`);
       }
 
-      // 4. Registro no banco (Opcional - em segundo plano)
-      void (async () => {
-        try {
-          const uid = await getAuthedUserId();
-          if (uid) {
-            await supabase.from("posts").insert({
-              user_id: uid,
-              tipo_post: isX ? (xSlides > 1 ? "Carrossel" : "Post Único") : tipo,
-              legenda: currentLegenda,
-              url_imagem: publicUrl,
-              status: "Publicado"
-            });
-          }
-        } catch (dbErr) {
-          console.warn("Aviso: Falha ao salvar log no banco (não crítico):", dbErr);
-        }
-      })();
+      const responseText = await res.text();
+      console.log("Corpo da resposta do Make:", responseText);
 
-      toast.success("Postagem enviada com sucesso!", { id: tId });
+      // Registro no banco
+      const uid = await getAuthedUserId();
+      if (uid) {
+        await supabase.from("posts").insert({
+          user_id: uid,
+          tipo_post: isX ? (xSlides > 1 ? "Carrossel" : "Post Único") : tipo,
+          legenda: currentLegenda,
+          url_imagem: publicUrl,
+          status: "Publicado"
+        });
+        console.log("Registro salvo no Supabase com sucesso.");
+      }
+
+      toast.success("Postagem enviada com sucesso ao Make!", { id: tId });
       
-      // Limpeza parcial
+      // Limpeza
       setImagem(null); 
       setCarrossel([]); 
       setPrompt("");
       if (onCreated) onCreated();
 
     } catch (err) {
-      console.error("[PostDirectError]", err);
-      toast.error(err instanceof Error ? err.message : "Erro ao postar", { id: tId });
+      console.error("ERRO CRÍTICO NO ENVIO:", err);
+      toast.error(err instanceof Error ? err.message : "Falha na conexão com o Make", { id: tId });
     } finally {
       setSaving(false);
+      console.log("Fim do processo handlePostNow.");
     }
   };
 
