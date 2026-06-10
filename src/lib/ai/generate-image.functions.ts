@@ -177,7 +177,7 @@ export const generateImage = createServerFn({ method: "POST" })
         model: "openai/gpt-image-2",
         prompt: finalPrompt,
         size,
-        quality: "high",
+        quality: "standard", // Alterado de "high" para "standard" para maior velocidade
         n: 1,
       }),
     });
