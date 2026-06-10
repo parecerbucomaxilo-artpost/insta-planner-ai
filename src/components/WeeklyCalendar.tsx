@@ -165,26 +165,39 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
         return updated;
       });
 
-      if (perfil?.nome_profissional || perfil?.cro_uf) {
-        const next = await Promise.all(
-          results.map(async (res: any) => {
-            if (res.status !== "fulfilled") return null;
-            try {
-              return await applyDoctorBadge(res.value.dataUrl, {
+      // aplica badge do médico e logo se houver
+      const next = await Promise.all(
+        results.map(async (res: any) => {
+          if (res.status !== "fulfilled") return null;
+          let currentUrl = res.value.dataUrl;
+          
+          // Aplica logo da clínica
+          try {
+            currentUrl = await applyWatermark(currentUrl, brandLogo, {
+              position: "tr", // Canto superior direito
+              sizeRatio: 0.08,
+              opacity: 0.8,
+            });
+          } catch (e) { console.error("Erro watermark logo:", e); }
+
+          // Aplica barra do médico
+          try {
+            if (perfil?.nome_profissional || perfil?.cro_uf) {
+              currentUrl = await applyDoctorBadge(currentUrl, {
                 nome: perfil.nome_profissional ?? "",
                 cro: perfil.cro_uf ?? "",
               });
-            } catch {
-              return res.value.dataUrl;
             }
-          }),
-        );
-        setPosts((arr) => {
-          const updated = arr.map((p, i) => ({ ...p, imagem: next[i] ?? p.imagem }));
-          writeWeekCache(weekStart.toISOString(), updated);
-          return updated;
-        });
-      }
+          } catch (e) { console.error("Erro badge médico:", e); }
+          
+          return currentUrl;
+        }),
+      );
+      setPosts((arr) => {
+        const updated = arr.map((p, i) => ({ ...p, imagem: next[i] ?? p.imagem }));
+        writeWeekCache(weekStart.toISOString(), updated);
+        return updated;
+      });
       toast.success("Cronograma de 14 posts pronto! ✨", { id: tId });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar cronograma", { id: tId });
