@@ -124,7 +124,7 @@ export const generateImage = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       prompt: z.string().min(2).max(8000),
-      aspect: z.enum(["1:1", "16:9"]).optional().default("1:1"),
+      aspect: z.enum(["1:1", "16:9", "9:16"]).optional().default("1:1"),
       conceptual: z.boolean().optional().default(false),
       slideRole: z
         .enum(["single", "carousel-hook", "carousel-middle", "carousel-cta", "conceptual"])
@@ -146,6 +146,8 @@ export const generateImage = createServerFn({ method: "POST" })
     const aspectClause =
       data.aspect === "16:9"
         ? " Strictly horizontal ultra-wide 16:9 aspect ratio composition."
+        : data.aspect === "9:16"
+        ? " Strictly vertical 9:16 aspect ratio for Instagram Stories, centered subject."
         : " Square 1:1 composition.";
 
     // Resolve papel do slide (conceptual flag tem prioridade p/ retrocompat)
@@ -166,7 +168,7 @@ export const generateImage = createServerFn({ method: "POST" })
 
     const finalPrompt = `${STYLE_PREFIX}${data.prompt}${STYLE_SUFFIX}${aspectClause}${typographyClause} CREATIVE DIRECTIVE: Use bold, viral-ready visual metaphors, high-impact contrast, and dynamic compositions designed to stop the scroll on Instagram and LinkedIn. Focus on emotional connection and scientific wonder. AUDIENCE: The visual communication must be highly accessible and engaging for laypeople (patients), using clear metaphors and avoiding overly technical or repulsive medical jargon in the imagery. Negative: ${NEGATIVE}.`;
 
-    const size = data.aspect === "16:9" ? "1536x1024" : "1024x1024";
+    const size = data.aspect === "16:9" ? "1536x1024" : data.aspect === "9:16" ? "1024x1792" : "1024x1024";
     const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
       method: "POST",
       headers: {
