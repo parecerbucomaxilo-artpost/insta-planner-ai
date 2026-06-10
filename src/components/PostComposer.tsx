@@ -1237,9 +1237,13 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
                 variant="outline" 
                 className="w-full bg-white border-blue-300 hover:bg-blue-50 text-blue-700 font-bold h-11 shadow-sm"
                 onClick={() => {
-                  const tabsElement = document.querySelector('[role="tablist"]');
-                  const weekTab = tabsElement?.querySelector('[value="semana"]') as HTMLElement;
-                  if (weekTab) weekTab.click();
+                  if (onTriggerWeekly) {
+                    onTriggerWeekly();
+                  } else {
+                    const tabsElement = document.querySelector('[role="tablist"]');
+                    const weekTab = tabsElement?.querySelector('[value="semana"]') as HTMLElement;
+                    if (weekTab) weekTab.click();
+                  }
                 }}
               >
                 <Sparkles className="h-4 w-4 mr-2 text-blue-600" />
