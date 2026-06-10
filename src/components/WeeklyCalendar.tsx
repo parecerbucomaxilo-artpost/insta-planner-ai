@@ -83,7 +83,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   );
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
-  const rebuildEmpty = (start: Date, curFormato: "Feed" | "Stories") =>
+  const rebuildEmpty = (start: Date, curFormato: "Feed" | "Stories" | "Reels") =>
     DIAS.flatMap((label, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
@@ -115,7 +115,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
 
   const handleGerar = async () => {
     setLoading(true);
-    const tId = toast.loading(`Gerando seu cronograma de 7 dias com 2 ${formato === "Stories" ? "stories" : "posts"} por dia…`);
+    const tId = toast.loading(`Gerando seu cronograma de 7 dias com 2 ${formato.toLowerCase()} por dia…`);
     try {
       const apiKey =
         (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
@@ -151,7 +151,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
       toast.loading("Gerando 14 imagens em paralelo…", { id: tId });
 
       const results = await Promise.allSettled(
-        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: formato === "Stories" ? "9:16" : "1:1" } })),
+        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: formato === "Feed" ? "1:1" : "9:16" } })),
       );
 
       setPosts((arr) => {
@@ -271,6 +271,16 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
             <Smartphone className="h-3.5 w-3.5" />
             Stories
           </button>
+          <button
+            onClick={() => { setFormato("Reels"); setPosts(rebuildEmpty(weekStart, "Reels")); }}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+              formato === "Reels" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Video className="h-3.5 w-3.5" />
+            Reels
+          </button>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
@@ -336,7 +346,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
                         
                         <div className={cn(
                           "aspect-[4/5] rounded overflow-hidden bg-muted relative border shadow-inner",
-                          formato === "Stories" ? "aspect-[9/16]" : "aspect-square"
+                          formato === "Feed" ? "aspect-square" : "aspect-[9/16]"
                         )}>
                           {p.imagem ? (
                             <img src={p.imagem} alt="" className="h-full w-full object-cover" />
