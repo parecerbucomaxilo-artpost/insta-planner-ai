@@ -253,12 +253,14 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             const { dataUrl } = await genImage({
               data: {
                 prompt: r.prompt_imagem,
-                aspect: isX ? "16:9" : "1:1",
+                aspect: formato === "Stories" ? "9:16" : isX ? "16:9" : "1:1",
                 conceptual: isX,
                 slideRole: isX
                   ? "conceptual"
                   : isCarousel
                   ? "carousel-hook"
+                  : formato === "Stories"
+                  ? "single"
                   : "single",
                 title: r.tema,
                 subtitle: extractFirstLine(isX ? "" : (r.legenda_instagram || r.legenda_linkedin || "")),
