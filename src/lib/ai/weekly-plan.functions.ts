@@ -135,7 +135,7 @@ export const weeklyPlan = createServerFn({ method: "POST" })
               type: "function",
               function: {
                 name: "cronograma_semanal",
-                description: "Plano editorial de 5 dias.",
+                description: "Plano editorial de 7 dias com 2 posts/dia.",
                 parameters: { ...toolSchema, additionalProperties: false },
               },
             },
