@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Sparkles, Image as ImgIcon, Send } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Sparkles, Image as ImgIcon, Send, LayoutGrid, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import type { Perfil } from "@/components/ProfileSettings";
 import { DirectReplyCard } from "./DirectReplyCard";
@@ -23,6 +24,7 @@ type PostPlano = {
   mensagemDirect: string;
   promptImagem: string;
   horaAgendamento: string;
+  formato: "Feed" | "Stories";
   imagem: string | null;
   status: "vazio" | "gerando" | "pronto";
 };
