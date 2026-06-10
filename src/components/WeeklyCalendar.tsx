@@ -241,34 +241,34 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
         })),
       );
 
-      toast.loading("Gerando 14 imagens em paralelo…", { id: tId });
+      toast.loading("Agendando geração de imagens para os posts…", { id: tId });
 
-      const results = await Promise.allSettled(
-        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: formato === "Stories" ? "9:16" : "1:1" } })),
-      );
-
+      // Atualiza o estado para "gerando" antes de iniciar a carga das imagens
       setPosts((arr) => {
-        const updated = arr.map((p, i) => {
-          const res = results[i] as any;
-          if (res && res.status === "fulfilled") {
-            return { ...p, imagem: res.value.dataUrl, status: "pronto" as const };
-          }
-          return { ...p, status: "pronto" as const };
-        });
-        writeWeekCache(weekStart.toISOString(), updated);
+        const updated = arr.map((p, i) => ({
+          ...p,
+          status: "gerando" as const
+        }));
         return updated;
       });
 
-      // aplica badge do médico e logo se houver
-      const next = await Promise.all(
-        results.map(async (res: any) => {
-          if (res.status !== "fulfilled") return null;
-          let currentUrl = res.value.dataUrl;
+      // Gera as imagens individualmente para evitar timeout global e permitir que o usuário veja o progresso
+      for (let i = 0; i < r.posts.length; i++) {
+        const p = r.posts[i];
+        try {
+          const res = await genImage({ 
+            data: { 
+              prompt: p.prompt_imagem, 
+              aspect: formato === "Stories" ? "9:16" : "1:1" 
+            } 
+          });
           
+          let currentUrl = res.dataUrl as string;
+
           // Aplica logo da clínica
           try {
             currentUrl = await applyWatermark(currentUrl, brandLogo, {
-              position: "tr", // Canto superior direito
+              position: "tr",
               sizeRatio: 0.08,
               opacity: 0.8,
             });
@@ -283,15 +283,23 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
               });
             }
           } catch (e) { console.error("Erro badge médico:", e); }
-          
-          return currentUrl;
-        }),
-      );
-      setPosts((arr) => {
-        const updated = arr.map((p, i) => ({ ...p, imagem: next[i] ?? p.imagem }));
-        writeWeekCache(weekStart.toISOString(), updated);
-        return updated;
-      });
+
+          setPosts((arr) => {
+            const updated = [...arr];
+            updated[i] = { ...updated[i], imagem: currentUrl as any, status: "pronto" as const };
+            writeWeekCache(weekStart.toISOString(), updated);
+            return updated;
+          });
+        } catch (err) {
+          console.error(`Erro ao gerar imagem ${i}:`, err);
+          setPosts((arr) => {
+            const updated = [...arr];
+            updated[i] = { ...updated[i], status: "pronto" as const };
+            return updated;
+          });
+        }
+      }
+
       toast.success("Cronograma de 14 posts pronto! ✨", { id: tId });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar cronograma", { id: tId });
