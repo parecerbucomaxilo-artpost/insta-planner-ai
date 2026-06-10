@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Sparkles, Image as ImgIcon, Send, LayoutGrid, Smartphone } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Sparkles, Image as ImgIcon, Send, LayoutGrid, Smartphone, Video } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import type { Perfil } from "@/components/ProfileSettings";
@@ -27,7 +27,7 @@ type PostPlano = {
   mensagemDirect: string;
   promptImagem: string;
   horaAgendamento: string;
-  formato: "Feed" | "Stories";
+  formato: "Feed" | "Stories" | "Reels";
   imagem: string | null;
   status: "vazio" | "gerando" | "pronto";
 };
@@ -69,7 +69,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   const genPlan = useServerFn(weeklyPlan);
   const genImage = useServerFn(generateImage);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
-  const [formato, setFormato] = useState<"Feed" | "Stories">("Feed");
+  const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels">("Feed");
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState<PostPlano[]>(() =>
     DIAS.flatMap((label, i) => {
@@ -83,7 +83,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   );
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
-  const rebuildEmpty = (start: Date, curFormato: "Feed" | "Stories") =>
+  const rebuildEmpty = (start: Date, curFormato: "Feed" | "Stories" | "Reels") =>
     DIAS.flatMap((label, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
@@ -115,7 +115,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
 
   const handleGerar = async () => {
     setLoading(true);
-    const tId = toast.loading(`Gerando seu cronograma de 7 dias com 2 ${formato === "Stories" ? "stories" : "posts"} por dia…`);
+    const tId = toast.loading(`Gerando seu cronograma de 7 dias com 2 ${formato.toLowerCase()} por dia…`);
     try {
       const apiKey =
         (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
@@ -151,7 +151,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
       toast.loading("Gerando 14 imagens em paralelo…", { id: tId });
 
       const results = await Promise.allSettled(
-        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: formato === "Stories" ? "9:16" : "1:1" } })),
+        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: formato === "Feed" ? "1:1" : "9:16" } })),
       );
 
       setPosts((arr) => {
@@ -271,6 +271,16 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
             <Smartphone className="h-3.5 w-3.5" />
             Stories
           </button>
+          <button
+            onClick={() => { setFormato("Reels"); setPosts(rebuildEmpty(weekStart, "Reels")); }}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+              formato === "Reels" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Video className="h-3.5 w-3.5" />
+            Reels
+          </button>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
@@ -336,7 +346,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
                         
                         <div className={cn(
                           "aspect-[4/5] rounded overflow-hidden bg-muted relative border shadow-inner",
-                          formato === "Stories" ? "aspect-[9/16]" : "aspect-square"
+                          formato === "Feed" ? "aspect-square" : "aspect-[9/16]"
                         )}>
                           {p.imagem ? (
                             <img src={p.imagem} alt="" className="h-full w-full object-cover" />
