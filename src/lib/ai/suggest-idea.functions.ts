@@ -159,7 +159,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
     required.push("mensagem_direct");
 
     const formatoSugerido = pickFormato((data.comando || "") + Date.now().toString());
-    const ctaRule = "CTA DE FECHAMENTO obrigatória do tipo engajamento/reflexão (ex.: 'Como você lida com isso? Comenta', 'Envie para quem precisa ver', 'Salve para depois'). NUNCA escreva 'Agende sua consulta', 'Marque sua avaliação', 'Compre', 'Contrate', 'Link na bio' ou variações comerciais.";
+    const ctaRule = "CTA DE FECHAMENTO obrigatória do tipo engajamento/reflexão (ex.: 'Como você lida com isso? Comenta', 'Envie para quem precisa ver', 'Salve para depois'). NUNCA escreva 'Agende sua consulta', 'Marque sua avaliação', 'Compre', 'Contrate', 'Link na bio' ou variações comerciais. O campo prompt_imagem deve ser extremamente detalhado, focando em realismo fotográfico de alto nível (estilo National Geographic ou editorial médico premium).";
     const audienceLabel = isX
       ? "rede X (Twitter), tweet curto"
       : `Redes: ${data.networks.join(", ") || "nenhuma"} — adapte: Instagram = humanizado/storytelling/prático; LinkedIn = corporativo/thought leadership/análise.`;
