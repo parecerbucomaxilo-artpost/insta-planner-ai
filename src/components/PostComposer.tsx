@@ -694,7 +694,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     const nowIso = new Date().toISOString();
     try {
       const uid = await getAuthedUserId();
-      const mediaUrl = tipo === "Post Único" ? imagem : filledCarouselPreview[0] ?? null;
+      const mediaRaw = tipo === "Post Único" ? imagem : filledCarouselPreview[0] ?? null;
       const { data: inserted, error } = await supabase
         .from("posts")
         .insert({
