@@ -79,13 +79,13 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   );
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
-  const rebuildEmpty = (start: Date) =>
+  const rebuildEmpty = (start: Date, curFormato: "Feed" | "Stories") =>
     DIAS.flatMap((label, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
       return [
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", imagem: null, status: "vazio" as const },
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", imagem: null, status: "vazio" as const }
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", formato: curFormato, imagem: null, status: "vazio" as const },
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", formato: curFormato, imagem: null, status: "vazio" as const }
       ];
     });
 
@@ -93,7 +93,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
     const next = new Date(weekStart);
     next.setDate(next.getDate() + delta * 7);
     setWeekStart(next);
-    setPosts(rebuildEmpty(next));
+    setPosts(rebuildEmpty(next, formato));
   };
 
   useEffect(() => {
