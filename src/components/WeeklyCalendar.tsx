@@ -263,7 +263,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
             } 
           });
           
-          let currentUrl = res.dataUrl;
+          let currentUrl = res.dataUrl as string;
 
           // Aplica logo da clínica
           try {
@@ -286,7 +286,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
 
           setPosts((arr) => {
             const updated = [...arr];
-            updated[i] = { ...updated[i], imagem: currentUrl, status: "pronto" as const };
+            updated[i] = { ...updated[i], imagem: currentUrl as any, status: "pronto" as const };
             writeWeekCache(weekStart.toISOString(), updated);
             return updated;
           });
