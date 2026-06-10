@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { useServerFn } from "@tanstack/react-start";
@@ -230,9 +231,33 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
           <CalendarDays className="h-5 w-5 text-primary" />
           <div>
             <h2 className="font-bold leading-tight">Calendário Editorial Semanal</h2>
-            <p className="text-xs text-muted-foreground">{rangeLabel} · 7 dias (2 posts/dia)</p>
+            <p className="text-xs text-muted-foreground">{rangeLabel} · 7 dias (2 {formato}/dia)</p>
           </div>
         </div>
+
+        <div className="flex items-center bg-muted p-1 rounded-lg ml-4">
+          <button
+            onClick={() => { setFormato("Feed"); setPosts(rebuildEmpty(weekStart, "Feed")); }}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+              formato === "Feed" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            Feed
+          </button>
+          <button
+            onClick={() => { setFormato("Stories"); setPosts(rebuildEmpty(weekStart, "Stories")); }}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+              formato === "Stories" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Smartphone className="h-3.5 w-3.5" />
+            Stories
+          </button>
+        </div>
+
         <div className="ml-auto flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => navWeek(-1)}>
             <ChevronLeft className="h-4 w-4" />
