@@ -306,15 +306,15 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
                 <Textarea
                   value={ativo.legenda}
                   onChange={(e) =>
-                    setDias((arr) => arr.map((x, j) => (j === openIdx ? { ...x, legenda: e.target.value } : x)))
+                    setPosts((arr: any) => arr.map((x: any, j: number) => (j === openIdx ? { ...x, legenda: e.target.value } : x)))
                   }
                   rows={6}
                 />
               </div>
               <DirectReplyCard
                 value={ativo.mensagemDirect}
-                onChange={(v) =>
-                  setDias((arr) => arr.map((x, j) => (j === openIdx ? { ...x, mensagemDirect: v } : x)))
+                onChange={(v: string) =>
+                  setPosts((arr: any) => arr.map((x: any, j: number) => (j === openIdx ? { ...x, mensagemDirect: v } : x)))
                 }
               />
               <div className="flex gap-2 justify-end">
