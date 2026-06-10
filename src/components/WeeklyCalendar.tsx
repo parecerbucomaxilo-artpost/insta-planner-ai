@@ -29,7 +29,7 @@ type PostPlano = {
   horaAgendamento: string;
   formato: "Feed" | "Stories" | "Reels";
   imagem: string | null;
-  status: "vazio" | "gerando" | "pronto";
+  status: "vazio" | "gerando" | "pronto" | "regerando";
 };
 
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] as const;
