@@ -249,6 +249,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
           mensagemDirect: r.posts[i]?.mensagem_direct ?? "",
           promptImagem: r.posts[i]?.prompt_imagem ?? "",
           horaAgendamento: r.posts[i]?.hora_agendamento ?? p.horaAgendamento,
+          slidesData: r.posts[i]?.carrossel_slides,
           status: "gerando",
         })),
       );
@@ -256,43 +257,83 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       // Gera as imagens individualmente se a opção estiver habilitada
       if (generateImages) {
         toast.loading("Agendando geração de imagens para os posts…", { id: tId });
+        
+        // Processa posts sequencialmente para evitar sobrecarga, mas cada post é "independente" no UI
         for (let i = 0; i < r.posts.length; i++) {
           const p = r.posts[i];
+          const isCarousel = formato === "Carrossel" && p.carrossel_slides?.length > 0;
+          
           try {
-            const res = await genImage({ 
-              data: { 
-                prompt: p.prompt_imagem, 
-                aspect: formato === "Stories" ? "9:16" : "1:1" 
-              } 
-            });
-            
-            let currentUrl = res.dataUrl as string;
+            if (isCarousel) {
+              const carouselImages: string[] = [];
+              for (let sIdx = 0; sIdx < p.carrossel_slides.length; sIdx++) {
+                const slide = p.carrossel_slides[sIdx];
+                const res = await genImage({ 
+                  data: { 
+                    prompt: slide.prompt_visual, 
+                    aspect: "1:1",
+                    slideRole: sIdx === 0 ? "carousel-hook" : sIdx === p.carrossel_slides.length - 1 ? "carousel-cta" : "carousel-middle",
+                    title: slide.titulo_slide,
+                    subtitle: slide.subtitulo_slide,
+                    bullets: slide.bullets,
+                    doctorName: perfil?.nome_profissional,
+                    cro: perfil?.cro_uf,
+                    slideIndex: sIdx,
+                    totalSlides: p.carrossel_slides.length
+                  } 
+                });
+                
+                let currentUrl = res.dataUrl as string;
+                try {
+                  currentUrl = await applyWatermark(currentUrl, brandLogo, { position: "tr", sizeRatio: 0.08, opacity: 0.8 });
+                } catch (e) { console.error("Erro watermark:", e); }
 
-            // Aplica logo da clínica
-            try {
-              currentUrl = await applyWatermark(currentUrl, brandLogo, {
-                position: "tr",
-                sizeRatio: 0.08,
-                opacity: 0.8,
-              });
-            } catch (e) { console.error("Erro watermark logo:", e); }
-
-            // Aplica barra do médico
-            try {
-              if (perfil?.nome_profissional || perfil?.cro_uf) {
-                currentUrl = await applyDoctorBadge(currentUrl, {
-                  nome: perfil.nome_profissional ?? "",
-                  cro: perfil.cro_uf ?? "",
+                carouselImages.push(currentUrl);
+                
+                // Atualiza parcial para o usuário ver progresso do carrossel
+                setPosts((arr) => {
+                  const updated = [...arr];
+                  updated[i] = { ...updated[i], imagens: [...carouselImages] };
+                  return updated;
                 });
               }
-            } catch (e) { console.error("Erro badge médico:", e); }
+              
+              setPosts((arr) => {
+                const updated = [...arr];
+                updated[i] = { ...updated[i], imagens: carouselImages, imagem: carouselImages[0], status: "pronto" as const };
+                writeWeekCache(weekStart.toISOString(), updated);
+                return updated;
+              });
+            } else {
+              const res = await genImage({ 
+                data: { 
+                  prompt: p.prompt_imagem, 
+                  aspect: formato === "Stories" ? "9:16" : "1:1" 
+                } 
+              });
+              
+              let currentUrl = res.dataUrl as string;
 
-            setPosts((arr) => {
-              const updated = [...arr];
-              updated[i] = { ...updated[i], imagem: currentUrl as any, status: "pronto" as const };
-              writeWeekCache(weekStart.toISOString(), updated);
-              return updated;
-            });
+              try {
+                currentUrl = await applyWatermark(currentUrl, brandLogo, { position: "tr", sizeRatio: 0.08, opacity: 0.8 });
+              } catch (e) { console.error("Erro watermark:", e); }
+
+              try {
+                if (perfil?.nome_profissional || perfil?.cro_uf) {
+                  currentUrl = await applyDoctorBadge(currentUrl, {
+                    nome: perfil.nome_profissional ?? "",
+                    cro: perfil.cro_uf ?? "",
+                  });
+                }
+              } catch (e) { console.error("Erro badge:", e); }
+
+              setPosts((arr) => {
+                const updated = [...arr];
+                updated[i] = { ...updated[i], imagem: currentUrl, imagens: [currentUrl], status: "pronto" as const };
+                writeWeekCache(weekStart.toISOString(), updated);
+                return updated;
+              });
+            }
           } catch (err) {
             console.error(`Erro ao gerar imagem ${i}:`, err);
             setPosts((arr) => {
@@ -303,7 +344,6 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
           }
         }
       } else {
-        // Se não for gerar imagens, marca todos como pronto imediatamente
         setPosts((arr) => {
           const updated = arr.map(p => ({ ...p, status: "pronto" as const }));
           writeWeekCache(weekStart.toISOString(), updated);
@@ -311,7 +351,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
         });
       }
 
-      toast.success("Cronograma de 14 posts pronto! ✨", { id: tId });
+      toast.success("Cronograma pronto! ✨", { id: tId });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar cronograma", { id: tId });
     } finally {
@@ -337,8 +377,8 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       legenda_linkedin: null,
       postar_instagram: true,
       postar_linkedin: false,
-      url_imagem: p.formato === "Carrossel" ? null : p.imagem,
-      imagens_carrossel: p.formato === "Carrossel" ? [p.imagem] : [],
+      url_imagem: p.formato === "Carrossel" ? (p.imagens[0] || p.imagem) : p.imagem,
+      imagens_carrossel: p.formato === "Carrossel" ? p.imagens : [],
       data_agendamento: agendar ? data.toISOString() : null,
       status: agendar ? "Agendado" : "Rascunho",
       prompt_ia: p.promptImagem,
