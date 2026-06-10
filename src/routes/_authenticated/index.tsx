@@ -145,10 +145,14 @@ function Dashboard() {
           </TabsList>
 
           <TabsContent value="criar" className="mt-6">
-            <PostComposer perfil={perfil} onCreated={() => { load(); setTab("todos"); }} />
+            <PostComposer 
+              perfil={perfil} 
+              onCreated={() => { load(); setTab("todos"); }} 
+              onTriggerWeekly={() => { setAutoGenWeekly(true); setTab("semana"); }}
+            />
           </TabsContent>
           <TabsContent value="semana" className="mt-6">
-            <WeeklyCalendar perfil={perfil} onCreated={load} />
+            <WeeklyCalendar perfil={perfil} onCreated={load} autoGenerate={autoGenWeekly} />
           </TabsContent>
           <TabsContent value="calendario" className="mt-6">
             <PostsCalendar posts={posts} />
