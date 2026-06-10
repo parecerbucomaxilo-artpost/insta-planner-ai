@@ -376,6 +376,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       const { dataUrl } = await genImage({
         data: {
           prompt: finalPrompt,
+          aspect: formato === "Stories" ? "9:16" : "1:1",
           slideRole: "single",
           title: tema || extractFirstLine(captionForAuto) || "",
           subtitle: extractFirstLine(captionForAuto.replace(extractFirstLine(captionForAuto), "")) || "",
