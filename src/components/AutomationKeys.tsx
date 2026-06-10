@@ -134,7 +134,7 @@ export function AutomationKeys() {
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Dica: No Make.com, use o módulo "Webhooks -> Custom Webhook" para gerar essa URL.
+            Dica: No Make.com, use o módulo "Webhooks &rarr; Custom Webhook" para gerar essa URL.
           </p>
         </CardContent>
       </Card>
