@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const ALBATO_WEBHOOK_URL =
+const FALLBACK_WEBHOOK_URL =
   "https://h.albato.com/wh/38/1lfds2n/dinfhr571VvcgIB5bHqOChq0jVVYnN7ZndwJdQNJXmE/";
 
 export const dispatchAlbato = createServerFn({ method: "POST" })
@@ -16,7 +17,16 @@ export const dispatchAlbato = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     try {
-      const res = await fetch(ALBATO_WEBHOOK_URL, {
+      // Busca webhook customizado no perfil do usuário
+      const { data: perfil } = await supabaseAdmin
+        .from("perfil_usuario")
+        .select("webhook_url")
+        .limit(1)
+        .maybeSingle();
+
+      const webhookUrl = perfil?.webhook_url || FALLBACK_WEBHOOK_URL;
+
+      const res = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -29,7 +39,7 @@ export const dispatchAlbato = createServerFn({ method: "POST" })
       });
       return { ok: res.ok, status: res.status };
     } catch (err) {
-      console.error("[Albato] webhook error", err);
+      console.error("[Webhook] error", err);
       return { ok: false, status: 0, error: err instanceof Error ? err.message : "unknown" };
     }
   });
