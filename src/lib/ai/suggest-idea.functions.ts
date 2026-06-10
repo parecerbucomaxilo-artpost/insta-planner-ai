@@ -190,98 +190,130 @@ export const suggestIdea = createServerFn({ method: "POST" })
 
     // === Preferência: Anthropic Claude 3.5 Sonnet ===
     if (anthropicKey) {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": anthropicKey,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          // PERF: Haiku é ~3x mais rápido que Sonnet para texto curto estruturado
-          model: "claude-3-5-haiku-latest",
-          max_tokens: 600, // Reduzido ligeiramente para maior velocidade
-          system: system,
-          messages: [{ role: "user", content: userPrompt }],
-          tools: [
-            {
-              name: "sugerir_post",
-              description:
-                "Retorna uma ideia de post de CTBMF / Odontologia Hospitalar adaptada para múltiplas redes.",
-              input_schema: {
-                type: "object",
-                properties: props,
-                required,
-              },
-            },
-          ],
-          tool_choice: { type: "tool", name: "sugerir_post" },
-        }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
 
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        if (res.status === 429) throw new Error("Limite de requisições atingido no Claude. Tente em instantes.");
-        if (res.status === 401) throw new Error("ANTHROPIC_API_KEY inválida.");
-        throw new Error(`Falha no Claude (${res.status}): ${t.slice(0, 200)}`);
-      }
-
-      const json = (await res.json()) as {
-        content?: Array<{ type: string; name?: string; input?: unknown }>;
-      };
-      const toolBlock = json.content?.find((b) => b.type === "tool_use");
-      if (!toolBlock?.input) throw new Error("Resposta do Claude sem sugestão.");
-      parsedArgs = JSON.stringify(toolBlock.input);
-    } else {
-      // === Fallback: Lovable AI Gateway ===
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: userPrompt },
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": anthropicKey,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: "claude-3-5-haiku-latest",
+            max_tokens: 600,
+            system: system,
+            messages: [{ role: "user", content: userPrompt }],
+            tools: [
+              {
                 name: "sugerir_post",
                 description:
                   "Retorna uma ideia de post de CTBMF / Odontologia Hospitalar adaptada para múltiplas redes.",
-                parameters: {
+                input_schema: {
                   type: "object",
                   properties: props,
                   required,
-                  additionalProperties: false,
                 },
               },
-            },
-          ],
-          tool_choice: { type: "function", function: { name: "sugerir_post" } },
-        }),
-      });
+            ],
+            tool_choice: { type: "tool", name: "sugerir_post" },
+          }),
+        });
 
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        if (res.status === 429) throw new Error("Limite de requisições atingido. Tente em instantes.");
-        if (res.status === 402) throw new Error("Créditos esgotados na workspace.");
-        // 5xx (502/503/504) costuma ser instabilidade transitória do gateway — devolve mock para não quebrar UI
-        if (res.status >= 500) {
-          console.error(`[suggestIdea] Gateway ${res.status}: ${t.slice(0, 200)}`);
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          if (res.status >= 500) {
+            console.error(`[suggestIdea] Anthropic 5xx: ${res.status}`);
+            return buildMock(data.networks, data.comando, data.estilo);
+          }
+          const t = await res.text().catch(() => "");
+          if (res.status === 429) throw new Error("Limite de requisições atingido no Claude. Tente em instantes.");
+          if (res.status === 401) throw new Error("ANTHROPIC_API_KEY inválida.");
+          throw new Error(`Falha no Claude (${res.status})`);
+        }
+
+        const json = (await res.json()) as {
+          content?: Array<{ type: string; name?: string; input?: unknown }>;
+        };
+        const toolBlock = json.content?.find((b) => b.type === "tool_use");
+        if (!toolBlock?.input) throw new Error("Resposta do Claude sem sugestão.");
+        parsedArgs = JSON.stringify(toolBlock.input);
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err instanceof Error && err.name === "AbortError") {
+          console.warn("[suggestIdea] Timeout no Claude — usando mock");
           return buildMock(data.networks, data.comando, data.estilo);
         }
-        throw new Error(`Falha na IA (${res.status}): ${t.slice(0, 200)}`);
+        throw err;
       }
+    } else {
+      // === Fallback: Lovable AI Gateway ===
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-      const json = (await res.json()) as {
-        choices?: Array<{ message?: { tool_calls?: Array<{ function?: { arguments?: string } }> } }>;
-      };
-      parsedArgs = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+      try {
+        const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${lovableKey}`,
+            "Content-Type": "application/json",
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: "google/gemini-2.0-flash-exp", // Atualizado para Flash 2.0 p/ maior velocidade
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: userPrompt },
+            ],
+            tools: [
+              {
+                type: "function",
+                function: {
+                  name: "sugerir_post",
+                  description:
+                    "Retorna uma ideia de post de CTBMF / Odontologia Hospitalar adaptada para múltiplas redes.",
+                  parameters: {
+                    type: "object",
+                    properties: props,
+                    required,
+                    additionalProperties: false,
+                  },
+                },
+              },
+            ],
+            tool_choice: { type: "function", function: { name: "sugerir_post" } },
+          }),
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          if (res.status >= 500) {
+            console.error(`[suggestIdea] Gateway 5xx: ${res.status}`);
+            return buildMock(data.networks, data.comando, data.estilo);
+          }
+          const t = await res.text().catch(() => "");
+          if (res.status === 429) throw new Error("Limite de requisições atingido. Tente em instantes.");
+          if (res.status === 402) throw new Error("Créditos esgotados na workspace.");
+          throw new Error(`Falha na IA (${res.status})`);
+        }
+
+        const json = (await res.json()) as {
+          choices?: Array<{ message?: { tool_calls?: Array<{ function?: { arguments?: string } }> } }>;
+        };
+        parsedArgs = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err instanceof Error && err.name === "AbortError") {
+          console.warn("[suggestIdea] Timeout no Gateway — usando mock");
+          return buildMock(data.networks, data.comando, data.estilo);
+        }
+        throw err;
+      }
     }
 
     if (!parsedArgs) {
