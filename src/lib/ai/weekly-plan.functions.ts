@@ -57,15 +57,17 @@ export const weeklyPlan = createServerFn({ method: "POST" })
     const system = buildSystem(data.perfil);
     const userPrompt = `Gere um CRONOGRAMA EDITORIAL de 7 dias (segunda a domingo), com 2 POSTS POR DIA (um às 10h e outro às 14h), totalizando 14 posts ESTRITAMENTE DISTINTOS, complementares e relevantes para ${FIXED_NICHE}. 
     
-    OBRIGATÓRIO VARIAR SUBTEMAS: Explore cada dia uma área diferente (Ex: Dia 1: Traumatologia Facial; Dia 2: Odontologia em UTI; Dia 3: Patologia/Biópsia; Dia 4: DTM/Dor Orofacial; Dia 5: Tecnologia/Planejamento 3D).`;
+    OBRIGATÓRIO VARIAR SUBTEMAS: Explore cada dia uma área diferente (Ex: Dia 1: Traumatologia Facial; Dia 2: Odontologia em UTI; Dia 3: Patologia/Biópsia; Dia 4: DTM/Dor Orofacial; Dia 5: Tecnologia/Planejamento 3D).
+    
+    Para cada um dos 14 posts, entregue: titulo curto, legenda_instagram (4-8 linhas com hashtags), mensagem_direct (resposta acolhedora curta, ≤ 350 chars), prompt_imagem (em INGLÊS, padrão Premium Medical Sci-Fi) e hora_agendamento (seja "10:00" ou "14:00").`;
 
     const toolSchema = {
       type: "object",
       properties: {
-        dias: {
+        posts: {
           type: "array",
-          minItems: 5,
-          maxItems: 5,
+          minItems: 14,
+          maxItems: 14,
           items: {
             type: "object",
             properties: {
@@ -73,12 +75,13 @@ export const weeklyPlan = createServerFn({ method: "POST" })
               legenda_instagram: { type: "string" },
               mensagem_direct: { type: "string" },
               prompt_imagem: { type: "string" },
+              hora_agendamento: { type: "string" },
             },
-            required: ["titulo", "legenda_instagram", "mensagem_direct", "prompt_imagem"],
+            required: ["titulo", "legenda_instagram", "mensagem_direct", "prompt_imagem", "hora_agendamento"],
           },
         },
       },
-      required: ["dias"],
+      required: ["posts"],
     };
 
     let parsedArgs: string | undefined;
