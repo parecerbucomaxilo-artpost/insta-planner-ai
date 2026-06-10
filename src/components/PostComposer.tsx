@@ -680,51 +680,58 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
   const handleSave = (forceAgendar = false) => submitPost({ immediate: false, forceAgendar });
 
-  // Função REESCRITA para o botão de postar agora, usando Server Function para evitar bloqueio de CORS
   const handlePostNow = async () => {
-    console.log("[PostNow] Iniciando disparo via Server Function...");
-    
-    // Captura o texto com base no modo atual
+    // 1. Captura o texto com base no modo atual
     const isX = modoCriacao === "x";
     const textoParaEnviar = isX ? textoX : (legendaIg || legendaLi || "");
 
-    if (!textoParaEnviar.trim()) {
+    // 2. Validação básica de texto
+    if (!textoParaEnviar || !textoParaEnviar.trim()) {
       toast.error("Por favor, escreva ou gere um texto antes de postar.");
       return;
     }
-    
+
+    if (saving) return;
     setSaving(true);
-    const tId = toast.loading("Enviando via servidor (evitando CORS)...");
+    
+    // 3. Feedback visual imediato
+    const tId = toast.loading("Enviando post para o Make/Telegram...");
+    console.log("[PostNow] Iniciando disparo para o Webhook:", "https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3");
 
     try {
-      // Dispara via Server Function (roda no backend, contornando CORS)
+      // 4. Disparo via Server Function (para contornar CORS e garantir entrega)
+      // Passamos estritamente a variável 'texto' como solicitado
       const result = await sendToMake({
-        data: { texto: textoParaEnviar }
+        data: { texto: textoParaEnviar.trim() }
       });
 
-      console.log("[PostNow] Sucesso no disparo:", result);
+      console.log("[PostNow] Resposta do servidor recebida com sucesso:", result);
 
-
-      // Registro opcional no banco de dados local para histórico
-      const userId = await getAuthedUserId();
-      if (userId) {
-        await supabase.from("posts").insert({
-          user_id: userId,
-          tipo_post: isX ? "Post Estilo X" : tipo,
-          legenda: textoParaEnviar,
-          status: "Publicado"
-        });
+      // 5. Registro opcional no banco de dados local para histórico/log
+      try {
+        const userId = await getAuthedUserId();
+        if (userId) {
+          await supabase.from("posts").insert({
+            user_id: userId,
+            tipo_post: isX ? "Post Estilo X" : tipo,
+            legenda: textoParaEnviar,
+            status: "Publicado"
+          });
+        }
+      } catch (dbError) {
+        console.warn("[PostNow] Falha ao registrar log no banco (não impede sucesso do webhook):", dbError);
       }
 
-      toast.success("Enviado com sucesso para o Make!", { id: tId });
+      // 6. Sucesso visual para o usuário
+      toast.success("Post enviado com sucesso!", { id: tId });
       
       // Limpeza opcional após sucesso
       setPrompt("");
       if (onCreated) onCreated();
 
     } catch (error) {
-      console.error("[MakeWebhook] Falha fatal:", error);
-      toast.error(error instanceof Error ? error.message : "Erro de conexão com o Webhook", { id: tId });
+      console.error("[PostNow] Erro crítico no envio:", error);
+      toast.error(error instanceof Error ? `Erro: ${error.message}` : "Falha na conexão com o servidor do Make", { id: tId });
     } finally {
       setSaving(false);
     }
