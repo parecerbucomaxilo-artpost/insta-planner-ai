@@ -11,13 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Sparkles, Image as ImgIcon, Send, LayoutGrid, Smartphone, Video } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Sparkles, Image as ImgIcon, Send, LayoutGrid, Smartphone, Video, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import type { Perfil } from "@/components/ProfileSettings";
 import { DirectReplyCard } from "./DirectReplyCard";
 import { applyDoctorBadge, applyWatermark } from "@/lib/watermark";
 import brandLogo from "@/assets/logo-clinica.png";
+import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
 
 type PostPlano = {
   date: Date;
@@ -29,7 +30,7 @@ type PostPlano = {
   horaAgendamento: string;
   formato: "Feed" | "Stories" | "Reels";
   imagem: string | null;
-  status: "vazio" | "gerando" | "pronto";
+  status: "vazio" | "gerando" | "pronto" | "regerando";
 };
 
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] as const;
@@ -68,6 +69,7 @@ function fmtDate(d: Date) {
 export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { perfil: Perfil | null; onCreated: () => void; autoGenerate?: boolean }) {
   const genPlan = useServerFn(weeklyPlan);
   const genImage = useServerFn(generateImage);
+  const genIdea = useServerFn(suggestIdea);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels">("Feed");
   const [loading, setLoading] = useState(false);
@@ -106,6 +108,88 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       setPosts(cached.map((c) => ({ ...c, date: new Date(c.dateIso) })));
     }
   }, [weekStart]);
+
+  const handleRegenerar = async (idx: number) => {
+    const post = posts[idx];
+    if (!post || post.status === "regerando") return;
+    
+    setPosts(prev => prev.map((p, i) => i === idx ? { ...p, status: "regerando" as const } : p));
+    const tId = toast.loading("Gerando nova ideia para este horário...");
+    
+    try {
+      const apiKey = (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
+      
+      const r = await genIdea({
+        data: {
+          networks: ["instagram"],
+          apiKey,
+          perfil: perfil ? {
+            nome: perfil.nome_profissional,
+            cro_uf: perfil.cro_uf,
+            subespecialidades: perfil.subespecialidades,
+            tom_voz: perfil.tom_voz
+          } : undefined,
+          estilo: "padrao"
+        }
+      }) as any;
+
+      const { dataUrl } = await genImage({
+        data: {
+          prompt: r.prompt_imagem,
+          aspect: post.formato === "Feed" ? "1:1" : "9:16"
+        }
+      });
+
+      let finalUrl: string = dataUrl;
+      
+      try {
+        finalUrl = await applyWatermark(finalUrl, brandLogo, {
+          position: "tr",
+          sizeRatio: 0.08,
+          opacity: 0.8,
+        });
+      } catch (e) { console.error(e); }
+
+      try {
+        if (perfil?.nome_profissional || perfil?.cro_uf) {
+          finalUrl = await applyDoctorBadge(finalUrl, {
+            nome: perfil.nome_profissional ?? "",
+            cro: perfil.cro_uf ?? "",
+          });
+        }
+      } catch (e) { console.error(e); }
+
+      setPosts(prev => prev.map((p, i) => i === idx ? {
+        ...p,
+        titulo: r.tema,
+        legenda: r.legenda_instagram || "",
+        mensagemDirect: r.mensagem_direct || "",
+        promptImagem: r.prompt_imagem,
+        imagem: finalUrl,
+        status: "pronto" as const
+      } : p));
+
+      toast.success("Novo post gerado com sucesso!", { id: tId });
+      
+      const cached = readWeekCache(weekStart.toISOString());
+      if (cached) {
+        const updated = cached.map((p, i) => i === idx ? {
+          ...p,
+          titulo: r.tema,
+          legenda: r.legenda_instagram || "",
+          mensagemDirect: r.mensagem_direct || "",
+          promptImagem: r.prompt_imagem,
+          imagem: finalUrl,
+          status: "pronto" as const
+        } : p);
+        writeWeekCache(weekStart.toISOString(), updated as any);
+      }
+
+    } catch (e) {
+      toast.error("Erro ao regerar post", { id: tId });
+      setPosts(prev => prev.map((p, i) => i === idx ? { ...p, status: "pronto" as const } : p));
+    }
+  };
 
   const autoGenTriggered = useRef(false);
   useEffect(() => {
@@ -329,53 +413,64 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
                 {dayPosts.map((p) => {
                   const globalIdx = posts.findIndex(item => item === p);
                   return (
-                    <button
-                      key={`${label}-${p.horaAgendamento}`}
-                      type="button"
-                      onClick={() => p.status !== "vazio" && setOpenIdx(globalIdx)}
-                      className="text-left w-full group"
-                      disabled={p.status === "vazio"}
-                    >
-                      <Card
-                        className={cn(
-                          "p-2.5 h-full space-y-2 transition-all border-dashed",
-                          p.status === "vazio"
-                            ? "opacity-40 border-muted-foreground/30 bg-transparent"
-                            : "card-elevated hover:border-primary/50 cursor-pointer border-solid bg-white"
-                        )}
+                    <div key={`${label}-${p.horaAgendamento}`} className="relative group/post">
+                      <button
+                        type="button"
+                        onClick={() => p.status !== "vazio" && p.status !== "regerando" && setOpenIdx(globalIdx)}
+                        className="text-left w-full"
+                        disabled={p.status === "vazio" || p.status === "regerando"}
                       >
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-[9px] px-1 h-4 font-bold border-primary/20 bg-primary/5 text-primary">
-                            {p.horaAgendamento}
-                          </Badge>
-                          {p.status === "pronto" && (
-                            <div className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
+                        <Card
+                          className={cn(
+                            "p-2.5 h-full space-y-2 transition-all border-dashed",
+                            p.status === "vazio"
+                              ? "opacity-40 border-muted-foreground/30 bg-transparent"
+                              : "card-elevated hover:border-primary/50 cursor-pointer border-solid bg-white"
                           )}
-                        </div>
-                        
-                        <div className={cn(
-                          "aspect-[4/5] rounded overflow-hidden bg-muted relative border shadow-inner",
-                          formato === "Feed" ? "aspect-square" : "aspect-[9/16]"
-                        )}>
-                          {p.imagem ? (
-                            <img src={p.imagem} alt="" className="h-full w-full object-cover" />
-                          ) : p.status === "gerando" ? (
-                            <div className="h-full w-full flex items-center justify-center bg-slate-50">
-                              <Loader2 className="h-4 w-4 animate-spin text-primary/40" />
-                            </div>
-                          ) : (
-                            <div className="h-full w-full flex flex-col items-center justify-center gap-1 opacity-20">
-                              <ImgIcon className="h-5 w-5" />
-                              <span className="text-[8px] font-bold">AGUARDANDO</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <p className="text-[10px] font-bold leading-tight line-clamp-3 text-slate-700 min-h-[2.4rem]">
-                          {p.titulo || "Post planejado"}
-                        </p>
-                      </Card>
-                    </button>
+                        >
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline" className="text-[9px] px-1 h-4 font-bold border-primary/20 bg-primary/5 text-primary">
+                              {p.horaAgendamento}
+                            </Badge>
+                            {p.status === "pronto" && (
+                              <div className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
+                            )}
+                          </div>
+                          
+                          <div className={cn(
+                            "aspect-[4/5] rounded overflow-hidden bg-muted relative border shadow-inner",
+                            formato === "Feed" ? "aspect-square" : "aspect-[9/16]"
+                          )}>
+                            {p.imagem ? (
+                              <img src={p.imagem} alt="" className="h-full w-full object-cover" />
+                            ) : (p.status === "gerando" || p.status === "regerando") ? (
+                              <div className="h-full w-full flex items-center justify-center bg-slate-50">
+                                <Loader2 className="h-4 w-4 animate-spin text-primary/40" />
+                              </div>
+                            ) : (
+                              <div className="h-full w-full flex flex-col items-center justify-center gap-1 opacity-20">
+                                <ImgIcon className="h-5 w-5" />
+                                <span className="text-[8px] font-bold">AGUARDANDO</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <p className="text-[10px] font-bold leading-tight line-clamp-3 text-slate-700 min-h-[2.4rem]">
+                            {p.titulo || "Post planejado"}
+                          </p>
+                        </Card>
+                      </button>
+                      
+                      {p.status === "pronto" && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRegenerar(globalIdx); }}
+                          className="absolute -top-1.5 -right-1.5 h-6 w-6 rounded-full bg-white shadow-md border flex items-center justify-center text-primary opacity-0 group-hover/post:opacity-100 transition-opacity z-10 hover:bg-slate-50"
+                          title="Gerar nova ideia para este horário"
+                        >
+                          <RefreshCcw className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
                   );
                 })}
               </div>
