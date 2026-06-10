@@ -675,9 +675,6 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       setSaving(false);
     }
   };
-      setSaving(false);
-    }
-  };
 
   const handleSave = (forceAgendar = false) => submitPost({ immediate: false, forceAgendar });
 
