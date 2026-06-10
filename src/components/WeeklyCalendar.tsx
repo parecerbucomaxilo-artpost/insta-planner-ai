@@ -44,38 +44,73 @@ const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] as const;
 
 function ImageCarousel({ images, className }: { images: string[]; className?: string }) {
   const [idx, setIdx] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+
   if (!images || images.length === 0) return null;
-  
+
+  const handlePrev = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setIdx(prev => (prev > 0 ? prev - 1 : images.length - 1));
+  };
+
+  const handleNext = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setIdx(prev => (prev < images.length - 1 ? prev + 1 : 0));
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+
+    if (diff > 50) handleNext();
+    if (diff < -50) handlePrev();
+    setTouchStart(null);
+  };
+
   return (
-    <div className={cn("relative group/carousel", className)}>
-      <img src={images[idx]} alt="" className="h-full w-full object-cover transition-all" />
+    <div 
+      className={cn("relative group/carousel overflow-hidden touch-pan-y", className)}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      <div className="relative h-full w-full flex transition-transform duration-300 ease-out" style={{ transform: `translateX(-${idx * 100}%)` }}>
+        {images.map((img, i) => (
+          <img key={i} src={img} alt="" className="h-full w-full flex-shrink-0 object-cover" />
+        ))}
+      </div>
       
       {images.length > 1 && (
         <>
-          <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1">
+          <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1.5 z-10">
             {images.map((_, i) => (
-              <div 
-                key={i} 
+              <button
+                key={i}
+                onClick={(e) => { e.stopPropagation(); setIdx(i); }}
                 className={cn(
-                  "h-1 w-1 rounded-full transition-all", 
-                  i === idx ? "bg-white w-3" : "bg-white/40"
+                  "h-1.5 rounded-full transition-all duration-300", 
+                  i === idx ? "bg-white w-4" : "bg-white/40 w-1.5 hover:bg-white/60"
                 )} 
               />
             ))}
           </div>
           
           <button 
-            onClick={(e) => { e.stopPropagation(); setIdx(prev => (prev > 0 ? prev - 1 : images.length - 1)); }}
-            className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+            onClick={handlePrev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5" />
           </button>
           
           <button 
-            onClick={(e) => { e.stopPropagation(); setIdx(prev => (prev < images.length - 1 ? prev + 1 : 0)); }}
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+            onClick={handleNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5" />
           </button>
         </>
       )}
