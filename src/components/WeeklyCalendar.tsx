@@ -65,20 +65,14 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   const genImage = useServerFn(generateImage);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const [loading, setLoading] = useState(false);
-  const [dias, setDias] = useState<DiaPlano[]>(() =>
-    DIAS.map((label, i) => {
+  const [posts, setPosts] = useState<PostPlano[]>(() =>
+    DIAS.flatMap((label, i) => {
       const d = startOfWeek(new Date());
       d.setDate(d.getDate() + i);
-      return {
-        date: d,
-        label,
-        titulo: "",
-        legenda: "",
-        mensagemDirect: "",
-        promptImagem: "",
-        imagem: null,
-        status: "vazio",
-      };
+      return [
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", imagem: null, status: "vazio" as const },
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", imagem: null, status: "vazio" as const }
+      ];
     }),
   );
   const [openIdx, setOpenIdx] = useState<number | null>(null);
