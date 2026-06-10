@@ -708,7 +708,8 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          texto: currentLegenda,
+          texto_instagram: legendaIg || currentLegenda,
+          texto_linkedin: legendaLi || currentLegenda,
           imagem_url: publicUrl
         })
       });
