@@ -78,33 +78,26 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
   const rebuildEmpty = (start: Date) =>
-    DIAS.map((label, i) => {
+    DIAS.flatMap((label, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
-      return {
-        date: d,
-        label,
-        titulo: "",
-        legenda: "",
-        mensagemDirect: "",
-        promptImagem: "",
-        imagem: null,
-        status: "vazio" as const,
-      };
+      return [
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", imagem: null, status: "vazio" as const },
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", imagem: null, status: "vazio" as const }
+      ];
     });
 
   const navWeek = (delta: number) => {
     const next = new Date(weekStart);
     next.setDate(next.getDate() + delta * 7);
     setWeekStart(next);
-    setDias(rebuildEmpty(next));
+    setPosts(rebuildEmpty(next));
   };
 
-  // PERF: hidrata o cronograma do cache local sempre que a semana muda
   useEffect(() => {
     const cached = readWeekCache(weekStart.toISOString());
-    if (cached && cached.length === 5) {
-      setDias(cached.map((c) => ({ ...c, date: new Date(c.dateIso) })));
+    if (cached && cached.length === 14) {
+      setPosts(cached.map((c) => ({ ...c, date: new Date(c.dateIso) })));
     }
   }, [weekStart]);
 
