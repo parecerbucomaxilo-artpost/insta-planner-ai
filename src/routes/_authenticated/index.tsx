@@ -49,6 +49,7 @@ function Dashboard() {
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   useEffect(() => { const c = readPerfilCache(); if (c) setPerfil(c); }, []);
   const [tab, setTab] = useState("criar");
+  const [autoGenWeekly, setAutoGenWeekly] = useState(false);
   const claim = useServerFn(claimLegacyData);
 
   const load = useCallback(async () => {
