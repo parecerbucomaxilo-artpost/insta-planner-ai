@@ -30,6 +30,7 @@ export type Database = {
           updated_at: string
           url_logo: string | null
           user_id: string | null
+          webhook_url: string | null
         }
         Insert: {
           arroba_usuario?: string
@@ -46,6 +47,7 @@ export type Database = {
           updated_at?: string
           url_logo?: string | null
           user_id?: string | null
+          webhook_url?: string | null
         }
         Update: {
           arroba_usuario?: string
@@ -62,6 +64,7 @@ export type Database = {
           updated_at?: string
           url_logo?: string | null
           user_id?: string | null
+          webhook_url?: string | null
         }
         Relationships: []
       }
