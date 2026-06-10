@@ -111,7 +111,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
 
   const handleGerar = async () => {
     setLoading(true);
-    const tId = toast.loading("Gerando seu cronograma de 7 dias com 2 posts por dia…");
+    const tId = toast.loading(`Gerando seu cronograma de 7 dias com 2 ${formato === "Stories" ? "stories" : "posts"} por dia…`);
     try {
       const apiKey =
         (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
@@ -126,6 +126,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
                 tom_voz: perfil.tom_voz,
               }
             : undefined,
+          formato: formato,
         },
       }) as any;
 
@@ -146,7 +147,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
       toast.loading("Gerando 14 imagens em paralelo…", { id: tId });
 
       const results = await Promise.allSettled(
-        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: "1:1" } })),
+        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: formato === "Stories" ? "9:16" : "1:1" } })),
       );
 
       setPosts((arr) => {
