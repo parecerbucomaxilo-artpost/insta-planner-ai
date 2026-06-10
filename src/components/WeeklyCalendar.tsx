@@ -42,6 +42,47 @@ type PostPlano = {
 
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] as const;
 
+function ImageCarousel({ images, className }: { images: string[]; className?: string }) {
+  const [idx, setIdx] = useState(0);
+  if (!images || images.length === 0) return null;
+  
+  return (
+    <div className={cn("relative group/carousel", className)}>
+      <img src={images[idx]} alt="" className="h-full w-full object-cover transition-all" />
+      
+      {images.length > 1 && (
+        <>
+          <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1">
+            {images.map((_, i) => (
+              <div 
+                key={i} 
+                className={cn(
+                  "h-1 w-1 rounded-full transition-all", 
+                  i === idx ? "bg-white w-3" : "bg-white/40"
+                )} 
+              />
+            ))}
+          </div>
+          
+          <button 
+            onClick={(e) => { e.stopPropagation(); setIdx(prev => (prev > 0 ? prev - 1 : images.length - 1)); }}
+            className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          
+          <button 
+            onClick={(e) => { e.stopPropagation(); setIdx(prev => (prev < images.length - 1 ? prev + 1 : 0)); }}
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // PERF: cache local do cronograma por semana (chave = ISO da segunda-feira)
 const WEEK_CACHE_PREFIX = "planner_weekly_cache_v2:";
 type CachedPost = Omit<PostPlano, "date"> & { dateIso: string };
@@ -521,7 +562,9 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
                             "aspect-[4/5] rounded overflow-hidden bg-muted relative border shadow-inner",
                             formato === "Feed" ? "aspect-square" : "aspect-[9/16]"
                           )}>
-                            {p.imagem ? (
+                            {p.imagens && p.imagens.length > 0 ? (
+                              <ImageCarousel images={p.imagens} className="h-full w-full" />
+                            ) : p.imagem ? (
                               <img src={p.imagem} alt="" className="h-full w-full object-cover" />
                             ) : (p.status === "gerando" || p.status === "regerando") ? (
                               <div className="h-full w-full flex items-center justify-center bg-slate-50">
@@ -568,9 +611,11 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
           </DialogHeader>
           {ativo && openIdx !== null && (
             <div className="space-y-4">
-              {ativo.imagem && (
+              {ativo.imagens && ativo.imagens.length > 0 ? (
+                <ImageCarousel images={ativo.imagens} className="w-full aspect-video rounded-lg border shadow-sm" />
+              ) : ativo.imagem ? (
                 <img src={ativo.imagem} alt="" className="w-full aspect-video object-cover rounded-lg border" />
-              )}
+              ) : null}
               <div className="space-y-1.5">
                 <Label className="text-sm">Legenda</Label>
                 <Textarea
