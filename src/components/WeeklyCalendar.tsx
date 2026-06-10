@@ -122,6 +122,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
   }, [weekStart]);
 
   const handleGerar = async () => {
+    if (loading) return;
     setLoading(true);
     const tId = toast.loading(`Gerando seu cronograma de 7 dias com 2 ${formato.toLowerCase()} por dia…`);
     try {
