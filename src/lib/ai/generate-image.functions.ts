@@ -3,12 +3,12 @@ import { z } from "zod";
 
 // ===================== IDENTIDADE VISUAL FIXA — DR. FRANCISCO MENEZES / BUCOMAXILOFACIAL =====================
 const STYLE_PREFIX =
-  "Premium high-performance medical visual for a Brazilian oral and maxillofacial surgeon (cirurgia bucomaxilofacial). High clinical authority, editorial advertising aesthetic for social media. Themes ALWAYS connected to: facial pain, TMJ (ATM), trigeminal neuralgia, jaw, skull, face, temporomandibular joint, advanced diagnosis, maxillofacial surgery. Combine medical expertise, advanced technology and diagnostic precision. ";
+  "High-end medical editorial photography for a top-tier Brazilian Maxillofacial Surgeon. MASTERPIECE QUALITY. Cinematic, professional, authoritative. Theme: ";
 const STYLE_SUFFIX =
-  " VISUAL ELEMENTS (use when relevant): human face in pain/facial discomfort, lateral close-up of face/jaw/ear/TMJ/trigeminal region, realistic anatomical illustrations of skull/jaw/TMJ/nerves/facial muscles/X-rays, lightning bolts / red glow / neural lines / luminous markings to represent pain, magnifying glass / X-ray / medical holograms / digital panels / diagnostic lines / grids / blue particles, simple medical icons in educational lists. PALETTE: deep medical blue (#0B2545 / #08306B) DOMINANT, pristine white for clarity, ELECTRIC BLUE (#1E90FF / #00A6FF) for highlights, keywords, technical lines, tech icons. RED (#E63946) ONLY to indicate pain, inflammation, alert or sensitive area on the face. Black or deep navy for dramatic high-impact images. White or very light gray for educational posts and informative carousels. COMPOSITION: strong visual hierarchy — large title first, support info next, CTA/signature last. Bold condensed clean modern highly-readable typography. High contrast background/text. Editorial, advertising, medical feel — NEVER generic. Rich anatomy when the theme demands. SAFE ZONE: 200px top/bottom, 100px lateral margins, important text never in right-side strip (Reels/Stories interface icons). MOOD: specialist, precision, correct diagnosis, medical technology, trust, pain relief. Hyperrealistic 8k editorial medical photography blended with crisp typography, award-winning composition.";
+  " | VISUAL STYLE: Professional medical advertising aesthetic. Shot on Phase One XF with 100MP sensor, 85mm prime lens, shallow depth of field, creamy bokeh. Lighting: sophisticated 3-point studio lighting or soft natural light through floor-to-ceiling windows in a luxury boutique clinic. Palette: deep surgical navy (#0B2545), pristine white, brushed matte gold, and clinical ice blue. High contrast, sharp focus on details. Mood: expert, precise, innovative, caring. COMPOSITION: Bold editorial layout with intentional negative space for typography. Hyper-realistic skin textures, professional medical equipment with subtle glowing interfaces. No gore, no blood. | ";
 
 const NEGATIVE =
-  "amateur, generic stock photo, childish, overly decorative, cluttered background, cartoon style, low resolution, misspelled text, gibberish letters, anglicized portuguese, missing portuguese accents, repeated copy, duplicated headline, lorem ipsum, fake brand logos, female figure when male requested, multiple unrelated people, gore, scary hospital, warm orange/yellow color cast, cyan-only neon without medical depth, shallow generic 'stock image' look without medical authority";
+  "amateur, blurry, low resolution, stock photo look, generic, cartoon, illustration, blood, gore, wounds, scary, dark hospital, orange lighting, oversaturated, text on image, watermark, logo, messy room, childish, low effort AI, distorted anatomy, extra fingers, gibberish letters";
 
 // ===================== DIRETRIZES DE TIPOGRAFIA OBRIGATÓRIAS =====================
 function buildTypographyDirective(opts: {
@@ -56,16 +56,16 @@ function buildTypographyDirective(opts: {
     "TEXT COLOR RULE: main title in deep medical blue (#0B2545) over white/light-gray background OR pristine white over deep navy block — choose whichever yields strongest contrast. 1-3 KEY WORDS may be highlighted in ELECTRIC BLUE (#1E90FF). Secondary text in graphite gray (#475569). CTA rendered as a deep navy button with white text. RED (#E63946) ONLY on anatomical pain/inflammation markers, never on copy. ALL TEXT IN BRAZILIAN PORTUGUESE with correct accents — never anglicize, never omit accents, never repeat copy, never translate, never rewrite.";
 
   const layoutHook =
-    "LAYOUT: large impactful HEADLINE positioned in the upper-left or upper-center, occupying ~30% of the canvas height. Strong negative space around it. The 3D skull / wireframe mesh sits in the right or lower portion of the frame as a background element, never overlapping the headline area.";
+    "LAYOUT: large impactful HEADLINE positioned in the upper-left or upper-center, occupying ~30% of the canvas height. Strong negative space around it. The main medical subject sits in the right or lower portion of the frame as a background element, never overlapping the headline area.";
 
   const layoutBullets =
-    "LAYOUT: a short section title at the top-left, then 1 to 3 clean bullet points listed vertically with thin cyan separators between them. Each bullet starts with a small glowing cyan dot. The 3D element is small, pushed to a corner or used as faint background texture, keeping ~60% of the frame as clean dark canvas for the bullets.";
+    "LAYOUT: a short section title at the top-left, then 1 to 3 clean bullet points listed vertically. The main subject is small, pushed to a corner or used as a soft background element, keeping ~60% of the frame as clean canvas for the bullets.";
 
   const layoutCta =
-    "LAYOUT: bold CTA sentence centered, very large, with a thin cyan underline. Below the CTA: the doctor signature line in smaller refined type. The 3D element is reduced to a faint silhouette/glow behind, never competing with the CTA text.";
+    "LAYOUT: bold CTA sentence centered, very large. The main medical subject is reduced to a faint silhouette/glow in the background, never competing with the CTA text.";
 
   const layoutSingle =
-    "LAYOUT (single-slide editorial poster): strong HEADLINE (the hook) in the upper third, an explanatory SUBTITLE one line below in smaller weight, and at the BOTTOM a thin navy bar containing the doctor name (left) and CRO registration (right). The 3D translucent skull or wireframe mesh sits in the mid/right area as a background element, leaving a dark clean zone on the left for the text block.";
+    "LAYOUT: strong HEADLINE in the upper third, an explanatory SUBTITLE below. The main photographic subject sits in the mid/right area, leaving a clean zone on the left for the text block.";
 
   const slideCounter =
     typeof slideIndex === "number" && typeof totalSlides === "number" && totalSlides > 1
