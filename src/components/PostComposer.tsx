@@ -1488,7 +1488,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
           <Button
             onClick={handlePostNow}
-            disabled={!hasContent || saving || isGenerating}
+            disabled={saving || isGenerating}
             size="lg"
             className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0"
           >
@@ -1539,7 +1539,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
           <Button
             onClick={handlePostNow}
-            disabled={!hasContent || saving || isGenerating}
+            disabled={saving || isGenerating}
             size="lg"
             className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0"
           >
