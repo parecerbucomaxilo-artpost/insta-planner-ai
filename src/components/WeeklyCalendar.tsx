@@ -119,7 +119,6 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
     try {
       const apiKey = (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
       
-      // Gera nova ideia
       const r = await genIdea({
         data: {
           networks: ["instagram"],
@@ -134,7 +133,6 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
         }
       }) as any;
 
-      // Gera nova imagem
       const { dataUrl } = await genImage({
         data: {
           prompt: r.prompt_imagem,
@@ -142,9 +140,8 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
         }
       });
 
-      let finalUrl = dataUrl;
+      let finalUrl: string = dataUrl;
       
-      // Aplica logo
       try {
         finalUrl = await applyWatermark(finalUrl, brandLogo, {
           position: "tr",
@@ -153,7 +150,6 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
         });
       } catch (e) { console.error(e); }
 
-      // Aplica badge
       try {
         if (perfil?.nome_profissional || perfil?.cro_uf) {
           finalUrl = await applyDoctorBadge(finalUrl, {
@@ -175,7 +171,6 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
 
       toast.success("Novo post gerado com sucesso!", { id: tId });
       
-      // Atualiza cache
       const cached = readWeekCache(weekStart.toISOString());
       if (cached) {
         const updated = cached.map((p, i) => i === idx ? {
