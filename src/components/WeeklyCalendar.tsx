@@ -69,6 +69,7 @@ function fmtDate(d: Date) {
 export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { perfil: Perfil | null; onCreated: () => void; autoGenerate?: boolean }) {
   const genPlan = useServerFn(weeklyPlan);
   const genImage = useServerFn(generateImage);
+  const genIdea = useServerFn(suggestIdea);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels">("Feed");
   const [loading, setLoading] = useState(false);
