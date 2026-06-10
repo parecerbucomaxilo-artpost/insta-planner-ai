@@ -678,93 +678,69 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
   const handleSave = (forceAgendar = false) => submitPost({ immediate: false, forceAgendar });
 
-  // Função ISOLADA para o botão de postar agora, usando fetch nativo
+  // Função REESCRITA para o botão de postar agora, focada em simplicidade e robustez para o Webhook do Make
   const handlePostNow = async () => {
-    console.log("Iniciando handlePostNow...");
+    console.log("[MakeWebhook] Iniciando disparo...");
     
+    // Captura o texto com base no modo atual
     const isX = modoCriacao === "x";
-    const currentLegenda = isX ? textoX : (legendaIg || legendaLi || "");
-    const currentMedia = isX 
-      ? (xSlides === 1 ? imagem : (enforcedCarrossel[0] || null)) 
-      : (tipo === "Post Único" ? imagem : (enforcedCarrossel[0] || null));
+    const textoParaEnviar = isX ? textoX : (legendaIg || legendaLi || "");
 
-    console.log("Dados atuais:", { isX, currentLegenda, hasMedia: !!currentMedia });
-
-    if (!currentLegenda.trim()) {
-      toast.error("A legenda está vazia.");
-      return;
-    }
-    if (!currentMedia) {
-      toast.error("Gere a imagem antes de postar.");
-      return;
-    }
-    
-    if (saving) {
-      console.log("Já existe um salvamento em curso, ignorando clique.");
+    if (!textoParaEnviar.trim()) {
+      toast.error("Por favor, escreva ou gere um texto antes de postar.");
       return;
     }
     
     setSaving(true);
-    const tId = toast.loading("Preparando envio direto...");
+    const tId = toast.loading("Enviando para o Make...");
 
     try {
-      const publicUrl = `https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800`;
+      // URL exata do Webhook do Make
+      const webhookUrl = "https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3";
       
+      // Payload estrito conforme solicitado: apenas a variável "texto"
       const payload = {
-        texto_instagram: legendaIg || currentLegenda,
-        texto_linkedin: legendaLi || currentLegenda,
-        imagem_url: publicUrl,
-        timestamp: new Date().toISOString()
+        texto: textoParaEnviar
       };
 
-      console.log("Disparando fetch para o Make...", payload);
+      console.log("[MakeWebhook] Payload:", payload);
       
-      const res = await fetch("https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3", {
+      const response = await fetch(webhookUrl, {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
+          "Content-Type": "application/json"
         },
-        mode: "cors", // Explicitamente habilitando CORS
         body: JSON.stringify(payload)
       });
 
-      console.log("Resposta do Webhook:", { status: res.status, ok: res.ok });
+      console.log("[MakeWebhook] Resposta recebida:", response.status);
 
-      if (!res.ok) {
-        throw new Error(`Erro no Webhook Make: ${res.status}`);
+      if (!response.ok) {
+        throw new Error(`Erro no servidor: ${response.status}`);
       }
 
-      const responseText = await res.text();
-      console.log("Corpo da resposta do Make:", responseText);
-
-      // Registro no banco
-      const uid = await getAuthedUserId();
-      if (uid) {
+      // Registro opcional no banco de dados local para histórico
+      const userId = await getAuthedUserId();
+      if (userId) {
         await supabase.from("posts").insert({
-          user_id: uid,
-          tipo_post: isX ? (xSlides > 1 ? "Carrossel" : "Post Único") : tipo,
-          legenda: currentLegenda,
-          url_imagem: publicUrl,
+          user_id: userId,
+          tipo_post: isX ? "Post Estilo X" : tipo,
+          legenda: textoParaEnviar,
           status: "Publicado"
         });
-        console.log("Registro salvo no Supabase com sucesso.");
       }
 
-      toast.success("Postagem enviada com sucesso ao Make!", { id: tId });
+      toast.success("Enviado com sucesso para o Make!", { id: tId });
       
-      // Limpeza
-      setImagem(null); 
-      setCarrossel([]); 
+      // Limpeza opcional após sucesso
       setPrompt("");
       if (onCreated) onCreated();
 
-    } catch (err) {
-      console.error("ERRO CRÍTICO NO ENVIO:", err);
-      toast.error(err instanceof Error ? err.message : "Falha na conexão com o Make", { id: tId });
+    } catch (error) {
+      console.error("[MakeWebhook] Falha fatal:", error);
+      toast.error(error instanceof Error ? error.message : "Erro de conexão com o Webhook", { id: tId });
     } finally {
       setSaving(false);
-      console.log("Fim do processo handlePostNow.");
     }
   };
 
@@ -780,10 +756,9 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const hasContent =
     modoCriacao === "x"
       ? Boolean(textoX.trim()) && textoX.length <= X_MAX &&
-        (xSlides > 1 ? filledCarouselPreview.length >= xSlides : Boolean(imagem))
-      : networks.length > 0 &&
-        Boolean(primaryLegenda.trim()) &&
-        (tipo === "Post Único" ? Boolean(imagem) : filledCarouselPreview.length > 0);
+      (xSlides > 1 ? filledCarouselPreview.length >= xSlides : true)
+    : networks.length > 0 &&
+      Boolean(primaryLegenda.trim());
   const isGenerating = loadingIdea || loadingAi || loadingImage || loadingPage !== null;
 
 
