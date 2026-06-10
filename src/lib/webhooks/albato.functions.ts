@@ -15,9 +15,19 @@ export const dispatchAlbato = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
+    console.log("[Webhook] Iniciando disparo para Make:", { 
+      has_image: !!data.media_url, 
+      image_is_base64: data.media_url?.startsWith("data:"),
+      caption_length: data.caption?.length 
+    });
+
     try {
-      // Priorizamos o Webhook específico solicitado pelo usuário
       const webhookUrl = MAKE_WEBHOOK_URL;
+
+      // Se por algum motivo ainda chegar base64 aqui, avisamos no log (não deve ocorrer com o novo fluxo do frontend)
+      if (data.media_url?.startsWith("data:")) {
+        console.warn("[Webhook] ALERTA: Recebido base64 no servidor. Isso pode causar lentidão ou erro de payload.");
+      }
 
       const res = await fetch(webhookUrl, {
         method: "POST",
@@ -30,9 +40,11 @@ export const dispatchAlbato = createServerFn({ method: "POST" })
           status: data.status ?? null,
         }),
       });
+
+      console.log("[Webhook] Resposta do Make:", { status: res.status, ok: res.ok });
       return { ok: res.ok, status: res.status };
     } catch (err) {
-      console.error("[Webhook] error", err);
+      console.error("[Webhook] Erro fatal ao disparar:", err);
       return { ok: false, status: 0, error: err instanceof Error ? err.message : "unknown" };
     }
   });
