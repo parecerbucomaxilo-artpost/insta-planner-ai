@@ -1,14 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-// ===================== IDENTIDADE VISUAL FIXA — DR. FRANCISCO MENEZES / BUCOMAXILOFACIAL =====================
+// ===================== IDENTIDADE VISUAL FIXA — BUCOMAXILOFACIAL =====================
 const STYLE_PREFIX =
-  "High-end medical editorial photography of Dr. Francisco Menezes, a top-tier Brazilian Maxillofacial Surgeon. SUBJECT DESCRIPTION: A distinguished man in his early 50s with a clean-shaven head (bald), a very well-groomed salt-and-pepper beard, and modern thick-rimmed black rectangular glasses. He has a warm, professional, and authoritative smile. He should be depicted wearing professional medical attire, such as a black surgical scrub with 'Francisco Menezes' embroidered on the chest. The likeness must match the description perfectly. Theme: ";
+  "High-end medical editorial photography in a top-tier Brazilian Maxillofacial Surgery and Hospital Dentistry clinic. SUBJECT DESCRIPTION: Purely conceptual and abstract medical imagery or clean surgical environments. NO PEOPLE, NO DOCTORS, NO HUMAN FACES should be visible. Focus on scientific wonder, high-tech equipment, or anatomical metaphors. Theme: ";
 const STYLE_SUFFIX =
-  " | VISUAL STYLE: Professional medical advertising aesthetic. MASTERPIECE QUALITY. Shot on Phase One XF, 85mm prime lens, shallow depth of field, creamy bokeh. Lighting: sophisticated 3-point studio lighting or soft natural light in a luxury boutique clinic. Palette: deep surgical navy (#0B2545), pristine white, brushed matte gold, and clinical ice blue. High contrast, sharp focus on details. Mood: expert, precise, innovative, caring. COMPOSITION: Bold editorial layout with intentional negative space for typography. Hyper-realistic skin textures, professional medical environment. No gore, no blood. | ";
+  " | VISUAL STYLE: Professional medical advertising aesthetic. MASTERPIECE QUALITY. Shot on Phase One XF, 85mm prime lens, shallow depth of field, creamy bokeh. Lighting: sophisticated 3-point studio lighting or soft natural light in a luxury boutique clinic. Palette: deep surgical navy (#0B2545), pristine white, brushed matte gold, and clinical ice blue. High contrast, sharp focus on details. Mood: expert, precise, innovative, caring. COMPOSITION: Bold editorial layout with intentional negative space for typography. Hyper-realistic skin textures are FORBIDDEN. Focus on clinical excellence without human subjects. | ";
 
 const NEGATIVE =
-  "amateur, blurry, low resolution, stock photo look, generic, cartoon, illustration, blood, gore, wounds, scary, dark hospital, orange lighting, oversaturated, text on image, watermark, logo, messy room, childish, low effort AI, distorted anatomy, extra fingers, gibberish letters";
+  "human, person, face, doctor, surgeon, people, skin, eyes, hands, amateur, blurry, low resolution, stock photo look, generic, cartoon, illustration, blood, gore, wounds, scary, dark hospital, orange lighting, oversaturated, text on image, watermark, logo, messy room, childish, low effort AI, distorted anatomy, extra fingers, gibberish letters";
 
 // ===================== DIRETRIZES DE TIPOGRAFIA OBRIGATÓRIAS =====================
 function buildTypographyDirective(opts: {

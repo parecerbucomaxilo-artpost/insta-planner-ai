@@ -117,7 +117,6 @@ export const weeklyPlan = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // PERF: Haiku é ~3x mais rápido para o cronograma de 5 dias
           model: "claude-3-5-haiku-latest",
           max_tokens: 4096,
           system,
@@ -147,7 +146,7 @@ export const weeklyPlan = createServerFn({ method: "POST" })
         method: "POST",
         headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-2.0-flash", // Updated to Flash for extreme speed and reduced timeouts
           messages: [
             { role: "system", content: system },
             { role: "user", content: userPrompt },

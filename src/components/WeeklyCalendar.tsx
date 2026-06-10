@@ -300,6 +300,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
         toast.loading("Agendando geração de imagens para os posts…", { id: tId });
         
         // Processa posts sequencialmente para evitar sobrecarga, mas cada post é "independente" no UI
+        // Aumentando o tempo limite de espera entre posts e reduzindo carga paralela
         for (let i = 0; i < r.posts.length; i++) {
           const p = r.posts[i];
           const isCarousel = formato === "Carrossel" && p.carrossel_slides?.length > 0;
