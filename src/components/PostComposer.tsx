@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import type { Network, FormatoMidia } from "@/lib/posts-types";
 import type { Perfil } from "@/components/ProfileSettings";
 import { applyWatermark } from "@/lib/watermark";
-import brandLogo from "@/assets/logo-planner.png.asset.json";
+import brandLogo from "@/assets/logo-clinica.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 
@@ -297,7 +297,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
 
   // Marca d'água da marca (logo transparente) — discreta, canto inferior direito.
-  const watermarkLogo = brandLogo.url;
+  const watermarkLogo = brandLogo;
 
   const maybeWatermark = async (src: string): Promise<string> => {
     if (!watermark) return src;

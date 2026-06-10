@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,11 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Sparkles, Image as ImgIcon, Send } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Sparkles, Image as ImgIcon, Send, LayoutGrid, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import type { Perfil } from "@/components/ProfileSettings";
 import { DirectReplyCard } from "./DirectReplyCard";
-import { applyDoctorBadge } from "@/lib/watermark";
+import { applyDoctorBadge, applyWatermark } from "@/lib/watermark";
+import brandLogo from "@/assets/logo-clinica.png";
 
 type PostPlano = {
   date: Date;
@@ -23,6 +26,7 @@ type PostPlano = {
   mensagemDirect: string;
   promptImagem: string;
   horaAgendamento: string;
+  formato: "Feed" | "Stories";
   imagem: string | null;
   status: "vazio" | "gerando" | "pronto";
 };
@@ -64,26 +68,27 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   const genPlan = useServerFn(weeklyPlan);
   const genImage = useServerFn(generateImage);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
+  const [formato, setFormato] = useState<"Feed" | "Stories">("Feed");
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState<PostPlano[]>(() =>
     DIAS.flatMap((label, i) => {
       const d = startOfWeek(new Date());
       d.setDate(d.getDate() + i);
       return [
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", imagem: null, status: "vazio" as const },
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", imagem: null, status: "vazio" as const }
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", formato: "Feed" as const, imagem: null, status: "vazio" as const },
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", formato: "Feed" as const, imagem: null, status: "vazio" as const }
       ];
     }),
   );
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
-  const rebuildEmpty = (start: Date) =>
+  const rebuildEmpty = (start: Date, curFormato: "Feed" | "Stories") =>
     DIAS.flatMap((label, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
       return [
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", imagem: null, status: "vazio" as const },
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", imagem: null, status: "vazio" as const }
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", formato: curFormato, imagem: null, status: "vazio" as const },
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", formato: curFormato, imagem: null, status: "vazio" as const }
       ];
     });
 
@@ -91,7 +96,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
     const next = new Date(weekStart);
     next.setDate(next.getDate() + delta * 7);
     setWeekStart(next);
-    setPosts(rebuildEmpty(next));
+    setPosts(rebuildEmpty(next, formato));
   };
 
   useEffect(() => {
@@ -109,7 +114,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
 
   const handleGerar = async () => {
     setLoading(true);
-    const tId = toast.loading("Gerando seu cronograma de 7 dias com 2 posts por dia…");
+    const tId = toast.loading(`Gerando seu cronograma de 7 dias com 2 ${formato === "Stories" ? "stories" : "posts"} por dia…`);
     try {
       const apiKey =
         (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
@@ -124,6 +129,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
                 tom_voz: perfil.tom_voz,
               }
             : undefined,
+          formato: formato,
         },
       }) as any;
 
@@ -144,7 +150,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
       toast.loading("Gerando 14 imagens em paralelo…", { id: tId });
 
       const results = await Promise.allSettled(
-        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: "1:1" } })),
+        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: formato === "Stories" ? "9:16" : "1:1" } })),
       );
 
       setPosts((arr) => {
@@ -159,26 +165,39 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
         return updated;
       });
 
-      if (perfil?.nome_profissional || perfil?.cro_uf) {
-        const next = await Promise.all(
-          results.map(async (res: any) => {
-            if (res.status !== "fulfilled") return null;
-            try {
-              return await applyDoctorBadge(res.value.dataUrl, {
+      // aplica badge do médico e logo se houver
+      const next = await Promise.all(
+        results.map(async (res: any) => {
+          if (res.status !== "fulfilled") return null;
+          let currentUrl = res.value.dataUrl;
+          
+          // Aplica logo da clínica
+          try {
+            currentUrl = await applyWatermark(currentUrl, brandLogo, {
+              position: "tr", // Canto superior direito
+              sizeRatio: 0.08,
+              opacity: 0.8,
+            });
+          } catch (e) { console.error("Erro watermark logo:", e); }
+
+          // Aplica barra do médico
+          try {
+            if (perfil?.nome_profissional || perfil?.cro_uf) {
+              currentUrl = await applyDoctorBadge(currentUrl, {
                 nome: perfil.nome_profissional ?? "",
                 cro: perfil.cro_uf ?? "",
               });
-            } catch {
-              return res.value.dataUrl;
             }
-          }),
-        );
-        setPosts((arr) => {
-          const updated = arr.map((p, i) => ({ ...p, imagem: next[i] ?? p.imagem }));
-          writeWeekCache(weekStart.toISOString(), updated);
-          return updated;
-        });
-      }
+          } catch (e) { console.error("Erro badge médico:", e); }
+          
+          return currentUrl;
+        }),
+      );
+      setPosts((arr) => {
+        const updated = arr.map((p, i) => ({ ...p, imagem: next[i] ?? p.imagem }));
+        writeWeekCache(weekStart.toISOString(), updated);
+        return updated;
+      });
       toast.success("Cronograma de 14 posts pronto! ✨", { id: tId });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar cronograma", { id: tId });
@@ -226,9 +245,33 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
           <CalendarDays className="h-5 w-5 text-primary" />
           <div>
             <h2 className="font-bold leading-tight">Calendário Editorial Semanal</h2>
-            <p className="text-xs text-muted-foreground">{rangeLabel} · 7 dias (2 posts/dia)</p>
+            <p className="text-xs text-muted-foreground">{rangeLabel} · 7 dias (2 {formato}/dia)</p>
           </div>
         </div>
+
+        <div className="flex items-center bg-muted p-1 rounded-lg ml-4">
+          <button
+            onClick={() => { setFormato("Feed"); setPosts(rebuildEmpty(weekStart, "Feed")); }}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+              formato === "Feed" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            Feed
+          </button>
+          <button
+            onClick={() => { setFormato("Stories"); setPosts(rebuildEmpty(weekStart, "Stories")); }}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+              formato === "Stories" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Smartphone className="h-3.5 w-3.5" />
+            Stories
+          </button>
+        </div>
+
         <div className="ml-auto flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => navWeek(-1)}>
             <ChevronLeft className="h-4 w-4" />
