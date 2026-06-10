@@ -116,7 +116,7 @@ const NETWORK_META: Record<Network, { label: string; Icon: typeof Instagram; col
   linkedin: { label: "LinkedIn", Icon: Linkedin, color: "from-sky-600 to-blue-700" },
 };
 
-export function PostComposer({ onCreated, perfil }: { onCreated: () => void; perfil: Perfil | null }) {
+export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated: () => void; perfil: Perfil | null; onTriggerWeekly?: () => void }) {
   const genImage = useServerFn(generateImage);
   const genIdea = useServerFn(suggestIdea);
   const sendAlbato = useServerFn(dispatchAlbato);
@@ -1237,9 +1237,13 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                 variant="outline" 
                 className="w-full bg-white border-blue-300 hover:bg-blue-50 text-blue-700 font-bold h-11 shadow-sm"
                 onClick={() => {
-                  const tabsElement = document.querySelector('[role="tablist"]');
-                  const weekTab = tabsElement?.querySelector('[value="semana"]') as HTMLElement;
-                  if (weekTab) weekTab.click();
+                  if (onTriggerWeekly) {
+                    onTriggerWeekly();
+                  } else {
+                    const tabsElement = document.querySelector('[role="tablist"]');
+                    const weekTab = tabsElement?.querySelector('[value="semana"]') as HTMLElement;
+                    if (weekTab) weekTab.click();
+                  }
                 }}
               >
                 <Sparkles className="h-4 w-4 mr-2 text-blue-600" />

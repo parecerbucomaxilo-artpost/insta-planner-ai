@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
@@ -65,7 +65,7 @@ function fmtDate(d: Date) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
-export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; onCreated: () => void }) {
+export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { perfil: Perfil | null; onCreated: () => void; autoGenerate?: boolean }) {
   const genPlan = useServerFn(weeklyPlan);
   const genImage = useServerFn(generateImage);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
@@ -107,6 +107,14 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
     }
   }, [weekStart]);
 
+  const autoGenTriggered = useRef(false);
+  useEffect(() => {
+    if (autoGenerate && !autoGenTriggered.current && !loading) {
+      autoGenTriggered.current = true;
+      handleGerar();
+    }
+  }, [autoGenerate, loading, posts]);
+
   const rangeLabel = useMemo(() => {
     const end = new Date(weekStart);
     end.setDate(end.getDate() + 4);
@@ -114,6 +122,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   }, [weekStart]);
 
   const handleGerar = async () => {
+    if (loading) return;
     setLoading(true);
     const tId = toast.loading(`Gerando seu cronograma de 7 dias com 2 ${formato.toLowerCase()} por dia…`);
     try {

@@ -49,6 +49,7 @@ function Dashboard() {
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   useEffect(() => { const c = readPerfilCache(); if (c) setPerfil(c); }, []);
   const [tab, setTab] = useState("criar");
+  const [autoGenWeekly, setAutoGenWeekly] = useState(false);
   const claim = useServerFn(claimLegacyData);
 
   const load = useCallback(async () => {
@@ -144,10 +145,14 @@ function Dashboard() {
           </TabsList>
 
           <TabsContent value="criar" className="mt-6">
-            <PostComposer perfil={perfil} onCreated={() => { load(); setTab("todos"); }} />
+            <PostComposer 
+              perfil={perfil} 
+              onCreated={() => { load(); setTab("todos"); }} 
+              onTriggerWeekly={() => { setAutoGenWeekly(true); setTab("semana"); }}
+            />
           </TabsContent>
           <TabsContent value="semana" className="mt-6">
-            <WeeklyCalendar perfil={perfil} onCreated={load} />
+            <WeeklyCalendar perfil={perfil} onCreated={load} autoGenerate={autoGenWeekly} />
           </TabsContent>
           <TabsContent value="calendario" className="mt-6">
             <PostsCalendar posts={posts} />
