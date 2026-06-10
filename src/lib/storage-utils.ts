@@ -1,33 +1,51 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Converte um base64/dataURL para Blob
+ * Converte um base64/dataURL para Blob e garante que seja JPEG se solicitado
  */
-function dataURLtoBlob(dataurl: string): Blob {
-  const arr = dataurl.split(",");
-  const mime = arr[0].match(/:(.*?);/)?.[1];
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-  return new Blob([u8arr], { type: mime });
+async function dataURLtoJPG(dataurl: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Não foi possível obter o contexto do canvas"));
+        return;
+      }
+      // Fundo branco para garantir que transparências do PNG não fiquem pretas no JPG
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Falha na conversão para Blob"));
+        },
+        "image/jpeg",
+        0.92
+      );
+    };
+    img.onerror = () => reject(new Error("Falha ao carregar imagem para conversão"));
+    img.src = dataurl;
+  });
 }
 
 /**
  * Faz upload de uma imagem (base64) para o Supabase Storage e retorna a URL pública.
  */
 export async function uploadToSupabase(dataUrl: string, path: string): Promise<string> {
-  const blob = dataURLtoBlob(dataUrl);
-  const fileExt = blob.type.split("/")[1] || "png";
-  const fileName = `${path}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+  const blob = await dataURLtoJPG(dataUrl);
+  const fileName = `${path}-${Math.random().toString(36).substring(2)}.jpg`;
   const filePath = `${fileName}`;
 
   const { data, error } = await supabase.storage
     .from("posts_media")
     .upload(filePath, blob, {
-      contentType: blob.type,
+      contentType: "image/jpeg",
       upsert: true,
     });
 
