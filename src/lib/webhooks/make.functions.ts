@@ -29,7 +29,8 @@ export const dispatchMakeWebhook = createServerFn({ method: "POST" })
         throw new Error(`Make respondeu com erro: ${response.status}`);
       }
 
-      return { success: true, status: response.status };
+      const responseText = await response.text();
+      return { success: true, status: response.status, response: responseText };
     } catch (error) {
       console.error("[MakeServerFn] Erro no disparo:", error);
       throw error;
