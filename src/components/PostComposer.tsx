@@ -899,8 +899,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           <div className="space-y-2">
             <Label className="text-sm font-semibold">Formato da mídia</Label>
             <div className="grid grid-cols-2 gap-2">
-              {(["Imagem", "Vídeo/Reels"] as FormatoMidia[]).map((f) => {
-                const Icon = f === "Vídeo/Reels" ? Film : PictureIcon;
+              {(["Imagem", "Vídeo/Reels", "Stories"] as FormatoMidia[]).map((f) => {
+                const Icon = f === "Stories" ? Smartphone : f === "Vídeo/Reels" ? Film : PictureIcon;
                 const active = formato === f;
                 return (
                   <button
