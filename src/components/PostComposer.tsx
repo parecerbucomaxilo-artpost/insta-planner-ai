@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon, Send, Twitter } from "lucide-react";
+import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon, Send, Twitter, Smartphone, Video } from "lucide-react";
 import { toast } from "sonner";
 import { PostPreview } from "./PostPreview";
 import { cn } from "@/lib/utils";
@@ -253,12 +253,14 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             const { dataUrl } = await genImage({
               data: {
                 prompt: r.prompt_imagem,
-                aspect: isX ? "16:9" : "1:1",
+                aspect: formato === "Stories" ? "9:16" : isX ? "16:9" : "1:1",
                 conceptual: isX,
                 slideRole: isX
                   ? "conceptual"
                   : isCarousel
                   ? "carousel-hook"
+                  : formato === "Stories"
+                  ? "single"
                   : "single",
                 title: r.tema,
                 subtitle: extractFirstLine(isX ? "" : (r.legenda_instagram || r.legenda_linkedin || "")),
@@ -374,6 +376,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
       const { dataUrl } = await genImage({
         data: {
           prompt: finalPrompt,
+          aspect: formato === "Stories" ? "9:16" : "1:1",
           slideRole: "single",
           title: tema || extractFirstLine(captionForAuto) || "",
           subtitle: extractFirstLine(captionForAuto.replace(extractFirstLine(captionForAuto), "")) || "",
@@ -899,8 +902,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           <div className="space-y-2">
             <Label className="text-sm font-semibold">Formato da mídia</Label>
             <div className="grid grid-cols-2 gap-2">
-              {(["Imagem", "Vídeo/Reels"] as FormatoMidia[]).map((f) => {
-                const Icon = f === "Vídeo/Reels" ? Film : PictureIcon;
+              {(["Imagem", "Vídeo/Reels", "Stories"] as FormatoMidia[]).map((f) => {
+                const Icon = f === "Stories" ? Smartphone : f === "Vídeo/Reels" ? Film : PictureIcon;
                 const active = formato === f;
                 return (
                   <button
@@ -915,7 +918,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                     )}
                   >
                     <Icon className={cn("h-4 w-4", f === "Vídeo/Reels" && "text-violet-500")} />
-                    {f === "Imagem" ? "Imagem estática" : "Vídeo / Reels"}
+                    {f === "Imagem" ? "Post de Feed" : f === "Vídeo/Reels" ? "Reels (Feed)" : "Stories"}
                   </button>
                 );
               })}
@@ -1215,10 +1218,11 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             Salvar como Rascunho
           </Button>
 
-          <div className="rounded-lg border-2 border-blue-500/40 bg-blue-500/5 p-4 space-y-2">
+          <div className="rounded-lg border-2 border-blue-500/40 bg-blue-500/5 p-4 space-y-3">
             <Label htmlFor="data-agendamento" className="text-base font-semibold text-blue-700 dark:text-blue-300">
               📅 Escolha o Dia e Horário da Postagem
             </Label>
+            
             <Input
               id="data-agendamento"
               type="datetime-local"
@@ -1226,8 +1230,25 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               onChange={(e) => setData(e.target.value)}
               className="h-12 text-base"
             />
-            <p className="text-xs text-muted-foreground">
-              Se deixar em branco, o post será agendado para o momento em que clicar abaixo.
+
+            <div className="pt-2 border-t border-blue-200">
+              <p className="text-xs font-semibold text-blue-600 mb-2 uppercase tracking-wider">Ou prefere automatizar?</p>
+              <Button 
+                variant="outline" 
+                className="w-full bg-white border-blue-300 hover:bg-blue-50 text-blue-700 font-bold h-11 shadow-sm"
+                onClick={() => {
+                  const tabsElement = document.querySelector('[role="tablist"]');
+                  const weekTab = tabsElement?.querySelector('[value="semana"]') as HTMLElement;
+                  if (weekTab) weekTab.click();
+                }}
+              >
+                <Sparkles className="h-4 w-4 mr-2 text-blue-600" />
+                Agendar em Lote (7 Dias / 2x por dia)
+              </Button>
+            </div>
+
+            <p className="text-[10px] text-muted-foreground italic">
+              * Se deixar em branco o horário acima, o post será agendado para o momento em que clicar abaixo.
             </p>
           </div>
 

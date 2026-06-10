@@ -1,5 +1,5 @@
 export type Network = "instagram" | "linkedin";
-export type FormatoMidia = "Imagem" | "Vídeo/Reels";
+export type FormatoMidia = "Imagem" | "Vídeo/Reels" | "Stories";
 
 export type PostRow = {
   id: string;
