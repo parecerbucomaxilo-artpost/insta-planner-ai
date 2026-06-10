@@ -18,6 +18,7 @@ import type { Perfil } from "@/components/ProfileSettings";
 import { DirectReplyCard } from "./DirectReplyCard";
 import { applyDoctorBadge, applyWatermark } from "@/lib/watermark";
 import brandLogo from "@/assets/logo-clinica.png";
+import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
 
 type PostPlano = {
   date: Date;
