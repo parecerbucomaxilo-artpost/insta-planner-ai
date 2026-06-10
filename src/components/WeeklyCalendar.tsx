@@ -15,7 +15,8 @@ import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Sparkles, Image as Im
 import { toast } from "sonner";
 import type { Perfil } from "@/components/ProfileSettings";
 import { DirectReplyCard } from "./DirectReplyCard";
-import { applyDoctorBadge } from "@/lib/watermark";
+import { applyDoctorBadge, applyWatermark } from "@/lib/watermark";
+import brandLogo from "@/assets/logo-clinica.png";
 
 type PostPlano = {
   date: Date;
