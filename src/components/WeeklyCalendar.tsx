@@ -250,36 +250,36 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
           </div>
         </div>
 
-        <div className="flex items-center bg-muted p-1 rounded-lg ml-4">
+        <div className="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200 ml-4">
           <button
             onClick={() => { setFormato("Feed"); setPosts(rebuildEmpty(weekStart, "Feed")); }}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all",
-              formato === "Feed" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+              "flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all",
+              formato === "Feed" ? "bg-white shadow-md text-primary ring-1 ring-slate-200" : "text-slate-500 hover:text-slate-700"
             )}
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            Feed
+            <LayoutGrid className="h-4 w-4" />
+            Feed (7 Dias)
           </button>
           <button
             onClick={() => { setFormato("Stories"); setPosts(rebuildEmpty(weekStart, "Stories")); }}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all",
-              formato === "Stories" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+              "flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all",
+              formato === "Stories" ? "bg-white shadow-md text-primary ring-1 ring-slate-200" : "text-slate-500 hover:text-slate-700"
             )}
           >
-            <Smartphone className="h-3.5 w-3.5" />
-            Stories
+            <Smartphone className="h-4 w-4" />
+            Stories (7 Dias)
           </button>
           <button
             onClick={() => { setFormato("Reels"); setPosts(rebuildEmpty(weekStart, "Reels")); }}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all",
-              formato === "Reels" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+              "flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all",
+              formato === "Reels" ? "bg-white shadow-md text-primary ring-1 ring-slate-200" : "text-slate-500 hover:text-slate-700"
             )}
           >
-            <Video className="h-3.5 w-3.5" />
-            Reels
+            <Video className="h-4 w-4" />
+            Reels (7 Dias)
           </button>
         </div>
 
