@@ -646,8 +646,8 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
       const r = await sendAlbato({
         data: {
-          imagem_url: mediaUrl, // Alterado de media_url para imagem_url conforme solicitado
-          texto: primaryLegenda, // Alterado de caption para texto conforme solicitado
+          media_url: mediaUrl,
+          caption: primaryLegenda,
           data_agendamento: agendamentoIso,
           post_id: inserted?.id,
           status: finalStatus,
@@ -727,8 +727,8 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
       const r = await sendAlbato({
         data: {
-          imagem_url: mediaUrl, // Alterado de media_url para imagem_url conforme solicitado
-          texto: primaryLegenda, // Alterado de caption para texto conforme solicitado
+          media_url: mediaUrl,
+          caption: primaryLegenda,
           data_agendamento: nowIso,
           post_id: inserted?.id,
           status: "Publicado",
