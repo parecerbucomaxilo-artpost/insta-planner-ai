@@ -708,7 +708,81 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   };
 
   const handleSave = (forceAgendar = false) => submitPost({ immediate: false, forceAgendar });
-  const handlePostNow = () => submitPost({ immediate: true });
+
+  // Função ISOLADA para o botão de postar agora, usando fetch nativo
+  const handlePostNow = async () => {
+    // 1. Validações básicas (Imediato)
+    const isX = modoCriacao === "x";
+    const currentLegenda = isX ? textoX : (legendaIg || legendaLi || "");
+    const currentMedia = isX 
+      ? (xSlides === 1 ? imagem : (enforcedCarrossel[0] || null)) 
+      : (tipo === "Post Único" ? imagem : (enforcedCarrossel[0] || null));
+
+    if (!currentLegenda.trim()) return toast.error("A legenda está vazia.");
+    if (!currentMedia) return toast.error("Gere a imagem antes de postar.");
+    
+    if (saving) return;
+    setSaving(true);
+    const tId = toast.loading("Preparando envio direto...");
+
+    try {
+      // 2. Garantir URL Pública (Upload direto para Supabase Storage via Client SDK)
+      // Bypass total de rotas internas de backend do Lovable para esta mídia
+      let publicUrl = currentMedia;
+      if (currentMedia.startsWith("data:")) {
+        toast.loading("Otimizando e subindo mídia...", { id: tId });
+        publicUrl = await uploadToSupabase(currentMedia, "direct-post");
+      }
+
+      // 3. Fetch NATIVO direto do navegador para o Make (Evita 502 Bad Gateway interno)
+      toast.loading("Disparando para o Instagram via Webhook...", { id: tId });
+      
+      const res = await fetch("https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          texto: currentLegenda,
+          imagem_url: publicUrl
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Falha no Webhook (Status: ${res.status}). Verifique o Make.`);
+      }
+
+      // 4. Registro no banco (Opcional - em segundo plano para não travar o usuário)
+      void (async () => {
+        try {
+          const uid = await getAuthedUserId();
+          if (uid) {
+            await supabase.from("posts").insert({
+              user_id: uid,
+              tipo_post: isX ? (xSlides > 1 ? "Carrossel" : "Post Único") : tipo,
+              legenda: currentLegenda,
+              url_imagem: publicUrl,
+              status: "Publicado"
+            });
+          }
+        } catch (dbErr) {
+          console.warn("Aviso: Falha ao salvar log no banco (não crítico):", dbErr);
+        }
+      })();
+
+      toast.success("Postagem enviada com sucesso!", { id: tId });
+      
+      // Limpeza parcial e reset do estado de criação
+      setImagem(null); 
+      setCarrossel([]); 
+      setPrompt("");
+      if (onCreated) onCreated();
+
+    } catch (err) {
+      console.error("[PostDirectError]", err);
+      toast.error(err instanceof Error ? err.message : "Erro desconhecido ao postar", { id: tId });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Para a prévia escolher legenda da rede ativa
   const previewLegenda =
