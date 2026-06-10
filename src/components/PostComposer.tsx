@@ -717,8 +717,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         .maybeSingle();
       if (error) throw new Error(error.message);
 
-      const mediaRaw = tipo === "Post Único" ? imagem : filledCarouselPreview[0] ?? null;
-      let mediaUrl = mediaRaw;
+      mediaUrl = mediaRaw;
       
       // Upload para storage se for base64
       if (mediaRaw && mediaRaw.startsWith("data:")) {
