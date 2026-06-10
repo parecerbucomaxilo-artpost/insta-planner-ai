@@ -22,6 +22,7 @@ import { applyWatermark } from "@/lib/watermark";
 import brandLogo from "@/assets/logo-clinica.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { uploadToSupabase } from "@/lib/storage-utils";
 
 
 type Tipo = "Post Único" | "Carrossel";
@@ -630,9 +631,21 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     if (error) return toast.error(error.message);
     toast.success(forceAgendar ? "Post agendado!" : "Post salvo!");
 
-    // Dispara webhook (Make/Albato)
+    // Dispara webhook (Make)
     try {
-      const mediaUrl = tipo === "Post Único" ? imagem : filledCarousel[0] ?? null;
+      const mediaRaw = tipo === "Post Único" ? imagem : filledCarousel[0] ?? null;
+      let mediaUrl = mediaRaw;
+      
+      // Se for base64, sobe para o storage antes
+      if (mediaRaw && mediaRaw.startsWith("data:")) {
+        try {
+          mediaUrl = await uploadToSupabase(mediaRaw, "post");
+        } catch (uploadErr) {
+          console.error("Erro no upload automático:", uploadErr);
+          // Fallback para enviar o base64 se o storage falhar
+        }
+      }
+
       const r = await sendAlbato({
         data: {
           media_url: mediaUrl,
@@ -640,7 +653,6 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
           data_agendamento: agendamentoIso,
           post_id: inserted?.id,
           status: finalStatus,
-          image_data: mediaUrl, // Enviando a imagem (que pode ser dataUrl ou URL)
         },
       });
       if (r.ok) toast.success("Webhook enviado ✓");
@@ -682,7 +694,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     const nowIso = new Date().toISOString();
     try {
       const uid = await getAuthedUserId();
-      const mediaUrl = tipo === "Post Único" ? imagem : filledCarouselPreview[0] ?? null;
+      const mediaRaw = tipo === "Post Único" ? imagem : filledCarouselPreview[0] ?? null;
       const { data: inserted, error } = await supabase
         .from("posts")
         .insert({
@@ -705,6 +717,17 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         .maybeSingle();
       if (error) throw new Error(error.message);
 
+      let mediaUrl = mediaRaw;
+      
+      // Upload para storage se for base64
+      if (mediaRaw && mediaRaw.startsWith("data:")) {
+        try {
+          mediaUrl = await uploadToSupabase(mediaRaw, "post-now");
+        } catch (uploadErr) {
+          console.error("Erro no upload automático:", uploadErr);
+        }
+      }
+
       const r = await sendAlbato({
         data: {
           media_url: mediaUrl,
@@ -712,7 +735,6 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
           data_agendamento: nowIso,
           post_id: inserted?.id,
           status: "Publicado",
-          image_data: mediaUrl,
         },
       });
       if (!r.ok) {
