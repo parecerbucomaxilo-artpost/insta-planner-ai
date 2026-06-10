@@ -109,6 +109,93 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
     }
   }, [weekStart]);
 
+  const handleRegenerar = async (idx: number) => {
+    const post = posts[idx];
+    if (!post || post.status === "regerando") return;
+    
+    setPosts(prev => prev.map((p, i) => i === idx ? { ...p, status: "regerando" as const } : p));
+    const tId = toast.loading("Gerando nova ideia para este horário...");
+    
+    try {
+      const apiKey = (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
+      
+      // Gera nova ideia
+      const r = await genIdea({
+        data: {
+          networks: ["instagram"],
+          apiKey,
+          perfil: perfil ? {
+            nome: perfil.nome_profissional,
+            cro_uf: perfil.cro_uf,
+            subespecialidades: perfil.subespecialidades,
+            tom_voz: perfil.tom_voz
+          } : undefined,
+          estilo: "padrao"
+        }
+      }) as any;
+
+      // Gera nova imagem
+      const { dataUrl } = await genImage({
+        data: {
+          prompt: r.prompt_imagem,
+          aspect: post.formato === "Feed" ? "1:1" : "9:16"
+        }
+      });
+
+      let finalUrl = dataUrl;
+      
+      // Aplica logo
+      try {
+        finalUrl = await applyWatermark(finalUrl, brandLogo, {
+          position: "tr",
+          sizeRatio: 0.08,
+          opacity: 0.8,
+        });
+      } catch (e) { console.error(e); }
+
+      // Aplica badge
+      try {
+        if (perfil?.nome_profissional || perfil?.cro_uf) {
+          finalUrl = await applyDoctorBadge(finalUrl, {
+            nome: perfil.nome_profissional ?? "",
+            cro: perfil.cro_uf ?? "",
+          });
+        }
+      } catch (e) { console.error(e); }
+
+      setPosts(prev => prev.map((p, i) => i === idx ? {
+        ...p,
+        titulo: r.tema,
+        legenda: r.legenda_instagram || "",
+        mensagemDirect: r.mensagem_direct || "",
+        promptImagem: r.prompt_imagem,
+        imagem: finalUrl,
+        status: "pronto" as const
+      } : p));
+
+      toast.success("Novo post gerado com sucesso!", { id: tId });
+      
+      // Atualiza cache
+      const cached = readWeekCache(weekStart.toISOString());
+      if (cached) {
+        const updated = cached.map((p, i) => i === idx ? {
+          ...p,
+          titulo: r.tema,
+          legenda: r.legenda_instagram || "",
+          mensagemDirect: r.mensagem_direct || "",
+          promptImagem: r.prompt_imagem,
+          imagem: finalUrl,
+          status: "pronto" as const
+        } : p);
+        writeWeekCache(weekStart.toISOString(), updated as any);
+      }
+
+    } catch (e) {
+      toast.error("Erro ao regerar post", { id: tId });
+      setPosts(prev => prev.map((p, i) => i === idx ? { ...p, status: "pronto" as const } : p));
+    }
+  };
+
   const autoGenTriggered = useRef(false);
   useEffect(() => {
     if (autoGenerate && !autoGenTriggered.current && !loading) {
