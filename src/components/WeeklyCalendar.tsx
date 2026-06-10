@@ -413,13 +413,13 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
                 {dayPosts.map((p) => {
                   const globalIdx = posts.findIndex(item => item === p);
                   return (
-                    <button
-                      key={`${label}-${p.horaAgendamento}`}
-                      type="button"
-                      onClick={() => p.status !== "vazio" && setOpenIdx(globalIdx)}
-                      className="text-left w-full group"
-                      disabled={p.status === "vazio"}
-                    >
+                    <div key={`${label}-${p.horaAgendamento}`} className="relative group/post">
+                      <button
+                        type="button"
+                        onClick={() => p.status !== "vazio" && p.status !== "regerando" && setOpenIdx(globalIdx)}
+                        className="text-left w-full"
+                        disabled={p.status === "vazio" || p.status === "regerando"}
+                      >
                       <Card
                         className={cn(
                           "p-2.5 h-full space-y-2 transition-all border-dashed",
