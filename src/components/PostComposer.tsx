@@ -687,12 +687,29 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const handlePostNow = async () => {
     if (!hasContent) return toast.error("Gere a legenda e a imagem antes de publicar.");
     if (saving) return;
-    const tId = toast.loading("Publicando agora nas redes integradas…");
+
+    const tId = toast.loading("Preparando publicação...");
     setSaving(true);
-    const nowIso = new Date().toISOString();
+    
     try {
       const uid = await getAuthedUserId();
       const mediaRaw = tipo === "Post Único" ? imagem : filledCarouselPreview[0] ?? null;
+      let mediaUrl = mediaRaw;
+
+      // Se a imagem for base64, precisamos salvar no Storage PRIMEIRO para ter uma URL pública
+      if (mediaRaw && mediaRaw.startsWith("data:")) {
+        toast.loading("Convertendo e salvando imagem oficial...", { id: tId });
+        try {
+          mediaUrl = await uploadToSupabase(mediaRaw, "post-now");
+        } catch (uploadErr) {
+          console.error("Erro crítico no upload:", uploadErr);
+          throw new Error("Falha ao gerar link público da imagem. Verifique sua conexão.");
+        }
+      }
+
+      toast.loading("Registrando no banco de dados...", { id: tId });
+      const nowIso = new Date().toISOString();
+      
       const { data: inserted, error } = await supabase
         .from("posts")
         .insert({
@@ -705,26 +722,18 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
           legenda_linkedin: networks.includes("linkedin") ? legendaLi : null,
           postar_instagram: networks.includes("instagram"),
           postar_linkedin: networks.includes("linkedin"),
-          url_imagem: tipo === "Post Único" ? imagem : null,
-          imagens_carrossel: tipo === "Carrossel" ? filledCarouselPreview : [],
+          url_imagem: tipo === "Post Único" ? mediaUrl : null,
+          imagens_carrossel: tipo === "Carrossel" ? (mediaUrl ? [mediaUrl, ...filledCarouselPreview.slice(1)] : filledCarouselPreview) : [],
           data_agendamento: nowIso,
           status: "Publicado",
           prompt_ia: tipo === "Carrossel" ? enforcedPrompts.join("\n---\n") : prompt || null,
         })
         .select("id")
         .maybeSingle();
+
       if (error) throw new Error(error.message);
 
-      let mediaUrl = mediaRaw;
-      
-      if (mediaRaw && mediaRaw.startsWith("data:")) {
-        try {
-          mediaUrl = await uploadToSupabase(mediaRaw, "post-now");
-        } catch (uploadErr) {
-          console.error("Erro no upload automático ao postar agora:", uploadErr);
-        }
-      }
-
+      toast.loading("Disparando integração com Make...", { id: tId });
       const r = await sendAlbato({
         data: {
           media_url: mediaUrl,
@@ -734,12 +743,14 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
           status: "Publicado",
         },
       });
+
       if (!r.ok) {
-        toast.error(`Salvo, mas webhook respondeu status ${r.status}`, { id: tId });
-      } else {
-        toast.success("✅ Post publicado agora!", { id: tId });
+        throw new Error(`O Webhook do Make retornou erro (Status ${r.status}). Verifique o cenário no Make.`);
       }
 
+      toast.success("✅ Post publicado e enviado ao Make!", { id: tId });
+
+      // Limpa formulário após sucesso
       setLegendaIg(""); setLegendaLi(""); setTextoX("");
       setPrompt(""); setImagem(null); setCarrossel([]);
       setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
