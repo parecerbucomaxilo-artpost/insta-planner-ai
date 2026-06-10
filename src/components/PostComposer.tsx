@@ -692,19 +692,20 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     
     if (saving) return;
     setSaving(true);
-    const tId = toast.loading("Preparando envio direto...");
+    const tId = toast.loading("Preparando envio...");
 
     try {
-      // 2. Garantir URL Pública (Upload direto para Supabase Storage via Client SDK)
-      // Bypass total de rotas internas de backend do Lovable para esta mídia
+      // 2. Garantir URL Pública (Upload para Supabase Storage)
       let publicUrl = currentMedia;
       if (currentMedia.startsWith("data:")) {
-        toast.loading("Otimizando e subindo mídia...", { id: tId });
-        publicUrl = await uploadToSupabase(currentMedia, "direct-post");
+        toast.loading("Otimizando imagem para o LinkedIn...", { id: tId });
+        // Usamos um caminho identificável no bucket
+        publicUrl = await uploadToSupabase(currentMedia, `direct-${Date.now()}`);
+        console.log("Upload concluído para o Storage:", publicUrl);
       }
 
       // 3. Fetch NATIVO direto do navegador para o Make (Evita 502 Bad Gateway interno)
-      toast.loading("Disparando para o Instagram via Webhook...", { id: tId });
+      toast.loading("Enviando para o Webhook do Make...", { id: tId });
       
       const res = await fetch("https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3", {
         method: "POST",
@@ -719,7 +720,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         throw new Error(`Falha no Webhook (Status: ${res.status}). Verifique o Make.`);
       }
 
-      // 4. Registro no banco (Opcional - em segundo plano para não travar o usuário)
+      // 4. Registro no banco (Opcional - em segundo plano)
       void (async () => {
         try {
           const uid = await getAuthedUserId();
@@ -739,7 +740,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
       toast.success("Postagem enviada com sucesso!", { id: tId });
       
-      // Limpeza parcial e reset do estado de criação
+      // Limpeza parcial
       setImagem(null); 
       setCarrossel([]); 
       setPrompt("");
@@ -747,7 +748,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
     } catch (err) {
       console.error("[PostDirectError]", err);
-      toast.error(err instanceof Error ? err.message : "Erro desconhecido ao postar", { id: tId });
+      toast.error(err instanceof Error ? err.message : "Erro ao postar", { id: tId });
     } finally {
       setSaving(false);
     }
