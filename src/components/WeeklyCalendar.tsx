@@ -125,7 +125,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
               }
             : undefined,
         },
-      });
+      }) as any;
 
       if (!r.posts) throw new Error("Falha ao obter lista de posts.");
 
@@ -149,7 +149,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
 
       setPosts((arr) => {
         const updated = arr.map((p, i) => {
-          const res = results[i];
+          const res = results[i] as any;
           if (res && res.status === "fulfilled") {
             return { ...p, imagem: res.value.dataUrl, status: "pronto" as const };
           }
@@ -161,7 +161,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
 
       if (perfil?.nome_profissional || perfil?.cro_uf) {
         const next = await Promise.all(
-          results.map(async (res) => {
+          results.map(async (res: any) => {
             if (res.status !== "fulfilled") return null;
             try {
               return await applyDoctorBadge(res.value.dataUrl, {
