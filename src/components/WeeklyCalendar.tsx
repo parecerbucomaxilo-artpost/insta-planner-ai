@@ -420,48 +420,57 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
                         className="text-left w-full"
                         disabled={p.status === "vazio" || p.status === "regerando"}
                       >
-                      <Card
-                        className={cn(
-                          "p-2.5 h-full space-y-2 transition-all border-dashed",
-                          p.status === "vazio"
-                            ? "opacity-40 border-muted-foreground/30 bg-transparent"
-                            : "card-elevated hover:border-primary/50 cursor-pointer border-solid bg-white"
-                        )}
-                      >
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-[9px] px-1 h-4 font-bold border-primary/20 bg-primary/5 text-primary">
-                            {p.horaAgendamento}
-                          </Badge>
-                          {p.status === "pronto" && (
-                            <div className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
+                        <Card
+                          className={cn(
+                            "p-2.5 h-full space-y-2 transition-all border-dashed",
+                            p.status === "vazio"
+                              ? "opacity-40 border-muted-foreground/30 bg-transparent"
+                              : "card-elevated hover:border-primary/50 cursor-pointer border-solid bg-white"
                           )}
-                        </div>
-                        
-                        <div className={cn(
-                          "aspect-[4/5] rounded overflow-hidden bg-muted relative border shadow-inner",
-                          formato === "Feed" ? "aspect-square" : "aspect-[9/16]"
-                        )}>
-                          {p.imagem ? (
-                            <img src={p.imagem} alt="" className="h-full w-full object-cover" />
-                          ) : p.status === "gerando" ? (
-                            <div className="h-full w-full flex items-center justify-center bg-slate-50">
-                              <Loader2 className="h-4 w-4 animate-spin text-primary/40" />
-                            </div>
-                          ) : (
-                            <div className="h-full w-full flex flex-col items-center justify-center gap-1 opacity-20">
-                              <ImgIcon className="h-5 w-5" />
-                              <span className="text-[8px] font-bold">AGUARDANDO</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <p className="text-[10px] font-bold leading-tight line-clamp-3 text-slate-700 min-h-[2.4rem]">
-                          {p.titulo || "Post planejado"}
-                        </p>
-                      </Card>
-                    </button>
-                  );
-                })}
+                        >
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline" className="text-[9px] px-1 h-4 font-bold border-primary/20 bg-primary/5 text-primary">
+                              {p.horaAgendamento}
+                            </Badge>
+                            {p.status === "pronto" && (
+                              <div className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
+                            )}
+                          </div>
+                          
+                          <div className={cn(
+                            "aspect-[4/5] rounded overflow-hidden bg-muted relative border shadow-inner",
+                            formato === "Feed" ? "aspect-square" : "aspect-[9/16]"
+                          )}>
+                            {p.imagem ? (
+                              <img src={p.imagem} alt="" className="h-full w-full object-cover" />
+                            ) : (p.status === "gerando" || p.status === "regerando") ? (
+                              <div className="h-full w-full flex items-center justify-center bg-slate-50">
+                                <Loader2 className="h-4 w-4 animate-spin text-primary/40" />
+                              </div>
+                            ) : (
+                              <div className="h-full w-full flex flex-col items-center justify-center gap-1 opacity-20">
+                                <ImgIcon className="h-5 w-5" />
+                                <span className="text-[8px] font-bold">AGUARDANDO</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <p className="text-[10px] font-bold leading-tight line-clamp-3 text-slate-700 min-h-[2.4rem]">
+                            {p.titulo || "Post planejado"}
+                          </p>
+                        </Card>
+                      </button>
+                      
+                      {p.status === "pronto" && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRegenerar(globalIdx); }}
+                          className="absolute -top-1.5 -right-1.5 h-6 w-6 rounded-full bg-white shadow-md border flex items-center justify-center text-primary opacity-0 group-hover/post:opacity-100 transition-opacity z-10 hover:bg-slate-50"
+                          title="Gerar nova ideia para este horário"
+                        >
+                          <RefreshCcw className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
               </div>
             </div>
           );
