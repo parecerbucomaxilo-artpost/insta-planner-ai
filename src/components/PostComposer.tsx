@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon, Send, Twitter, Smartphone, Video } from "lucide-react";
+import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon, Send, Twitter, Smartphone, Video, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { PostPreview } from "./PostPreview";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,8 @@ import brandLogo from "@/assets/logo-clinica.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { uploadToSupabase } from "@/lib/storage-utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+
 
 
 type Tipo = "Post Único" | "Carrossel";
@@ -161,6 +163,10 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   // ===== Modo de criação: Padrão (IG/LinkedIn) vs Estilo X (Twitter) =====
   const [modoCriacao, setModoCriacao] = useState<"padrao" | "x">("padrao");
   const [textoX, setTextoX] = useState("");
+  const [webhookResponse, setWebhookResponse] = useState<string | null>(null);
+  const [showResponseDialog, setShowResponseDialog] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
   const [xSlides, setXSlides] = useState<1 | 2 | 3>(1); // X publicado no Instagram: até 3 slides
   const X_MAX = 280;
   
@@ -1576,6 +1582,45 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       )}
 
 
+      <Dialog open={showResponseDialog} onOpenChange={setShowResponseDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-primary" />
+              Retorno do Make
+            </DialogTitle>
+            <DialogDescription>
+              Confira a resposta síncrona devolvida pela automação.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            <div className="relative group">
+              <div className="bg-muted p-4 rounded-lg text-sm font-mono whitespace-pre-wrap break-words max-h-[300px] overflow-y-auto border border-border">
+                {webhookResponse}
+              </div>
+              <Button
+                size="icon"
+                variant="outline"
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={handleCopyResponse}
+              >
+                {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button className="w-full" onClick={handleCopyResponse}>
+              {isCopied ? (
+                <><Check className="h-4 w-4 mr-2" /> Copiado!</>
+              ) : (
+                <><Copy className="h-4 w-4 mr-2" /> Copiar Texto</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
