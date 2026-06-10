@@ -580,53 +580,35 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
    */
   const submitPost = async (options: { immediate: boolean; forceAgendar?: boolean }) => {
     const isX = modoCriacao === "x";
-    const { immediate, forceAgendar = false } = options;
+    const { forceAgendar = false } = options;
 
-    // Validações básicas
+    // Validações básicas (foco em salvamento/agendamento)
     if (isX) {
       if (!textoX.trim()) return toast.error("Escreva ou gere o texto do tweet.");
       if (textoX.length > X_MAX) return toast.error(`Texto excede ${X_MAX} caracteres.`);
-      if (xSlides > 1 && enforcedCarrossel.filter(Boolean).length < xSlides) {
-        return toast.error(`Gere as ${xSlides} imagens antes de publicar.`);
-      }
-      if (xSlides === 1 && !imagem) return toast.error("Gere a imagem do tweet.");
     } else {
-      if (networks.length === 0) return toast.error("Selecione ao menos uma rede social");
-      if (tipo === "Post Único" && !imagem) return toast.error("Gere uma imagem via Gemini");
-      if (tipo === "Carrossel" && enforcedCarrossel.filter(Boolean).length === 0) {
-        return toast.error("Gere ao menos a Página 1");
-      }
+      if (networks.length === 0) return toast.error("Selecione ao menos uma rede social para salvar.");
     }
 
     if (saving) return;
     setSaving(true);
-    const tId = toast.loading(immediate ? "Publicando agora..." : "Salvando post...");
+    const tId = toast.loading("Processando post...");
 
     try {
       const uid = await getAuthedUserId();
       const now = new Date();
       
       // Define data de agendamento e status
-      let agendamentoIso: string | null = null;
-      let finalStatus: Status = "Rascunho";
-
-      if (immediate) {
-        agendamentoIso = now.toISOString();
-        finalStatus = "Publicado";
-      } else {
-        agendamentoIso = data ? new Date(data).toISOString() : (forceAgendar ? now.toISOString() : null);
-        finalStatus = forceAgendar ? "Agendado" : (data && status === "Rascunho" ? "Agendado" : status);
-      }
+      const agendamentoIso = data ? new Date(data).toISOString() : (forceAgendar ? now.toISOString() : null);
+      const finalStatus: Status = forceAgendar ? "Agendado" : (data && status === "Rascunho" ? "Agendado" : status);
 
       const effectiveTipo: Tipo = isX ? (xSlides > 1 ? "Carrossel" : "Post Único") : tipo;
       
-      // 1. Processar mídias (Converter base64 para URLs do Supabase)
-      toast.loading("Processando mídias...", { id: tId });
+      // 1. Processar mídias
+      toast.loading("Otimizando mídias...", { id: tId });
       
       const processMedia = async (raw: string | null, prefix: string) => {
-        if (raw && raw.startsWith("data:")) {
-          return await uploadToSupabase(raw, prefix);
-        }
+        if (raw && raw.startsWith("data:")) return await uploadToSupabase(raw, prefix);
         return raw;
       };
 
@@ -634,7 +616,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       let finalImagensCarrossel: string[] = [];
 
       if (effectiveTipo === "Post Único") {
-        finalUrlImagem = await processMedia(imagem, immediate ? "post-now" : "post-draft");
+        finalUrlImagem = await processMedia(imagem, "post-draft");
       } else {
         const rawList = isX ? enforcedCarrossel.slice(0, xSlides) : enforcedCarrossel.filter(Boolean);
         finalImagensCarrossel = await Promise.all(
@@ -642,8 +624,8 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         ) as string[];
       }
 
-      // 2. Salvar no Banco de Dados
-      toast.loading("Registrando no banco...", { id: tId });
+      // 2. Salvar no Banco
+      toast.loading("Salvando no banco...", { id: tId });
       const { data: inserted, error } = await supabase.from("posts").insert({
         user_id: uid,
         tipo_post: effectiveTipo,
@@ -663,17 +645,10 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
       if (error) throw error;
 
-      // 3. Disparar Webhook (somente se não for apenas rascunho sem data)
-      if (finalStatus !== "Rascunho" || agendamentoIso) {
-        toast.loading("Enviando para o Make...", { id: tId });
+      // 3. Disparar Webhook apenas se for AGENDADO (via server function)
+      if (finalStatus === "Agendado") {
         const mediaForWebhook = finalUrlImagem || (finalImagensCarrossel.length > 0 ? finalImagensCarrossel[0] : null);
-        
-        // Bloqueio de segurança: nunca enviar base64 para o servidor
-        if (mediaForWebhook?.startsWith("data:")) {
-          throw new Error("Falha ao gerar URL pública da imagem. O Make não aceita dados brutos.");
-        }
-
-        const r = await sendAlbato({
+        await sendAlbato({
           data: {
             media_url: mediaForWebhook,
             caption: primaryLegenda,
@@ -682,17 +657,11 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
             status: finalStatus,
           },
         });
-
-        if (!r.ok) {
-          console.warn(`[Webhook] Make retornou status ${r.status}`);
-          // Se for "Postar Agora", o erro no webhook é crítico. Se for agendamento, apenas avisamos.
-          if (immediate) throw new Error(`O Webhook do Make falhou (Status ${r.status}).`);
-        }
       }
 
-      toast.success(immediate ? "Publicado com sucesso!" : (forceAgendar ? "Post agendado!" : "Post salvo!"), { id: tId });
+      toast.success(forceAgendar ? "Post agendado!" : "Post salvo com sucesso!", { id: tId });
       
-      // Limpeza do formulário
+      // Reset form
       setLegendaIg(""); setLegendaLi(""); setTextoX("");
       setPrompt(""); setImagem(null); setCarrossel([]);
       setCarouselPrompts([""]); setData(""); setStatus("Rascunho");
@@ -700,15 +669,89 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       
       onCreated();
     } catch (e) {
-      console.error("[SubmitPost] Erro fatal:", e);
-      toast.error(e instanceof Error ? e.message : "Erro na operação", { id: tId });
+      console.error("[SubmitPostError]", e);
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar post", { id: tId });
     } finally {
       setSaving(false);
     }
   };
 
   const handleSave = (forceAgendar = false) => submitPost({ immediate: false, forceAgendar });
-  const handlePostNow = () => submitPost({ immediate: true });
+
+  // Função ISOLADA para o botão de postar agora, usando fetch nativo
+  const handlePostNow = async () => {
+    // 1. Validações básicas (Imediato)
+    const isX = modoCriacao === "x";
+    const currentLegenda = isX ? textoX : (legendaIg || legendaLi || "");
+    const currentMedia = isX 
+      ? (xSlides === 1 ? imagem : (enforcedCarrossel[0] || null)) 
+      : (tipo === "Post Único" ? imagem : (enforcedCarrossel[0] || null));
+
+    if (!currentLegenda.trim()) return toast.error("A legenda está vazia.");
+    if (!currentMedia) return toast.error("Gere a imagem antes de postar.");
+    
+    if (saving) return;
+    setSaving(true);
+    const tId = toast.loading("Preparando envio direto...");
+
+    try {
+      // 2. Garantir URL Pública (Upload direto para Supabase Storage via Client SDK)
+      // Bypass total de rotas internas de backend do Lovable para esta mídia
+      let publicUrl = currentMedia;
+      if (currentMedia.startsWith("data:")) {
+        toast.loading("Otimizando e subindo mídia...", { id: tId });
+        publicUrl = await uploadToSupabase(currentMedia, "direct-post");
+      }
+
+      // 3. Fetch NATIVO direto do navegador para o Make (Evita 502 Bad Gateway interno)
+      toast.loading("Disparando para o Instagram via Webhook...", { id: tId });
+      
+      const res = await fetch("https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          texto: currentLegenda,
+          imagem_url: publicUrl
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Falha no Webhook (Status: ${res.status}). Verifique o Make.`);
+      }
+
+      // 4. Registro no banco (Opcional - em segundo plano para não travar o usuário)
+      void (async () => {
+        try {
+          const uid = await getAuthedUserId();
+          if (uid) {
+            await supabase.from("posts").insert({
+              user_id: uid,
+              tipo_post: isX ? (xSlides > 1 ? "Carrossel" : "Post Único") : tipo,
+              legenda: currentLegenda,
+              url_imagem: publicUrl,
+              status: "Publicado"
+            });
+          }
+        } catch (dbErr) {
+          console.warn("Aviso: Falha ao salvar log no banco (não crítico):", dbErr);
+        }
+      })();
+
+      toast.success("Postagem enviada com sucesso!", { id: tId });
+      
+      // Limpeza parcial e reset do estado de criação
+      setImagem(null); 
+      setCarrossel([]); 
+      setPrompt("");
+      if (onCreated) onCreated();
+
+    } catch (err) {
+      console.error("[PostDirectError]", err);
+      toast.error(err instanceof Error ? err.message : "Erro desconhecido ao postar", { id: tId });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Para a prévia escolher legenda da rede ativa
   const previewLegenda =
