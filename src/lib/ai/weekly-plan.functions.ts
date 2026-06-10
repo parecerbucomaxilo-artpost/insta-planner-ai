@@ -55,21 +55,19 @@ export const weeklyPlan = createServerFn({ method: "POST" })
     if (!anthropicKey && !lovableKey) return buildMock(data.perfil);
 
     const system = buildSystem(data.perfil);
-    const userPrompt = `Gere um CRONOGRAMA EDITORIAL de 5 dias (segunda a sexta) com temas ESTRITAMENTE DISTINTOS, complementares e relevantes para ${FIXED_NICHE}. 
+    const userPrompt = `Gere um CRONOGRAMA EDITORIAL de 7 dias (segunda a domingo), com 2 POSTS POR DIA (um às 10h e outro às 14h), totalizando 14 posts ESTRITAMENTE DISTINTOS, complementares e relevantes para ${FIXED_NICHE}. 
     
-    OBRIGATÓRIO VARIAR SUBTEMAS: Explore cada dia uma área diferente (Ex: Dia 1: Traumatologia Facial; Dia 2: Odontologia em UTI; Dia 3: Patologia/Biópsia; Dia 4: DTM/Dor Orofacial; Dia 5: Tecnologia/Planejamento 3D). 
+    OBRIGATÓRIO VARIAR SUBTEMAS: Explore cada dia uma área diferente (Ex: Dia 1: Traumatologia Facial; Dia 2: Odontologia em UTI; Dia 3: Patologia/Biópsia; Dia 4: DTM/Dor Orofacial; Dia 5: Tecnologia/Planejamento 3D).
     
-    EVITE REPETIÇÃO: Não use Ortognática em todos os dias. 
-    
-    Para cada dia entregue: titulo curto, legenda_instagram (4-8 linhas com hashtags), mensagem_direct (resposta acolhedora curta, ≤ 350 chars) e prompt_imagem (em INGLÊS, padrão Premium Medical Sci-Fi: deep navy, glowing cyan, dark background, 3D wireframe mesh sobre rosto OU crânio anatômico em vidro azul, hyperrealistic 8k, sem texto na imagem).`;
+    Para cada um dos 14 posts, entregue: titulo curto, legenda_instagram (4-8 linhas com hashtags), mensagem_direct (resposta acolhedora curta, ≤ 350 chars), prompt_imagem (em INGLÊS, padrão Premium Medical Sci-Fi) e hora_agendamento (seja "10:00" ou "14:00").`;
 
     const toolSchema = {
       type: "object",
       properties: {
-        dias: {
+        posts: {
           type: "array",
-          minItems: 5,
-          maxItems: 5,
+          minItems: 14,
+          maxItems: 14,
           items: {
             type: "object",
             properties: {
@@ -77,12 +75,13 @@ export const weeklyPlan = createServerFn({ method: "POST" })
               legenda_instagram: { type: "string" },
               mensagem_direct: { type: "string" },
               prompt_imagem: { type: "string" },
+              hora_agendamento: { type: "string" },
             },
-            required: ["titulo", "legenda_instagram", "mensagem_direct", "prompt_imagem"],
+            required: ["titulo", "legenda_instagram", "mensagem_direct", "prompt_imagem", "hora_agendamento"],
           },
         },
       },
-      required: ["dias"],
+      required: ["posts"],
     };
 
     let parsedArgs: string | undefined;
@@ -98,13 +97,13 @@ export const weeklyPlan = createServerFn({ method: "POST" })
         body: JSON.stringify({
           // PERF: Haiku é ~3x mais rápido para o cronograma de 5 dias
           model: "claude-3-5-haiku-20241022",
-          max_tokens: 3072,
+          max_tokens: 4096,
           system,
           messages: [{ role: "user", content: userPrompt }],
           tools: [
             {
               name: "cronograma_semanal",
-              description: "Retorna um plano editorial de 5 dias úteis.",
+              description: "Retorna um plano editorial de 7 dias com 2 posts/dia.",
               input_schema: toolSchema,
             },
           ],
@@ -136,7 +135,7 @@ export const weeklyPlan = createServerFn({ method: "POST" })
               type: "function",
               function: {
                 name: "cronograma_semanal",
-                description: "Plano editorial de 5 dias.",
+                description: "Plano editorial de 7 dias com 2 posts/dia.",
                 parameters: { ...toolSchema, additionalProperties: false },
               },
             },
@@ -158,11 +157,12 @@ export const weeklyPlan = createServerFn({ method: "POST" })
 
     if (!parsedArgs) throw new Error("Resposta sem cronograma.");
     return JSON.parse(parsedArgs) as {
-      dias: Array<{
+      posts: Array<{
         titulo: string;
         legenda_instagram: string;
         mensagem_direct: string;
         prompt_imagem: string;
+        hora_agendamento: string;
       }>;
     };
   });

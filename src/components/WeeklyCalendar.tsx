@@ -15,33 +15,34 @@ import type { Perfil } from "@/components/ProfileSettings";
 import { DirectReplyCard } from "./DirectReplyCard";
 import { applyDoctorBadge } from "@/lib/watermark";
 
-type DiaPlano = {
+type PostPlano = {
   date: Date;
-  label: string; // Seg, Ter…
+  label: string;
   titulo: string;
   legenda: string;
   mensagemDirect: string;
   promptImagem: string;
+  horaAgendamento: string;
   imagem: string | null;
   status: "vazio" | "gerando" | "pronto";
 };
 
-const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"] as const;
+const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] as const;
 
 // PERF: cache local do cronograma por semana (chave = ISO da segunda-feira)
-const WEEK_CACHE_PREFIX = "planner_weekly_cache_v1:";
-type CachedDia = Omit<DiaPlano, "date"> & { dateIso: string };
-function readWeekCache(weekStartIso: string): CachedDia[] | null {
+const WEEK_CACHE_PREFIX = "planner_weekly_cache_v2:";
+type CachedPost = Omit<PostPlano, "date"> & { dateIso: string };
+function readWeekCache(weekStartIso: string): CachedPost[] | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(WEEK_CACHE_PREFIX + weekStartIso);
-    return raw ? (JSON.parse(raw) as CachedDia[]) : null;
+    return raw ? (JSON.parse(raw) as CachedPost[]) : null;
   } catch { return null; }
 }
-function writeWeekCache(weekStartIso: string, dias: DiaPlano[]) {
+function writeWeekCache(weekStartIso: string, posts: PostPlano[]) {
   if (typeof window === "undefined") return;
   try {
-    const payload: CachedDia[] = dias.map(({ date, ...rest }) => ({ ...rest, dateIso: date.toISOString() }));
+    const payload: CachedPost[] = posts.map(({ date, ...rest }) => ({ ...rest, dateIso: date.toISOString() }));
     window.localStorage.setItem(WEEK_CACHE_PREFIX + weekStartIso, JSON.stringify(payload));
   } catch { /* ignore quota */ }
 }
@@ -64,52 +65,39 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   const genImage = useServerFn(generateImage);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const [loading, setLoading] = useState(false);
-  const [dias, setDias] = useState<DiaPlano[]>(() =>
-    DIAS.map((label, i) => {
+  const [posts, setPosts] = useState<PostPlano[]>(() =>
+    DIAS.flatMap((label, i) => {
       const d = startOfWeek(new Date());
       d.setDate(d.getDate() + i);
-      return {
-        date: d,
-        label,
-        titulo: "",
-        legenda: "",
-        mensagemDirect: "",
-        promptImagem: "",
-        imagem: null,
-        status: "vazio",
-      };
+      return [
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", imagem: null, status: "vazio" as const },
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", imagem: null, status: "vazio" as const }
+      ];
     }),
   );
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
   const rebuildEmpty = (start: Date) =>
-    DIAS.map((label, i) => {
+    DIAS.flatMap((label, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
-      return {
-        date: d,
-        label,
-        titulo: "",
-        legenda: "",
-        mensagemDirect: "",
-        promptImagem: "",
-        imagem: null,
-        status: "vazio" as const,
-      };
+      return [
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", imagem: null, status: "vazio" as const },
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", imagem: null, status: "vazio" as const }
+      ];
     });
 
   const navWeek = (delta: number) => {
     const next = new Date(weekStart);
     next.setDate(next.getDate() + delta * 7);
     setWeekStart(next);
-    setDias(rebuildEmpty(next));
+    setPosts(rebuildEmpty(next));
   };
 
-  // PERF: hidrata o cronograma do cache local sempre que a semana muda
   useEffect(() => {
     const cached = readWeekCache(weekStart.toISOString());
-    if (cached && cached.length === 5) {
-      setDias(cached.map((c) => ({ ...c, date: new Date(c.dateIso) })));
+    if (cached && cached.length === 14) {
+      setPosts(cached.map((c) => ({ ...c, date: new Date(c.dateIso) })));
     }
   }, [weekStart]);
 
@@ -121,7 +109,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
 
   const handleGerar = async () => {
     setLoading(true);
-    const tId = toast.loading("Claude está montando seu cronograma semanal…");
+    const tId = toast.loading("Gerando seu cronograma de 7 dias com 2 posts por dia…");
     try {
       const apiKey =
         (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
@@ -137,38 +125,43 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
               }
             : undefined,
         },
-      });
-      // marca como "gerando" para imagens
-      setDias((arr) =>
-        arr.map((d, i) => ({
-          ...d,
-          titulo: r.dias[i]?.titulo ?? d.titulo,
-          legenda: r.dias[i]?.legenda_instagram ?? "",
-          mensagemDirect: r.dias[i]?.mensagem_direct ?? "",
-          promptImagem: r.dias[i]?.prompt_imagem ?? "",
+      }) as any;
+
+      if (!r.posts) throw new Error("Falha ao obter lista de posts.");
+
+      setPosts((arr) =>
+        arr.map((p, i) => ({
+          ...p,
+          titulo: r.posts[i]?.titulo ?? p.titulo,
+          legenda: r.posts[i]?.legenda_instagram ?? "",
+          mensagemDirect: r.posts[i]?.mensagem_direct ?? "",
+          promptImagem: r.posts[i]?.prompt_imagem ?? "",
+          horaAgendamento: r.posts[i]?.hora_agendamento ?? p.horaAgendamento,
           status: "gerando",
         })),
       );
-      toast.loading("Gerando 5 imagens Premium em paralelo…", { id: tId });
+
+      toast.loading("Gerando 14 imagens em paralelo…", { id: tId });
 
       const results = await Promise.allSettled(
-        r.dias.map((d) => genImage({ data: { prompt: d.prompt_imagem, aspect: "1:1" } })),
+        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: "1:1" } })),
       );
-      setDias((arr) => {
-        const updated = arr.map((d, i) => {
-          const res = results[i];
+
+      setPosts((arr) => {
+        const updated = arr.map((p, i) => {
+          const res = results[i] as any;
           if (res && res.status === "fulfilled") {
-            return { ...d, imagem: res.value.dataUrl, status: "pronto" as const };
+            return { ...p, imagem: res.value.dataUrl, status: "pronto" as const };
           }
-          return { ...d, status: "pronto" as const };
+          return { ...p, status: "pronto" as const };
         });
         writeWeekCache(weekStart.toISOString(), updated);
         return updated;
       });
-      // aplica badge do médico se houver
+
       if (perfil?.nome_profissional || perfil?.cro_uf) {
         const next = await Promise.all(
-          results.map(async (res) => {
+          results.map(async (res: any) => {
             if (res.status !== "fulfilled") return null;
             try {
               return await applyDoctorBadge(res.value.dataUrl, {
@@ -180,13 +173,13 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
             }
           }),
         );
-        setDias((arr) => {
-          const updated = arr.map((d, i) => ({ ...d, imagem: next[i] ?? d.imagem }));
+        setPosts((arr) => {
+          const updated = arr.map((p, i) => ({ ...p, imagem: next[i] ?? p.imagem }));
           writeWeekCache(weekStart.toISOString(), updated);
           return updated;
         });
       }
-      toast.success("Cronograma da semana pronto! ✨", { id: tId });
+      toast.success("Cronograma de 14 posts pronto! ✨", { id: tId });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar cronograma", { id: tId });
     } finally {
@@ -195,10 +188,11 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   };
 
   const salvarDia = async (i: number, agendar: boolean) => {
-    const d = dias[i];
-    if (!d.legenda.trim()) return toast.error("Texto vazio.");
-    const data = new Date(d.date);
-    data.setHours(9, 0, 0, 0);
+    const p = posts[i];
+    if (!p.legenda.trim()) return toast.error("Texto vazio.");
+    const data = new Date(p.date);
+    const [h, m] = p.horaAgendamento.split(":").map(Number);
+    data.setHours(h || 10, m || 0, 0, 0);
     let uid: string;
     try { uid = await getAuthedUserId(); } catch (e) { return toast.error(e instanceof Error ? e.message : "Sessão expirada"); }
     const { error } = await supabase.from("posts").insert({
@@ -206,24 +200,24 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
       tipo_post: "Post Único",
       estilo_layout: "Padrão",
       formato_midia: "Imagem",
-      legenda: d.legenda,
-      legenda_instagram: d.legenda,
+      legenda: p.legenda,
+      legenda_instagram: p.legenda,
       legenda_linkedin: null,
       postar_instagram: true,
       postar_linkedin: false,
-      url_imagem: d.imagem,
+      url_imagem: p.imagem,
       imagens_carrossel: [],
       data_agendamento: agendar ? data.toISOString() : null,
       status: agendar ? "Agendado" : "Rascunho",
-      prompt_ia: d.promptImagem,
+      prompt_ia: p.promptImagem,
     });
     if (error) return toast.error(error.message);
-    toast.success(agendar ? `Agendado para ${fmtDate(data)}` : "Salvo como rascunho");
+    toast.success(agendar ? `Agendado para ${fmtDate(data)} às ${p.horaAgendamento}` : "Salvo como rascunho");
     onCreated();
     setOpenIdx(null);
   };
 
-  const ativo = openIdx !== null ? dias[openIdx] : null;
+  const ativo = openIdx !== null ? posts[openIdx] : null;
 
   return (
     <div className="space-y-5">
@@ -232,7 +226,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
           <CalendarDays className="h-5 w-5 text-primary" />
           <div>
             <h2 className="font-bold leading-tight">Calendário Editorial Semanal</h2>
-            <p className="text-xs text-muted-foreground">{rangeLabel} · Segunda a Sexta</p>
+            <p className="text-xs text-muted-foreground">{rangeLabel} · 7 dias (2 posts/dia)</p>
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -252,32 +246,32 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        {dias.map((d, i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+        {posts.map((p, i) => (
           <button
             key={i}
             type="button"
-            onClick={() => d.status !== "vazio" && setOpenIdx(i)}
+            onClick={() => p.status !== "vazio" && setOpenIdx(i)}
             className="text-left"
-            disabled={d.status === "vazio"}
+            disabled={p.status === "vazio"}
           >
             <Card
               className={`p-3 h-full space-y-2 transition-all ${
-                d.status === "vazio"
+                p.status === "vazio"
                   ? "opacity-60"
                   : "card-elevated hover:-translate-y-0.5 cursor-pointer"
               }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                  {d.label}
+                  {p.label} · {p.horaAgendamento}
                 </span>
-                <span className="text-[10px] text-muted-foreground">{fmtDate(d.date)}</span>
+                <span className="text-[10px] text-muted-foreground">{fmtDate(p.date)}</span>
               </div>
               <div className="aspect-square rounded-md overflow-hidden bg-muted relative">
-                {d.imagem ? (
-                  <img src={d.imagem} alt="" className="h-full w-full object-cover" />
-                ) : d.status === "gerando" ? (
+                {p.imagem ? (
+                  <img src={p.imagem} alt="" className="h-full w-full object-cover" />
+                ) : p.status === "gerando" ? (
                   <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
                     <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   </div>
@@ -288,7 +282,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
                 )}
               </div>
               <p className="text-xs font-semibold leading-snug line-clamp-2 min-h-[2.2rem]">
-                {d.titulo || "—"}
+                {p.titulo || "—"}
               </p>
             </Card>
           </button>
@@ -312,15 +306,15 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
                 <Textarea
                   value={ativo.legenda}
                   onChange={(e) =>
-                    setDias((arr) => arr.map((x, j) => (j === openIdx ? { ...x, legenda: e.target.value } : x)))
+                    setPosts((arr: any) => arr.map((x: any, j: number) => (j === openIdx ? { ...x, legenda: e.target.value } : x)))
                   }
                   rows={6}
                 />
               </div>
               <DirectReplyCard
                 value={ativo.mensagemDirect}
-                onChange={(v) =>
-                  setDias((arr) => arr.map((x, j) => (j === openIdx ? { ...x, mensagemDirect: v } : x)))
+                onChange={(v: string) =>
+                  setPosts((arr: any) => arr.map((x: any, j: number) => (j === openIdx ? { ...x, mensagemDirect: v } : x)))
                 }
               />
               <div className="flex gap-2 justify-end">
