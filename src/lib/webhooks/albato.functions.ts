@@ -23,15 +23,19 @@ export const dispatchAlbato = createServerFn({ method: "POST" })
 
     try {
       const webhookUrl = MAKE_WEBHOOK_URL;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout para o Make
 
-      // Se por algum motivo ainda chegar base64 aqui, avisamos no log (não deve ocorrer com o novo fluxo do frontend)
+      // Se por algum motivo ainda chegar base64 aqui, avisamos no log
       if (data.media_url?.startsWith("data:")) {
-        console.warn("[Webhook] ALERTA: Recebido base64 no servidor. Isso pode causar lentidão ou erro de payload.");
+        console.warn("[Webhook] ALERTA: Recebido base64 no servidor. Bloqueando para evitar timeout.");
+        return { ok: false, status: 413, error: "Payload too large (base64 image forbidden)" };
       }
 
       const res = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           texto: data.caption ?? "",
           imagem_url: data.media_url ?? null,
@@ -41,9 +45,14 @@ export const dispatchAlbato = createServerFn({ method: "POST" })
         }),
       });
 
+      clearTimeout(timeoutId);
       console.log("[Webhook] Resposta do Make:", { status: res.status, ok: res.ok });
       return { ok: res.ok, status: res.status };
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        console.error("[Webhook] Timeout ao disparar para Make (20s)");
+        return { ok: false, status: 504, error: "Timeout" };
+      }
       console.error("[Webhook] Erro fatal ao disparar:", err);
       return { ok: false, status: 0, error: err instanceof Error ? err.message : "unknown" };
     }
