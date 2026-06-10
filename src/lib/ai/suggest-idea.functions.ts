@@ -289,7 +289,7 @@ export const suggestIdea = createServerFn({ method: "POST" })
       return buildMock(data.networks, data.comando, data.estilo);
     }
 
-    if (!parsedArgs) throw new Error("Resposta sem sugestão");
+    
     return JSON.parse(parsedArgs) as {
       tema: string;
       prompt_imagem: string;
