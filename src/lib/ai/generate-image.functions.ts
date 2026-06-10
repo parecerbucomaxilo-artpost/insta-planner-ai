@@ -75,7 +75,7 @@ function buildTypographyDirective(opts: {
   const signature =
     safeDoctor || safeCro
       ? ` BOTTOM SIGNATURE BAR (mandatory, small but readable): "${
-          safeDoctor ? (safeDoctor.startsWith("Dr") ? safeDoctor : `Dr(a). ${safeDoctor}`) : ""
+          safeDoctor ? safeDoctor : ""
         }${safeDoctor && safeCro ? "  ·  " : ""}${safeCro ? `CRO ${safeCro}` : ""}" rendered in clean uppercase sans-serif tracking, white over a thin navy strip.`
       : "";
 
@@ -164,7 +164,7 @@ export const generateImage = createServerFn({ method: "POST" })
       totalSlides: data.totalSlides,
     });
 
-    const finalPrompt = `${STYLE_PREFIX}${data.prompt}${STYLE_SUFFIX}${aspectClause}${typographyClause} Negative: ${NEGATIVE}.`;
+    const finalPrompt = `${STYLE_PREFIX}${data.prompt}${STYLE_SUFFIX}${aspectClause}${typographyClause} CREATIVE DIRECTIVE: Use bold, viral-ready visual metaphors, high-impact contrast, and dynamic compositions designed to stop the scroll on Instagram and LinkedIn. Focus on emotional connection and scientific wonder. Negative: ${NEGATIVE}.`;
 
     const size = data.aspect === "16:9" ? "1536x1024" : "1024x1024";
     const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
