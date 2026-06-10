@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const FALLBACK_WEBHOOK_URL =
   "https://h.albato.com/wh/38/1lfds2n/dinfhr571VvcgIB5bHqOChq0jVVYnN7ZndwJdQNJXmE/";
