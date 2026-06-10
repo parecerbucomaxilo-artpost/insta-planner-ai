@@ -73,6 +73,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels" | "Carrossel">("Feed");
   const [loading, setLoading] = useState(false);
+  const [generateImages, setGenerateImages] = useState(true);
   const [posts, setPosts] = useState<PostPlano[]>(() =>
     DIAS.flatMap((label, i) => {
       const d = startOfWeek(new Date());
@@ -133,31 +134,35 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
         }
       }) as any;
 
-      const { dataUrl } = await genImage({
-        data: {
-          prompt: r.prompt_imagem,
-          aspect: post.formato === "Stories" ? "9:16" : "1:1"
-        }
-      });
-
-      let finalUrl: string = dataUrl;
+      let finalUrl: string | null = null;
       
-      try {
-        finalUrl = await applyWatermark(finalUrl, brandLogo, {
-          position: "tr",
-          sizeRatio: 0.08,
-          opacity: 0.8,
+      if (generateImages) {
+        const { dataUrl } = await genImage({
+          data: {
+            prompt: r.prompt_imagem,
+            aspect: post.formato === "Stories" ? "9:16" : "1:1"
+          }
         });
-      } catch (e) { console.error(e); }
 
-      try {
-        if (perfil?.nome_profissional || perfil?.cro_uf) {
-          finalUrl = await applyDoctorBadge(finalUrl, {
-            nome: perfil.nome_profissional ?? "",
-            cro: perfil.cro_uf ?? "",
+        finalUrl = dataUrl;
+        
+        try {
+          finalUrl = await applyWatermark(finalUrl, brandLogo, {
+            position: "tr",
+            sizeRatio: 0.08,
+            opacity: 0.8,
           });
-        }
-      } catch (e) { console.error(e); }
+        } catch (e) { console.error(e); }
+
+        try {
+          if (perfil?.nome_profissional || perfil?.cro_uf) {
+            finalUrl = await applyDoctorBadge(finalUrl, {
+              nome: perfil.nome_profissional ?? "",
+              cro: perfil.cro_uf ?? "",
+            });
+          }
+        } catch (e) { console.error(e); }
+      }
 
       setPosts(prev => prev.map((p, i) => i === idx ? {
         ...p,
@@ -241,63 +246,62 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
         })),
       );
 
-      toast.loading("Agendando geração de imagens para os posts…", { id: tId });
-
-      // Atualiza o estado para "gerando" antes de iniciar a carga das imagens
-      setPosts((arr) => {
-        const updated = arr.map((p, i) => ({
-          ...p,
-          status: "gerando" as const
-        }));
-        return updated;
-      });
-
-      // Gera as imagens individualmente para evitar timeout global e permitir que o usuário veja o progresso
-      for (let i = 0; i < r.posts.length; i++) {
-        const p = r.posts[i];
-        try {
-          const res = await genImage({ 
-            data: { 
-              prompt: p.prompt_imagem, 
-              aspect: formato === "Stories" ? "9:16" : "1:1" 
-            } 
-          });
-          
-          let currentUrl = res.dataUrl as string;
-
-          // Aplica logo da clínica
+      // Gera as imagens individualmente se a opção estiver habilitada
+      if (generateImages) {
+        toast.loading("Agendando geração de imagens para os posts…", { id: tId });
+        for (let i = 0; i < r.posts.length; i++) {
+          const p = r.posts[i];
           try {
-            currentUrl = await applyWatermark(currentUrl, brandLogo, {
-              position: "tr",
-              sizeRatio: 0.08,
-              opacity: 0.8,
+            const res = await genImage({ 
+              data: { 
+                prompt: p.prompt_imagem, 
+                aspect: formato === "Stories" ? "9:16" : "1:1" 
+              } 
             });
-          } catch (e) { console.error("Erro watermark logo:", e); }
+            
+            let currentUrl = res.dataUrl as string;
 
-          // Aplica barra do médico
-          try {
-            if (perfil?.nome_profissional || perfil?.cro_uf) {
-              currentUrl = await applyDoctorBadge(currentUrl, {
-                nome: perfil.nome_profissional ?? "",
-                cro: perfil.cro_uf ?? "",
+            // Aplica logo da clínica
+            try {
+              currentUrl = await applyWatermark(currentUrl, brandLogo, {
+                position: "tr",
+                sizeRatio: 0.08,
+                opacity: 0.8,
               });
-            }
-          } catch (e) { console.error("Erro badge médico:", e); }
+            } catch (e) { console.error("Erro watermark logo:", e); }
 
-          setPosts((arr) => {
-            const updated = [...arr];
-            updated[i] = { ...updated[i], imagem: currentUrl as any, status: "pronto" as const };
-            writeWeekCache(weekStart.toISOString(), updated);
-            return updated;
-          });
-        } catch (err) {
-          console.error(`Erro ao gerar imagem ${i}:`, err);
-          setPosts((arr) => {
-            const updated = [...arr];
-            updated[i] = { ...updated[i], status: "pronto" as const };
-            return updated;
-          });
+            // Aplica barra do médico
+            try {
+              if (perfil?.nome_profissional || perfil?.cro_uf) {
+                currentUrl = await applyDoctorBadge(currentUrl, {
+                  nome: perfil.nome_profissional ?? "",
+                  cro: perfil.cro_uf ?? "",
+                });
+              }
+            } catch (e) { console.error("Erro badge médico:", e); }
+
+            setPosts((arr) => {
+              const updated = [...arr];
+              updated[i] = { ...updated[i], imagem: currentUrl as any, status: "pronto" as const };
+              writeWeekCache(weekStart.toISOString(), updated);
+              return updated;
+            });
+          } catch (err) {
+            console.error(`Erro ao gerar imagem ${i}:`, err);
+            setPosts((arr) => {
+              const updated = [...arr];
+              updated[i] = { ...updated[i], status: "pronto" as const };
+              return updated;
+            });
+          }
         }
+      } else {
+        // Se não for gerar imagens, marca todos como pronto imediatamente
+        setPosts((arr) => {
+          const updated = arr.map(p => ({ ...p, status: "pronto" as const }));
+          writeWeekCache(weekStart.toISOString(), updated);
+          return updated;
+        });
       }
 
       toast.success("Cronograma de 14 posts pronto! ✨", { id: tId });
@@ -394,7 +398,18 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
           </button>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center gap-2 mr-2">
+            <input 
+              type="checkbox" 
+              id="gen-images" 
+              checked={generateImages} 
+              onChange={(e) => setGenerateImages(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <Label htmlFor="gen-images" className="text-xs font-medium cursor-pointer">Gerar imagens com IA</Label>
+          </div>
+
           <Button variant="outline" size="icon" onClick={() => navWeek(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
