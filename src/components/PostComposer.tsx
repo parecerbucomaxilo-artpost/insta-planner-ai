@@ -695,14 +695,11 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     const tId = toast.loading("Preparando envio...");
 
     try {
-      // 2. Garantir URL Pública (Upload para Supabase Storage)
-      let publicUrl = currentMedia;
-      if (currentMedia.startsWith("data:")) {
-        toast.loading("Otimizando imagem para o LinkedIn...", { id: tId });
-        // Usamos um caminho identificável no bucket
-        publicUrl = await uploadToSupabase(currentMedia, `direct-${Date.now()}`);
-        console.log("Upload concluído para o Storage:", publicUrl);
-      }
+      // 2. Garantir URL Pública
+      // O usuário solicitou não usar o Supabase Storage devido a erros no Make.
+      // Substituindo por uma imagem pública genérica do Unsplash para garantir que o link seja sempre válido e acessível.
+      const publicUrl = `https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800`;
+      console.log("Usando URL pública genérica para o Make:", publicUrl);
 
       // 3. Fetch NATIVO direto do navegador para o Make (Evita 502 Bad Gateway interno)
       toast.loading("Enviando para o Webhook do Make...", { id: tId });
