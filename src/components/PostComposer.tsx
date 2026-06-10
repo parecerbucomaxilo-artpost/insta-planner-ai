@@ -630,7 +630,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     if (error) return toast.error(error.message);
     toast.success(forceAgendar ? "Post agendado!" : "Post salvo!");
 
-    // Dispara webhook Albato (não bloqueia o fluxo)
+    // Dispara webhook (Make/Albato)
     try {
       const mediaUrl = tipo === "Post Único" ? imagem : filledCarousel[0] ?? null;
       const r = await sendAlbato({
@@ -640,12 +640,13 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
           data_agendamento: agendamentoIso,
           post_id: inserted?.id,
           status: finalStatus,
+          image_data: mediaUrl, // Enviando a imagem (que pode ser dataUrl ou URL)
         },
       });
-      if (r.ok) toast.success("Webhook Albato enviado ✓");
-      else toast.error(`Albato respondeu status ${r.status}`);
+      if (r.ok) toast.success("Webhook enviado ✓");
+      else toast.error(`Webhook respondeu status ${r.status}`);
     } catch (e) {
-      toast.error(e instanceof Error ? `Albato: ${e.message}` : "Falha no webhook Albato");
+      toast.error(e instanceof Error ? `Webhook: ${e.message}` : "Falha no webhook");
     }
 
     setLegendaIg(""); setLegendaLi(""); setTextoX("");
@@ -711,6 +712,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
           data_agendamento: nowIso,
           post_id: inserted?.id,
           status: "Publicado",
+          image_data: mediaUrl,
         },
       });
       if (!r.ok) {

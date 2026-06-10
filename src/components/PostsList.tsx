@@ -44,6 +44,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
           data_agendamento: nowIso,
           post_id: p.id,
           status: "Publicado",
+          image_data: mediaUrl,
         },
       });
 
