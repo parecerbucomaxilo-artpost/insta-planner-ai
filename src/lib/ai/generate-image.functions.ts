@@ -174,10 +174,10 @@ export const generateImage = createServerFn({ method: "POST" })
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/dall-e-3",
+        model: "openai/gpt-image-2",
         prompt: finalPrompt,
         size,
-        quality: "standard", // Alterado de "high" para "standard" para maior velocidade
+        quality: "low", // 'low' para máxima velocidade conforme padrão Lovable AI
         n: 1,
       }),
     });
