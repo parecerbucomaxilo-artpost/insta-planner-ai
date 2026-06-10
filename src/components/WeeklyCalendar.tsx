@@ -109,7 +109,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
 
   const handleGerar = async () => {
     setLoading(true);
-    const tId = toast.loading("Claude está montando seu cronograma semanal…");
+    const tId = toast.loading("Gerando seu cronograma de 7 dias com 2 posts por dia…");
     try {
       const apiKey =
         (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
@@ -126,34 +126,39 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
             : undefined,
         },
       });
-      // marca como "gerando" para imagens
-      setDias((arr) =>
-        arr.map((d, i) => ({
-          ...d,
-          titulo: r.dias[i]?.titulo ?? d.titulo,
-          legenda: r.dias[i]?.legenda_instagram ?? "",
-          mensagemDirect: r.dias[i]?.mensagem_direct ?? "",
-          promptImagem: r.dias[i]?.prompt_imagem ?? "",
+
+      if (!r.posts) throw new Error("Falha ao obter lista de posts.");
+
+      setPosts((arr) =>
+        arr.map((p, i) => ({
+          ...p,
+          titulo: r.posts[i]?.titulo ?? p.titulo,
+          legenda: r.posts[i]?.legenda_instagram ?? "",
+          mensagemDirect: r.posts[i]?.mensagem_direct ?? "",
+          promptImagem: r.posts[i]?.prompt_imagem ?? "",
+          horaAgendamento: r.posts[i]?.hora_agendamento ?? p.horaAgendamento,
           status: "gerando",
         })),
       );
-      toast.loading("Gerando 5 imagens Premium em paralelo…", { id: tId });
+
+      toast.loading("Gerando 14 imagens em paralelo…", { id: tId });
 
       const results = await Promise.allSettled(
-        r.dias.map((d) => genImage({ data: { prompt: d.prompt_imagem, aspect: "1:1" } })),
+        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: "1:1" } })),
       );
-      setDias((arr) => {
-        const updated = arr.map((d, i) => {
+
+      setPosts((arr) => {
+        const updated = arr.map((p, i) => {
           const res = results[i];
           if (res && res.status === "fulfilled") {
-            return { ...d, imagem: res.value.dataUrl, status: "pronto" as const };
+            return { ...p, imagem: res.value.dataUrl, status: "pronto" as const };
           }
-          return { ...d, status: "pronto" as const };
+          return { ...p, status: "pronto" as const };
         });
         writeWeekCache(weekStart.toISOString(), updated);
         return updated;
       });
-      // aplica badge do médico se houver
+
       if (perfil?.nome_profissional || perfil?.cro_uf) {
         const next = await Promise.all(
           results.map(async (res) => {
@@ -168,13 +173,13 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
             }
           }),
         );
-        setDias((arr) => {
-          const updated = arr.map((d, i) => ({ ...d, imagem: next[i] ?? d.imagem }));
+        setPosts((arr) => {
+          const updated = arr.map((p, i) => ({ ...p, imagem: next[i] ?? p.imagem }));
           writeWeekCache(weekStart.toISOString(), updated);
           return updated;
         });
       }
-      toast.success("Cronograma da semana pronto! ✨", { id: tId });
+      toast.success("Cronograma de 14 posts pronto! ✨", { id: tId });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar cronograma", { id: tId });
     } finally {
@@ -183,10 +188,11 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
   };
 
   const salvarDia = async (i: number, agendar: boolean) => {
-    const d = dias[i];
-    if (!d.legenda.trim()) return toast.error("Texto vazio.");
-    const data = new Date(d.date);
-    data.setHours(9, 0, 0, 0);
+    const p = posts[i];
+    if (!p.legenda.trim()) return toast.error("Texto vazio.");
+    const data = new Date(p.date);
+    const [h, m] = p.horaAgendamento.split(":").map(Number);
+    data.setHours(h || 10, m || 0, 0, 0);
     let uid: string;
     try { uid = await getAuthedUserId(); } catch (e) { return toast.error(e instanceof Error ? e.message : "Sessão expirada"); }
     const { error } = await supabase.from("posts").insert({
