@@ -28,7 +28,7 @@ type PostPlano = {
   mensagemDirect: string;
   promptImagem: string;
   horaAgendamento: string;
-  formato: "Feed" | "Stories" | "Reels";
+  formato: "Feed" | "Stories" | "Reels" | "Carrossel";
   imagem: string | null;
   status: "vazio" | "gerando" | "pronto" | "regerando";
 };
@@ -71,7 +71,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
   const genImage = useServerFn(generateImage);
   const genIdea = useServerFn(suggestIdea);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
-  const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels">("Feed");
+  const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels" | "Carrossel">("Feed");
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState<PostPlano[]>(() =>
     DIAS.flatMap((label, i) => {
@@ -85,7 +85,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
   );
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
-  const rebuildEmpty = (start: Date, curFormato: "Feed" | "Stories" | "Reels") =>
+  const rebuildEmpty = (start: Date, curFormato: "Feed" | "Stories" | "Reels" | "Carrossel") =>
     DIAS.flatMap((label, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
@@ -136,7 +136,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       const { dataUrl } = await genImage({
         data: {
           prompt: r.prompt_imagem,
-          aspect: post.formato === "Feed" ? "1:1" : "9:16"
+          aspect: post.formato === "Stories" ? "9:16" : "1:1"
         }
       });
 
@@ -244,7 +244,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       toast.loading("Gerando 14 imagens em paralelo…", { id: tId });
 
       const results = await Promise.allSettled(
-        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: formato === "Feed" ? "1:1" : "9:16" } })),
+        r.posts.map((p: any) => genImage({ data: { prompt: p.prompt_imagem, aspect: formato === "Stories" ? "9:16" : "1:1" } })),
       );
 
       setPosts((arr) => {
@@ -310,16 +310,16 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
     try { uid = await getAuthedUserId(); } catch (e) { return toast.error(e instanceof Error ? e.message : "Sessão expirada"); }
     const { error } = await supabase.from("posts").insert({
       user_id: uid,
-      tipo_post: "Post Único",
+      tipo_post: p.formato === "Carrossel" ? "Carrossel" : "Post Único",
       estilo_layout: "Padrão",
-      formato_midia: "Imagem",
+      formato_midia: p.formato === "Carrossel" ? "Carrossel" : "Imagem",
       legenda: p.legenda,
       legenda_instagram: p.legenda,
       legenda_linkedin: null,
       postar_instagram: true,
       postar_linkedin: false,
-      url_imagem: p.imagem,
-      imagens_carrossel: [],
+      url_imagem: p.formato === "Carrossel" ? null : p.imagem,
+      imagens_carrossel: p.formato === "Carrossel" ? [p.imagem] : [],
       data_agendamento: agendar ? data.toISOString() : null,
       status: agendar ? "Agendado" : "Rascunho",
       prompt_ia: p.promptImagem,
@@ -373,6 +373,16 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
           >
             <Video className="h-4 w-4" />
             Reels (7 Dias)
+          </button>
+          <button
+            onClick={() => { setFormato("Carrossel"); setPosts(rebuildEmpty(weekStart, "Carrossel")); }}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all",
+              formato === "Carrossel" ? "bg-white shadow-md text-primary ring-1 ring-slate-200" : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            <LayoutGrid className="h-4 w-4 rotate-45" />
+            Carrossel (7 Dias)
           </button>
         </div>
 

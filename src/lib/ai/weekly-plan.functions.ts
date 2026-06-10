@@ -47,7 +47,7 @@ export const weeklyPlan = createServerFn({ method: "POST" })
     z.object({
       apiKey: z.string().trim().min(10).max(200).optional(),
       perfil: PerfilSchema,
-      formato: z.enum(["Feed", "Stories", "Reels"]).optional().default("Feed"),
+      formato: z.enum(["Feed", "Stories", "Reels", "Carrossel"]).optional().default("Feed"),
     }),
   )
   .handler(async ({ data }) => {
@@ -60,6 +60,7 @@ export const weeklyPlan = createServerFn({ method: "POST" })
     const system = buildSystem(data.perfil);
     const userPrompt = `Gere um CRONOGRAMA EDITORIAL de 7 dias (segunda a domingo), com 2 ${data.formato.toUpperCase()} POR DIA (um às 10h e outro às 14h), totalizando 14 conteúdos ESTRITAMENTE DISTINTOS, complementares e relevantes para ${FIXED_NICHE}. 
     
+    ${data.formato === "Carrossel" ? "Os conteúdos devem ser pensados como Carrosséis de 3 a 5 slides, com um gancho forte no primeiro slide e desenvolvimento nos seguintes." : ""}
     ${isStories ? "Os conteúdos devem ser interativos, rápidos e pensados para engajamento em stories (enquetes sugeridas, caixas de perguntas, etc)." : ""}
     ${isReels ? "Os conteúdos devem ser pensados para vídeos curtos (Reels), com roteiros dinâmicos, ganchos (hooks) fortes nos primeiros 3 segundos e sugestões de áudios/trends médicos." : ""}
     
@@ -102,7 +103,7 @@ export const weeklyPlan = createServerFn({ method: "POST" })
         },
         body: JSON.stringify({
           // PERF: Haiku é ~3x mais rápido para o cronograma de 5 dias
-          model: "claude-3-5-haiku-20241022",
+          model: "claude-3-5-haiku-latest",
           max_tokens: 4096,
           system,
           messages: [{ role: "user", content: userPrompt }],
