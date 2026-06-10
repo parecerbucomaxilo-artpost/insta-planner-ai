@@ -107,6 +107,14 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
     }
   }, [weekStart]);
 
+  const autoGenTriggered = useRef(false);
+  useEffect(() => {
+    if (autoGenerate && !autoGenTriggered.current && !loading && posts.every(p => p.status === "vazio")) {
+      autoGenTriggered.current = true;
+      handleGerar();
+    }
+  }, [autoGenerate, loading, posts]);
+
   const rangeLabel = useMemo(() => {
     const end = new Date(weekStart);
     end.setDate(end.getDate() + 4);
