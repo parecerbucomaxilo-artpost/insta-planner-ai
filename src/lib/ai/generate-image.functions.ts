@@ -174,7 +174,7 @@ export const generateImage = createServerFn({ method: "POST" })
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-image-2",
+        model: "openai/dall-e-3",
         prompt: finalPrompt,
         size,
         quality: "standard", // Alterado de "high" para "standard" para maior velocidade
