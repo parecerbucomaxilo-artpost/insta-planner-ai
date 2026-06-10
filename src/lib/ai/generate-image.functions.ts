@@ -56,16 +56,16 @@ function buildTypographyDirective(opts: {
     "TEXT COLOR RULE: main title in deep medical blue (#0B2545) over white/light-gray background OR pristine white over deep navy block — choose whichever yields strongest contrast. 1-3 KEY WORDS may be highlighted in ELECTRIC BLUE (#1E90FF). Secondary text in graphite gray (#475569). CTA rendered as a deep navy button with white text. RED (#E63946) ONLY on anatomical pain/inflammation markers, never on copy. ALL TEXT IN BRAZILIAN PORTUGUESE with correct accents — never anglicize, never omit accents, never repeat copy, never translate, never rewrite.";
 
   const layoutHook =
-    "LAYOUT: large impactful HEADLINE positioned in the upper-left or upper-center, occupying ~30% of the canvas height. Strong negative space around it. The 3D skull / wireframe mesh sits in the right or lower portion of the frame as a background element, never overlapping the headline area.";
+    "LAYOUT: large impactful HEADLINE positioned in the upper-left or upper-center, occupying ~30% of the canvas height. Strong negative space around it. The main medical subject sits in the right or lower portion of the frame as a background element, never overlapping the headline area.";
 
   const layoutBullets =
-    "LAYOUT: a short section title at the top-left, then 1 to 3 clean bullet points listed vertically with thin cyan separators between them. Each bullet starts with a small glowing cyan dot. The 3D element is small, pushed to a corner or used as faint background texture, keeping ~60% of the frame as clean dark canvas for the bullets.";
+    "LAYOUT: a short section title at the top-left, then 1 to 3 clean bullet points listed vertically. The main subject is small, pushed to a corner or used as a soft background element, keeping ~60% of the frame as clean canvas for the bullets.";
 
   const layoutCta =
-    "LAYOUT: bold CTA sentence centered, very large, with a thin cyan underline. Below the CTA: the doctor signature line in smaller refined type. The 3D element is reduced to a faint silhouette/glow behind, never competing with the CTA text.";
+    "LAYOUT: bold CTA sentence centered, very large. The main medical subject is reduced to a faint silhouette/glow in the background, never competing with the CTA text.";
 
   const layoutSingle =
-    "LAYOUT (single-slide editorial poster): strong HEADLINE (the hook) in the upper third, an explanatory SUBTITLE one line below in smaller weight, and at the BOTTOM a thin navy bar containing the doctor name (left) and CRO registration (right). The 3D translucent skull or wireframe mesh sits in the mid/right area as a background element, leaving a dark clean zone on the left for the text block.";
+    "LAYOUT: strong HEADLINE in the upper third, an explanatory SUBTITLE below. The main photographic subject sits in the mid/right area, leaving a clean zone on the left for the text block.";
 
   const slideCounter =
     typeof slideIndex === "number" && typeof totalSlides === "number" && totalSlides > 1
