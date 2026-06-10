@@ -87,17 +87,17 @@ function buildSlideVisualSubject(slideText: string): string {
   const t = (slideText || "").toLowerCase();
   const subjects: string[] = [];
   if (/atm|temporomandibular|mandíbula|mandibula|maxilar/.test(t))
-    subjects.push("realistic lateral close-up of a human jaw / TMJ region, anatomical accuracy");
+    subjects.push("Extreme close-up of a human jaw and TMJ area, showing anatomical precision, high-end medical lighting, professional medical photography");
   if (/nevralgia|trigêmeo|trigemeo|nervo|dor facial|dor na face/.test(t))
-    subjects.push("realistic close-up of a male patient's face holding the cheek / temple area in pain, subtle red glow over trigeminal nerve path");
+    subjects.push("A male patient in a luxury clinic, expressing relief after successful treatment, warm lighting, empathetic atmosphere, editorial style");
   if (/dente siso|terceiro molar|extração|extracao|cirurgia/.test(t))
-    subjects.push("realistic surgeon in scrubs performing maxillofacial procedure, sterile hospital lighting");
+    subjects.push("A top-tier surgeon in pristine blue scrubs, focused and professional, performing a precision maxillofacial procedure in a state-of-the-art surgical suite");
   if (/diagnóstico|diagnostico|tomografia|raio-?x|exame|imagem/.test(t))
-    subjects.push("realistic photo of a surgeon analyzing a 3D CT scan of skull/jaw on a medical monitor");
+    subjects.push("Close-up of a high-resolution 3D CT scan of a skull and jaw displayed on a professional EIZO medical monitor in a dark diagnostic room");
   if (/consulta|avaliação|avaliacao|paciente/.test(t))
-    subjects.push("realistic photo of a male oral and maxillofacial surgeon in white coat speaking with a patient in a modern clinic");
+    subjects.push("A distinguished maxillofacial surgeon in a crisp white coat, having a professional and warm consultation with a patient in a modern boutique clinic");
   if (subjects.length === 0)
-    subjects.push("realistic editorial medical photography of an oral and maxillofacial surgeon in a modern hospital-grade clinic, anatomical 3D skull or jaw visible on a screen behind");
+    subjects.push("Cinematic shot of a luxury maxillofacial clinic interior, showcasing advanced medical technology and premium architectural design");
   return subjects.join("; ");
 }
 
