@@ -55,13 +55,9 @@ export const weeklyPlan = createServerFn({ method: "POST" })
     if (!anthropicKey && !lovableKey) return buildMock(data.perfil);
 
     const system = buildSystem(data.perfil);
-    const userPrompt = `Gere um CRONOGRAMA EDITORIAL de 5 dias (segunda a sexta) com temas ESTRITAMENTE DISTINTOS, complementares e relevantes para ${FIXED_NICHE}. 
+    const userPrompt = `Gere um CRONOGRAMA EDITORIAL de 7 dias (segunda a domingo), com 2 POSTS POR DIA (um às 10h e outro às 14h), totalizando 14 posts ESTRITAMENTE DISTINTOS, complementares e relevantes para ${FIXED_NICHE}. 
     
-    OBRIGATÓRIO VARIAR SUBTEMAS: Explore cada dia uma área diferente (Ex: Dia 1: Traumatologia Facial; Dia 2: Odontologia em UTI; Dia 3: Patologia/Biópsia; Dia 4: DTM/Dor Orofacial; Dia 5: Tecnologia/Planejamento 3D). 
-    
-    EVITE REPETIÇÃO: Não use Ortognática em todos os dias. 
-    
-    Para cada dia entregue: titulo curto, legenda_instagram (4-8 linhas com hashtags), mensagem_direct (resposta acolhedora curta, ≤ 350 chars) e prompt_imagem (em INGLÊS, padrão Premium Medical Sci-Fi: deep navy, glowing cyan, dark background, 3D wireframe mesh sobre rosto OU crânio anatômico em vidro azul, hyperrealistic 8k, sem texto na imagem).`;
+    OBRIGATÓRIO VARIAR SUBTEMAS: Explore cada dia uma área diferente (Ex: Dia 1: Traumatologia Facial; Dia 2: Odontologia em UTI; Dia 3: Patologia/Biópsia; Dia 4: DTM/Dor Orofacial; Dia 5: Tecnologia/Planejamento 3D).`;
 
     const toolSchema = {
       type: "object",
