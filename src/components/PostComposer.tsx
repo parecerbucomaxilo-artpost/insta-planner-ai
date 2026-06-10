@@ -116,7 +116,7 @@ const NETWORK_META: Record<Network, { label: string; Icon: typeof Instagram; col
   linkedin: { label: "LinkedIn", Icon: Linkedin, color: "from-sky-600 to-blue-700" },
 };
 
-export function PostComposer({ onCreated, perfil }: { onCreated: () => void; perfil: Perfil | null }) {
+export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated: () => void; perfil: Perfil | null; onTriggerWeekly?: () => void }) {
   const genImage = useServerFn(generateImage);
   const genIdea = useServerFn(suggestIdea);
   const sendAlbato = useServerFn(dispatchAlbato);
