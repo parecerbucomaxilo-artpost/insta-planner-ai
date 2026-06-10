@@ -18,7 +18,7 @@ export const dispatchAlbato = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       // Busca webhook customizado no perfil do usuário
-      const { data: perfil } = await supabase
+      const { data: perfil } = await supabaseAdmin
         .from("perfil_usuario")
         .select("webhook_url")
         .limit(1)
