@@ -36,13 +36,13 @@ function readWeekCache(weekStartIso: string): CachedPost[] | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(WEEK_CACHE_PREFIX + weekStartIso);
-    return raw ? (JSON.parse(raw) as CachedDia[]) : null;
+    return raw ? (JSON.parse(raw) as CachedPost[]) : null;
   } catch { return null; }
 }
-function writeWeekCache(weekStartIso: string, dias: DiaPlano[]) {
+function writeWeekCache(weekStartIso: string, posts: PostPlano[]) {
   if (typeof window === "undefined") return;
   try {
-    const payload: CachedDia[] = dias.map(({ date, ...rest }) => ({ ...rest, dateIso: date.toISOString() }));
+    const payload: CachedPost[] = posts.map(({ date, ...rest }) => ({ ...rest, dateIso: date.toISOString() }));
     window.localStorage.setItem(WEEK_CACHE_PREFIX + weekStartIso, JSON.stringify(payload));
   } catch { /* ignore quota */ }
 }
