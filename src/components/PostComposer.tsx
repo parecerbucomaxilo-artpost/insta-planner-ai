@@ -717,7 +717,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         .maybeSingle();
       if (error) throw new Error(error.message);
 
-      mediaUrl = mediaRaw;
+      let mediaUrl = mediaRaw;
       
       // Upload para storage se for base64
       if (mediaRaw && mediaRaw.startsWith("data:")) {
