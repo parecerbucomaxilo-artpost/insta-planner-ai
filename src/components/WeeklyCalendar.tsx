@@ -65,7 +65,7 @@ function fmtDate(d: Date) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
-export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; onCreated: () => void }) {
+export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { perfil: Perfil | null; onCreated: () => void; autoGenerate?: boolean }) {
   const genPlan = useServerFn(weeklyPlan);
   const genImage = useServerFn(generateImage);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
