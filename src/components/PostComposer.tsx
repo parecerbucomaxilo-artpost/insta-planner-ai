@@ -307,11 +307,9 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
 
   // Estética "Médico Premium" — variações sutis dentro do mesmo padrão sofisticado.
   const VISUAL_STYLES = [
-    "professional medical editorial photography, luxury boutique clinic interior, shot on Hasselblad H6D with 85mm f/1.4 prime lens, shallow depth of field, creamy bokeh background, soft diffused natural daylight through linen sheers, warm cinematic lighting, photorealistic 8k, award-winning composition",
-    "premium medical editorial photography, modern minimalist consultório with discreet marble surfaces and matte gold details, 85mm f/1.4 cinematic lens, elegantly blurred background, soft studio key light with gentle fill, photorealistic 8k, award-winning composition",
-    "high-end medical lifestyle photography, doctor and patient warm authentic interaction, luxury clinic with state-of-the-art equipment glowing subtly, 85mm f/1.4, shallow depth of field, champagne and platinum accents, soft warm cinematic lighting, photorealistic 8k, award-winning composition",
-    "editorial healthcare photography for a luxury private clinic, architectural interior with deep navy walls, surgical white, brushed matte gold details, 85mm f/1.4 anamorphic bokeh, soft diffused window light, photorealistic 8k, award-winning composition",
-    "premium medical brand photography, refined boutique clinic, discreet marble and platinum gray tones with subtle champagne highlights, 85mm f/1.4 cinematic depth of field, soft natural lighting like a luxury studio, photorealistic 8k, award-winning composition",
+    "Masterpiece medical editorial, shot on Hasselblad H6D, 85mm f/1.4, cinematic lighting, shallow depth of field, sharp detail, professional boutique clinic interior",
+    "Premium healthcare advertising style, soft natural light, luxury medical office, cinematic atmosphere, award-winning composition, hyper-realistic textures",
+    "High-end clinical photography, dramatic lighting, professional 3-point setup, high contrast, clean surgical environment, sophisticated and authoritative",
   ];
   const pickStyle = (seed: string) => {
     let h = 0;
@@ -319,16 +317,8 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
     return VISUAL_STYLES[Math.abs(h) % VISUAL_STYLES.length];
   };
 
-  // Diretrizes universais "Médico Premium" injetadas em TODOS os prompts.
   const PREMIUM_MEDICAL_DIRECTIVES = [
-    "AESTHETIC: 'Premium Medical' — sophistication, trust, advanced technology, innovation, and human warmth. Never cheap, cold, or stock-photo-like.",
-    "PALETTE: deep navy, surgical pristine white, subtle matte gold, champagne and platinum gray accents. Cohesive, refined, never oversaturated.",
-    "LIGHTING: clean, soft, diffused — professional studio softboxes or natural daylight through a luxury consultório window. Warm cinematic mood, never harsh.",
-    "PHOTOGRAPHY: shot on professional 85mm f/1.4 cinematic lens, shallow depth of field, elegant bokeh background, rule-of-thirds composition with intentional negative space for caption overlay.",
-    "PEOPLE: doctors and patients look natural, warm, welcoming, well-cared-for and genuinely happy — never stiff, scared or generic.",
-    "SETTING: high-end consultório, modern boutique clinic, minimalist design, discreet marble surfaces, state-of-the-art medical equipment with subtle glowing lights.",
-    "QUALITY KEYWORDS: professional medical editorial photography, luxury clinic interior, clean elegant composition, warm cinematic lighting, photorealistic 8k, award-winning composition.",
-    "STRICTLY FORBIDDEN: cheap stock-photo look, cold or sterile vibes, oversaturated colors, harsh neon blue, dark or scary hospital corridors, visible blood, wounds, gore, identifiable real patients, on-image text, watermarks, low-effort AI artifacts.",
+    "Visual standard: Luxury medical boutique, professional, authoritative. Colors: Deep surgical blue, white, matte gold. Lighting: Soft, cinematic, professional studio grade. No blood, no scary hospital vibes, no gore. Photography: Sharp focus on the subject, elegantly blurred background.",
   ].join(" ");
 
   // Constrói um prompt visual médico/ético RICO e ARTÍSTICO a partir da legenda da rede ativa.
