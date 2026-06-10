@@ -713,7 +713,13 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
       console.log("[PostNow] Resposta do servidor recebida com sucesso:", result);
 
-      // 5. Registro opcional no banco de dados local para histórico/log
+      // 5. Captura a resposta textual devolvida pelo Make
+      if (result.success && result.response) {
+        setWebhookResponse(result.response);
+        setShowResponseDialog(true);
+      }
+
+      // 6. Registro opcional no banco de dados local para histórico/log
       try {
         const userId = await getAuthedUserId();
         if (userId) {
@@ -728,7 +734,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         console.warn("[PostNow] Falha ao registrar log no banco (não impede sucesso do webhook):", dbError);
       }
 
-      // 6. Sucesso visual para o usuário
+      // 7. Sucesso visual para o usuário
       toast.success("Post enviado com sucesso!", { id: tId });
       
       // Limpeza opcional após sucesso
@@ -740,6 +746,15 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       toast.error(error instanceof Error ? `Erro: ${error.message}` : "Falha na conexão com o servidor do Make", { id: tId });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCopyResponse = () => {
+    if (webhookResponse) {
+      navigator.clipboard.writeText(webhookResponse);
+      setIsCopied(true);
+      toast.success("Copiado para a área de transferência!");
+      setTimeout(() => setIsCopied(false), 2000);
     }
   };
 
