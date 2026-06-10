@@ -200,24 +200,24 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
       tipo_post: "Post Único",
       estilo_layout: "Padrão",
       formato_midia: "Imagem",
-      legenda: d.legenda,
-      legenda_instagram: d.legenda,
+      legenda: p.legenda,
+      legenda_instagram: p.legenda,
       legenda_linkedin: null,
       postar_instagram: true,
       postar_linkedin: false,
-      url_imagem: d.imagem,
+      url_imagem: p.imagem,
       imagens_carrossel: [],
       data_agendamento: agendar ? data.toISOString() : null,
       status: agendar ? "Agendado" : "Rascunho",
-      prompt_ia: d.promptImagem,
+      prompt_ia: p.promptImagem,
     });
     if (error) return toast.error(error.message);
-    toast.success(agendar ? `Agendado para ${fmtDate(data)}` : "Salvo como rascunho");
+    toast.success(agendar ? `Agendado para ${fmtDate(data)} às ${p.horaAgendamento}` : "Salvo como rascunho");
     onCreated();
     setOpenIdx(null);
   };
 
-  const ativo = openIdx !== null ? dias[openIdx] : null;
+  const ativo = openIdx !== null ? posts[openIdx] : null;
 
   return (
     <div className="space-y-5">
@@ -226,7 +226,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
           <CalendarDays className="h-5 w-5 text-primary" />
           <div>
             <h2 className="font-bold leading-tight">Calendário Editorial Semanal</h2>
-            <p className="text-xs text-muted-foreground">{rangeLabel} · Segunda a Sexta</p>
+            <p className="text-xs text-muted-foreground">{rangeLabel} · 7 dias (2 posts/dia)</p>
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
