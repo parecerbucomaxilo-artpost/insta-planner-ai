@@ -918,7 +918,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
                     )}
                   >
                     <Icon className={cn("h-4 w-4", f === "Vídeo/Reels" && "text-violet-500")} />
-                    {f === "Imagem" ? "Imagem estática" : "Vídeo / Reels"}
+                    {f === "Imagem" ? "Post de Feed" : f === "Vídeo/Reels" ? "Reels (Feed)" : "Stories"}
                   </button>
                 );
               })}
