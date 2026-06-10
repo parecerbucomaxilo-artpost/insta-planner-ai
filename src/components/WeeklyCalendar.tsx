@@ -246,32 +246,32 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        {dias.map((d, i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+        {posts.map((p, i) => (
           <button
             key={i}
             type="button"
-            onClick={() => d.status !== "vazio" && setOpenIdx(i)}
+            onClick={() => p.status !== "vazio" && setOpenIdx(i)}
             className="text-left"
-            disabled={d.status === "vazio"}
+            disabled={p.status === "vazio"}
           >
             <Card
               className={`p-3 h-full space-y-2 transition-all ${
-                d.status === "vazio"
+                p.status === "vazio"
                   ? "opacity-60"
                   : "card-elevated hover:-translate-y-0.5 cursor-pointer"
               }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                  {d.label}
+                  {p.label} · {p.horaAgendamento}
                 </span>
-                <span className="text-[10px] text-muted-foreground">{fmtDate(d.date)}</span>
+                <span className="text-[10px] text-muted-foreground">{fmtDate(p.date)}</span>
               </div>
               <div className="aspect-square rounded-md overflow-hidden bg-muted relative">
-                {d.imagem ? (
-                  <img src={d.imagem} alt="" className="h-full w-full object-cover" />
-                ) : d.status === "gerando" ? (
+                {p.imagem ? (
+                  <img src={p.imagem} alt="" className="h-full w-full object-cover" />
+                ) : p.status === "gerando" ? (
                   <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
                     <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   </div>
@@ -282,7 +282,7 @@ export function WeeklyCalendar({ perfil, onCreated }: { perfil: Perfil | null; o
                 )}
               </div>
               <p className="text-xs font-semibold leading-snug line-clamp-2 min-h-[2.2rem]">
-                {d.titulo || "—"}
+                {p.titulo || "—"}
               </p>
             </Card>
           </button>
