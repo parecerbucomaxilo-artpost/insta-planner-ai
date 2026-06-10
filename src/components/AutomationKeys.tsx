@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, KeyRound, Link as LinkIcon, ShieldAlert } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Copy, Check, KeyRound, Link as LinkIcon, ShieldAlert, Save, Loader2, Globe } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { getAuthedUserId } from "@/lib/auth-utils";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -43,17 +46,107 @@ function CopyField({ label, value, icon }: { label: string; value: string; icon:
 }
 
 export function AutomationKeys() {
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [perfilId, setPerfilId] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadWebhook() {
+      try {
+        const { data, error } = await supabase
+          .from("perfil_usuario")
+          .select("id, webhook_url")
+          .limit(1)
+          .maybeSingle();
+        
+        if (error) throw error;
+        if (data) {
+          setPerfilId(data.id);
+          setWebhookUrl(data.webhook_url || "");
+        }
+      } catch (err) {
+        console.error("Erro ao carregar webhook:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadWebhook();
+  }, []);
+
+  const handleSaveWebhook = async () => {
+    setSaving(true);
+    try {
+      const userId = await getAuthedUserId();
+      
+      if (perfilId) {
+        const { error } = await supabase
+          .from("perfil_usuario")
+          .update({ webhook_url: webhookUrl })
+          .eq("id", perfilId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from("perfil_usuario")
+          .insert({ user_id: userId, webhook_url: webhookUrl })
+          .select("id")
+          .single();
+        if (error) throw error;
+        setPerfilId(data.id);
+      }
+      
+      toast.success("URL do Webhook salva com sucesso!");
+    } catch (err) {
+      console.error("Erro ao salvar webhook:", err);
+      toast.error("Erro ao salvar a URL do webhook.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5 text-primary" />
-            Chaves de Automação — Make.com / n8n / Zapier
+          <CardTitle className="flex items-center gap-2 text-primary">
+            <Globe className="h-5 w-5" />
+            Webhook do Integrador (Make.com / n8n)
           </CardTitle>
           <CardDescription>
-            Copie estas credenciais e cole na configuração do seu robô de automação para que ele
-            consiga ler e gravar dados no banco deste aplicativo.
+            Cole aqui a URL do Webhook que você criou no Make.com ou n8n. 
+            O app enviará os dados do post para esta URL sempre que você clicar em "Publicar".
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">URL do Webhook</label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="https://hook.make.com/..."
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                disabled={loading}
+              />
+              <Button onClick={handleSaveWebhook} disabled={saving || loading}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Salvar
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Dica: No Make.com, use o módulo "Webhooks -> Custom Webhook" para gerar essa URL.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="h-5 w-5 text-primary" />
+            Chaves de Automação do Banco de Dados
+          </CardTitle>
+          <CardDescription>
+            Use estas credenciais no módulo <strong>Supabase</strong> do seu integrador para que ele consiga ler os posts agendados.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -77,24 +170,23 @@ export function AutomationKeys() {
             <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="text-sm space-y-2">
               <p className="font-medium text-amber-900 dark:text-amber-200">
-                Service Role Key não é exibida aqui
+                Service Role Key (Acesso Total)
               </p>
               <p className="text-amber-800 dark:text-amber-300">
-                A <strong>Service Role Key</strong> ignora regras de segurança (RLS) e dá acesso
-                total ao banco. Por segurança, ela <strong>nunca</strong> deve estar no frontend.
-                Pegue-a em <em>View Backend → Project Settings → API Keys</em> e guarde apenas
-                dentro do Make.com (nunca no navegador).
+                A <strong>Service Role Key</strong> dá acesso total ao banco. Ela <strong>nunca</strong> deve ser exibida no frontend por segurança.
+                Você a encontra no painel do Lovable em <em>Project Settings → API Keys</em>. 
+                Use-a apenas dentro do Make.com se precisar gravar dados sem restrições.
               </p>
             </div>
           </div>
 
           <div className="rounded-md border bg-muted/30 p-4 text-sm space-y-2">
-            <p className="font-medium">Como usar no Make.com</p>
+            <p className="font-medium">Como configurar no Make.com</p>
             <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
-              <li>No módulo Supabase do Make, cole a <strong>URL</strong> acima no campo Base URL.</li>
-              <li>Cole a <strong>Anon Key</strong> no campo API Key (para operações respeitando RLS).</li>
-              <li>Para escrever em qualquer tabela sem barreiras, use a Service Role Key como Bearer Token.</li>
-              <li>Nome da tabela principal de posts: <code className="bg-background px-1 rounded">posts</code>.</li>
+              <li>No Make, adicione o módulo <strong>Supabase</strong>.</li>
+              <li>Crie uma nova conexão e use a <strong>URL</strong> e a <strong>Anon Key</strong> acima.</li>
+              <li>Para disparos automáticos, use o <strong>Webhook</strong> que você configurou no topo desta página.</li>
+              <li>Tabela principal: <code className="bg-background px-1 rounded">posts</code>.</li>
             </ol>
           </div>
         </CardContent>
