@@ -1215,10 +1215,11 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
             Salvar como Rascunho
           </Button>
 
-          <div className="rounded-lg border-2 border-blue-500/40 bg-blue-500/5 p-4 space-y-2">
+          <div className="rounded-lg border-2 border-blue-500/40 bg-blue-500/5 p-4 space-y-3">
             <Label htmlFor="data-agendamento" className="text-base font-semibold text-blue-700 dark:text-blue-300">
               📅 Escolha o Dia e Horário da Postagem
             </Label>
+            
             <Input
               id="data-agendamento"
               type="datetime-local"
@@ -1226,8 +1227,25 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
               onChange={(e) => setData(e.target.value)}
               className="h-12 text-base"
             />
-            <p className="text-xs text-muted-foreground">
-              Se deixar em branco, o post será agendado para o momento em que clicar abaixo.
+
+            <div className="pt-2 border-t border-blue-200">
+              <p className="text-xs font-semibold text-blue-600 mb-2 uppercase tracking-wider">Ou prefere automatizar?</p>
+              <Button 
+                variant="outline" 
+                className="w-full bg-white border-blue-300 hover:bg-blue-50 text-blue-700 font-bold h-11 shadow-sm"
+                onClick={() => {
+                  const tabsElement = document.querySelector('[role="tablist"]');
+                  const weekTab = tabsElement?.querySelector('[value="semana"]') as HTMLElement;
+                  if (weekTab) weekTab.click();
+                }}
+              >
+                <Sparkles className="h-4 w-4 mr-2 text-blue-600" />
+                Agendar em Lote (7 Dias / 2x por dia)
+              </Button>
+            </div>
+
+            <p className="text-[10px] text-muted-foreground italic">
+              * Se deixar em branco o horário acima, o post será agendado para o momento em que clicar abaixo.
             </p>
           </div>
 
