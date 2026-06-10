@@ -372,6 +372,7 @@ export function PostComposer({ onCreated, perfil }: { onCreated: () => void; per
           cro: perfil?.cro_uf ?? "",
         },
       });
+      // Aplica marca d'água de forma assíncrona sem bloquear a UI se necessário, mas aqui mantemos o fluxo
       const finalUrl = await maybeWatermark(dataUrl);
       setImagem(finalUrl);
       toast.success("Imagem gerada via Gemini!");
