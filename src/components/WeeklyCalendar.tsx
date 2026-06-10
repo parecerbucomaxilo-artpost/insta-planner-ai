@@ -30,9 +30,9 @@ type PostPlano = {
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] as const;
 
 // PERF: cache local do cronograma por semana (chave = ISO da segunda-feira)
-const WEEK_CACHE_PREFIX = "planner_weekly_cache_v1:";
-type CachedDia = Omit<DiaPlano, "date"> & { dateIso: string };
-function readWeekCache(weekStartIso: string): CachedDia[] | null {
+const WEEK_CACHE_PREFIX = "planner_weekly_cache_v2:";
+type CachedPost = Omit<PostPlano, "date"> & { dateIso: string };
+function readWeekCache(weekStartIso: string): CachedPost[] | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(WEEK_CACHE_PREFIX + weekStartIso);
