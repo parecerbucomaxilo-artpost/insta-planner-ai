@@ -54,9 +54,19 @@ export async function uploadToSupabase(dataUrl: string, path: string): Promise<s
     throw error;
   }
 
-  const { data: { publicUrl } } = supabase.storage
+  // Criar uma Signed URL válida por 1 hora (3600 segundos)
+  const { data: signedData, error: signedError } = await supabase.storage
     .from("posts_media")
-    .getPublicUrl(data.path);
+    .createSignedUrl(data.path, 3600);
 
-  return publicUrl;
+  if (signedError) {
+    console.error("Erro ao gerar Signed URL:", signedError);
+    // Fallback para Public URL caso a assinatura falhe
+    const { data: { publicUrl } } = supabase.storage
+      .from("posts_media")
+      .getPublicUrl(data.path);
+    return publicUrl;
+  }
+
+  return signedData.signedUrl;
 }
