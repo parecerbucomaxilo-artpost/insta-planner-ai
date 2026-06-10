@@ -4,6 +4,7 @@ import { getAuthedUserId } from "@/lib/auth-utils";
 import { generateImage } from "@/lib/ai/generate-image.functions";
 import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
 import { dispatchAlbato } from "@/lib/webhooks/albato.functions";
+import { dispatchMakeWebhook } from "@/lib/webhooks/make.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,6 +122,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const genImage = useServerFn(generateImage);
   const genIdea = useServerFn(suggestIdea);
   const sendAlbato = useServerFn(dispatchAlbato);
+  const sendToMake = useServerFn(dispatchMakeWebhook);
 
   // Redes
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
@@ -678,9 +680,9 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
   const handleSave = (forceAgendar = false) => submitPost({ immediate: false, forceAgendar });
 
-  // Função REESCRITA para o botão de postar agora, focada em simplicidade e robustez para o Webhook do Make
+  // Função REESCRITA para o botão de postar agora, usando Server Function para evitar bloqueio de CORS
   const handlePostNow = async () => {
-    console.log("[MakeWebhook] Iniciando disparo...");
+    console.log("[PostNow] Iniciando disparo via Server Function...");
     
     // Captura o texto com base no modo atual
     const isX = modoCriacao === "x";
@@ -692,32 +694,16 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     }
     
     setSaving(true);
-    const tId = toast.loading("Enviando para o Make...");
+    const tId = toast.loading("Enviando via servidor (evitando CORS)...");
 
     try {
-      // URL exata do Webhook do Make
-      const webhookUrl = "https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3";
-      
-      // Payload estrito conforme solicitado: apenas a variável "texto"
-      const payload = {
-        texto: textoParaEnviar
-      };
-
-      console.log("[MakeWebhook] Payload:", payload);
-      
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+      // Dispara via Server Function (roda no backend, contornando CORS)
+      const result = await sendToMake({
+        data: { texto: textoParaEnviar }
       });
 
-      console.log("[MakeWebhook] Resposta recebida:", response.status);
+      console.log("[PostNow] Sucesso no disparo:", result);
 
-      if (!response.ok) {
-        throw new Error(`Erro no servidor: ${response.status}`);
-      }
 
       // Registro opcional no banco de dados local para histórico
       const userId = await getAuthedUserId();
