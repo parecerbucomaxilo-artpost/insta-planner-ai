@@ -30,7 +30,14 @@ type PostPlano = {
   horaAgendamento: string;
   formato: "Feed" | "Stories" | "Reels" | "Carrossel";
   imagem: string | null;
+  imagens: string[]; // Para carrossel
   status: "vazio" | "gerando" | "pronto" | "regerando";
+  slidesData?: Array<{
+    titulo_slide: string;
+    subtitulo_slide?: string;
+    prompt_visual: string;
+    bullets?: string[];
+  }>;
 };
 
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] as const;
@@ -79,8 +86,8 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       const d = startOfWeek(new Date());
       d.setDate(d.getDate() + i);
       return [
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", formato: "Feed" as const, imagem: null, status: "vazio" as const },
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", formato: "Feed" as const, imagem: null, status: "vazio" as const }
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", formato: "Feed" as const, imagem: null, imagens: [], status: "vazio" as const },
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", formato: "Feed" as const, imagem: null, imagens: [], status: "vazio" as const }
       ];
     }),
   );
@@ -91,8 +98,8 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       const d = new Date(start);
       d.setDate(d.getDate() + i);
       return [
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", formato: curFormato, imagem: null, status: "vazio" as const },
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", formato: curFormato, imagem: null, status: "vazio" as const }
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", formato: curFormato, imagem: null, imagens: [], status: "vazio" as const },
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", formato: curFormato, imagem: null, imagens: [], status: "vazio" as const }
       ];
     });
 
