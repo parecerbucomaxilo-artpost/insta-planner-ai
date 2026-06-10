@@ -15,18 +15,19 @@ import type { Perfil } from "@/components/ProfileSettings";
 import { DirectReplyCard } from "./DirectReplyCard";
 import { applyDoctorBadge } from "@/lib/watermark";
 
-type DiaPlano = {
+type PostPlano = {
   date: Date;
-  label: string; // Seg, Ter…
+  label: string;
   titulo: string;
   legenda: string;
   mensagemDirect: string;
   promptImagem: string;
+  horaAgendamento: string;
   imagem: string | null;
   status: "vazio" | "gerando" | "pronto";
 };
 
-const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"] as const;
+const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] as const;
 
 // PERF: cache local do cronograma por semana (chave = ISO da segunda-feira)
 const WEEK_CACHE_PREFIX = "planner_weekly_cache_v1:";
