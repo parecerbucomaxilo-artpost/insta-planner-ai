@@ -97,13 +97,13 @@ export const weeklyPlan = createServerFn({ method: "POST" })
         body: JSON.stringify({
           // PERF: Haiku é ~3x mais rápido para o cronograma de 5 dias
           model: "claude-3-5-haiku-20241022",
-          max_tokens: 3072,
+          max_tokens: 4096,
           system,
           messages: [{ role: "user", content: userPrompt }],
           tools: [
             {
               name: "cronograma_semanal",
-              description: "Retorna um plano editorial de 5 dias úteis.",
+              description: "Retorna um plano editorial de 7 dias com 2 posts/dia.",
               input_schema: toolSchema,
             },
           ],
