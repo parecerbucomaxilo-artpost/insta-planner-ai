@@ -83,6 +83,21 @@ export const weeklyPlan = createServerFn({ method: "POST" })
               mensagem_direct: { type: "string" },
               prompt_imagem: { type: "string" },
               hora_agendamento: { type: "string" },
+              carrossel_slides: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    titulo_slide: { type: "string" },
+                    subtitulo_slide: { type: "string" },
+                    prompt_visual: { type: "string" },
+                    bullets: { type: "array", items: { type: "string" } },
+                  },
+                  required: ["titulo_slide", "prompt_visual"],
+                },
+                minItems: 3,
+                maxItems: 5,
+              },
             },
             required: ["titulo", "legenda_instagram", "mensagem_direct", "prompt_imagem", "hora_agendamento"],
           },
@@ -170,6 +185,12 @@ export const weeklyPlan = createServerFn({ method: "POST" })
         mensagem_direct: string;
         prompt_imagem: string;
         hora_agendamento: string;
+        carrossel_slides?: Array<{
+          titulo_slide: string;
+          subtitulo_slide?: string;
+          prompt_visual: string;
+          bullets?: string[];
+        }>;
       }>;
     };
   });

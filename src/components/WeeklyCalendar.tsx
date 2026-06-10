@@ -30,10 +30,58 @@ type PostPlano = {
   horaAgendamento: string;
   formato: "Feed" | "Stories" | "Reels" | "Carrossel";
   imagem: string | null;
+  imagens: string[]; // Para carrossel
   status: "vazio" | "gerando" | "pronto" | "regerando";
+  slidesData?: Array<{
+    titulo_slide: string;
+    subtitulo_slide?: string;
+    prompt_visual: string;
+    bullets?: string[];
+  }>;
 };
 
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] as const;
+
+function ImageCarousel({ images, className }: { images: string[]; className?: string }) {
+  const [idx, setIdx] = useState(0);
+  if (!images || images.length === 0) return null;
+  
+  return (
+    <div className={cn("relative group/carousel", className)}>
+      <img src={images[idx]} alt="" className="h-full w-full object-cover transition-all" />
+      
+      {images.length > 1 && (
+        <>
+          <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1">
+            {images.map((_, i) => (
+              <div 
+                key={i} 
+                className={cn(
+                  "h-1 w-1 rounded-full transition-all", 
+                  i === idx ? "bg-white w-3" : "bg-white/40"
+                )} 
+              />
+            ))}
+          </div>
+          
+          <button 
+            onClick={(e) => { e.stopPropagation(); setIdx(prev => (prev > 0 ? prev - 1 : images.length - 1)); }}
+            className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          
+          <button 
+            onClick={(e) => { e.stopPropagation(); setIdx(prev => (prev < images.length - 1 ? prev + 1 : 0)); }}
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
 // PERF: cache local do cronograma por semana (chave = ISO da segunda-feira)
 const WEEK_CACHE_PREFIX = "planner_weekly_cache_v2:";
@@ -79,8 +127,8 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       const d = startOfWeek(new Date());
       d.setDate(d.getDate() + i);
       return [
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", formato: "Feed" as const, imagem: null, status: "vazio" as const },
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", formato: "Feed" as const, imagem: null, status: "vazio" as const }
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", formato: "Feed" as const, imagem: null, imagens: [], status: "vazio" as const },
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", formato: "Feed" as const, imagem: null, imagens: [], status: "vazio" as const }
       ];
     }),
   );
@@ -91,8 +139,8 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       const d = new Date(start);
       d.setDate(d.getDate() + i);
       return [
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", formato: curFormato, imagem: null, status: "vazio" as const },
-        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", formato: curFormato, imagem: null, status: "vazio" as const }
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "10:00", formato: curFormato, imagem: null, imagens: [], status: "vazio" as const },
+        { date: d, label, titulo: "", legenda: "", mensagemDirect: "", promptImagem: "", horaAgendamento: "14:00", formato: curFormato, imagem: null, imagens: [], status: "vazio" as const }
       ];
     });
 
@@ -242,6 +290,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
           mensagemDirect: r.posts[i]?.mensagem_direct ?? "",
           promptImagem: r.posts[i]?.prompt_imagem ?? "",
           horaAgendamento: r.posts[i]?.hora_agendamento ?? p.horaAgendamento,
+          slidesData: r.posts[i]?.carrossel_slides,
           status: "gerando",
         })),
       );
@@ -249,43 +298,83 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       // Gera as imagens individualmente se a opção estiver habilitada
       if (generateImages) {
         toast.loading("Agendando geração de imagens para os posts…", { id: tId });
+        
+        // Processa posts sequencialmente para evitar sobrecarga, mas cada post é "independente" no UI
         for (let i = 0; i < r.posts.length; i++) {
           const p = r.posts[i];
+          const isCarousel = formato === "Carrossel" && p.carrossel_slides?.length > 0;
+          
           try {
-            const res = await genImage({ 
-              data: { 
-                prompt: p.prompt_imagem, 
-                aspect: formato === "Stories" ? "9:16" : "1:1" 
-              } 
-            });
-            
-            let currentUrl = res.dataUrl as string;
+            if (isCarousel) {
+              const carouselImages: string[] = [];
+              for (let sIdx = 0; sIdx < p.carrossel_slides.length; sIdx++) {
+                const slide = p.carrossel_slides[sIdx];
+                const res = await genImage({ 
+                  data: { 
+                    prompt: slide.prompt_visual, 
+                    aspect: "1:1",
+                    slideRole: sIdx === 0 ? "carousel-hook" : sIdx === p.carrossel_slides.length - 1 ? "carousel-cta" : "carousel-middle",
+                    title: slide.titulo_slide,
+                    subtitle: slide.subtitulo_slide,
+                    bullets: slide.bullets,
+                    doctorName: perfil?.nome_profissional,
+                    cro: perfil?.cro_uf,
+                    slideIndex: sIdx,
+                    totalSlides: p.carrossel_slides.length
+                  } 
+                });
+                
+                let currentUrl = res.dataUrl as string;
+                try {
+                  currentUrl = await applyWatermark(currentUrl, brandLogo, { position: "tr", sizeRatio: 0.08, opacity: 0.8 });
+                } catch (e) { console.error("Erro watermark:", e); }
 
-            // Aplica logo da clínica
-            try {
-              currentUrl = await applyWatermark(currentUrl, brandLogo, {
-                position: "tr",
-                sizeRatio: 0.08,
-                opacity: 0.8,
-              });
-            } catch (e) { console.error("Erro watermark logo:", e); }
-
-            // Aplica barra do médico
-            try {
-              if (perfil?.nome_profissional || perfil?.cro_uf) {
-                currentUrl = await applyDoctorBadge(currentUrl, {
-                  nome: perfil.nome_profissional ?? "",
-                  cro: perfil.cro_uf ?? "",
+                carouselImages.push(currentUrl);
+                
+                // Atualiza parcial para o usuário ver progresso do carrossel
+                setPosts((arr) => {
+                  const updated = [...arr];
+                  updated[i] = { ...updated[i], imagens: [...carouselImages] };
+                  return updated;
                 });
               }
-            } catch (e) { console.error("Erro badge médico:", e); }
+              
+              setPosts((arr) => {
+                const updated = [...arr];
+                updated[i] = { ...updated[i], imagens: carouselImages, imagem: carouselImages[0], status: "pronto" as const };
+                writeWeekCache(weekStart.toISOString(), updated);
+                return updated;
+              });
+            } else {
+              const res = await genImage({ 
+                data: { 
+                  prompt: p.prompt_imagem, 
+                  aspect: formato === "Stories" ? "9:16" : "1:1" 
+                } 
+              });
+              
+              let currentUrl = res.dataUrl as string;
 
-            setPosts((arr) => {
-              const updated = [...arr];
-              updated[i] = { ...updated[i], imagem: currentUrl as any, status: "pronto" as const };
-              writeWeekCache(weekStart.toISOString(), updated);
-              return updated;
-            });
+              try {
+                currentUrl = await applyWatermark(currentUrl, brandLogo, { position: "tr", sizeRatio: 0.08, opacity: 0.8 });
+              } catch (e) { console.error("Erro watermark:", e); }
+
+              try {
+                if (perfil?.nome_profissional || perfil?.cro_uf) {
+                  currentUrl = await applyDoctorBadge(currentUrl, {
+                    nome: perfil.nome_profissional ?? "",
+                    cro: perfil.cro_uf ?? "",
+                  });
+                }
+              } catch (e) { console.error("Erro badge:", e); }
+
+              setPosts((arr) => {
+                const updated = [...arr];
+                updated[i] = { ...updated[i], imagem: currentUrl, imagens: [currentUrl], status: "pronto" as const };
+                writeWeekCache(weekStart.toISOString(), updated);
+                return updated;
+              });
+            }
           } catch (err) {
             console.error(`Erro ao gerar imagem ${i}:`, err);
             setPosts((arr) => {
@@ -296,7 +385,6 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
           }
         }
       } else {
-        // Se não for gerar imagens, marca todos como pronto imediatamente
         setPosts((arr) => {
           const updated = arr.map(p => ({ ...p, status: "pronto" as const }));
           writeWeekCache(weekStart.toISOString(), updated);
@@ -304,7 +392,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
         });
       }
 
-      toast.success("Cronograma de 14 posts pronto! ✨", { id: tId });
+      toast.success("Cronograma pronto! ✨", { id: tId });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar cronograma", { id: tId });
     } finally {
@@ -330,8 +418,8 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
       legenda_linkedin: null,
       postar_instagram: true,
       postar_linkedin: false,
-      url_imagem: p.formato === "Carrossel" ? null : p.imagem,
-      imagens_carrossel: p.formato === "Carrossel" ? [p.imagem] : [],
+      url_imagem: p.formato === "Carrossel" ? (p.imagens[0] || p.imagem) : p.imagem,
+      imagens_carrossel: p.formato === "Carrossel" ? p.imagens : [],
       data_agendamento: agendar ? data.toISOString() : null,
       status: agendar ? "Agendado" : "Rascunho",
       prompt_ia: p.promptImagem,
@@ -474,7 +562,9 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
                             "aspect-[4/5] rounded overflow-hidden bg-muted relative border shadow-inner",
                             formato === "Feed" ? "aspect-square" : "aspect-[9/16]"
                           )}>
-                            {p.imagem ? (
+                            {p.imagens && p.imagens.length > 0 ? (
+                              <ImageCarousel images={p.imagens} className="h-full w-full" />
+                            ) : p.imagem ? (
                               <img src={p.imagem} alt="" className="h-full w-full object-cover" />
                             ) : (p.status === "gerando" || p.status === "regerando") ? (
                               <div className="h-full w-full flex items-center justify-center bg-slate-50">
@@ -521,9 +611,11 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
           </DialogHeader>
           {ativo && openIdx !== null && (
             <div className="space-y-4">
-              {ativo.imagem && (
+              {ativo.imagens && ativo.imagens.length > 0 ? (
+                <ImageCarousel images={ativo.imagens} className="w-full aspect-video rounded-lg border shadow-sm" />
+              ) : ativo.imagem ? (
                 <img src={ativo.imagem} alt="" className="w-full aspect-video object-cover rounded-lg border" />
-              )}
+              ) : null}
               <div className="space-y-1.5">
                 <Label className="text-sm">Legenda</Label>
                 <Textarea
