@@ -86,16 +86,25 @@ function splitCaptionIntoSlides(caption: string, n: number): string[] {
 function buildSlideVisualSubject(slideText: string): string {
   const t = (slideText || "").toLowerCase();
   const subjects: string[] = [];
-  if (/atm|temporomandibular|mandíbula|mandibula|maxilar/.test(t))
+  if (/atm|temporomandibular|disfunção|desarranjo|clique|estalo/.test(t))
     subjects.push("Extreme close-up of a human jaw and TMJ area, showing anatomical precision, high-end medical lighting, professional medical photography");
-  if (/nevralgia|trigêmeo|trigemeo|nervo|dor facial|dor na face/.test(t))
+  if (/nevralgia|trigêmeo|trigemeo|nervo|dor facial|dor na face|sensibilidade/.test(t))
     subjects.push("A male patient in a luxury clinic, expressing relief after successful treatment, warm lighting, empathetic atmosphere, editorial style");
-  if (/dente siso|terceiro molar|extração|extracao|cirurgia/.test(t))
+  if (/dente siso|terceiro molar|extração|extracao|cirurgia|incluso|retido|canino/.test(t))
     subjects.push("A top-tier surgeon in pristine blue scrubs, focused and professional, performing a precision maxillofacial procedure in a state-of-the-art surgical suite");
-  if (/diagnóstico|diagnostico|tomografia|raio-?x|exame|imagem/.test(t))
+  if (/diagnóstico|diagnostico|tomografia|raio-?x|exame|imagem|3d|planejamento/.test(t))
     subjects.push("Close-up of a high-resolution 3D CT scan of a skull and jaw displayed on a professional EIZO medical monitor in a dark diagnostic room");
-  if (/consulta|avaliação|avaliacao|paciente/.test(t))
+  if (/consulta|avaliação|avaliacao|paciente|atendimento|acolhimento/.test(t))
     subjects.push("A distinguished maxillofacial surgeon in a crisp white coat, having a professional and warm consultation with a patient in a modern boutique clinic");
+  if (/fratura|trauma|acidente|hospital|urgência|emergência|facial/.test(t))
+    subjects.push("Professional medical photography of a high-tech hospital trauma suite, clean surgical instruments, monitors with vital signs, authoritative medical environment");
+  if (/implante|enxerto|reconstrução|osso|levantamento|seio/.test(t))
+    subjects.push("Detailed view of dental implant technology, titanium components with high-end lighting, medical precision, clean aesthetic");
+  if (/ortognática|ortognatica|queixo|mordida|maxila|mandíbula/.test(t))
+    subjects.push("Side profile silhouette of a human face with digital alignment lines and 3D wireframe overlay, surgical planning aesthetic, clean and modern");
+  if (/hospitalar|uti|paciente sistêmico|oncologia|mucosite/.test(t))
+    subjects.push("Professional shot of a specialized dentist in full PPE, working in a modern hospital room, calm and safe atmosphere, high-end healthcare setting");
+  
   if (subjects.length === 0)
     subjects.push("Cinematic shot of a luxury maxillofacial clinic interior, showcasing advanced medical technology and premium architectural design");
   return subjects.join("; ");

@@ -13,18 +13,34 @@ const PerfilSchema = z
   .optional();
 
 const FIXED_NICHE =
-  "Odontologia, focado especificamente nas áreas de Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar";
+  "Odontologia, focado especificamente nas áreas de Cirurgia e Traumatologia Bucomaxilofacial (CTBMF) e Odontologia Hospitalar";
 
-// Biblioteca de formatos para rotação (combate à repetição)
+// Biblioteca expandida de formatos para rotação (combate à repetição)
 const FORMATOS = [
-  "post educativo (explica um conceito clínico de forma acessível)",
+  "post educativo (explica um conceito clínico complexo de forma acessível)",
   "estudo de caso anonimizado (situação clínica + raciocínio + desfecho)",
   "quebra de mito (afirmação comum vs. evidência atual)",
-  "lista de ferramentas/recursos (3-5 itens úteis ao público)",
+  "lista de ferramentas/recursos (3-5 itens úteis ao público ou colegas)",
   "reflexão de bastidores (rotina hospitalar, decisão clínica difícil)",
   "checklist prático (sinais de alerta, cuidados pós-operatórios)",
   "comparativo técnico (técnica A vs B, prós/contras)",
-  "responder pergunta frequente do paciente",
+  "pergunta frequente (FAQ) do paciente respondida com autoridade",
+  "dica de 'ouro' (detalhe técnico que faz diferença no resultado)",
+  "análise de tendência (o que há de novo na CTBMF/Hospitalar)",
+  "gestão de complicações (como prevenir e tratar problemas comuns)",
+  "interconsulta (a importância da Odontologia na equipe multidisciplinar)",
+];
+
+const TEMAS_REFERENCIA = [
+  "Traumatologia: fraturas de mandíbula, zigoma, órbita, NOE, condilar",
+  "Cirurgia Ortognática: classe II, classe III, assimetrias, apneia do sono",
+  "Patologia: cistos maxilares, tumores benignos, biópsias, lesões bucais",
+  "ATM e Dor Orofacial: luxações, desarranjos internos, placas, viscossuplementação",
+  "Cirurgia Oral: sisos inclusos complexos, dentes retidos, caninos impactados",
+  "Implantes e Reconstrução: enxertos ósseos, levantamento de seio, implantes zigomáticos",
+  "Infecções: abscessos odontogênicos, osteomielite, manejo hospitalar",
+  "Odontologia Hospitalar: UTI, manejo de pacientes sistêmicos, oncologia (mucosite, osteonecrose)",
+  "Tecnologia: planejamento 3D, prototipagem, cirurgia guiada",
 ];
 
 function pickFormato(seed: string) {
@@ -38,20 +54,23 @@ function buildSystem(perfil?: z.infer<typeof PerfilSchema>) {
     ? `\n\nCONTEXTO DO ESPECIALISTA:\n- Nome: ${perfil.nome || "(n/d)"}\n- Registro: ${perfil.cro_uf || "(n/d)"}\n- Subespecialidades: ${(perfil.subespecialidades || []).join(", ") || "(n/d)"}\n- Tom preferido: ${perfil.tom_voz || "Científico"}`
     : "";
   return `Você é estrategista sênior de conteúdo para ${FIXED_NICHE}.
+  
+  OBJETIVO OCULTO: atrair consultas e agendamentos SEM jamais soar comercial. Gere valor massivo, identifique dores latentes e demonstre autoridade. A conversão acontece como consequência orgânica.
 
-OBJETIVO OCULTO: atrair consultas e agendamentos SEM jamais soar comercial. Gere valor massivo, identifique dores latentes e demonstre autoridade. A conversão acontece como consequência orgânica.
+  ANTI-REPETIÇÃO: Evite focar excessivamente em 'Cirurgia Ortognática' a menos que seja solicitado. Explore o espectro completo da especialidade:
+  ${TEMAS_REFERENCIA.join("\n  ")}
 
-PROIBIDO TERMINANTEMENTE qualquer frase de venda explícita: "Agende sua consulta", "Marque sua avaliação", "Agende agora", "Compre", "Contrate", "Entre em contato para orçamento", "Fale conosco", "WhatsApp na bio", "Link na bio", "Clique aqui". NÃO usar essas frases em hipótese alguma.
+  PROIBIDO TERMINANTEMENTE qualquer frase de venda explícita: "Agende sua consulta", "Marque sua avaliação", "Agende agora", "Compre", "Contrate", "Entre em contato para orçamento", "Fale conosco", "WhatsApp na bio", "Link na bio", "Clique aqui". NÃO usar essas frases em hipótese alguma.
+  
+  CTA OBRIGATÓRIA = engajamento ou reflexão. Exemplos válidos: "Como você lida com isso na sua rotina? Comenta aqui", "Envie este post para alguém que precisa ver isso hoje", "Salve para consultar depois", "Conhecia esse detalhe? Conta nos comentários", "Marque um colega que vai se identificar".
 
-CTA OBRIGATÓRIA = engajamento ou reflexão. Exemplos válidos: "Como você lida com isso na sua rotina? Comenta aqui", "Envie este post para alguém que precisa ver isso hoje", "Salve para consultar depois", "Conhecia esse detalhe? Conta nos comentários", "Marque um colega que vai se identificar".
+  ADAPTAÇÃO POR REDE — siga estritamente:
+  • Instagram → tom visual impactante, linguagem humanizada, storytelling, soluções práticas do dia a dia, frases curtas, emojis sutis.
+  • LinkedIn → tom corporativo e técnico, thought leadership, análises de mercado, tendências do setor, maturidade profissional. Sem ser frio nem puramente acadêmico.
 
-ADAPTAÇÃO POR REDE — siga estritamente:
-• Instagram → tom visual impactante, linguagem humanizada, storytelling, soluções práticas do dia a dia, frases curtas, emojis sutis.
-• LinkedIn → tom corporativo e técnico, thought leadership, análises de mercado, tendências do setor, maturidade profissional. Sem ser frio nem puramente acadêmico.
+  VARIABILIDADE: alterne formato e tema a cada chamada (NUNCA repetir a introdução ou o gancho). Use o formato sugerido como guia. Varie sinônimos, ganchos e estruturas. Busque ângulos inusitados sobre temas comuns.
 
-VARIABILIDADE: alterne formato a cada chamada (nunca repetir a introdução). Use formato sugerido como guia. Varie sinônimos, ganchos e estruturas.
-
-Tom: técnico, ético, humanizado, baseado em evidência. Sem promessas de resultado. Sem conteúdo gráfico. Português brasileiro com acentos corretos.${ctx}`;
+  Tom: técnico, ético, humanizado, baseado em evidência. Sem promessas de resultado. Sem conteúdo gráfico. Português brasileiro com acentos corretos.${ctx}`;
 }
 
 function buildMock(networks: Array<"instagram" | "linkedin">, comando?: string, estilo: "padrao" | "x" = "padrao") {
