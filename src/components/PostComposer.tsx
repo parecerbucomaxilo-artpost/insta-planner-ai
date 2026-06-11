@@ -435,10 +435,6 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         body: {
           imageUrl: finalImageUrl,
           caption: legendaIg || legendaLi || tema,
-          instagramToken: perfil?.instagram_access_token,
-          instagramUserId: perfil?.instagram_business_account_id,
-          linkedInToken: perfil?.linkedin_access_token,
-          linkedInUrn: perfil?.linkedin_urn,
           bufferToken: perfil?.buffer_access_token
         }
       });
@@ -893,8 +889,8 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       return;
     }
 
-    if (!perfil?.instagram_access_token && !perfil?.linkedin_access_token) {
-      toast.error("Configure seus tokens de acesso em Configurações -> Integrações.");
+    if (!perfil?.buffer_access_token) {
+      toast.error("Configure sua Chave API Buffer em Configurações -> Integrações.");
       return;
     }
 
@@ -912,10 +908,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         body: {
           imageUrl: finalImageUrl,
           caption: textoParaEnviar,
-          instagramToken: perfil.instagram_access_token,
-          instagramUserId: perfil.instagram_business_account_id,
-          linkedInToken: perfil.linkedin_access_token,
-          linkedInUrn: perfil.linkedin_urn
+          bufferToken: perfil.buffer_access_token
         }
       });
 
