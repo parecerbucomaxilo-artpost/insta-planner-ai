@@ -124,6 +124,9 @@ function Dashboard() {
             <span className="text-sm text-muted-foreground">
               {posts.length} {posts.length === 1 ? "post" : "posts"}
             </span>
+            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/settings" })} aria-label="Configurações">
+              <Settings className="h-4 w-4 mr-1.5" /> Configurações
+            </Button>
             <Button variant="ghost" size="sm" onClick={handleSignOut} aria-label="Sair">
               <LogOut className="h-4 w-4 mr-1.5" /> Sair
             </Button>
