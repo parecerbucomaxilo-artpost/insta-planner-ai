@@ -777,7 +777,10 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
       // 6. Disparo via Server Function (para contornar CORS e garantir entrega)
       const result = await sendToMake({
-        data: dadosDoPost
+        data: {
+          ...dadosDoPost,
+          custom_webhook_url: perfil?.make_webhook_url || undefined
+        }
       });
 
       console.log("[PostNow] Resposta do servidor recebida:", result);
