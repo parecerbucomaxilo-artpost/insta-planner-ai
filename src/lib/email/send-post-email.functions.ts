@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { WorkerMailer } from "worker-mailer";
+// NOTA: `worker-mailer` depende de `cloudflare:sockets`, que só existe no
+// runtime workerd (produção). Por isso o import é feito dentro do handler,
+// para que o dev SSR (Node) não quebre ao carregar este módulo.
+
 
 type Input = {
   evento: "agendado" | "publicado";
@@ -58,6 +61,7 @@ export const sendPostEmail = createServerFn({ method: "POST" })
     `;
 
     try {
+      const { WorkerMailer } = await import("worker-mailer");
       const mailer = await WorkerMailer.connect({
         host,
         port,
@@ -65,6 +69,7 @@ export const sendPostEmail = createServerFn({ method: "POST" })
         credentials: { username: user, password: pass },
         authType: "login",
       });
+
 
       await mailer.send({
         from: { name: "Planner Dr. Francisco", email: user },
