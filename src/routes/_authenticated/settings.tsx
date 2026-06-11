@@ -45,6 +45,7 @@ function SettingsPage() {
             <TabsTrigger value="redes"><Share2 className="h-4 w-4 mr-1.5" /> Redes Sociais</TabsTrigger>
             <TabsTrigger value="perfil"><Stethoscope className="h-4 w-4 mr-1.5" /> Perfil</TabsTrigger>
             <TabsTrigger value="chaves"><KeyRound className="h-4 w-4 mr-1.5" /> Automação</TabsTrigger>
+            <TabsTrigger value="integracoes"><Globe className="h-4 w-4 mr-1.5" /> Integrações</TabsTrigger>
             <TabsTrigger value="ia"><Sparkles className="h-4 w-4 mr-1.5" /> IA</TabsTrigger>
           </TabsList>
 
