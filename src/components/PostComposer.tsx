@@ -669,6 +669,19 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         });
       }
 
+      // 3b. Notificar por e-mail (Agendado ou Publicado)
+      if (finalStatus === "Agendado" || finalStatus === "Publicado") {
+        sendEmailNotify({
+          data: {
+            evento: finalStatus === "Agendado" ? "agendado" : "publicado",
+            postId: inserted?.id,
+            tipo: effectiveTipo,
+            legenda: primaryLegenda,
+            dataAgendamento: agendamentoIso,
+          },
+        }).catch((err) => console.warn("[EmailNotify] falha:", err));
+      }
+
       toast.success(forceAgendar ? "Post agendado!" : "Post salvo com sucesso!", { id: tId });
       
       // Reset form
