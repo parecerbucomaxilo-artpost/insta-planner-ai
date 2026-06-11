@@ -37,9 +37,8 @@ export async function uploadGeneratedImage(dataUrl: string): Promise<string> {
     });
 
   if (error) {
-    console.error("Erro no upload para o Storage (usando fallback de DataURL):", error);
-    // Se o upload falhar, retorna o próprio dataUrl como fallback para não quebrar a UI
-    return dataUrl;
+    console.error("Erro no upload para o Storage:", error);
+    throw error;
   }
 
   const { data: { publicUrl } } = supabase.storage

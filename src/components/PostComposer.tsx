@@ -258,8 +258,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
                   },
                 }).then(async ({ dataUrl }) => {
                   const withWatermark = await maybeWatermark(dataUrl);
-                  const result = await uploadGeneratedImage(withWatermark);
-                  return result;
+                  return withWatermark;
                 }),
               ),
             );
@@ -288,7 +287,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
               },
             });
             const withWatermark = await maybeWatermark(dataUrl);
-            const finalUrl = await uploadGeneratedImage(withWatermark);
+            const finalUrl = withWatermark;
             
             if (!isX && tipo === "Carrossel") {
               setCarrossel((arr) => {
@@ -764,7 +763,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       // 4. Garantir que a imagem seja uma URL pública (upload se for base64)
       let finalImageUrl = rawMedia;
       if (rawMedia.startsWith("data:")) {
-        toast.loading("Otimizando imagem para o webhook...", { id: tId });
+        toast.loading("Fazendo upload da imagem para o Instagram...", { id: tId });
         finalImageUrl = await uploadGeneratedImage(rawMedia);
       }
 
