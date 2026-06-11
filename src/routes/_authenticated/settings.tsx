@@ -3,11 +3,12 @@ import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Share2, Stethoscope, KeyRound, Sparkles } from "lucide-react";
+import { ArrowLeft, Share2, Stethoscope, KeyRound, Sparkles, Globe } from "lucide-react";
 import { SocialConnections } from "@/components/SocialConnections";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { AutomationKeys } from "@/components/AutomationKeys";
 import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
+import { IntegrationsSettings } from "@/components/IntegrationsSettings";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
