@@ -258,7 +258,8 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
                   },
                 }).then(async ({ dataUrl }) => {
                   const withWatermark = await maybeWatermark(dataUrl);
-                  return await uploadGeneratedImage(withWatermark);
+                  const result = await uploadGeneratedImage(withWatermark);
+                  return result;
                 }),
               ),
             );
