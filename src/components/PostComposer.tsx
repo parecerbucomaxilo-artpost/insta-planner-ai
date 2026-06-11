@@ -6,6 +6,7 @@ import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
 import { dispatchAlbato } from "@/lib/webhooks/albato.functions";
 import { dispatchMakeWebhook } from "@/lib/webhooks/make.functions";
 import { sendPostEmail } from "@/lib/email/send-post-email.functions";
+import { publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,6 +128,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const sendAlbato = useServerFn(dispatchAlbato);
   const sendToMake = useServerFn(dispatchMakeWebhook);
   const sendEmailNotify = useServerFn(sendPostEmail);
+  const sendLinkedIn = useServerFn(publishToLinkedIn);
 
   // Redes
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
@@ -680,6 +682,26 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
             dataAgendamento: agendamentoIso,
           },
         }).catch((err) => console.warn("[EmailNotify] falha:", err));
+      }
+
+      // 3c. Publicação NATIVA no LinkedIn quando status = Publicado e rede selecionada
+      if (finalStatus === "Publicado" && !isX && networks.includes("linkedin")) {
+        const liText = (legendaLi || primaryLegenda || "").trim();
+        const liImages = effectiveTipo === "Carrossel"
+          ? finalImagensCarrossel.filter(Boolean)
+          : (finalUrlImagem ? [finalUrlImagem] : []);
+        toast.loading("Publicando no LinkedIn…", { id: tId });
+        try {
+          const res = await sendLinkedIn({ data: { text: liText, imageUrls: liImages } });
+          if (res.ok) {
+            toast.success("Publicado no LinkedIn ✅", { id: tId });
+          } else {
+            toast.error(`LinkedIn: ${res.error || "falha"}`, { id: tId });
+          }
+        } catch (err) {
+          console.error("[LinkedInPublish]", err);
+          toast.error(err instanceof Error ? `LinkedIn: ${err.message}` : "Falha no LinkedIn", { id: tId });
+        }
       }
 
       toast.success(forceAgendar ? "Post agendado!" : "Post salvo com sucesso!", { id: tId });
