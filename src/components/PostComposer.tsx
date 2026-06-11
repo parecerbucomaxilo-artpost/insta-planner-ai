@@ -414,6 +414,49 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       setLoadingAi(false);
     }
   };
+  
+  const handlePublishToSocial = async () => {
+    if (!imagem && carrossel.length === 0) {
+      return toast.error("Gere uma imagem antes de publicar.");
+    }
+    
+    setIsPublishingDirect(true);
+    const tId = toast.loading("Publicando nas redes sociais...");
+    
+    try {
+      // 1. A imagem já foi salva no storage no handleGenerateSingle/Page (está em setImagem(finalUrl))
+      // Mas vamos garantir que temos a URL final
+      const finalImageUrl = imagem || (carrossel.length > 0 ? carrossel[0] : "");
+      
+      if (!finalImageUrl) throw new Error("URL da imagem não encontrada.");
+
+      // 2. Chama a Edge Function
+      const { data, error } = await supabase.functions.invoke('publish-to-social', {
+        body: {
+          imageUrl: finalImageUrl,
+          caption: legendaIg || legendaLi || tema,
+          instagramToken: perfil?.instagram_access_token,
+          instagramUserId: perfil?.instagram_business_account_id,
+          linkedInToken: perfil?.linkedin_access_token,
+          linkedInUrn: perfil?.linkedin_urn,
+          bufferToken: perfil?.buffer_access_token
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success("Publicado com sucesso!", { id: tId });
+      } else {
+        toast.error(`Erro ao publicar: ${data.error}`, { id: tId });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro na integração direta.", { id: tId });
+    } finally {
+      setIsPublishingDirect(false);
+    }
+  };
 
   const handleGeneratePage = async (index: number) => {
     const pageOrientation = carouselPrompts[index] ?? "";
