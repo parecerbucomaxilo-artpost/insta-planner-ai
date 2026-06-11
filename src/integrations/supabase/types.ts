@@ -24,6 +24,7 @@ export type Database = {
           instagram_foto_url: string | null
           linkedin_foto_url: string | null
           linkedin_nome: string
+          make_webhook_url: string | null
           nome_profissional: string
           subespecialidades: string[]
           tom_voz: string
@@ -41,6 +42,7 @@ export type Database = {
           instagram_foto_url?: string | null
           linkedin_foto_url?: string | null
           linkedin_nome?: string
+          make_webhook_url?: string | null
           nome_profissional?: string
           subespecialidades?: string[]
           tom_voz?: string
@@ -58,6 +60,7 @@ export type Database = {
           instagram_foto_url?: string | null
           linkedin_foto_url?: string | null
           linkedin_nome?: string
+          make_webhook_url?: string | null
           nome_profissional?: string
           subespecialidades?: string[]
           tom_voz?: string

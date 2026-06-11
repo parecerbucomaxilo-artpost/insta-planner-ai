@@ -22,6 +22,7 @@ export type Perfil = {
   cro_uf: string;
   subespecialidades: string[];
   tom_voz: "Científico" | "Humanizado" | "Editorial";
+  make_webhook_url?: string;
 };
 
 const SUGGESTED_SUBS = [
@@ -135,6 +136,7 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
   const [subs, setSubs] = useState<string[]>([]);
   const [novaSub, setNovaSub] = useState("");
   const [tomVoz, setTomVoz] = useState<"Científico" | "Humanizado" | "Editorial">("Científico");
+  const [makeWebhookUrl, setMakeWebhookUrl] = useState("");
 
   const [igArroba, setIgArroba] = useState("");
   const [igFoto, setIgFoto] = useState<string | null>(null);
@@ -160,6 +162,7 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
         setIgFoto(d.instagram_foto_url ?? d.url_logo ?? null);
         setLiNome(d.linkedin_nome ?? d.nome_profissional ?? "");
         setLiFoto(d.linkedin_foto_url ?? d.url_logo ?? null);
+        setMakeWebhookUrl(d.make_webhook_url ?? "");
       }
       setLoading(false);
     })();
@@ -196,6 +199,7 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
       cro_uf: croUf.trim(),
       subespecialidades: subs,
       tom_voz: tomVoz,
+      make_webhook_url: makeWebhookUrl.trim(),
     };
     let result;
     if (id) {
@@ -370,6 +374,25 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
         onPhoto={setLiFoto}
         description="Use foto formal/corporativa e seu nome completo com títulos."
       />
+
+      <Card className="p-5 space-y-4">
+        <div className="flex items-center gap-3 text-blue-600">
+          <Sparkles className="h-5 w-5" />
+          <h3 className="font-semibold">Integração Make.com (Webhook)</h3>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="make-webhook" className="text-sm">URL do Webhook do Make</Label>
+          <Input 
+            id="make-webhook"
+            value={makeWebhookUrl}
+            onChange={(e) => setMakeWebhookUrl(e.target.value)}
+            placeholder="https://hook.us2.make.com/..." 
+          />
+          <p className="text-[11px] text-muted-foreground italic">
+            Cole aqui a URL que você criou no Make para receber os posts automáticos.
+          </p>
+        </div>
+      </Card>
 
       <Button onClick={handleSave} disabled={saving} size="lg" className="w-full">
         {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
