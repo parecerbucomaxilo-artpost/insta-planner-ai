@@ -170,6 +170,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const [webhookResponse, setWebhookResponse] = useState<string | null>(null);
   const [showResponseDialog, setShowResponseDialog] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isPublishingDirect, setIsPublishingDirect] = useState(false);
 
   const [xSlides, setXSlides] = useState<1 | 2 | 3>(1); // X publicado no Instagram: até 3 slides
   const X_MAX = 280;
