@@ -141,7 +141,7 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
   const [subs, setSubs] = useState<string[]>([]);
   const [novaSub, setNovaSub] = useState("");
   const [tomVoz, setTomVoz] = useState<"Científico" | "Humanizado" | "Editorial">("Científico");
-  const [makeWebhookUrl, setMakeWebhookUrl] = useState("");
+  const [bufferAccessToken, setBufferAccessToken] = useState("");
 
   const [igArroba, setIgArroba] = useState("");
   const [igFoto, setIgFoto] = useState<string | null>(null);
@@ -167,7 +167,7 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
         setIgFoto(d.instagram_foto_url ?? d.url_logo ?? null);
         setLiNome(d.linkedin_nome ?? d.nome_profissional ?? "");
         setLiFoto(d.linkedin_foto_url ?? d.url_logo ?? null);
-        setMakeWebhookUrl(d.make_webhook_url ?? "");
+        setBufferAccessToken(d.buffer_access_token ?? "");
       }
       setLoading(false);
     })();
@@ -204,7 +204,7 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
       cro_uf: croUf.trim(),
       subespecialidades: subs,
       tom_voz: tomVoz,
-      make_webhook_url: makeWebhookUrl.trim(),
+      buffer_access_token: bufferAccessToken.trim(),
     };
     let result;
     if (id) {
@@ -380,21 +380,29 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
         description="Use foto formal/corporativa e seu nome completo com títulos."
       />
 
-      <Card className="p-5 space-y-4">
-        <div className="flex items-center gap-3 text-blue-600">
-          <Sparkles className="h-5 w-5" />
-          <h3 className="font-semibold">Integração Make.com (Webhook)</h3>
+      <Card className="p-5 space-y-4 border-primary/20 bg-primary/5">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-black flex items-center justify-center text-white">
+            <svg viewBox="0 0 24 24" className="h-6 w-6 fill-current">
+              <path d="M22 7.5L12 12.5L2 7.5V16.5L12 21.5L22 16.5V7.5ZM12 2.5L22 7.5L12 12.5L2 7.5L12 2.5Z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-semibold">Conexão com Buffer</h3>
+            <p className="text-xs text-muted-foreground">Central de postagens automáticas.</p>
+          </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="make-webhook" className="text-sm">URL do Webhook do Make</Label>
+          <Label htmlFor="buffer-access-token" className="text-sm">Chave de Acesso do Buffer</Label>
           <Input 
-            id="make-webhook"
-            value={makeWebhookUrl}
-            onChange={(e) => setMakeWebhookUrl(e.target.value)}
-            placeholder="https://hook.us2.make.com/..." 
+            id="buffer-access-token"
+            value={bufferAccessToken}
+            onChange={(e) => setBufferAccessToken(e.target.value)}
+            type="password"
+            placeholder="Cole seu Personal Access Token aqui..." 
           />
           <p className="text-[11px] text-muted-foreground italic">
-            Cole aqui a URL que você criou no Make para receber os posts automáticos.
+            Obtenha esta chave nas configurações de desenvolvedor do seu painel do Buffer.
           </p>
         </div>
       </Card>
