@@ -126,6 +126,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const genIdea = useServerFn(suggestIdea);
   const sendAlbato = useServerFn(dispatchAlbato);
   const sendToMake = useServerFn(dispatchMakeWebhook);
+  const sendEmailNotify = useServerFn(sendPostEmail);
 
   // Redes
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
