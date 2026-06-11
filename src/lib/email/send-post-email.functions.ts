@@ -61,6 +61,7 @@ export const sendPostEmail = createServerFn({ method: "POST" })
     `;
 
     try {
+      const { WorkerMailer } = await import("worker-mailer");
       const mailer = await WorkerMailer.connect({
         host,
         port,
@@ -68,6 +69,7 @@ export const sendPostEmail = createServerFn({ method: "POST" })
         credentials: { username: user, password: pass },
         authType: "login",
       });
+
 
       await mailer.send({
         from: { name: "Planner Dr. Francisco", email: user },
