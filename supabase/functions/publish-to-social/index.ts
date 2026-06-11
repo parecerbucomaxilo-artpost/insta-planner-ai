@@ -11,16 +11,58 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, caption, instagramToken, instagramUserId, linkedInToken, linkedInUrn } = await req.json()
+    const { imageUrl, caption, instagramToken, instagramUserId, linkedInToken, linkedInUrn, bufferToken } = await req.json()
 
     console.log('Publishing started:', { 
       hasImage: !!imageUrl, 
       hasInsta: !!(instagramToken && instagramUserId), 
-      hasLinkedIn: !!(linkedInToken && linkedInUrn) 
+      hasLinkedIn: !!(linkedInToken && linkedInUrn),
+      hasBuffer: !!bufferToken
     })
 
     let instaResult = null
     let linkedInResult = null
+    let bufferResult = null
+
+    // 0. INTEGRAÇÃO BUFFER API
+    if (bufferToken) {
+      console.log('Publishing to Buffer...')
+      try {
+        // Primeiro, precisamos pegar os profiles do usuário no Buffer para saber onde postar
+        const profilesRes = await fetch('https://api.bufferapp.com/1/profiles.json', {
+          headers: { 'Authorization': `Bearer ${bufferToken}` }
+        })
+        const profiles = await profilesRes.json()
+
+        if (profilesRes.ok && Array.isArray(profiles) && profiles.length > 0) {
+          // Vamos postar em todos os profiles conectados por padrão, ou no primeiro disponível
+          const profileIds = profiles.map(p => p.id)
+          
+          const bufferPublishUrl = 'https://api.bufferapp.com/1/updates/create.json'
+          const bufferRes = await fetch(bufferPublishUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${bufferToken}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+              'text': caption,
+              'profile_ids[]': profileIds.join(','), // Pode enviar múltiplos
+              'media[photo]': imageUrl,
+              'shorten': 'false'
+            })
+          })
+          bufferResult = await bufferRes.json()
+          console.log('Buffer result:', bufferResult)
+        } else {
+          console.error('No Buffer profiles found or error fetching them')
+          bufferResult = { success: false, error: 'No profiles found' }
+        }
+      } catch (err) {
+        console.error('Buffer error:', err)
+        bufferResult = { success: false, error: err.message }
+      }
+    }
 
     // 1. INTEGRAÇÃO INSTAGRAM GRAPH API
     if (instagramToken && instagramUserId) {
@@ -105,7 +147,12 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, instagram: instaResult, linkedIn: linkedInResult }),
+      JSON.stringify({ 
+        success: true, 
+        instagram: instaResult, 
+        linkedIn: linkedInResult,
+        buffer: bufferResult 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 

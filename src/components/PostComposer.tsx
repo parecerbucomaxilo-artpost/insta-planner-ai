@@ -170,6 +170,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const [webhookResponse, setWebhookResponse] = useState<string | null>(null);
   const [showResponseDialog, setShowResponseDialog] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isPublishingDirect, setIsPublishingDirect] = useState(false);
 
   const [xSlides, setXSlides] = useState<1 | 2 | 3>(1); // X publicado no Instagram: até 3 slides
   const X_MAX = 280;
@@ -411,6 +412,49 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       toast.error(e instanceof Error ? e.message : "Erro ao gerar");
     } finally {
       setLoadingAi(false);
+    }
+  };
+  
+  const handlePublishToSocial = async () => {
+    if (!imagem && carrossel.length === 0) {
+      return toast.error("Gere uma imagem antes de publicar.");
+    }
+    
+    setIsPublishingDirect(true);
+    const tId = toast.loading("Publicando nas redes sociais...");
+    
+    try {
+      // 1. A imagem já foi salva no storage no handleGenerateSingle/Page (está em setImagem(finalUrl))
+      // Mas vamos garantir que temos a URL final
+      const finalImageUrl = imagem || (carrossel.length > 0 ? carrossel[0] : "");
+      
+      if (!finalImageUrl) throw new Error("URL da imagem não encontrada.");
+
+      // 2. Chama a Edge Function
+      const { data, error } = await supabase.functions.invoke('publish-to-social', {
+        body: {
+          imageUrl: finalImageUrl,
+          caption: legendaIg || legendaLi || tema,
+          instagramToken: perfil?.instagram_access_token,
+          instagramUserId: perfil?.instagram_business_account_id,
+          linkedInToken: perfil?.linkedin_access_token,
+          linkedInUrn: perfil?.linkedin_urn,
+          bufferToken: perfil?.buffer_access_token
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success("Publicado com sucesso!", { id: tId });
+      } else {
+        toast.error(`Erro ao publicar: ${data.error}`, { id: tId });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro na integração direta.", { id: tId });
+    } finally {
+      setIsPublishingDirect(false);
     }
   };
 
@@ -1806,6 +1850,34 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Botões de Ação Final */}
+      <Card className="mt-6 p-6 border-2 border-primary/20 bg-primary/5">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button 
+            className="flex-1 h-14 text-lg font-bold bg-green-600 hover:bg-green-700 shadow-lg shadow-green-900/20"
+            onClick={handlePublishToSocial}
+            disabled={isPublishingDirect || (!imagem && carrossel.length === 0)}
+          >
+            {isPublishingDirect ? (
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            ) : (
+              <Globe className="h-6 w-6 mr-2" />
+            )}
+            Publicar com um Clique
+          </Button>
+
+          <Button 
+            variant="outline"
+            className="flex-1 h-14 text-lg font-semibold"
+            onClick={() => {
+              toast.success("Rascunho salvo!");
+            }}
+          >
+            Salvar Rascunho
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -20,12 +20,15 @@ export function IntegrationSettings() {
   // LinkedIn
   const [liToken, setLiToken] = useState("");
 
+  // Buffer
+  const [bufferToken, setBufferToken] = useState("");
+
   useEffect(() => {
     async function loadSettings() {
       try {
         const { data } = await supabase
           .from("perfil_usuario")
-          .select("id, instagram_access_token, instagram_business_account_id, linkedin_access_token")
+          .select("id, instagram_access_token, instagram_business_account_id, linkedin_access_token, buffer_access_token")
           .limit(1)
           .maybeSingle();
 
@@ -34,6 +37,7 @@ export function IntegrationSettings() {
           setIgToken(data.instagram_access_token || "");
           setIgId(data.instagram_business_account_id || "");
           setLiToken(data.linkedin_access_token || "");
+          setBufferToken(data.buffer_access_token || "");
         }
       } catch (err) {
         console.error("Erro ao carregar configurações:", err);
@@ -53,6 +57,7 @@ export function IntegrationSettings() {
         instagram_access_token: igToken.trim(),
         instagram_business_account_id: igId.trim(),
         linkedin_access_token: liToken.trim(),
+        buffer_access_token: bufferToken.trim(),
       };
 
       if (perfilId) {
@@ -160,6 +165,40 @@ export function IntegrationSettings() {
           <p className="text-xs text-muted-foreground italic">
             Nota: Se você já conectou via Lovable Cloud, o token é gerenciado automaticamente. Este campo é para tokens manuais/customizados.
           </p>
+        </CardContent>
+      </Card>
+      
+      {/* Buffer API */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-[#2c3e50] flex items-center justify-center text-white">
+              <KeyRound className="h-6 w-6" />
+            </div>
+            <div>
+              <CardTitle>Buffer API</CardTitle>
+              <CardDescription>Configure sua Personal Access Token do Buffer.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="buffer-token">Chave API Buffer (Personal Access Token)</Label>
+            <Input
+              id="buffer-token"
+              type="password"
+              value={bufferToken}
+              onChange={(e) => setBufferToken(e.target.value)}
+              placeholder="buf-..."
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button asChild variant="link" size="sm" className="h-auto p-0">
+              <a href="https://publish.buffer.com/profile/settings/apps-and-extras" target="_blank" rel="noreferrer" className="flex items-center gap-1">
+                Obter Token no Buffer <ExternalLink className="h-3 w-3" />
+              </a>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

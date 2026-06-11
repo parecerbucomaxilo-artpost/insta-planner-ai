@@ -27,6 +27,7 @@ export type Perfil = {
   instagram_business_account_id?: string;
   linkedin_access_token?: string;
   linkedin_urn?: string;
+  buffer_access_token?: string;
 };
 
 const SUGGESTED_SUBS = [
