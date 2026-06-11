@@ -621,7 +621,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       toast.loading("Otimizando mídias...", { id: tId });
       
       const processMedia = async (raw: string | null, prefix: string) => {
-        if (raw && raw.startsWith("data:")) return await uploadToSupabase(raw, prefix);
+        if (raw && raw.startsWith("data:")) return await uploadGeneratedImage(raw);
         return raw;
       };
 
@@ -759,7 +759,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       let finalImageUrl = rawMedia;
       if (rawMedia.startsWith("data:")) {
         toast.loading("Otimizando imagem para o webhook...", { id: tId });
-        finalImageUrl = await uploadToSupabase(rawMedia, "direct-publish");
+        finalImageUrl = await uploadGeneratedImage(rawMedia);
       }
 
       // 5. Estrutura EXATA solicitada para o disparo
