@@ -1703,19 +1703,6 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
               )}
             </Button>
 
-            <Button
-              onClick={handlePostNow}
-              disabled={saving || isGenerating}
-              size="lg"
-              variant="outline"
-              className="w-full h-12 font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50"
-            >
-              {saving ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processando…</>
-              ) : (
-                <><Send className="h-4 w-4 mr-2" /> Disparar Make</>
-              )}
-            </Button>
           </div>
 
           <Card className="p-4 space-y-3 bg-slate-950 text-slate-100 border-slate-800">
@@ -1770,19 +1757,6 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
               )}
             </Button>
 
-            <Button
-              onClick={handlePostNow}
-              disabled={saving || isGenerating}
-              size="lg"
-              variant="outline"
-              className="w-full h-12 font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50"
-            >
-              {saving ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processando…</>
-              ) : (
-                <><Send className="h-4 w-4 mr-2" /> Disparar Make</>
-              )}
-            </Button>
           </div>
           {!hasContent && !isGenerating && (
             <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
@@ -1804,45 +1778,6 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       )}
 
 
-      <Dialog open={showResponseDialog} onOpenChange={setShowResponseDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-primary" />
-              Retorno do Make
-            </DialogTitle>
-            <DialogDescription>
-              Confira a resposta síncrona devolvida pela automação.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="mt-4">
-            <div className="relative group">
-              <div className="bg-muted p-4 rounded-lg text-sm font-mono whitespace-pre-wrap break-words max-h-[300px] overflow-y-auto border border-border">
-                {webhookResponse}
-              </div>
-              <Button
-                size="icon"
-                variant="outline"
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={handleCopyResponse}
-              >
-                {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-
-          <DialogFooter className="mt-4">
-            <Button className="w-full" onClick={handleCopyResponse}>
-              {isCopied ? (
-                <><Check className="h-4 w-4 mr-2" /> Copiado!</>
-              ) : (
-                <><Copy className="h-4 w-4 mr-2" /> Copiar Texto</>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Botões de Ação Final */}
       <Card className="mt-6 p-6 border-2 border-primary/20 bg-primary/5">
