@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
-const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3";
+const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
 
 type LiStatus =
   | { connected: true; name?: string; email?: string; picture?: string; sub?: string }
