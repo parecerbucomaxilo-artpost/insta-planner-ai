@@ -25,6 +25,12 @@ export function SocialConnections() {
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
 
+  const [igWebhook, setIgWebhook] = useState("");
+  const [igLoading, setIgLoading] = useState(true);
+  const [igSaving, setIgSaving] = useState(false);
+  const [igTesting, setIgTesting] = useState(false);
+  const [perfilId, setPerfilId] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
       try {
@@ -36,7 +42,69 @@ export function SocialConnections() {
         setLoading(false);
       }
     })();
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("perfil_usuario")
+          .select("id, webhook_url")
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (data) {
+          setPerfilId(data.id);
+          setIgWebhook(data.webhook_url || DEFAULT_MAKE_WEBHOOK);
+        } else {
+          setIgWebhook(DEFAULT_MAKE_WEBHOOK);
+        }
+      } finally {
+        setIgLoading(false);
+      }
+    })();
   }, [fetchStatus]);
+
+  const handleSaveIgWebhook = async () => {
+    const url = igWebhook.trim();
+    if (!/^https?:\/\//i.test(url)) {
+      toast.error("Informe uma URL válida começando com https://");
+      return;
+    }
+    setIgSaving(true);
+    try {
+      const uid = await getAuthedUserId();
+      const payload = { user_id: uid, webhook_url: url };
+      const res = perfilId
+        ? await supabase.from("perfil_usuario").update({ webhook_url: url }).eq("id", perfilId).select("id").maybeSingle()
+        : await supabase.from("perfil_usuario").insert(payload).select("id").maybeSingle();
+      if (res.error) throw res.error;
+      if (res.data?.id) setPerfilId(res.data.id);
+      toast.success("Webhook do Instagram salvo ✅");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao salvar");
+    } finally {
+      setIgSaving(false);
+    }
+  };
+
+  const handleTestIgWebhook = async () => {
+    const url = igWebhook.trim();
+    if (!/^https?:\/\//i.test(url)) return toast.error("Salve uma URL válida antes de testar.");
+    setIgTesting(true);
+    const tid = toast.loading("Disparando teste para o Make…");
+    try {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: "✅ Teste do Planner Chico — webhook do Instagram conectado." }),
+      });
+      if (!r.ok) throw new Error(`Make respondeu ${r.status}`);
+      toast.success("Webhook respondeu OK — verifique seu cenário no Make.", { id: tid });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha no teste", { id: tid });
+    } finally {
+      setIgTesting(false);
+    }
+  };
+
 
   const handleTestPost = async () => {
     setTesting(true);
