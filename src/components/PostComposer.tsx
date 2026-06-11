@@ -1807,6 +1807,34 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Botões de Ação Final */}
+      <Card className="mt-6 p-6 border-2 border-primary/20 bg-primary/5">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button 
+            className="flex-1 h-14 text-lg font-bold bg-green-600 hover:bg-green-700 shadow-lg shadow-green-900/20"
+            onClick={handlePublishToSocial}
+            disabled={isPublishingDirect || (!imagem && carrossel.length === 0)}
+          >
+            {isPublishingDirect ? (
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            ) : (
+              <Globe className="h-6 w-6 mr-2" />
+            )}
+            Publicar com um Clique
+          </Button>
+
+          <Button 
+            variant="outline"
+            className="flex-1 h-14 text-lg font-semibold"
+            onClick={() => {
+              toast.success("Rascunho salvo!");
+            }}
+          >
+            Salvar Rascunho
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 }

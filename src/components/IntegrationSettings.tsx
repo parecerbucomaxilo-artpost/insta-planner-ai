@@ -200,6 +200,40 @@ export function IntegrationSettings() {
             </Button>
           </div>
         </CardContent>
+      </Card>
+      
+      {/* Buffer API */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-[#2c3e50] flex items-center justify-center text-white">
+              <KeyRound className="h-6 w-6" />
+            </div>
+            <div>
+              <CardTitle>Buffer API</CardTitle>
+              <CardDescription>Configure sua Personal Access Token do Buffer.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="buffer-token">Chave API Buffer (Personal Access Token)</Label>
+            <Input
+              id="buffer-token"
+              type="password"
+              value={bufferToken}
+              onChange={(e) => setBufferToken(e.target.value)}
+              placeholder="buf-..."
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button asChild variant="link" size="sm" className="h-auto p-0">
+              <a href="https://publish.buffer.com/profile/settings/apps-and-extras" target="_blank" rel="noreferrer" className="flex items-center gap-1">
+                Obter Token no Buffer <ExternalLink className="h-3 w-3" />
+              </a>
+            </Button>
+          </div>
+        </CardContent>
 
       <Button onClick={handleSave} disabled={saving || loading} className="w-full h-12 text-base font-semibold">
         {saving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Save className="h-5 w-5 mr-2" />}
