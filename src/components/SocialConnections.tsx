@@ -212,25 +212,49 @@ export function SocialConnections() {
                 <Badge variant="secondary" className="gap-1">via automação</Badge>
               </CardTitle>
               <CardDescription>
-                Publicação por webhook (Make/Albato) — configurada na aba <strong>Chaves de Automação</strong>.
+                Publicação por webhook do Make. O Make recebe o texto e publica no seu Instagram Business.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm text-amber-900 dark:text-amber-100">
-            <p className="font-medium mb-1">Por que não nativo?</p>
-            <p className="text-xs leading-relaxed">
-              A API oficial do Instagram (<code>instagram_content_publish</code>) exige App próprio no Meta for Developers
-              com revisão da Meta, conta Business vinculada a uma Página do Facebook e tokens de longa duração por usuário.
-              Você optou por manter o fluxo via webhook (Make/Albato), que já está funcionando e é mais simples.
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="ig-webhook" className="flex items-center gap-1.5 text-sm">
+              <LinkIcon className="h-3.5 w-3.5" /> URL do Webhook (Make)
+            </Label>
+            {igLoading ? (
+              <div className="h-9 rounded-md bg-muted animate-pulse" />
+            ) : (
+              <Input
+                id="ig-webhook"
+                value={igWebhook}
+                onChange={(e) => setIgWebhook(e.target.value)}
+                placeholder="https://hook.us2.make.com/…"
+                className="font-mono text-xs"
+              />
+            )}
+            <p className="text-[11px] text-muted-foreground">
+              Cole aqui a URL do cenário no Make. O app envia <code>{"{ texto }"}</code> via POST quando você clicar em <strong>Publicar agora</strong>.
             </p>
           </div>
-          <Button asChild variant="outline" size="sm">
-            <a href="https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media_publish" target="_blank" rel="noreferrer">
-              <ExternalLink className="h-4 w-4" /> Docs oficiais da Meta
-            </a>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={handleSaveIgWebhook} disabled={igSaving || igLoading} size="sm">
+              {igSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Salvar
+            </Button>
+            <Button onClick={handleTestIgWebhook} disabled={igTesting || igLoading} variant="outline" size="sm">
+              {igTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Testar disparo
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <a href="https://www.make.com/en/help/tools/webhooks" target="_blank" rel="noreferrer">
+                <ExternalLink className="h-4 w-4" /> Docs do Make
+              </a>
+            </Button>
+          </div>
+          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-100 leading-relaxed">
+            <strong>Por que não API nativa?</strong> A Meta exige App próprio aprovado e conta Business vinculada a uma Página do Facebook. O webhook é o caminho mais rápido e estável.
+          </div>
         </CardContent>
       </Card>
     </div>
