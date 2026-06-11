@@ -735,19 +735,32 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       }
 
       // 6. Registro opcional no banco de dados local para histórico/log
+      let publishedPostId: string | undefined;
       try {
         const userId = await getAuthedUserId();
         if (userId) {
-          await supabase.from("posts").insert({
+          const { data: ins } = await supabase.from("posts").insert({
             user_id: userId,
             tipo_post: isX ? "Post Estilo X" : tipo,
             legenda: textoParaEnviar,
             status: "Publicado"
-          });
+          }).select("id").maybeSingle();
+          publishedPostId = ins?.id;
         }
       } catch (dbError) {
         console.warn("[PostNow] Falha ao registrar log no banco (não impede sucesso do webhook):", dbError);
       }
+
+      // 6b. Notifica por e-mail
+      sendEmailNotify({
+        data: {
+          evento: "publicado",
+          postId: publishedPostId,
+          tipo: isX ? "Post Estilo X" : tipo,
+          legenda: textoParaEnviar,
+          dataAgendamento: null,
+        },
+      }).catch((err) => console.warn("[EmailNotify] falha:", err));
 
       // 7. Sucesso visual para o usuário
       toast.success("Post enviado com sucesso!", { id: tId });
