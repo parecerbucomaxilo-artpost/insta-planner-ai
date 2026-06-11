@@ -3,11 +3,12 @@ import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Share2, Stethoscope, KeyRound, Sparkles } from "lucide-react";
+import { ArrowLeft, Share2, Stethoscope, KeyRound, Sparkles, Globe } from "lucide-react";
 import { SocialConnections } from "@/components/SocialConnections";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { AutomationKeys } from "@/components/AutomationKeys";
 import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
+import { IntegrationsSettings } from "@/components/IntegrationsSettings";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -44,6 +45,7 @@ function SettingsPage() {
             <TabsTrigger value="redes"><Share2 className="h-4 w-4 mr-1.5" /> Redes Sociais</TabsTrigger>
             <TabsTrigger value="perfil"><Stethoscope className="h-4 w-4 mr-1.5" /> Perfil</TabsTrigger>
             <TabsTrigger value="chaves"><KeyRound className="h-4 w-4 mr-1.5" /> Automação</TabsTrigger>
+            <TabsTrigger value="integracoes"><Globe className="h-4 w-4 mr-1.5" /> Integrações</TabsTrigger>
             <TabsTrigger value="ia"><Sparkles className="h-4 w-4 mr-1.5" /> IA</TabsTrigger>
           </TabsList>
 
@@ -55,6 +57,9 @@ function SettingsPage() {
           </TabsContent>
           <TabsContent value="chaves" className="mt-6">
             <AutomationKeys />
+          </TabsContent>
+          <TabsContent value="integracoes" className="mt-6">
+            <IntegrationsSettings />
           </TabsContent>
           <TabsContent value="ia" className="mt-6">
             <AnthropicKeySettings />

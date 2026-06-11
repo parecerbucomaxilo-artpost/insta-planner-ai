@@ -23,6 +23,10 @@ export type Perfil = {
   subespecialidades: string[];
   tom_voz: "Científico" | "Humanizado" | "Editorial";
   make_webhook_url?: string;
+  instagram_access_token?: string;
+  instagram_business_account_id?: string;
+  linkedin_access_token?: string;
+  linkedin_urn?: string;
 };
 
 const SUGGESTED_SUBS = [

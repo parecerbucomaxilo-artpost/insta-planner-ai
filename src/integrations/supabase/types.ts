@@ -27,6 +27,7 @@ export type Database = {
           linkedin_access_token: string | null
           linkedin_foto_url: string | null
           linkedin_nome: string
+          linkedin_urn: string | null
           make_webhook_url: string | null
           nome_profissional: string
           subespecialidades: string[]
@@ -48,6 +49,7 @@ export type Database = {
           linkedin_access_token?: string | null
           linkedin_foto_url?: string | null
           linkedin_nome?: string
+          linkedin_urn?: string | null
           make_webhook_url?: string | null
           nome_profissional?: string
           subespecialidades?: string[]
@@ -69,6 +71,7 @@ export type Database = {
           linkedin_access_token?: string | null
           linkedin_foto_url?: string | null
           linkedin_nome?: string
+          linkedin_urn?: string | null
           make_webhook_url?: string | null
           nome_profissional?: string
           subespecialidades?: string[]

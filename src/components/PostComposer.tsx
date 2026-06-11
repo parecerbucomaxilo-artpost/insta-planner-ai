@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon, Send, Twitter, Smartphone, Video, Copy, Check } from "lucide-react";
+import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Stamp, Film, Image as PictureIcon, Send, Twitter, Smartphone, Video, Copy, Check, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { PostPreview } from "./PostPreview";
 import { cn } from "@/lib/utils";
@@ -834,6 +834,59 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     }
   };
 
+  const handlePublishToSocialDirect = async () => {
+    if (loadingAi || loadingImage || loadingPage !== null) {
+      toast.error("Aguarde a geração da mídia finalizar.");
+      return;
+    }
+
+    const isX = modoCriacao === "x";
+    const textoParaEnviar = (isX ? textoX : (legendaIg || legendaLi || "")).trim();
+    const rawMedia = imagem || (tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean)[0] : null);
+
+    if (!textoParaEnviar || !rawMedia) {
+      toast.error("Gere o conteúdo antes de publicar.");
+      return;
+    }
+
+    if (!perfil?.instagram_access_token && !perfil?.linkedin_access_token) {
+      toast.error("Configure seus tokens de acesso em Configurações -> Integrações.");
+      return;
+    }
+
+    setSaving(true);
+    const tId = toast.loading("Publicando nas redes sociais...");
+
+    try {
+      let finalImageUrl = rawMedia;
+      if (rawMedia.startsWith("data:")) {
+        toast.loading("Enviando imagem para o Storage...", { id: tId });
+        finalImageUrl = await uploadGeneratedImage(rawMedia);
+      }
+
+      const { data, error } = await supabase.functions.invoke("publish-to-social", {
+        body: {
+          imageUrl: finalImageUrl,
+          caption: textoParaEnviar,
+          instagramToken: perfil.instagram_access_token,
+          instagramUserId: perfil.instagram_business_account_id,
+          linkedInToken: perfil.linkedin_access_token,
+          linkedInUrn: perfil.linkedin_urn
+        }
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast.success("Publicado com sucesso!", { id: tId });
+      if (onCreated) onCreated();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao publicar direto");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleCopyResponse = () => {
     if (webhookResponse) {
       navigator.clipboard.writeText(webhookResponse);
@@ -1599,18 +1652,34 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
             )}
           </div>
 
-          <Button
-            onClick={handlePostNow}
-            disabled={saving || isGenerating}
-            size="lg"
-            className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0"
-          >
-            {saving ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publicando…</>
-            ) : (
-              <><Send className="h-4 w-4 mr-2" /> Postar Agora</>
-            )}
-          </Button>
+          <div className="grid grid-cols-1 gap-2">
+            <Button
+              onClick={handlePublishToSocialDirect}
+              disabled={saving || isGenerating}
+              size="lg"
+              className="w-full h-12 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50"
+            >
+              {saving ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publicando…</>
+              ) : (
+                <><Globe className="h-4 w-4 mr-2" /> Publicar nas Redes</>
+              )}
+            </Button>
+
+            <Button
+              onClick={handlePostNow}
+              disabled={saving || isGenerating}
+              size="lg"
+              variant="outline"
+              className="w-full h-12 font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50"
+            >
+              {saving ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processando…</>
+              ) : (
+                <><Send className="h-4 w-4 mr-2" /> Disparar Make</>
+              )}
+            </Button>
+          </div>
 
           <Card className="p-4 space-y-3 bg-slate-950 text-slate-100 border-slate-800">
             <div className="flex items-center gap-2">
@@ -1650,18 +1719,34 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
             )}
           </div>
 
-          <Button
-            onClick={handlePostNow}
-            disabled={saving || isGenerating}
-            size="lg"
-            className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0"
-          >
-            {saving ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publicando…</>
-            ) : (
-              <><Send className="h-4 w-4 mr-2" /> Postar Agora</>
-            )}
-          </Button>
+          <div className="grid grid-cols-1 gap-2">
+            <Button
+              onClick={handlePublishToSocialDirect}
+              disabled={saving || isGenerating}
+              size="lg"
+              className="w-full h-12 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50"
+            >
+              {saving ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publicando…</>
+              ) : (
+                <><Globe className="h-4 w-4 mr-2" /> Publicar nas Redes</>
+              )}
+            </Button>
+
+            <Button
+              onClick={handlePostNow}
+              disabled={saving || isGenerating}
+              size="lg"
+              variant="outline"
+              className="w-full h-12 font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50"
+            >
+              {saving ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processando…</>
+              ) : (
+                <><Send className="h-4 w-4 mr-2" /> Disparar Make</>
+              )}
+            </Button>
+          </div>
           {!hasContent && !isGenerating && (
             <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
               Gere legenda e imagem para liberar a publicação imediata.
