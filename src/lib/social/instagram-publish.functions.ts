@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
 
 const INSTAGRAM_GRAPH_URL = "https://graph.facebook.com/v19.0";
 
@@ -15,10 +16,18 @@ type IgPublishResult = {
   error?: string;
 };
 
+const publishToInstagramSchema = z.object({
+  caption: z.string(),
+  imageUrl: z.string(),
+});
+
 export const publishToInstagram = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => publishToInstagramSchema.parse(d))
   .handler(async ({ data: input }): Promise<IgPublishResult> => {
     try {
+      if (!input) throw new Error("Dados de entrada ausentes");
+
       // 1. Buscar tokens do usuário
       const { data: perfil, error: perfilError } = await supabase
         .from("perfil_usuario")
@@ -67,3 +76,4 @@ export const publishToInstagram = createServerFn({ method: "POST" })
       return { ok: false, error: e instanceof Error ? e.message : "Erro desconhecido" };
     }
   });
+
