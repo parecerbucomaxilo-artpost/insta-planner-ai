@@ -726,18 +726,18 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const handlePostNow = async () => {
     // 1. Captura o texto com base no modo atual
     const isX = modoCriacao === "x";
-    const textoParaEnviar = isX ? textoX : (legendaIg || legendaLi || "");
+    const textoParaEnviar = (isX ? textoX : (legendaIg || legendaLi || "")).trim();
     
     // 2. Captura a imagem/mídia (link ou base64 atual)
-    const mediaParaEnviar = imagem || (tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean)[0] : null);
+    const rawMedia = imagem || (tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean)[0] : null);
 
     // 3. Validações básicas (campos obrigatórios)
-    if (!textoParaEnviar || !textoParaEnviar.trim()) {
+    if (!textoParaEnviar) {
       toast.error("Por favor, escreva ou gere um texto antes de postar.");
       return;
     }
 
-    if (!mediaParaEnviar) {
+    if (!rawMedia) {
       toast.error("Uma imagem ou mídia é obrigatória para publicar no Instagram.");
       return;
     }
@@ -746,18 +746,29 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     setSaving(true);
     
     const tId = toast.loading("Enviando post para o Make/Instagram...");
-    console.log("[PostNow] Iniciando disparo para o Webhook com texto e imagem_url...");
 
     try {
-      // 4. Disparo via Server Function (garantindo o objeto JSON solicitado)
+      // 4. Garantir que a imagem seja uma URL pública (upload se for base64)
+      let finalImageUrl = rawMedia;
+      if (rawMedia.startsWith("data:")) {
+        toast.loading("Otimizando imagem para o webhook...", { id: tId });
+        finalImageUrl = await uploadToSupabase(rawMedia, "direct-publish");
+      }
+
+      // 5. Estrutura EXATA solicitada para o disparo
+      const dadosDoPost = {
+        texto: textoParaEnviar,
+        imagem_url: finalImageUrl
+      };
+
+      console.log("[PostNow] Disparando para o webhook com estrutura JSON:", dadosDoPost);
+
+      // 6. Disparo via Server Function (para contornar CORS e garantir entrega)
       const result = await sendToMake({
-        data: { 
-          texto: textoParaEnviar.trim(),
-          imagem_url: mediaParaEnviar
-        }
+        data: dadosDoPost
       });
 
-      console.log("[PostNow] Resposta do servidor recebida com sucesso:", result);
+      console.log("[PostNow] Resposta do servidor recebida:", result);
 
       // 5. Captura a resposta textual devolvida pelo Make
       if (result.success && result.response) {
