@@ -17,6 +17,7 @@ export type Database = {
       perfil_usuario: {
         Row: {
           arroba_usuario: string
+          buffer_access_token: string | null
           created_at: string
           cro_uf: string
           id: string
@@ -39,6 +40,7 @@ export type Database = {
         }
         Insert: {
           arroba_usuario?: string
+          buffer_access_token?: string | null
           created_at?: string
           cro_uf?: string
           id?: string
@@ -61,6 +63,7 @@ export type Database = {
         }
         Update: {
           arroba_usuario?: string
+          buffer_access_token?: string | null
           created_at?: string
           cro_uf?: string
           id?: string
