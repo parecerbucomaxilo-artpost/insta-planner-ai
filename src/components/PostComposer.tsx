@@ -1652,18 +1652,34 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
             )}
           </div>
 
-          <Button
-            onClick={handlePostNow}
-            disabled={saving || isGenerating}
-            size="lg"
-            className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0"
-          >
-            {saving ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publicando…</>
-            ) : (
-              <><Send className="h-4 w-4 mr-2" /> Postar Agora</>
-            )}
-          </Button>
+          <div className="grid grid-cols-1 gap-2">
+            <Button
+              onClick={handlePublishToSocialDirect}
+              disabled={saving || isGenerating}
+              size="lg"
+              className="w-full h-12 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50"
+            >
+              {saving ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publicando…</>
+              ) : (
+                <><Globe className="h-4 w-4 mr-2" /> Publicar nas Redes</>
+              )}
+            </Button>
+
+            <Button
+              onClick={handlePostNow}
+              disabled={saving || isGenerating}
+              size="lg"
+              variant="outline"
+              className="w-full h-12 font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50"
+            >
+              {saving ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processando…</>
+              ) : (
+                <><Send className="h-4 w-4 mr-2" /> Disparar Make</>
+              )}
+            </Button>
+          </div>
 
           <Card className="p-4 space-y-3 bg-slate-950 text-slate-100 border-slate-800">
             <div className="flex items-center gap-2">
