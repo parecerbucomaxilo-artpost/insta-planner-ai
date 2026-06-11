@@ -25,7 +25,7 @@ import { applyWatermark } from "@/lib/watermark";
 import brandLogo from "@/assets/logo-clinica.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { uploadToSupabase } from "@/lib/storage-utils";
+import { uploadGeneratedImage } from "@/lib/storage-utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 
@@ -397,10 +397,11 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
           cro: perfil?.cro_uf ?? "",
         },
       });
-      // Aplica marca d'água de forma assíncrona sem bloquear a UI se necessário, mas aqui mantemos o fluxo
-      const finalUrl = await maybeWatermark(dataUrl);
+      // Aplica marca d'água e faz upload para o Supabase Storage
+      const withWatermark = await maybeWatermark(dataUrl);
+      const finalUrl = await uploadGeneratedImage(withWatermark);
       setImagem(finalUrl);
-      toast.success("Imagem gerada via Gemini!");
+      toast.success("Imagem gerada e salva com sucesso!");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar");
     } finally {
