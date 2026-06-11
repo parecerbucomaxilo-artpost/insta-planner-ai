@@ -58,6 +58,9 @@ function SettingsPage() {
           <TabsContent value="chaves" className="mt-6">
             <AutomationKeys />
           </TabsContent>
+          <TabsContent value="integracoes" className="mt-6">
+            <IntegrationsSettings />
+          </TabsContent>
           <TabsContent value="ia" className="mt-6">
             <AnthropicKeySettings />
           </TabsContent>
