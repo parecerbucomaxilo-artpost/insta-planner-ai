@@ -39,8 +39,17 @@ async function dataURLtoJPG(dataurl: string): Promise<Blob> {
  */
 export async function uploadToSupabase(dataUrl: string, path: string): Promise<string> {
   const blob = await dataURLtoJPG(dataUrl);
+
+  // Garante que o arquivo é salvo dentro da pasta do usuário autenticado,
+  // o que é exigido pelas RLS policies de ownership do bucket posts_media.
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    throw new Error("Sessão expirada. Entre novamente para enviar mídias.");
+  }
+  const userId = userData.user.id;
+
   const fileName = `${path}-${Math.random().toString(36).substring(2)}.jpg`;
-  const filePath = `${fileName}`;
+  const filePath = `${userId}/${fileName}`;
 
   const { data, error } = await supabase.storage
     .from("posts_media")
@@ -48,6 +57,7 @@ export async function uploadToSupabase(dataUrl: string, path: string): Promise<s
       contentType: "image/jpeg",
       upsert: true,
     });
+
 
   if (error) {
     console.error("Erro no upload para o Storage:", error);
