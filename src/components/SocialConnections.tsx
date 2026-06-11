@@ -3,9 +3,15 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Linkedin, Instagram, Loader2, CheckCircle2, AlertCircle, ExternalLink, Send } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Linkedin, Instagram, Loader2, CheckCircle2, AlertCircle, ExternalLink, Send, Save, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { getAuthedUserId } from "@/lib/auth-utils";
 import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
+
+const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3";
 
 type LiStatus =
   | { connected: true; name?: string; email?: string; picture?: string; sub?: string }
