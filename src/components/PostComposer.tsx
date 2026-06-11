@@ -724,21 +724,27 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const handleSave = (forceAgendar = false) => submitPost({ immediate: false, forceAgendar });
 
   const handlePostNow = async () => {
-    // 1. Captura o texto com base no modo atual
+    // 1. Verificações de carregamento da IA/Imagem
+    if (loadingAi || loadingImage || loadingPage !== null) {
+      toast.error("Aguarde o Gemini finalizar a geração da imagem antes de publicar.");
+      return;
+    }
+
+    // 2. Captura o texto com base no modo atual
     const isX = modoCriacao === "x";
     const textoParaEnviar = (isX ? textoX : (legendaIg || legendaLi || "")).trim();
     
-    // 2. Captura a imagem/mídia (link ou base64 atual)
+    // 3. Captura a imagem/mídia (link ou base64 atual)
     const rawMedia = imagem || (tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean)[0] : null);
 
-    // 3. Validações básicas (campos obrigatórios)
+    // 4. Validações básicas (campos obrigatórios)
     if (!textoParaEnviar) {
       toast.error("Por favor, escreva ou gere um texto antes de postar.");
       return;
     }
 
     if (!rawMedia) {
-      toast.error("Uma imagem ou mídia é obrigatória para publicar no Instagram.");
+      toast.error("A imagem ainda não está pronta. Gere uma imagem com o Gemini antes de publicar.");
       return;
     }
 
