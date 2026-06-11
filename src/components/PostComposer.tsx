@@ -745,7 +745,10 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       // 4. Disparo via Server Function (para contornar CORS e garantir entrega)
       // Passamos estritamente a variável 'texto' como solicitado
       const result = await sendToMake({
-        data: { texto: textoParaEnviar.trim() }
+        data: { 
+          texto: textoParaEnviar.trim(),
+          imagem_url: imagem || (tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean)[0] : undefined)
+        }
       });
 
       console.log("[PostNow] Resposta do servidor recebida com sucesso:", result);
