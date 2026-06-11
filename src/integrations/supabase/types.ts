@@ -20,8 +20,11 @@ export type Database = {
           created_at: string
           cro_uf: string
           id: string
+          instagram_access_token: string | null
           instagram_arroba: string
+          instagram_business_account_id: string | null
           instagram_foto_url: string | null
+          linkedin_access_token: string | null
           linkedin_foto_url: string | null
           linkedin_nome: string
           make_webhook_url: string | null
@@ -38,8 +41,11 @@ export type Database = {
           created_at?: string
           cro_uf?: string
           id?: string
+          instagram_access_token?: string | null
           instagram_arroba?: string
+          instagram_business_account_id?: string | null
           instagram_foto_url?: string | null
+          linkedin_access_token?: string | null
           linkedin_foto_url?: string | null
           linkedin_nome?: string
           make_webhook_url?: string | null
@@ -56,8 +62,11 @@ export type Database = {
           created_at?: string
           cro_uf?: string
           id?: string
+          instagram_access_token?: string | null
           instagram_arroba?: string
+          instagram_business_account_id?: string | null
           instagram_foto_url?: string | null
+          linkedin_access_token?: string | null
           linkedin_foto_url?: string | null
           linkedin_nome?: string
           make_webhook_url?: string | null

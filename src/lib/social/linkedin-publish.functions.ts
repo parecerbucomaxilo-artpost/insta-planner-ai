@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabase } from "@/integrations/supabase/client";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/linkedin";
 
@@ -15,11 +16,21 @@ type PublishResult = {
   error?: string;
 };
 
-function gatewayHeaders() {
+async function gatewayHeaders() {
   const lovableKey = process.env.LOVABLE_API_KEY;
-  const linkedinKey = process.env.LINKEDIN_API_KEY;
+  
+  // Tentar buscar token manual do banco primeiro
+  const { data: perfil } = await supabase
+    .from("perfil_usuario")
+    .select("linkedin_access_token")
+    .limit(1)
+    .maybeSingle();
+
+  const linkedinKey = perfil?.linkedin_access_token || process.env.LINKEDIN_API_KEY;
+  
   if (!lovableKey) throw new Error("LOVABLE_API_KEY ausente no backend.");
-  if (!linkedinKey) throw new Error("LinkedIn não está conectado. Vá em Configurações → Redes Sociais.");
+  if (!linkedinKey) throw new Error("LinkedIn não está conectado. Vá em Configurações → Integrações.");
+  
   return {
     Authorization: `Bearer ${lovableKey}`,
     "X-Connection-Api-Key": linkedinKey,
@@ -27,10 +38,11 @@ function gatewayHeaders() {
 }
 
 async function gatewayJson(path: string, init?: RequestInit) {
+  const headers = await gatewayHeaders();
   const res = await fetch(`${GATEWAY}${path}`, {
     ...init,
     headers: {
-      ...gatewayHeaders(),
+      ...headers,
       "Content-Type": "application/json",
       "X-Restli-Protocol-Version": "2.0.0",
       ...(init?.headers || {}),
@@ -75,10 +87,11 @@ async function uploadImageAsset(authorUrn: string, imageUrl: string): Promise<st
   const contentType = imgRes.headers.get("content-type") || "image/jpeg";
 
   // 3) PUT direto na uploadUrl (não passa pelo gateway — é assinada)
+  const headers = await gatewayHeaders();
   const put = await fetch(uploadUrl, {
     method: "PUT",
     headers: {
-      Authorization: `Bearer ${process.env.LINKEDIN_API_KEY}`,
+      Authorization: `Bearer ${headers["X-Connection-Api-Key"]}`,
       "Content-Type": contentType,
     },
     body: bytes,
