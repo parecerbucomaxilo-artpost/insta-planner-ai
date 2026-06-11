@@ -1,82 +1,49 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Converte um base64/dataURL para Blob e garante que seja JPEG se solicitado
+ * Converte um base64/dataURL para Blob e garante que seja JPEG
  */
-async function dataURLtoJPG(dataurl: string): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("Não foi possível obter o contexto do canvas"));
-        return;
-      }
-      // Fundo branco para garantir que transparências do PNG não fiquem pretas no JPG
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-      
-      canvas.toBlob(
-        (blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error("Falha na conversão para Blob"));
-        },
-        "image/jpeg",
-        0.92
-      );
-    };
-    img.onerror = () => reject(new Error("Falha ao carregar imagem para conversão"));
-    img.src = dataurl;
-  });
+async function dataURLtoBlob(dataurl: string): Promise<Blob> {
+  const arr = dataurl.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
 }
 
 /**
- * Faz upload de uma imagem (base64) para o Supabase Storage e retorna a URL pública.
+ * Faz upload de uma imagem (base64) para o Supabase Storage e retorna a URL pública definitiva.
  */
-export async function uploadToSupabase(dataUrl: string, path: string): Promise<string> {
-  const blob = await dataURLtoJPG(dataUrl);
+export async function uploadGeneratedImage(dataUrl: string): Promise<string> {
+  if (!dataUrl) throw new Error("DataURL da imagem é obrigatório");
 
-  // Garante que o arquivo é salvo dentro da pasta do usuário autenticado,
-  // o que é exigido pelas RLS policies de ownership do bucket posts_media.
+  const blob = await dataURLtoBlob(dataUrl);
+  
   const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
-    throw new Error("Sessão expirada. Entre novamente para enviar mídias.");
-  }
-  const userId = userData.user.id;
-
-  const fileName = `${path}-${Math.random().toString(36).substring(2)}.jpg`;
-  const filePath = `${userId}/${fileName}`;
-
+  const userId = userData?.user?.id || 'anonymous';
+  
+  // Nome único com UUID e timestamp
+  const fileName = `${userId}/${Date.now()}-${crypto.randomUUID()}.png`;
+  
   const { data, error } = await supabase.storage
-    .from("posts_media")
-    .upload(filePath, blob, {
-      contentType: "image/jpeg",
+    .from("post-images")
+    .upload(fileName, blob, {
+      contentType: "image/png",
       upsert: true,
     });
-
 
   if (error) {
     console.error("Erro no upload para o Storage:", error);
     throw error;
   }
 
-  // Criar uma Signed URL válida por 1 hora (3600 segundos)
-  const { data: signedData, error: signedError } = await supabase.storage
-    .from("posts_media")
-    .createSignedUrl(data.path, 3600);
-
-  if (signedError) {
-    console.error("Erro ao gerar Signed URL:", signedError);
-    // Fallback para Public URL caso a assinatura falhe
-    const { data: { publicUrl } } = supabase.storage
-      .from("posts_media")
-      .getPublicUrl(data.path);
-    return publicUrl;
-  }
-
-  return signedData.signedUrl;
+  const { data: { publicUrl } } = supabase.storage
+    .from("post-images")
+    .getPublicUrl(data.path);
+    
+  return publicUrl;
 }
