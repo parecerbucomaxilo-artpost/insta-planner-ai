@@ -22,6 +22,7 @@ export type Perfil = {
   cro_uf: string;
   subespecialidades: string[];
   tom_voz: "Científico" | "Humanizado" | "Editorial";
+  make_webhook_url?: string;
 };
 
 const SUGGESTED_SUBS = [
