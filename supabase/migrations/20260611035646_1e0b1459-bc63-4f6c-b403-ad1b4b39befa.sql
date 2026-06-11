@@ -1,0 +1,1 @@
+UPDATE public.perfil_usuario SET webhook_url='https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn' WHERE webhook_url IS NULL OR webhook_url = '' OR webhook_url = 'https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3';
