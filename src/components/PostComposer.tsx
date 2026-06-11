@@ -727,27 +727,33 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     // 1. Captura o texto com base no modo atual
     const isX = modoCriacao === "x";
     const textoParaEnviar = isX ? textoX : (legendaIg || legendaLi || "");
+    
+    // 2. Captura a imagem/mídia (link ou base64 atual)
+    const mediaParaEnviar = imagem || (tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean)[0] : null);
 
-    // 2. Validação básica de texto
+    // 3. Validações básicas (campos obrigatórios)
     if (!textoParaEnviar || !textoParaEnviar.trim()) {
       toast.error("Por favor, escreva ou gere um texto antes de postar.");
+      return;
+    }
+
+    if (!mediaParaEnviar) {
+      toast.error("Uma imagem ou mídia é obrigatória para publicar no Instagram.");
       return;
     }
 
     if (saving) return;
     setSaving(true);
     
-    // 3. Feedback visual imediato
-    const tId = toast.loading("Enviando post para o Make/Telegram...");
-    console.log("[PostNow] Iniciando disparo para o Webhook:", "https://hook.us2.make.com/woig439jfttlafb64nc425f6fy4353i3");
+    const tId = toast.loading("Enviando post para o Make/Instagram...");
+    console.log("[PostNow] Iniciando disparo para o Webhook com texto e imagem_url...");
 
     try {
-      // 4. Disparo via Server Function (para contornar CORS e garantir entrega)
-      // Passamos estritamente a variável 'texto' como solicitado
+      // 4. Disparo via Server Function (garantindo o objeto JSON solicitado)
       const result = await sendToMake({
         data: { 
           texto: textoParaEnviar.trim(),
-          imagem_url: imagem || (tipo === "Carrossel" ? enforcedCarrossel.filter(Boolean)[0] : undefined)
+          imagem_url: mediaParaEnviar
         }
       });
 

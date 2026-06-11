@@ -7,7 +7,7 @@ export const dispatchMakeWebhook = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       texto: z.string(),
-      imagem_url: z.string().optional(),
+      imagem_url: z.string(),
     }),
   )
   .handler(async ({ data }) => {
