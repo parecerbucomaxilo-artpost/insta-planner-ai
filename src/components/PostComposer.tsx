@@ -6,6 +6,7 @@ import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
 import { dispatchAlbato } from "@/lib/webhooks/albato.functions";
 import { dispatchMakeWebhook } from "@/lib/webhooks/make.functions";
 import { sendPostEmail } from "@/lib/email/send-post-email.functions";
+import { publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,6 +128,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const sendAlbato = useServerFn(dispatchAlbato);
   const sendToMake = useServerFn(dispatchMakeWebhook);
   const sendEmailNotify = useServerFn(sendPostEmail);
+  const sendLinkedIn = useServerFn(publishToLinkedIn);
 
   // Redes
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
