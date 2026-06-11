@@ -256,7 +256,10 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
                     slideIndex: idx,
                     totalSlides: total,
                   },
-                }).then(({ dataUrl }) => maybeWatermark(dataUrl)),
+                }).then(async ({ dataUrl }) => {
+                  const withWatermark = await maybeWatermark(dataUrl);
+                  return await uploadGeneratedImage(withWatermark);
+                }),
               ),
             );
             setCarrossel(results);
@@ -283,7 +286,9 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
                 totalSlides: isCarousel ? Math.max(1, enforcedPrompts.length) : undefined,
               },
             });
-            const finalUrl = await maybeWatermark(dataUrl);
+            const withWatermark = await maybeWatermark(dataUrl);
+            const finalUrl = await uploadGeneratedImage(withWatermark);
+            
             if (!isX && tipo === "Carrossel") {
               setCarrossel((arr) => {
                 const next = [...arr];
