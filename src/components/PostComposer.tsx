@@ -71,13 +71,12 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         user_id: userId,
         legenda: legenda,
         url_imagem: publicUrl,
-        url_da_imagem: publicUrl, // Mantendo ambos por compatibilidade
         tipo_post: tipo,
         status: "Publicado",
         postar_linkedin: networks.includes("linkedin"),
         postar_instagram: networks.includes("instagram"),
         formato_midia: "Imagem"
-      }).select();
+      } as any).select();
 
       if (dbError) {
         console.error("Erro ao salvar no banco:", dbError);

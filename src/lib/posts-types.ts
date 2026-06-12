@@ -11,7 +11,7 @@ export type PostRow = {
   postar_instagram: boolean;
   postar_linkedin: boolean;
    url_imagem: string | null;
-  url_da_imagem: string | null;
+  url_da_imagem?: string | null;
   imagens_carrossel: string[];
   data_agendamento: string | null;
   status: "Rascunho" | "Agendado" | "Publicado" | "Erro";
