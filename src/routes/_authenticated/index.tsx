@@ -179,9 +179,7 @@ function Dashboard() {
 
           <TabsContent value="criar" className="mt-6">
             <PostComposer 
-
               onCreated={() => { load(); setTab("todos"); }} 
-              onTriggerWeekly={() => { setAutoGenWeekly(true); setTab("semana"); }}
             />
           </TabsContent>
           <TabsContent value="semana" className="mt-6">
