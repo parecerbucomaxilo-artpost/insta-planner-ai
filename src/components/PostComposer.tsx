@@ -260,12 +260,12 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const genWeek = useServerFn(generateWeekThemes);
 
   const handleSingle = async () => {
-    if (!tema.trim()) return toast.error("Descreva o tema do post.");
+    const temaTrim = tema.trim();
     setBusy("single");
     const tid = "ai-single";
-    toast.loading("IA criando legenda + imagem...", { id: tid });
+    toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
     try {
-      await genSingle({ data: { tema, especialidade, rede } });
+      await genSingle({ data: { tema: temaTrim, especialidade, rede } });
       toast.success("Post gerado! Veja em 'Todos os posts'.", { id: tid });
       setTema("");
       onCreated();
@@ -327,9 +327,9 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="md:col-span-2 space-y-1">
-          <Label className="text-xs">Tema do post</Label>
+          <Label className="text-xs">Tema do post <span className="text-zinc-400 font-normal">(opcional — deixe em branco para a IA escolher)</span></Label>
           <Input
-            placeholder="Ex.: Dor de dente do siso que irradia para o ouvido"
+            placeholder="Ex.: Dor do siso que irradia para o ouvido — ou deixe vazio"
             value={tema}
             onChange={(e) => setTema(e.target.value)}
           />
@@ -374,7 +374,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           className="bg-indigo-600 hover:bg-indigo-700 text-white"
         >
           {busy === "single" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-          Gerar 1 post (legenda + imagem)
+          {tema.trim() ? "Gerar 1 post (legenda + imagem)" : "IA escolhe tema + gera tudo"}
         </Button>
         <Button
           onClick={handleWeek}

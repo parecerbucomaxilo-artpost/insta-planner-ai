@@ -3,13 +3,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const SingleInput = z.object({
-  tema: z.string().min(1),
+  // Se vazio, a IA escolhe um tema relevante automaticamente.
+  tema: z.string().optional().default(""),
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
   rede: z.enum(["instagram", "linkedin", "estilo-x"]).default("instagram"),
   tipo: z.enum(["feed", "stories"]).optional(),
-  // Formato visual. Default: feed IG = Carrossel; stories = Story; demais = Post Único.
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
-  quando: z.string().datetime().optional(), // ISO; se vier, agenda
+  quando: z.string().datetime().optional(),
 });
 
 const WeekInput = z.object({
@@ -79,14 +79,28 @@ export const generateSinglePost = createServerFn({ method: "POST" })
             ? "Carrossel"
             : "Post Único");
 
+    // 0. Se nenhum tema foi fornecido, a IA escolhe um automaticamente.
+    let tema = (data.tema ?? "").trim();
+    if (!tema) {
+      const { text: temaEscolhido } = await generateText({
+        model,
+        system: `Você é estrategista de conteúdo de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar (CTBMF + Odontologia Hospitalar).`,
+        prompt: `Escolha 1 TEMA de post para a rede ${data.rede} (formato ${formato}) dentro da especialidade "${data.especialidade}".
+Tema deve ser sobre uma DOR REAL do paciente (siso, ATM, trauma facial, infecção odontogênica, apneia obstrutiva, cirurgia ortognática, atendimento hospitalar, etc.) e ter potencial de conversão.
+Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem prefixos, sem explicação.`,
+      });
+      tema = temaEscolhido.trim().replace(/^["'`]+|["'`]+$/g, "").split("\n")[0];
+      if (!tema) throw new Error("IA não conseguiu escolher um tema.");
+    }
+
     // 1. Legenda (stories = texto curtíssimo)
     const isStory = formato === "Story";
     const { text: legenda } = await generateText({
       model,
       system: captionSystem(data.rede, data.especialidade),
       prompt: isStory
-        ? `Crie um TEXTO DE STORY (até 220 caracteres, 1-2 emojis, sem hashtags, CTA "Link na Bio") que CHAME ATENÇÃO para o post do FEED de hoje sobre: "${data.tema}". O story deve provocar curiosidade e mandar o usuário para o feed.`
-        : `Crie a legenda completa para o post sobre: "${data.tema}".`,
+        ? `Crie um TEXTO DE STORY (até 220 caracteres, 1-2 emojis, sem hashtags, CTA "Link na Bio") que CHAME ATENÇÃO para o post do FEED de hoje sobre: "${tema}". O story deve provocar curiosidade e mandar o usuário para o feed.`
+        : `Crie a legenda completa para o post sobre: "${tema}".`,
     });
 
     // 2. Imagens — Carrossel = 3 slides em paralelo, demais = 1 imagem
@@ -116,7 +130,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         slidesSpec.map((s) =>
           generateImageBase64({
             apiKey: key,
-            prompt: imageSystemPrompt(data.tema, data.rede, s),
+            prompt: imageSystemPrompt(tema, data.rede, s),
             size,
           }),
         ),
@@ -127,7 +141,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     } else {
       const b64 = await generateImageBase64({
         apiKey: key,
-        prompt: imageSystemPrompt(data.tema, data.rede),
+        prompt: imageSystemPrompt(tema, data.rede),
         size,
       });
       urlImagem = await uploadOne(b64);
@@ -149,7 +163,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         postar_linkedin: data.rede === "linkedin",
         status: data.quando ? "Agendado" : "Rascunho",
         data_agendamento: data.quando ?? null,
-        prompt_ia: data.tema,
+        prompt_ia: tema,
       } as any)
       .select()
       .single();
