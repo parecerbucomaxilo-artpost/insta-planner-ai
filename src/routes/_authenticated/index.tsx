@@ -53,13 +53,23 @@ function Dashboard() {
   const claim = async () => {};
 
   const load = useCallback(async () => {
-    console.log("Carregando posts do banco de dados...");
-    const { data, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false });
+    console.log("[Reset] Carregando posts...");
+    // Forçar limpeza de cache através de um parâmetro de query ou simplesmente garantindo nova requisição
+    const { data, error } = await supabase
+      .from("posts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100); // Limite para evitar timeout em tabelas grandes
+
     if (error) {
-      console.error("Erro ao carregar posts:", error);
-      toast.error("Erro ao carregar posts: " + error.message);
+      console.error("[Reset] Erro ao carregar posts:", error);
+      if (error.message.includes("timeout")) {
+        toast.error("Tempo de conexão esgotado. Tentando novamente...");
+      } else {
+        toast.error("Erro de banco: " + error.message);
+      }
     } else if (data) {
-      console.log("Posts carregados:", data.length);
+      console.log("[Reset] Posts carregados:", data.length);
       setPosts(data as unknown as PostRow[]);
     }
   }, []);

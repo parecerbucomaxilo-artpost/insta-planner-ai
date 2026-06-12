@@ -21,9 +21,15 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   const [publishingId, setPublishingId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("posts").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Post excluído"); onChange(); }
+    try {
+      const { error } = await supabase.from("posts").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Post excluído"); 
+      onChange(); 
+    } catch (error: any) {
+      console.error("[Reset] Erro ao excluir:", error);
+      toast.error(error.message || "Erro ao excluir post");
+    }
   };
 
   const handlePostNow = async (p: PostRow) => {
