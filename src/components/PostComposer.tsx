@@ -1746,11 +1746,11 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
           <div className="grid grid-cols-1 gap-2">
             <Button
               onClick={handlePublishToSocialDirect}
-              disabled={saving || isGenerating}
+              disabled={isPublishingDirect || isGenerating}
               size="lg"
               className="w-full h-12 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md hover:-translate-y-px transition-all disabled:opacity-50"
             >
-              {saving ? (
+              {isPublishingDirect ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Publicando…</>
               ) : (
                 <><Globe className="h-4 w-4 mr-2" /> Publicar nas Redes</>
