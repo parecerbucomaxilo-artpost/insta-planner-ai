@@ -54,10 +54,18 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       // 1. Upload imagem (direto, sem retries)
       const publicUrl = await uploadPostImage(fileToUpload);
 
-      // 2. Insert simples: apenas texto + url_da_imagem
+      // 2. Pega usuário autenticado (necessário para RLS)
+      const userId = await getAuthedUserId();
+      if (!userId) throw new Error("Você precisa estar logado para publicar.");
+
+      // 3. Insert com as colunas corretas do schema
       const { error: dbError } = await supabase.from("posts").insert({
-        texto: legenda,
-        url_da_imagem: publicUrl,
+        user_id: userId,
+        tipo_post: tipo,
+        legenda,
+        url_imagem: publicUrl,
+        postar_instagram: networks.includes("instagram"),
+        postar_linkedin: networks.includes("linkedin"),
       } as any);
 
       if (dbError) throw dbError;
