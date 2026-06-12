@@ -150,6 +150,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const [orientacoes, setOrientacoes] = useState("");
   const [imagem, setImagem] = useState<string | null>(null);
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [carrossel, setCarrossel] = useState<string[]>([]);
   const [carouselPrompts, setCarouselPrompts] = useState<string[]>([""]);
   const [data, setData] = useState("");
