@@ -142,9 +142,6 @@ function Dashboard() {
             <span className="text-sm text-muted-foreground">
               {posts.length} {posts.length === 1 ? "post" : "posts"}
             </span>
-            <Button variant="outline" size="sm" onClick={handleTestWebhook} className="bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100">
-              <Send className="h-4 w-4 mr-1.5" /> Testar Webhook
-            </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/settings" })} aria-label="Configurações">
               <Settings className="h-4 w-4 mr-1.5" /> Configurações
             </Button>
