@@ -7,30 +7,25 @@ const corsHeaders = {
 
 const WORKER_URL = 'https://workers.dev'
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 serve(async (req) => {
-  // Resposta simples para OPTIONS para evitar problemas de CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Recebe o corpo da requisição do frontend
-    // Esperamos as mesmas propriedades que o frontend já envia
     const body = await req.json()
     console.log('Publishing request received:', body)
 
-    // Estrutura EXATA solicitada pelo usuário:
-    // { "plataforma": "instagram", "texto": "Legenda de teste", "imagemUrl": "https://unsplash.com" }
     const payload = {
       plataforma: "instagram",
       texto: body.caption || "Legenda de teste",
       imagemUrl: body.imageUrl || "https://unsplash.com"
     }
 
-    console.log('Sending payload to server:', payload)
+    console.log('Step 1: Sending initial post payload:', payload)
 
-    // Disparo POST simples para a URL do servidor
-    // Removendo cabeçalhos complexos (mantendo apenas o básico)
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 
@@ -40,14 +35,45 @@ serve(async (req) => {
     })
 
     const responseText = await res.text()
-    console.log('Server response status:', res.status)
-    console.log('Server response body:', responseText)
+    console.log('Step 1 Response status:', res.status)
+    
+    let finalResponseText = responseText
+    let isPublished = res.ok
 
-    // Retorna a resposta bruta para o frontend exibir
+    // Se o post inicial foi bem sucedido, aguarda 5 segundos e envia a confirmação
+    if (res.ok) {
+      console.log('Step 1 success. Waiting 5 seconds before Step 2 (publish confirmation)...')
+      await delay(5000)
+
+      const confirmPayload = { action: "publish" }
+      console.log('Step 2: Sending confirmation payload:', confirmPayload)
+
+      try {
+        const confirmRes = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(confirmPayload),
+        })
+        
+        const confirmText = await confirmRes.text()
+        console.log('Step 2 Response status:', confirmRes.status)
+        console.log('Step 2 Response body:', confirmText)
+        
+        // Atualiza a resposta para incluir informações de ambos os passos se necessário
+        finalResponseText = `Step 1: ${responseText}\nStep 2: ${confirmText}`
+        isPublished = confirmRes.ok
+      } catch (confirmError) {
+        console.error('Step 2 (confirmation) failed:', confirmError)
+        finalResponseText = `Step 1: ${responseText}\nStep 2 Error: ${confirmError instanceof Error ? confirmError.message : String(confirmError)}`
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
-        success: res.ok, 
-        rawResponse: responseText,
+        success: isPublished, 
+        rawResponse: finalResponseText,
         status: res.status
       }),
       { 

@@ -916,7 +916,32 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       }
 
       if (data.success) {
-        toast.success("Publicado com sucesso!", { id: tId });
+        toast.success("Publicado e confirmado no Feed!", { id: tId });
+        
+        // Atualiza o status no banco para refletir no feed mockup
+        try {
+          const userId = await getAuthedUserId();
+          if (userId) {
+            // Busca o post mais recente deste usuário para atualizar o status
+            const { data: latestPost } = await supabase
+              .from("posts")
+              .select("id")
+              .eq("user_id", userId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+              
+            if (latestPost) {
+              await supabase
+                .from("posts")
+                .update({ status: "Publicado" })
+                .eq("id", latestPost.id);
+            }
+          }
+        } catch (updateError) {
+          console.warn("Erro ao atualizar status local:", updateError);
+        }
+
         if (onCreated) onCreated();
       } else {
         toast.error(`Erro: ${data.error || "Resposta negativa do servidor"}`, { id: tId });
