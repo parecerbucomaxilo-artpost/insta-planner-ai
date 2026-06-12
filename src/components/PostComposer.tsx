@@ -255,7 +255,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x">("instagram");
   const [busy, setBusy] = useState<null | "single" | "week">(null);
-  const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tema: string; gancho: string }> | null>(null);
+  const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; quando?: string; tema: string; gancho: string }> | null>(null);
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
 
@@ -279,11 +279,11 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const handleWeek = async () => {
     setBusy("week");
     const tid = "ai-week";
-    toast.loading("IA planejando 7 dias...", { id: tid });
+    toast.loading("IA planejando 7 dias (cronograma fixo)...", { id: tid });
     try {
       const out = await genWeek({ data: { especialidade } });
-      setTemas(out.temas);
-      toast.success("Cronograma gerado. Aprove os temas e gere as imagens.", { id: tid });
+      setTemas(out.temas as any);
+      toast.success(`${out.temas.length} slots gerados. Aprove para criar imagem + agendar.`, { id: tid });
     } catch (e: any) {
       toast.error(e.message || "Falha no cronograma.", { id: tid });
     } finally {
@@ -291,19 +291,30 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     }
   };
 
-  const approveTheme = async (t: { rede: string; tema: string }) => {
+  const approveTheme = async (t: { rede: string; tipo?: string; quando?: string; tema: string }) => {
     const r = (t.rede === "linkedin" ? "linkedin" : t.rede === "estilo-x" ? "estilo-x" : "instagram") as
       | "instagram" | "linkedin" | "estilo-x";
     const tid = `ai-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
-      await genSingle({ data: { tema: t.tema, especialidade, rede: r } });
-      toast.success("Gerado!", { id: tid });
+      await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, quando: t.quando } });
+      toast.success(t.quando ? "Agendado!" : "Gerado!", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       onCreated();
     } catch (e: any) {
       toast.error(e.message || "Falha", { id: tid });
     }
+  };
+
+  const approveAll = async () => {
+    if (!temas) return;
+    setBusy("week");
+    for (const t of temas) {
+      // sequencial para não estourar rate-limit de imagem
+      // eslint-disable-next-line no-await-in-loop
+      await approveTheme(t);
+    }
+    setBusy(null);
   };
 
   return (
