@@ -59,39 +59,47 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     
     try {
       const userId = await getAuthedUserId();
+      console.log("Usuário autenticado:", userId);
       
-      // 1. Upload real para o bucket post-images
+      // 1. Upload real para o bucket post-images com nome único
       toast.loading("Enviando imagem para o Storage...", { id: tId });
       const publicUrl = await uploadPostImage(fileToUpload);
       
       // 2. Salva na tabela posts
-      toast.loading("Salvando dados do post...", { id: tId });
-      const { error: dbError } = await supabase.from("posts").insert({
+      toast.loading("Salvando dados do post no banco...", { id: tId });
+      const { error: dbError, data: dbData } = await supabase.from("posts").insert({
         user_id: userId,
         legenda: legenda,
         url_imagem: publicUrl,
         tipo_post: tipo,
         status: "Publicado",
         postar_linkedin: networks.includes("linkedin")
-      });
+      }).select();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error("Erro ao inserir post no banco de dados:", dbError);
+        throw new Error(`Erro no banco: ${dbError.message}`);
+      }
+      
+      console.log("Post salvo com sucesso no banco:", dbData);
 
       // 3. Dispara publicação para o LinkedIn se selecionado
       if (networks.includes("linkedin")) {
         toast.loading("Publicando no LinkedIn...", { id: tId });
-        await sendLinkedIn({
+        const resLi = await sendLinkedIn({
           data: {
             text: legenda,
             media_url: publicUrl
           }
         });
+        console.log("Resultado LinkedIn:", resLi);
       }
 
-      toast.success("Post salvo e publicado com sucesso! ✨", { id: tId });
+      toast.success("Post salvo com sucesso! ✨", { id: tId });
       onCreated();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao processar post", { id: tId });
+      console.error("Erro completo no processo:", e);
+      toast.error(e instanceof Error ? e.message : "Erro crítico no processo", { id: tId });
     } finally {
       setSaving(false);
     }

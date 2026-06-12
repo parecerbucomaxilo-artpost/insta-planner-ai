@@ -1,21 +1,26 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export async function uploadPostImage(file: File): Promise<string> {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-  const filePath = `${fileName}`;
-
+  const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+  
+  console.log("Iniciando upload manual para bucket post-images:", fileName);
+  
   const { data, error } = await supabase.storage
     .from('post-images')
-    .upload(filePath, file);
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
 
   if (error) {
-    throw error;
+    console.error("Erro no upload para o Supabase Storage:", error);
+    throw new Error(`Falha no upload: ${error.message}`);
   }
 
   const { data: { publicUrl } } = supabase.storage
     .from('post-images')
-    .getPublicUrl(filePath);
+    .getPublicUrl(fileName);
 
+  console.log("Upload concluído com sucesso. URL pública:", publicUrl);
   return publicUrl;
 }
