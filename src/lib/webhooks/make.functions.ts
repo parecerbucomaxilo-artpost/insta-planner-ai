@@ -7,7 +7,8 @@ export const dispatchMakeWebhook = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       texto: z.string(),
-      imagem_url: z.string(),
+      url_da_imagem: z.string(),
+      rede_social: z.string().optional(),
       custom_webhook_url: z.string().optional(),
     }),
   )
@@ -24,7 +25,8 @@ export const dispatchMakeWebhook = createServerFn({ method: "POST" })
         },
         body: JSON.stringify({
           texto: data.texto,
-          imagem_url: data.imagem_url
+          url_da_imagem: data.url_da_imagem,
+          rede_social: data.rede_social || "Instagram"
         }),
       });
 

@@ -810,7 +810,8 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       // 5. Estrutura EXATA solicitada para o disparo
       const dadosDoPost = {
         texto: textoParaEnviar,
-        imagem_url: finalImageUrl
+        url_da_imagem: finalImageUrl,
+        rede_social: isX ? "Instagram" : (networks[0] === "linkedin" ? "LinkedIn" : "Instagram")
       };
 
       console.log("[PostNow] Disparando para o webhook com estrutura JSON:", dadosDoPost);
