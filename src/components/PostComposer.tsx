@@ -86,55 +86,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
       if (dbError) throw new Error(`Erro ao salvar no banco: ${dbError.message}`);
       
-      // 3. Busca Webhooks
-      const { data: perfilData } = await supabase
-        .from("perfil_usuario")
-        .select("instagram_webhook_url, linkedin_webhook_url, webhook_url")
-        .limit(1)
-        .maybeSingle();
+      // O disparo do Webhook agora é feito automaticamente pelo Supabase (Database Webhook)
+      // ao detectar o INSERT na tabela 'posts'. Removida lógica de fetch/conexão externa do frontend.
 
-      // 4. Dispara Webhooks (sem loop de reexecução)
-      for (const network of networks) {
-        const webhookUrl = network === "instagram" 
-          ? (perfilData?.instagram_webhook_url || perfilData?.webhook_url || "https://hook.us2.make.com/vx87y6fldoxlpq2les3vpbfj16qq61iq")
-          : (perfilData?.linkedin_webhook_url || "https://hook.us2.make.com/4tics3gdoow4y02vo1rh4wcmeshu4psv");
-
-        toast.loading(`Enviando para ${network}...`, { id: tId });
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-        try {
-          const response = await fetch(webhookUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            signal: controller.signal,
-            body: JSON.stringify({
-              texto: legenda,
-              imagemUrl: publicUrl,
-              plataforma: network.charAt(0).toUpperCase() + network.slice(1),
-              timestamp: new Date().toISOString()
-            }),
-          });
-
-          clearTimeout(timeoutId);
-
-          if (!response.ok) {
-            throw new Error(`O servidor do ${network} respondeu com erro ${response.status}`);
-          }
-        } catch (webhookErr: any) {
-          clearTimeout(timeoutId);
-          // Falha crítica interrompe tudo
-          const isTimeout = webhookErr.name === 'AbortError';
-          const msg = isTimeout 
-            ? `Tempo esgotado ao conectar com ${network}.` 
-            : `Erro ao publicar no ${network}: ${webhookErr.message}`;
-          
-          toast.error(msg, { id: tId });
-          setSaving(false);
-          return; // Para execução imediatamente
-        }
-      }
 
       toast.success("Post publicado com sucesso! ✨", { id: tId });
       
