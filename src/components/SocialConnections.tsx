@@ -109,25 +109,7 @@ export function SocialConnections() {
 
 
   const handleTestPost = async () => {
-    setTesting(true);
-    const tid = toast.loading("Publicando post de teste no LinkedIn…");
-    try {
-      const r = await sendLinkedIn({
-        data: {
-          text: "✅ Teste de integração nativa via Planner Chico. Publicação automática ativa.",
-        },
-      });
-      if (r.ok) {
-        toast.success("Post de teste publicado!", { id: tid });
-        if (r.shareUrl) window.open(r.shareUrl, "_blank");
-      } else {
-        toast.error(r.error || "Falha ao publicar", { id: tid });
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
-    } finally {
-      setTesting(false);
-    }
+    toast.info("A integração nativa foi resetada.");
   };
 
   return (
