@@ -1784,7 +1784,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         <div className="flex flex-col sm:flex-row gap-3">
           <Button 
             className="flex-1 h-14 text-lg font-bold bg-green-600 hover:bg-green-700 shadow-lg shadow-green-900/20"
-            onClick={handlePublishToSocial}
+            onClick={handlePublishToSocialDirect}
             disabled={isPublishingDirect || (!imagem && carrossel.length === 0)}
           >
             {isPublishingDirect ? (
