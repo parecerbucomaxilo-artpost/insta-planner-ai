@@ -6,6 +6,8 @@ const SingleInput = z.object({
   tema: z.string().min(1),
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
   rede: z.enum(["instagram", "linkedin", "estilo-x"]).default("instagram"),
+  tipo: z.enum(["feed", "stories"]).optional(),
+  quando: z.string().datetime().optional(), // ISO; se vier, agenda
 });
 
 const WeekInput = z.object({
@@ -88,11 +90,13 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         user_id: context.userId,
         tipo_post: data.rede === "estilo-x" ? "Carrossel" : "Post Único",
         estilo_layout: data.rede === "estilo-x" ? "Estilo X" : "Padrão",
+        formato_midia: data.tipo === "stories" ? "Story" : "Imagem",
         legenda,
         url_imagem: pub.publicUrl,
         postar_instagram: data.rede !== "linkedin",
         postar_linkedin: data.rede === "linkedin",
-        status: "Rascunho",
+        status: data.quando ? "Agendado" : "Rascunho",
+        data_agendamento: data.quando ?? null,
         prompt_ia: data.tema,
       } as any)
       .select()
