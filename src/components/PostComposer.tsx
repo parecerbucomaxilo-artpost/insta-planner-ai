@@ -288,7 +288,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
               },
             });
             const withWatermark = await maybeWatermark(dataUrl);
-            const finalUrl = withWatermark;
+            const finalUrl = await uploadGeneratedImage(withWatermark);
             
             if (!isX && tipo === "Carrossel") {
               setCarrossel((arr) => {
@@ -500,7 +500,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
           totalSlides: total,
         },
       });
-      const finalUrl = await maybeWatermark(dataUrl);
+      const finalUrl = await uploadGeneratedImage(await maybeWatermark(dataUrl));
       setCarrossel((arr) => {
         const next = [...arr];
         next[index] = finalUrl;
@@ -569,7 +569,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
               totalSlides: total,
             },
           });
-          return await maybeWatermark(dataUrl);
+          return await uploadGeneratedImage(await maybeWatermark(dataUrl));
         }),
       );
       setCarrossel(results);
@@ -599,7 +599,9 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         e.target.value = "";
         return;
       }
-      setImagem(await fileToDataUrl(file));
+      const dataUrl = await fileToDataUrl(file);
+      const storageUrl = await uploadGeneratedImage(dataUrl);
+      setImagem(storageUrl);
     }
     e.target.value = "";
   };
@@ -665,7 +667,9 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       // 1. Processar mídias
       toast.loading("Otimizando mídias...", { id: tId });
       
-      const processMedia = async (raw: string | null, prefix: string) => {
+      const processMedia = async (raw: string | null) => {
+        // Agora todas as mídias já devem ser URLs do Storage ao chegarem aqui, 
+        // mas mantemos o upload como fallback de segurança.
         if (raw && raw.startsWith("data:")) return await uploadGeneratedImage(raw);
         return raw;
       };
@@ -674,11 +678,11 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       let finalImagensCarrossel: string[] = [];
 
       if (effectiveTipo === "Post Único") {
-        finalUrlImagem = await processMedia(imagem, "post-draft");
+        finalUrlImagem = await processMedia(imagem);
       } else {
         const rawList = isX ? enforcedCarrossel.slice(0, xSlides) : enforcedCarrossel.filter(Boolean);
         finalImagensCarrossel = await Promise.all(
-          rawList.map((src, i) => processMedia(src, `carousel-${i}`))
+          rawList.map((src) => processMedia(src))
         ) as string[];
       }
 
