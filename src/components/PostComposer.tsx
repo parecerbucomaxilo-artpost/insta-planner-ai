@@ -255,7 +255,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x">("instagram");
   const [busy, setBusy] = useState<null | "single" | "week">(null);
-  const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; quando?: string; tema: string; gancho: string }> | null>(null);
+  const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
 
@@ -291,13 +291,13 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     }
   };
 
-  const approveTheme = async (t: { rede: string; tipo?: string; quando?: string; tema: string }) => {
+  const approveTheme = async (t: { rede: string; tipo?: string; formato?: string; quando?: string; tema: string }) => {
     const r = (t.rede === "linkedin" ? "linkedin" : t.rede === "estilo-x" ? "estilo-x" : "instagram") as
       | "instagram" | "linkedin" | "estilo-x";
     const tid = `ai-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
-      await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, quando: t.quando } });
+      await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando } });
       toast.success(t.quando ? "Agendado!" : "Gerado!", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       onCreated();
