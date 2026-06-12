@@ -90,6 +90,8 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       // ao detectar o INSERT na tabela 'posts'. Removida lógica de fetch/conexão externa do frontend.
 
 
+
+
       toast.success("Post publicado com sucesso! ✨", { id: tId });
       
       setLegenda("");
