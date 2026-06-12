@@ -85,7 +85,7 @@ export function PostsCalendar({ posts }: { posts: PostRow[] }) {
         ) : (
           <ul className="space-y-3">
             {dayPosts.map((p) => {
-              const thumb = p.url_imagem ?? (Array.isArray(p.imagens_carrossel) ? p.imagens_carrossel[0] : null);
+              const thumb = p.url_imagem ?? (Array.isArray(p.imagens_carrossel) ? (p.imagens_carrossel[0] as string) : null);
               const isVideo = p.formato_midia === "Vídeo/Reels";
               return (
                 <li key={p.id} className="flex gap-3 p-3 rounded-lg border hover:bg-accent/40 transition-colors">

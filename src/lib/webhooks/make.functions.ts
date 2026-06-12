@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const DEFAULT_MAKE_WEBHOOK_URL = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
+const DEFAULT_MAKE_WEBHOOK_URL = "https://hook.us2.make.com/vx87y6fldoxlpq2les3vpbfj16qq61iq";
 
 export const dispatchMakeWebhook = createServerFn({ method: "POST" })
   .inputValidator(
