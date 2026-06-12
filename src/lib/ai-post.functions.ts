@@ -7,6 +7,8 @@ const SingleInput = z.object({
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
   rede: z.enum(["instagram", "linkedin", "estilo-x"]).default("instagram"),
   tipo: z.enum(["feed", "stories"]).optional(),
+  // Formato visual. Default: feed IG = Carrossel; stories = Story; demais = Post Único.
+  formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(), // ISO; se vier, agenda
 });
 
@@ -35,13 +37,20 @@ FORMATO: legenda pronta para postar, com gancho forte na 1ª linha, 3-6 emojis e
 NÃO inclua a assinatura "${ASSINATURA}" no texto (ela vai como overlay na imagem).`;
 }
 
-function imageSystemPrompt(tema: string, rede: string) {
+function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; total: number; papel: string }) {
+  const slideInfo = slide
+    ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.`
+    : "";
+  const assinaturaInfo = slide
+    ? slide.n === 1 || slide.n === slide.total
+      ? `\n- Rodapé OBRIGATÓRIO: "${ASSINATURA}".`
+      : `\n- NÃO inclua a assinatura neste slide (vai apenas no 1º e último).`
+    : `\n- Rodapé discreto: "${ASSINATURA}".`;
   return `Cartaz médico premium em estilo Dr. Francisco Menezes:
 - Paleta: azul profundo (#0c2340), branco, azul elétrico (#2dd4ff). Vermelho APENAS para indicar dor.
 - Tipografia bold, alto contraste, layout limpo e autoridade médica premium.
-- Texto curto em PT-BR (com acentos corretos) sobre: "${tema}".
-- Rodapé discreto: "${ASSINATURA}".
-- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : "Formato quadrado 1:1."}
+- Texto curto em PT-BR (com acentos corretos) sobre: "${tema}".${assinaturaInfo}
+- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : "Formato quadrado 1:1."}${slideInfo}
 - Sem texto inglês. Sem watermark de IA.`;
 }
 
