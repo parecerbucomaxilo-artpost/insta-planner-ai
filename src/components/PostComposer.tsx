@@ -3,19 +3,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Loader2, Image as ImageIcon, Send, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
+import { XStyleIcon } from "@/components/icons/XStyleIcon";
+import { BRANDING } from "@/lib/branding";
+import { cn } from "@/lib/utils";
 
 type Network = "instagram" | "linkedin";
-type Tipo = "Post Único" | "Carrossel";
+type Formato = "Post Único" | "Carrossel" | "Estilo X";
+type Quando = "agora" | "7dias";
+
+const FORMATOS: { id: Formato; label: string; icon: React.ComponentType<{ className?: string }>; desc: string }[] = [
+  { id: "Post Único", label: "Post Único", icon: Square, desc: "1 imagem" },
+  { id: "Carrossel", label: "Carrossel", icon: Layers, desc: "Até 10 slides" },
+  { id: "Estilo X", label: "Estilo X", icon: XStyleIcon, desc: "Tweet visual (1-3 slides 16:9)" },
+];
 
 export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
-  const [tipo, setTipo] = useState<Tipo>("Post Único");
+  const [formato, setFormato] = useState<Formato>("Post Único");
+  const [quando, setQuando] = useState<Quando>("agora");
   const [legenda, setLegenda] = useState("");
   const [imagem, setImagem] = useState<string | null>(null);
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
@@ -33,98 +44,142 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     if (file) {
       setFileToUpload(file);
       setFileName(file.name);
-      const localUrl = URL.createObjectURL(file);
-      setImagem(localUrl);
-      return () => URL.revokeObjectURL(localUrl);
+      setImagem(URL.createObjectURL(file));
     }
   };
 
   const handleSave = useCallback(async () => {
-    // Evita múltiplos cliques imediatos desativando a lógica se já estiver salvando
     if (saving) return;
-    
+    if (networks.length === 0) return toast.error("Escolha pelo menos uma rede.");
     if (!legenda.trim()) return toast.error("Escreva uma legenda primeiro.");
     if (!fileToUpload) return toast.error("Selecione uma imagem primeiro.");
-    
+
     setSaving(true);
     const tId = "post-saving-toast";
-    toast.loading("Publicando post...", { id: tId });
-    
+    toast.loading(quando === "agora" ? "Publicando..." : "Agendando...", { id: tId });
+
     try {
-      // 1. Upload imagem (direto, sem retries)
       const publicUrl = await uploadPostImage(fileToUpload);
-
-      // 2. Pega usuário autenticado (necessário para RLS)
       const userId = await getAuthedUserId();
-      if (!userId) throw new Error("Você precisa estar logado para publicar.");
+      if (!userId) throw new Error("Você precisa estar logado.");
 
-      // 3. Insert com as colunas corretas do schema
+      const tipoDb = formato === "Estilo X" ? "Carrossel" : formato;
+
       const { error: dbError } = await supabase.from("posts").insert({
         user_id: userId,
-        tipo_post: tipo,
+        tipo_post: tipoDb,
         legenda,
         url_imagem: publicUrl,
         postar_instagram: networks.includes("instagram"),
         postar_linkedin: networks.includes("linkedin"),
+        status: quando === "agora" ? "Publicado" : "Agendado",
+        estilo_layout: formato === "Estilo X" ? "Estilo X" : "Padrão",
       } as any);
 
       if (dbError) throw dbError;
 
-      toast.success("Post salvo com sucesso!", { id: tId });
-      
-      // Reseta o estado do formulário
-      setLegenda("");
-      setImagem(null);
-      setFileToUpload(null);
-      setFileName(null);
+      toast.success(quando === "agora" ? "Post publicado!" : "Post agendado!", { id: tId });
+      setLegenda(""); setImagem(null); setFileToUpload(null); setFileName(null);
       onCreated();
-
     } catch (e: any) {
-      console.error("Erro na publicação:", e);
-      toast.error("Falha ao salvar. Tente novamente.", { id: tId });
+      console.error("Erro:", e);
+      toast.error(e.message || "Falha ao salvar.", { id: tId });
     } finally {
-      // O botão será reabilitado apenas após a conclusão (sucesso ou erro)
       setSaving(false);
     }
-  }, [legenda, fileToUpload, networks, tipo, saving, onCreated]);
+  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated]);
 
   return (
     <Card className="p-6 space-y-6 max-w-4xl mx-auto border-zinc-200 shadow-sm">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="text-xl font-semibold text-zinc-800 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-indigo-500" />
           Novo Post
         </h2>
-        <div className="flex gap-2">
-          {["instagram", "linkedin"].map((n) => (
-            <Button
-              key={n}
-              variant={networks.includes(n as Network) ? "default" : "outline"}
-              size="sm"
-              onClick={() => toggleNetwork(n as Network)}
-              className="capitalize"
-            >
-              {n}
-            </Button>
-          ))}
+        <p className="text-xs text-zinc-500">{BRANDING.nome} — {BRANDING.cro}</p>
+      </div>
+
+      {/* Redes — botões separados com ícones e cores */}
+      <div className="space-y-2">
+        <Label>Publicar em</Label>
+        <div className="grid grid-cols-2 gap-3">
+          <NetworkButton
+            active={networks.includes("instagram")}
+            onClick={() => toggleNetwork("instagram")}
+            icon={<Instagram className="w-5 h-5" />}
+            label="Instagram"
+            activeClass="bg-gradient-to-tr from-fuchsia-500 via-pink-500 to-orange-400 text-white border-transparent shadow-md"
+          />
+          <NetworkButton
+            active={networks.includes("linkedin")}
+            onClick={() => toggleNetwork("linkedin")}
+            icon={<Linkedin className="w-5 h-5" />}
+            label="LinkedIn"
+            activeClass="bg-[#0a66c2] text-white border-transparent shadow-md"
+          />
+        </div>
+      </div>
+
+      {/* Formato — 3 botões */}
+      <div className="space-y-2">
+        <Label>Formato</Label>
+        <div className="grid grid-cols-3 gap-3">
+          {FORMATOS.map(({ id, label, icon: Icon, desc }) => {
+            const active = formato === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setFormato(id)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1.5 p-4 rounded-lg border-2 transition-all",
+                  active
+                    ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm"
+                    : "border-zinc-200 hover:border-zinc-300 text-zinc-600",
+                )}
+              >
+                <Icon className="w-6 h-6" />
+                <span className="text-sm font-semibold">{label}</span>
+                <span className="text-[10px] opacity-75">{desc}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Quando — Postar agora vs Programar 7 dias */}
+      <div className="space-y-2">
+        <Label>Quando</Label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setQuando("agora")}
+            className={cn(
+              "flex items-center gap-2 justify-center p-3 rounded-lg border-2 font-semibold transition-all",
+              quando === "agora"
+                ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                : "border-zinc-200 text-zinc-600 hover:border-zinc-300",
+            )}
+          >
+            <Zap className="w-4 h-4" /> Postar agora
+          </button>
+          <button
+            type="button"
+            onClick={() => setQuando("7dias")}
+            className={cn(
+              "flex items-center gap-2 justify-center p-3 rounded-lg border-2 font-semibold transition-all",
+              quando === "7dias"
+                ? "border-sky-500 bg-sky-50 text-sky-700"
+                : "border-zinc-200 text-zinc-600 hover:border-zinc-300",
+            )}
+          >
+            <Clock className="w-4 h-4" /> Programar 7 dias
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Tipo</Label>
-            <Select value={tipo} onValueChange={(v) => setTipo(v as Tipo)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Post Único">Post Único</SelectItem>
-                <SelectItem value="Carrossel">Carrossel</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="space-y-2">
             <Label>Legenda</Label>
             <Textarea
@@ -133,37 +188,36 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
               value={legenda}
               onChange={(e) => setLegenda(e.target.value)}
             />
+            <p className="text-[11px] text-zinc-500 flex items-center gap-1">
+              <MessageCircle className="w-3 h-3" /> CTA padrão: <span className="font-medium">{BRANDING.ctaInstagram}</span> · WhatsApp {BRANDING.whatsappNumero}
+            </p>
           </div>
 
           <div className="space-y-2">
             <Label>Mídia</Label>
-            <div className="flex flex-col gap-2">
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-300 rounded-lg cursor-pointer hover:bg-zinc-50 transition-colors">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <ImageIcon className="w-8 h-8 text-zinc-400 mb-2" />
-                  <p className="text-sm text-zinc-500">Selecionar imagem</p>
-                </div>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-              </label>
-              {fileName && (
-                <p className="text-xs text-green-600 font-medium flex items-center gap-1">
-                  <Check className="w-3 h-3" /> {fileName}
-                </p>
-              )}
-            </div>
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-300 rounded-lg cursor-pointer hover:bg-zinc-50 transition-colors">
+              <ImageIcon className="w-8 h-8 text-zinc-400 mb-2" />
+              <p className="text-sm text-zinc-500">Selecionar imagem</p>
+              <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+            </label>
+            {fileName && (
+              <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                <Check className="w-3 h-3" /> {fileName}
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="space-y-4 border-l pl-6 border-zinc-100">
+        <div className="space-y-2 border-l pl-6 border-zinc-100">
           <Label>Prévia</Label>
           <div className="aspect-square w-full rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50 flex items-center justify-center relative">
             {imagem ? (
-              <img src={imagem} alt="Preview" className="w-full h-full object-cover" />
+              <>
+                <img src={imagem} alt="Preview" className="w-full h-full object-cover" />
+                <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded">
+                  {BRANDING.nome} — {BRANDING.cro}
+                </div>
+              </>
             ) : (
               <div className="text-center p-4">
                 <ImageIcon className="w-12 h-12 text-zinc-200 mx-auto mb-2" />
@@ -176,11 +230,30 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
       <div className="flex justify-end gap-3 pt-4 border-t border-zinc-100">
         <Button variant="outline" onClick={() => onCreated()}>Cancelar</Button>
-        <Button onClick={handleSave} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving} className="min-w-[180px]">
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-          Publicar Agora
+          {quando === "agora" ? "Publicar Agora" : "Agendar"}
         </Button>
       </div>
     </Card>
+  );
+}
+
+function NetworkButton({
+  active, onClick, icon, label, activeClass,
+}: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; activeClass: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex items-center justify-center gap-2 p-3 rounded-lg border-2 font-semibold transition-all",
+        active ? activeClass : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
+      )}
+    >
+      {icon}
+      <span>{label}</span>
+      {active && <Check className="w-4 h-4" />}
+    </button>
   );
 }
