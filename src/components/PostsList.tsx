@@ -48,8 +48,8 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {posts.map((p) => {
-        const rawThumb = p.url_imagem ?? p.imagens_carrossel?.[0] ?? null;
-        const thumb = p.url_imagem ?? (p.imagens_carrossel?.[0] as string) ?? null;
+        const rawThumb = p.url_imagem ?? (p as any).url_da_imagem ?? p.imagens_carrossel?.[0] ?? null;
+        const thumb = p.url_imagem ?? (p as any).url_da_imagem ?? (p.imagens_carrossel?.[0] as string) ?? null;
         const isVideo = p.formato_midia === "Vídeo/Reels";
         const isViral = (p.visualizacoes ?? 0) >= 500;
         const isPublishing = publishingId === p.id;

@@ -76,7 +76,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         postar_linkedin: networks.includes("linkedin"),
         postar_instagram: networks.includes("instagram"),
         formato_midia: "Imagem"
-      }).select();
+      } as any).select();
 
       if (dbError) {
         console.error("Erro ao salvar no banco:", dbError);
