@@ -149,6 +149,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const [imageMode, setImageMode] = useState<"auto" | "manual">("auto");
   const [orientacoes, setOrientacoes] = useState("");
   const [imagem, setImagem] = useState<string | null>(null);
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [carrossel, setCarrossel] = useState<string[]>([]);
   const [carouselPrompts, setCarouselPrompts] = useState<string[]>([""]);
   const [data, setData] = useState("");
@@ -581,7 +582,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     }
   };
 
-  const handleUploadSingle = async (e: ChangeEvent<HTMLInputElement>) => {
+  const handleUploadSingle = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (formato === "Vídeo/Reels" && !file.type.startsWith("video/")) {
@@ -600,21 +601,13 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         return;
       }
 
-      const tId = toast.loading("Enviando arquivo para o Storage...");
-      try {
-        // 1. Garante que o input de arquivo capture o objeto File correto (já capturado em 'file')
-        // 2. Faz o upload usando a função que encapsula o supabase.storage.from('post-images').upload()
-        // 3. Captura o erro do upload (dentro do uploadFile e aqui no try/catch)
-        const storageUrl = await uploadFile(file);
-        
-        // 4. Se o upload der certo, a URL pública já é retornada pela função
-        setImagem(storageUrl);
-        toast.success("Arquivo enviado com sucesso!", { id: tId });
-      } catch (error) {
-        // 3. Exibe um alerta em vermelho na tela (toast) mostrando a mensagem do erro
-        console.error("Erro no upload:", error);
-        toast.error(error instanceof Error ? `Erro no upload: ${error.message}` : "Erro desconhecido no upload", { id: tId });
-      }
+      // 1. Gera URL temporária para prévia imediata
+      const previewUrl = URL.createObjectURL(file);
+      setImagem(previewUrl);
+      
+      // 2. Guarda o objeto File para upload no momento do salvamento
+      setFileToUpload(file);
+      toast.success("Mídia selecionada!");
     }
     e.target.value = "";
   };
@@ -681,8 +674,11 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       toast.loading("Otimizando mídias...", { id: tId });
       
       const processMedia = async (raw: string | null) => {
-        // Agora todas as mídias já devem ser URLs do Storage ao chegarem aqui, 
-        // mas mantemos o upload como fallback de segurança.
+        // Se houver um arquivo físico pendente de upload, fazemos o upload agora
+        if (fileToUpload && raw && raw.startsWith("blob:")) {
+          return await uploadFile(fileToUpload);
+        }
+        // Fallback para base64
         if (raw && raw.startsWith("data:")) return await uploadGeneratedImage(raw);
         return raw;
       };
@@ -817,9 +813,12 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
     const tId = toast.loading("Enviando post para o Make/Instagram...");
 
     try {
-      // 4. Garantir que a imagem seja uma URL pública (upload se for base64)
+      // 4. Garantir que a imagem seja uma URL pública (upload se for blob ou base64)
       let finalImageUrl = rawMedia;
-      if (rawMedia.startsWith("data:")) {
+      if (rawMedia.startsWith("blob:") && fileToUpload) {
+        toast.loading("Enviando imagem para o Storage...", { id: tId });
+        finalImageUrl = await uploadFile(fileToUpload);
+      } else if (rawMedia.startsWith("data:")) {
         toast.loading("Fazendo upload da imagem para o Instagram...", { id: tId });
         finalImageUrl = await uploadGeneratedImage(rawMedia);
       }
@@ -912,7 +911,10 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
     try {
       let finalImageUrl = rawMedia;
-      if (rawMedia.startsWith("data:")) {
+      if (rawMedia.startsWith("blob:") && fileToUpload) {
+        toast.loading("Enviando imagem para o Storage...", { id: tId });
+        finalImageUrl = await uploadFile(fileToUpload);
+      } else if (rawMedia.startsWith("data:")) {
         toast.loading("Enviando imagem para o Storage...", { id: tId });
         finalImageUrl = await uploadGeneratedImage(rawMedia);
       }
