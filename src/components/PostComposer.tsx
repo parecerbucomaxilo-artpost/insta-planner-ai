@@ -94,10 +94,10 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
       for (const network of networks) {
         const specificWebhook = network === "instagram" 
-          ? (perfilData?.instagram_webhook_url || perfilData?.webhook_url)
-          : perfilData?.linkedin_webhook_url;
+          ? (perfilData?.instagram_webhook_url || perfilData?.webhook_url || "https://hook.us2.make.com/vx87y6fldoxlpq2les3vpbfj16qq61iq")
+          : (perfilData?.linkedin_webhook_url || "https://hook.us2.make.com/4tics3gdoow4y02vo1rh4wcmeshu4psv");
 
-        const webhookUrl = specificWebhook || "https://hook.us2.make.com/vx87y6fldoxlpq2les3vpbfj16qq61iq";
+        const webhookUrl = specificWebhook;
 
         toast.loading(`Publicando no ${network}...`, { id: tId });
         try {

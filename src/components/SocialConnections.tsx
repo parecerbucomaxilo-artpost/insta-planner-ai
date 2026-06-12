@@ -58,7 +58,7 @@ export function SocialConnections() {
         if (data) {
           setPerfilId(data.id);
           setIgWebhook(data.instagram_webhook_url || data.webhook_url || DEFAULT_MAKE_WEBHOOK);
-          setLiWebhook(data.linkedin_webhook_url || "");
+          setLiWebhook(data.linkedin_webhook_url || "https://hook.us2.make.com/4tics3gdoow4y02vo1rh4wcmeshu4psv");
         } else {
           setIgWebhook(DEFAULT_MAKE_WEBHOOK);
         }
