@@ -43,7 +43,7 @@ export async function uploadGeneratedImage(dataUrl: string): Promise<string> {
 
   const { data: { publicUrl } } = supabase.storage
     .from("post-images")
-    .getPublicUrl(data.path);
+    .getPublicUrl(fileName);
     
   return publicUrl;
 }

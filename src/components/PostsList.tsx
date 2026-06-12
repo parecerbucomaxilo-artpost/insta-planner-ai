@@ -33,7 +33,10 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
     setPublishingId(p.id);
     const loadingId = toast.loading("Publicando agora nas redes integradas…");
     try {
-      const mediaUrl = p.url_imagem ?? p.imagens_carrossel?.[0] ?? null;
+      const rawMediaUrl = p.url_imagem ?? p.imagens_carrossel?.[0] ?? null;
+      const mediaUrl = (rawMediaUrl && !rawMediaUrl.startsWith('http'))
+        ? supabase.storage.from("post-images").getPublicUrl(rawMediaUrl).data.publicUrl
+        : rawMediaUrl;
       const caption = p.legenda_instagram || p.legenda_linkedin || p.legenda || "";
       const nowIso = new Date().toISOString();
 
@@ -81,7 +84,10 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {posts.map((p) => {
-        const thumb = p.url_imagem ?? p.imagens_carrossel?.[0] ?? null;
+        const rawThumb = p.url_imagem ?? p.imagens_carrossel?.[0] ?? null;
+        const thumb = (rawThumb && !rawThumb.startsWith('http')) 
+          ? supabase.storage.from("post-images").getPublicUrl(rawThumb).data.publicUrl 
+          : rawThumb;
         const isVideo = p.formato_midia === "Vídeo/Reels";
         const isViral = (p.visualizacoes ?? 0) >= 500;
         const isPublishing = publishingId === p.id;
