@@ -10,12 +10,17 @@ import { Card } from "@/components/ui/card";
 import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedin, Send, Image as PictureIcon, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { uploadPostImage } from "@/lib/storage-utils";
+import { publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { getAuthedUserId } from "@/lib/auth-utils";
 
 type Network = "instagram" | "linkedin";
 type Tipo = "Post Único" | "Carrossel";
 type Status = "Rascunho" | "Agendado" | "Publicado";
 
 export function PostComposer({ onCreated }: { onCreated: () => void }) {
+  const sendLinkedIn = useServerFn(publishToLinkedIn);
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
   const [tipo, setTipo] = useState<Tipo>("Post Único");
   const [legenda, setLegenda] = useState("");
@@ -47,13 +52,49 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
   const handleSave = async () => {
     if (!legenda.trim()) return toast.error("Escreva uma legenda primeiro.");
+    if (!fileToUpload) return toast.error("Selecione uma imagem primeiro.");
+    
     setSaving(true);
-    // TODO: Nova lógica de salvamento e upload
-    setTimeout(() => {
-      toast.success("Post salvo (Simulação de reset)");
-      setSaving(false);
+    const tId = toast.loading("Iniciando processo de salvamento...");
+    
+    try {
+      const userId = await getAuthedUserId();
+      
+      // 1. Upload real para o bucket post-images
+      toast.loading("Enviando imagem para o Storage...", { id: tId });
+      const publicUrl = await uploadPostImage(fileToUpload);
+      
+      // 2. Salva na tabela posts
+      toast.loading("Salvando dados do post...", { id: tId });
+      const { error: dbError } = await supabase.from("posts").insert({
+        user_id: userId,
+        legenda: legenda,
+        url_imagem: publicUrl,
+        tipo_post: tipo,
+        status: "Publicado",
+        postar_linkedin: networks.includes("linkedin")
+      });
+
+      if (dbError) throw dbError;
+
+      // 3. Dispara publicação para o LinkedIn se selecionado
+      if (networks.includes("linkedin")) {
+        toast.loading("Publicando no LinkedIn...", { id: tId });
+        await sendLinkedIn({
+          data: {
+            text: legenda,
+            media_url: publicUrl
+          }
+        });
+      }
+
+      toast.success("Post salvo e publicado com sucesso! ✨", { id: tId });
       onCreated();
-    }, 1000);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao processar post", { id: tId });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
