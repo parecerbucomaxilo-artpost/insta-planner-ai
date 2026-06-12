@@ -174,10 +174,26 @@ export function SocialConnections() {
               </p>
             </>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                {status?.error || "A conexão precisa ser reautorizada nas configurações do projeto."}
+                {status?.error || "A conexão precisa ser autorizada para habilitar a publicação automática."}
               </p>
+              <Button 
+                className="w-full sm:w-auto bg-[#0077b5] hover:bg-[#0077b5]/90 text-white gap-2"
+                onClick={async () => {
+                  const { error } = await supabase.auth.signInWithOAuth({
+                    provider: 'linkedin_oidc',
+                    options: {
+                      redirectTo: window.location.origin + '/settings',
+                      scopes: 'openid profile email w_member_social'
+                    }
+                  });
+                  if (error) toast.error("Erro ao iniciar login: " + error.message);
+                }}
+              >
+                <Linkedin className="h-4 w-4" />
+                Conectar com o LinkedIn
+              </Button>
             </div>
           )}
         </CardContent>
