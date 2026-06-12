@@ -3,13 +3,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const SingleInput = z.object({
-  tema: z.string().min(1),
+  // Se vazio, a IA escolhe um tema relevante automaticamente.
+  tema: z.string().optional().default(""),
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
   rede: z.enum(["instagram", "linkedin", "estilo-x"]).default("instagram"),
   tipo: z.enum(["feed", "stories"]).optional(),
-  // Formato visual. Default: feed IG = Carrossel; stories = Story; demais = Post Único.
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
-  quando: z.string().datetime().optional(), // ISO; se vier, agenda
+  quando: z.string().datetime().optional(),
 });
 
 const WeekInput = z.object({
