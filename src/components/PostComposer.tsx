@@ -810,7 +810,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       // 5. Estrutura EXATA solicitada para o disparo
       const dadosDoPost = {
         texto: textoParaEnviar,
-        url_da_imagem: finalImageUrl,
+        url_da_imagem: finalImageUrl, // URL pública completa gerada pelo getPublicUrl no uploadGeneratedImage
         rede_social: isX ? "Instagram" : (networks[0] === "linkedin" ? "LinkedIn" : "Instagram")
       };
 
