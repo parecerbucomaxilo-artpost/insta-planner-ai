@@ -125,7 +125,10 @@ export function SocialConnections() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           texto: "✅ Teste Instagram — webhook conectado.",
-          plataforma: "Instagram"
+          plataforma: "Instagram",
+          imagem_url: "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=1080&h=1080&fit=crop&fm=jpg&q=85",
+          legenda: "✅ Teste Instagram — webhook conectado.",
+          tipo: "imagem"
         }),
       });
       if (!r.ok) throw new Error(`Make respondeu ${r.status}`);
