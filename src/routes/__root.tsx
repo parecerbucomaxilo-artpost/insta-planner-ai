@@ -112,26 +112,8 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-const RESET_FLAG = "planner_chico_reset_v1";
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      if (window.localStorage.getItem(RESET_FLAG)) return;
-      // Limpa toda a configuração de conexões/credenciais salvas no navegador
-      window.localStorage.removeItem("anthropic_api_key");
-      // Remove qualquer cache de perfil, semanas e chaves de automação/redes sociais
-      const prefixes = ["perfil_", "week_cache_", "automation_", "social_", "linkedin_", "instagram_", "make_"];
-      for (let i = window.localStorage.length - 1; i >= 0; i--) {
-        const k = window.localStorage.key(i);
-        if (k && prefixes.some((p) => k.startsWith(p))) window.localStorage.removeItem(k);
-      }
-      window.localStorage.setItem(RESET_FLAG, "1");
-    } catch { /* ignore */ }
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -140,4 +122,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-
