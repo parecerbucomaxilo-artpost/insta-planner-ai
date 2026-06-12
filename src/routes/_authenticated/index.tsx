@@ -53,8 +53,15 @@ function Dashboard() {
   const claim = async () => {};
 
   const load = useCallback(async () => {
+    console.log("Carregando posts do banco de dados...");
     const { data, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false });
-    if (!error && data) setPosts(data as unknown as PostRow[]);
+    if (error) {
+      console.error("Erro ao carregar posts:", error);
+      toast.error("Erro ao carregar posts: " + error.message);
+    } else if (data) {
+      console.log("Posts carregados:", data.length);
+      setPosts(data as unknown as PostRow[]);
+    }
   }, []);
 
   const loadPerfil = useCallback(async () => {
