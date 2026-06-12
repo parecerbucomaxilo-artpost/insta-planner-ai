@@ -71,6 +71,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         user_id: userId,
         legenda: legenda,
         url_imagem: publicUrl,
+        url_da_imagem: publicUrl, // Mantendo ambos por compatibilidade
         tipo_post: tipo,
         status: "Publicado",
         postar_linkedin: networks.includes("linkedin"),

@@ -57,7 +57,7 @@ function Dashboard() {
     // Forçar limpeza de cache através de um parâmetro de query ou simplesmente garantindo nova requisição
     const { data, error } = await supabase
       .from("posts")
-      .select("*")
+      .select("*, url_da_imagem") // Explicitando campos para evitar problemas de cache de schema
       .order("created_at", { ascending: false })
       .limit(100); // Limite para evitar timeout em tabelas grandes
 
