@@ -600,7 +600,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         setImagem(base64);
         // Guarda o objeto File para o upload definitivo
         setFileToUpload(file);
-        toast.success("Mídia carregada com sucesso!");
+        setFileName(file.name);
       };
       reader.onerror = () => {
         toast.error("Erro ao ler o arquivo.");
