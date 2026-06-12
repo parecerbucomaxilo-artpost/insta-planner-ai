@@ -386,6 +386,11 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           Programar 7 dias com IA
         </Button>
       </div>
+      <p className="text-[11px] text-indigo-700/80 bg-indigo-50/60 rounded-md p-2 leading-relaxed">
+        <strong>Cronograma fixo (seg-sáb):</strong> IG feed 09h / 15h / 19h · IG stories 08h / 13h / 17h · LinkedIn 09h e 17h30.
+        <br />
+        <strong>Domingo:</strong> mensagem especial automática (IG 10h + story 9h · LinkedIn 11h).
+      </p>
 
       {temas && temas.length > 0 && (
         <div className="space-y-2 pt-3 border-t border-indigo-200">
