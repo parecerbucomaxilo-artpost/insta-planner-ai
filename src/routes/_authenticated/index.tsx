@@ -98,32 +98,6 @@ function Dashboard() {
     navigate({ to: "/auth", replace: true });
   }, [navigate]);
 
-  const handleTestWebhook = useCallback(async () => {
-    try {
-      const response = await fetch("https://hook.us2.make.com/vx87y6fldoxlpq2les3vpbfj16qq61iq", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          texto: "Teste Lovable",
-          imagemUrl: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?q=80&w=2070&auto=format&fit=crop",
-          plataforma: "Instagram",
-          timestamp: new Date().toISOString()
-        }),
-      });
-
-      if (response.ok) {
-        toast.success("Webhook disparado com sucesso!");
-      } else {
-        const text = await response.text();
-        toast.error(`Erro ao disparar webhook: ${response.status} ${text}`);
-      }
-    } catch (error) {
-      console.error("Erro no fetch do webhook:", error);
-      toast.error("Erro de conexão ao disparar o webhook.");
-    }
-  }, []);
 
   // Notificação interna para posts que atingiram 500+ views (e ainda não foram avisados)
   const notifiedRef = useRef<Set<string>>(new Set());
