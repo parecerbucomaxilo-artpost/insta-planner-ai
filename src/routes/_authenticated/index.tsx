@@ -17,6 +17,7 @@ import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar";
 // import { claimLegacyData } from "@/lib/claim-legacy.functions";
 import type { PostRow } from "@/lib/posts-types";
+import { signPostMediaUrls } from "@/lib/storage-url";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -70,7 +71,10 @@ function Dashboard() {
       }
     } else if (data) {
       console.log("[Reset] Posts carregados:", data.length);
-      setPosts(data as unknown as PostRow[]);
+      const postsWithMedia = await Promise.all(
+        (data as unknown as PostRow[]).map((post) => signPostMediaUrls(post)),
+      );
+      setPosts(postsWithMedia as PostRow[]);
     }
   }, []);
 
