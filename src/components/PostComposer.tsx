@@ -1,17 +1,19 @@
 import { useState, useCallback, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle } from "lucide-react";
+import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { XStyleIcon } from "@/components/icons/XStyleIcon";
 import { BRANDING } from "@/lib/branding";
 import { cn } from "@/lib/utils";
+import { generateSinglePost, generateWeekThemes } from "@/lib/ai-post.functions";
 
 type Network = "instagram" | "linkedin";
 type Formato = "Post Único" | "Carrossel" | "Estilo X";
@@ -98,6 +100,15 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         </h2>
         <p className="text-xs text-zinc-500">{BRANDING.nome} — {BRANDING.cro}</p>
       </div>
+
+      <AiGenerationPanel onCreated={onCreated} />
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-200" /></div>
+        <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-zinc-400 uppercase tracking-wider">ou crie manualmente</span></div>
+      </div>
+
+
 
       {/* Redes — botões separados com ícones e cores */}
       <div className="space-y-2">
@@ -238,6 +249,154 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     </Card>
   );
 }
+
+function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
+  const [tema, setTema] = useState("");
+  const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
+  const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x">("instagram");
+  const [busy, setBusy] = useState<null | "single" | "week">(null);
+  const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tema: string; gancho: string }> | null>(null);
+  const genSingle = useServerFn(generateSinglePost);
+  const genWeek = useServerFn(generateWeekThemes);
+
+  const handleSingle = async () => {
+    if (!tema.trim()) return toast.error("Descreva o tema do post.");
+    setBusy("single");
+    const tid = "ai-single";
+    toast.loading("IA criando legenda + imagem...", { id: tid });
+    try {
+      await genSingle({ data: { tema, especialidade, rede } });
+      toast.success("Post gerado! Veja em 'Todos os posts'.", { id: tid });
+      setTema("");
+      onCreated();
+    } catch (e: any) {
+      toast.error(e.message || "Falha na geração.", { id: tid });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleWeek = async () => {
+    setBusy("week");
+    const tid = "ai-week";
+    toast.loading("IA planejando 7 dias...", { id: tid });
+    try {
+      const out = await genWeek({ data: { especialidade } });
+      setTemas(out.temas);
+      toast.success("Cronograma gerado. Aprove os temas e gere as imagens.", { id: tid });
+    } catch (e: any) {
+      toast.error(e.message || "Falha no cronograma.", { id: tid });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const approveTheme = async (t: { rede: string; tema: string }) => {
+    const r = (t.rede === "linkedin" ? "linkedin" : t.rede === "estilo-x" ? "estilo-x" : "instagram") as
+      | "instagram" | "linkedin" | "estilo-x";
+    const tid = `ai-approve-${t.tema}`;
+    toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
+    try {
+      await genSingle({ data: { tema: t.tema, especialidade, rede: r } });
+      toast.success("Gerado!", { id: tid });
+      setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
+      onCreated();
+    } catch (e: any) {
+      toast.error(e.message || "Falha", { id: tid });
+    }
+  };
+
+  return (
+    <Card className="p-5 space-y-4 border-2 border-dashed border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-cyan-50/30">
+      <div className="flex items-center gap-2">
+        <Wand2 className="w-5 h-5 text-indigo-600" />
+        <h3 className="font-semibold text-indigo-900">Gerar com IA</h3>
+        <span className="text-xs text-indigo-600/70">Gemini + GPT-image-2 · estilo médico premium</span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="md:col-span-2 space-y-1">
+          <Label className="text-xs">Tema do post</Label>
+          <Input
+            placeholder="Ex.: Dor de dente do siso que irradia para o ouvido"
+            value={tema}
+            onChange={(e) => setTema(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Especialidade</Label>
+          <select
+            value={especialidade}
+            onChange={(e) => setEspecialidade(e.target.value as any)}
+            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option>CTBMF</option>
+            <option>Odontologia Hospitalar</option>
+            <option>Ambas</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        {(["instagram", "linkedin", "estilo-x"] as const).map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => setRede(r)}
+            className={cn(
+              "px-3 py-1.5 rounded-md text-xs font-semibold border flex items-center gap-1.5",
+              rede === r ? "bg-indigo-600 text-white border-indigo-600" : "bg-white border-zinc-200 text-zinc-600",
+            )}
+          >
+            {r === "instagram" && <Instagram className="w-3.5 h-3.5" />}
+            {r === "linkedin" && <Linkedin className="w-3.5 h-3.5" />}
+            {r === "estilo-x" && <XStyleIcon className="w-3.5 h-3.5" />}
+            {r === "estilo-x" ? "Estilo X" : r === "linkedin" ? "LinkedIn" : "Instagram"}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+        <Button
+          onClick={handleSingle}
+          disabled={busy !== null}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+        >
+          {busy === "single" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
+          Gerar 1 post (legenda + imagem)
+        </Button>
+        <Button
+          onClick={handleWeek}
+          disabled={busy !== null}
+          variant="outline"
+          className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+        >
+          {busy === "week" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CalendarDays className="w-4 h-4 mr-2" />}
+          Programar 7 dias com IA
+        </Button>
+      </div>
+
+      {temas && temas.length > 0 && (
+        <div className="space-y-2 pt-3 border-t border-indigo-200">
+          <p className="text-xs font-semibold text-indigo-900">Aprove os temas para gerar imagem + legenda:</p>
+          {temas.map((t) => (
+            <div key={t.dia} className="flex items-start gap-2 p-2 bg-white rounded-md border border-indigo-100">
+              <span className="text-xs font-bold text-indigo-600 w-12">Dia {t.dia}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{t.tema}</p>
+                <p className="text-xs text-zinc-500 truncate">{t.gancho} · {t.rede}</p>
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => approveTheme(t)}>
+                <Check className="w-4 h-4 text-emerald-600" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 
 function NetworkButton({
   active, onClick, icon, label, activeClass,
