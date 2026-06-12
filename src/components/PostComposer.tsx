@@ -101,6 +101,15 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         <p className="text-xs text-zinc-500">{BRANDING.nome} — {BRANDING.cro}</p>
       </div>
 
+      <AiGenerationPanel onCreated={onCreated} />
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-200" /></div>
+        <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-zinc-400 uppercase tracking-wider">ou crie manualmente</span></div>
+      </div>
+
+
+
       {/* Redes — botões separados com ícones e cores */}
       <div className="space-y-2">
         <Label>Publicar em</Label>
