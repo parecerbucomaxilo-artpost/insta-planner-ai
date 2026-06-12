@@ -96,7 +96,10 @@ export function SocialConnections() {
       const r = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texto: "✅ Teste do Planner Chico — webhook do Instagram conectado." }),
+        body: JSON.stringify({ 
+          texto: "✅ Teste do Planner Chico — webhook conectado.",
+          plataforma: "Teste"
+        }),
       });
       if (!r.ok) throw new Error(`Make respondeu ${r.status}`);
       toast.success("Webhook respondeu OK — verifique seu cenário no Make.", { id: tid });
@@ -109,7 +112,7 @@ export function SocialConnections() {
 
 
   const handleTestPost = async () => {
-    toast.info("A integração nativa foi resetada.");
+    handleTestIgWebhook();
   };
 
   return (
@@ -131,71 +134,24 @@ export function SocialConnections() {
             <div className="flex-1">
               <CardTitle className="flex items-center gap-2">
                 LinkedIn
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                ) : status?.connected ? (
-                  <Badge className="bg-emerald-600 hover:bg-emerald-600 gap-1">
-                    <CheckCircle2 className="h-3 w-3" /> Conectado
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive" className="gap-1">
-                    <AlertCircle className="h-3 w-3" /> Desconectado
-                  </Badge>
-                )}
+                <Badge variant="secondary" className="gap-1">via automação</Badge>
               </CardTitle>
               <CardDescription>
-                Publicação nativa via API oficial (escopo <code>w_member_social</code>). Posta em nome do seu perfil pessoal.
+                Publicação por webhook do Make. O Make recebe o texto e publica no seu perfil do LinkedIn.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {status?.connected ? (
-            <>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border">
-                {status.picture && (
-                  <img src={status.picture} alt="" className="h-10 w-10 rounded-full object-cover" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{status.name || "Membro LinkedIn"}</p>
-                  {status.email && (
-                    <p className="text-xs text-muted-foreground truncate">{status.email}</p>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleTestPost} disabled={testing} variant="outline" size="sm">
-                  {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  Publicar post de teste
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Quando você marcar <strong>LinkedIn</strong> no compositor e definir o status como <strong>Publicado</strong>, o post é enviado automaticamente para sua conta.
-              </p>
-            </>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                {status?.error || "A conexão precisa ser autorizada para habilitar a publicação automática."}
-              </p>
-              <Button 
-                className="w-full sm:w-auto bg-[#0077b5] hover:bg-[#0077b5]/90 text-white gap-2"
-                onClick={async () => {
-                  const { error } = await supabase.auth.signInWithOAuth({
-                    provider: 'linkedin_oidc',
-                    options: {
-                      redirectTo: window.location.origin + '/settings',
-                      scopes: 'openid profile email w_member_social'
-                    }
-                  });
-                  if (error) toast.error("Erro ao iniciar login: " + error.message);
-                }}
-              >
-                <Linkedin className="h-4 w-4" />
-                Conectar com o LinkedIn
-              </Button>
-            </div>
-          )}
+          <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs text-blue-900 dark:text-blue-100 leading-relaxed mb-4">
+            <strong>Configuração Unificada:</strong> O LinkedIn agora utiliza o mesmo Webhook do Instagram configurado abaixo para enviar as postagens.
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleTestIgWebhook} disabled={igTesting} variant="outline" size="sm">
+              {igTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Testar disparo LinkedIn
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

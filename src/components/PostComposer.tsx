@@ -11,8 +11,8 @@ import { Sparkles, X, Loader2, Plus, Wand2, Image as ImgIcon, Instagram, Linkedi
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { uploadPostImage } from "@/lib/storage-utils";
-import { publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
-import { useServerFn } from "@tanstack/react-start";
+// import { publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
+// import { useServerFn } from "@tanstack/react-start";
 import { getAuthedUserId } from "@/lib/auth-utils";
 
 type Network = "instagram" | "linkedin";
@@ -20,7 +20,7 @@ type Tipo = "Post Único" | "Carrossel";
 type Status = "Rascunho" | "Agendado" | "Publicado";
 
 export function PostComposer({ onCreated }: { onCreated: () => void }) {
-  const sendLinkedIn = useServerFn(publishToLinkedIn);
+  // const sendLinkedIn = useServerFn(publishToLinkedIn);
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
   const [tipo, setTipo] = useState<Tipo>("Post Único");
   const [legenda, setLegenda] = useState("");
@@ -85,16 +85,31 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       
       console.log("Post salvo com sucesso:", dbData);
 
-      // 3. Dispara publicação para o LinkedIn se selecionado
-      if (networks.includes("linkedin")) {
-        toast.loading("Publicando no LinkedIn...", { id: tId });
-        const resLi = await sendLinkedIn({
-          data: {
-            text: legenda,
-            media_url: publicUrl
-          }
-        });
-        console.log("Resultado LinkedIn:", resLi);
+      // 3. Dispara publicação via Webhook (Unificado)
+      const { data: perfilData } = await supabase
+        .from("perfil_usuario")
+        .select("webhook_url")
+        .limit(1)
+        .maybeSingle();
+
+      const webhookUrl = perfilData?.webhook_url || "https://hook.us2.make.com/vx87y6fldoxlpq2les3vpbfj16qq61iq";
+
+      for (const network of networks) {
+        toast.loading(`Publicando no ${network}...`, { id: tId });
+        try {
+          await fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              texto: legenda,
+              imagemUrl: publicUrl,
+              plataforma: network.charAt(0).toUpperCase() + network.slice(1),
+              timestamp: new Date().toISOString()
+            }),
+          });
+        } catch (webhookErr) {
+          console.error(`Erro ao disparar webhook para ${network}:`, webhookErr);
+        }
       }
 
       toast.success("Post salvo com sucesso! ✨", { id: tId });
