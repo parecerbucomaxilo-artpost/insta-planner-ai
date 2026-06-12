@@ -85,16 +85,20 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       
       console.log("Post salvo com sucesso:", dbData);
 
-      // 3. Dispara publicação via Webhook (Unificado)
+      // 3. Dispara publicação via Webhooks específicos
       const { data: perfilData } = await supabase
         .from("perfil_usuario")
-        .select("webhook_url")
+        .select("instagram_webhook_url, linkedin_webhook_url, webhook_url")
         .limit(1)
         .maybeSingle();
 
-      const webhookUrl = perfilData?.webhook_url || "https://hook.us2.make.com/vx87y6fldoxlpq2les3vpbfj16qq61iq";
-
       for (const network of networks) {
+        const specificWebhook = network === "instagram" 
+          ? (perfilData?.instagram_webhook_url || perfilData?.webhook_url)
+          : perfilData?.linkedin_webhook_url;
+
+        const webhookUrl = specificWebhook || "https://hook.us2.make.com/vx87y6fldoxlpq2les3vpbfj16qq61iq";
+
         toast.loading(`Publicando no ${network}...`, { id: tId });
         try {
           await fetch(webhookUrl, {

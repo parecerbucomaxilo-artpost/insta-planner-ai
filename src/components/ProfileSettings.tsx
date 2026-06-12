@@ -22,6 +22,9 @@ export type Perfil = {
   cro_uf: string;
   subespecialidades: string[];
   tom_voz: "Científico" | "Humanizado" | "Editorial";
+  webhook_url?: string;
+  instagram_webhook_url?: string;
+  linkedin_webhook_url?: string;
   make_webhook_url?: string;
   instagram_access_token?: string;
   instagram_business_account_id?: string;

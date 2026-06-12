@@ -25,10 +25,12 @@ export type Database = {
           instagram_arroba: string
           instagram_business_account_id: string | null
           instagram_foto_url: string | null
+          instagram_webhook_url: string | null
           linkedin_access_token: string | null
           linkedin_foto_url: string | null
           linkedin_nome: string
           linkedin_urn: string | null
+          linkedin_webhook_url: string | null
           make_webhook_url: string | null
           nome_profissional: string
           subespecialidades: string[]
@@ -48,10 +50,12 @@ export type Database = {
           instagram_arroba?: string
           instagram_business_account_id?: string | null
           instagram_foto_url?: string | null
+          instagram_webhook_url?: string | null
           linkedin_access_token?: string | null
           linkedin_foto_url?: string | null
           linkedin_nome?: string
           linkedin_urn?: string | null
+          linkedin_webhook_url?: string | null
           make_webhook_url?: string | null
           nome_profissional?: string
           subespecialidades?: string[]
@@ -71,10 +75,12 @@ export type Database = {
           instagram_arroba?: string
           instagram_business_account_id?: string | null
           instagram_foto_url?: string | null
+          instagram_webhook_url?: string | null
           linkedin_access_token?: string | null
           linkedin_foto_url?: string | null
           linkedin_nome?: string
           linkedin_urn?: string | null
+          linkedin_webhook_url?: string | null
           make_webhook_url?: string | null
           nome_profissional?: string
           subespecialidades?: string[]
