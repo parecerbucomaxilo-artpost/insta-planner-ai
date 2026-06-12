@@ -51,13 +51,16 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
             );
           }
 
+          const { signPostMediaUrls } = await import("@/lib/storage-url");
+          const post = await signPostMediaUrls(data);
+
           return new Response(
             JSON.stringify({
-              id: data.id,
-              tipo_post: data.tipo_post,
-              url_imagem: data.url_imagem,
-              legenda_instagram: data.legenda_instagram,
-              legenda_linkedin: data.legenda_linkedin,
+              id: post.id,
+              tipo_post: post.tipo_post,
+              url_imagem: post.url_imagem,
+              legenda_instagram: post.legenda_instagram,
+              legenda_linkedin: post.legenda_linkedin,
             }),
             {
               status: 200,
