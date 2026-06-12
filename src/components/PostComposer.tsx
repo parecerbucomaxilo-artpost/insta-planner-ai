@@ -62,28 +62,28 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       console.log("Usuário autenticado:", userId);
       
       // 1. Upload real para o bucket post-images com nome único
-      toast.loading("Enviando imagem para o Storage...", { id: tId });
+      toast.loading("Enviando imagem...", { id: tId });
       const publicUrl = await uploadPostImage(fileToUpload);
       
       // 2. Salva na tabela posts
-      toast.loading("Salvando dados do post no banco...", { id: tId });
+      toast.loading("Salvando post...", { id: tId });
       const { error: dbError, data: dbData } = await supabase.from("posts").insert({
         user_id: userId,
         legenda: legenda,
         url_imagem: publicUrl,
         tipo_post: tipo,
         status: "Publicado",
-        postar_linkedin: networks.includes("linkedin")
+        postar_linkedin: networks.includes("linkedin"),
+        postar_instagram: networks.includes("instagram"),
+        formato_midia: "Imagem"
       }).select();
 
       if (dbError) {
-        console.error("ERRO DETALHADO DO SUPABASE:", dbError);
-        const errorInfo = `Tabela: ${dbError.details || 'posts'}\nMensagem: ${dbError.message}\nCódigo: ${dbError.code}`;
-        alert(`Erro de Banco (RLS?):\n\n${errorInfo}`);
+        console.error("Erro ao salvar no banco:", dbError);
         throw new Error(`Erro no banco: ${dbError.message}`);
       }
       
-      console.log("Post salvo com sucesso no banco:", dbData);
+      console.log("Post salvo com sucesso:", dbData);
 
       // 3. Dispara publicação para o LinkedIn se selecionado
       if (networks.includes("linkedin")) {
@@ -98,6 +98,13 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       }
 
       toast.success("Post salvo com sucesso! ✨", { id: tId });
+      
+      // Reset local state
+      setLegenda("");
+      setImagem(null);
+      setFileToUpload(null);
+      setFileName(null);
+
       onCreated();
     } catch (e) {
       console.error("Erro completo no processo:", e);
