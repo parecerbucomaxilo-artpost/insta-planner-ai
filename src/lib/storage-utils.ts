@@ -24,10 +24,13 @@ export async function uploadGeneratedImage(dataUrl: string): Promise<string> {
   const blob = await dataURLtoBlob(dataUrl);
   
   const { data: userData, error: userError } = await supabase.auth.getUser();
-  const userId = userData?.user?.id || 'anonymous';
+  if (userError || !userData?.user?.id) {
+    throw new Error("Usuário não autenticado — faça login para enviar imagens.");
+  }
+  const userId = userData.user.id;
   
-  // Nome único com UUID e timestamp na raiz do bucket
-  const fileName = `${Date.now()}-${crypto.randomUUID()}.png`;
+  // Caminho prefixado com o userId (exigido pelas políticas de RLS do Storage)
+  const fileName = `${userId}/${Date.now()}-${crypto.randomUUID()}.png`;
   
   const { data, error } = await supabase.storage
     .from("post-images")
@@ -35,6 +38,7 @@ export async function uploadGeneratedImage(dataUrl: string): Promise<string> {
       contentType: "image/png",
       upsert: true,
     });
+
 
   if (error) {
     console.error("Erro no upload para o Storage:", error);
