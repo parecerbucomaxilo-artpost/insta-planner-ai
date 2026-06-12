@@ -260,12 +260,12 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const genWeek = useServerFn(generateWeekThemes);
 
   const handleSingle = async () => {
-    if (!tema.trim()) return toast.error("Descreva o tema do post.");
+    const temaTrim = tema.trim();
     setBusy("single");
     const tid = "ai-single";
-    toast.loading("IA criando legenda + imagem...", { id: tid });
+    toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
     try {
-      await genSingle({ data: { tema, especialidade, rede } });
+      await genSingle({ data: { tema: temaTrim, especialidade, rede } });
       toast.success("Post gerado! Veja em 'Todos os posts'.", { id: tid });
       setTema("");
       onCreated();
