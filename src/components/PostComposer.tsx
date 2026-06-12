@@ -50,24 +50,30 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
+    if (saving) return;
     if (!legenda.trim()) return toast.error("Escreva uma legenda primeiro.");
     if (!fileToUpload) return toast.error("Selecione uma imagem primeiro.");
     
     setSaving(true);
-    const tId = toast.loading("Iniciando processo de salvamento...");
+    const tId = "post-saving-toast";
+    toast.loading("Iniciando processo de publicação...", { id: tId });
     
     try {
       const userId = await getAuthedUserId();
-      console.log("Usuário autenticado:", userId);
       
-      // 1. Upload real para o bucket post-images com nome único
+      // 1. Upload imagem (sem retry automático no storage-utils)
       toast.loading("Enviando imagem...", { id: tId });
-      const publicUrl = await uploadPostImage(fileToUpload);
+      let publicUrl: string;
+      try {
+        publicUrl = await uploadPostImage(fileToUpload);
+      } catch (uploadError: any) {
+        throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
+      }
       
-      // 2. Salva na tabela posts
-      toast.loading("Salvando post...", { id: tId });
-      const { error: dbError, data: dbData } = await supabase.from("posts").insert({
+      // 2. Salva no banco
+      toast.loading("Salvando registro do post...", { id: tId });
+      const { error: dbError } = await supabase.from("posts").insert({
         user_id: userId,
         legenda: legenda,
         url_imagem: publicUrl,
@@ -76,29 +82,24 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         postar_linkedin: networks.includes("linkedin"),
         postar_instagram: networks.includes("instagram"),
         formato_midia: "Imagem"
-      } as any).select();
+      } as any);
 
-      if (dbError) {
-        console.error("Erro ao salvar no banco:", dbError);
-        throw new Error(`Erro no banco: ${dbError.message}`);
-      }
+      if (dbError) throw new Error(`Erro ao salvar no banco: ${dbError.message}`);
       
-      console.log("Post salvo com sucesso:", dbData);
-
-      // 3. Dispara publicação via Webhooks específicos com timeout de 10s
+      // 3. Busca Webhooks
       const { data: perfilData } = await supabase
         .from("perfil_usuario")
         .select("instagram_webhook_url, linkedin_webhook_url, webhook_url")
         .limit(1)
         .maybeSingle();
 
+      // 4. Dispara Webhooks (sem loop de reexecução)
       for (const network of networks) {
-        const specificWebhook = network === "instagram" 
+        const webhookUrl = network === "instagram" 
           ? (perfilData?.instagram_webhook_url || perfilData?.webhook_url || "https://hook.us2.make.com/vx87y6fldoxlpq2les3vpbfj16qq61iq")
           : (perfilData?.linkedin_webhook_url || "https://hook.us2.make.com/4tics3gdoow4y02vo1rh4wcmeshu4psv");
 
-        const webhookUrl = specificWebhook;
-        toast.loading(`Publicando no ${network}...`, { id: tId });
+        toast.loading(`Enviando para ${network}...`, { id: tId });
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -119,19 +120,19 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           clearTimeout(timeoutId);
 
           if (!response.ok) {
-            throw new Error(`O servidor do ${network} retornou um erro (${response.status}).`);
+            throw new Error(`O servidor do ${network} respondeu com erro ${response.status}`);
           }
         } catch (webhookErr: any) {
           clearTimeout(timeoutId);
-          console.error(`Erro fatal ao disparar webhook para ${network}:`, webhookErr);
+          // Falha crítica interrompe tudo
+          const isTimeout = webhookErr.name === 'AbortError';
+          const msg = isTimeout 
+            ? `Tempo esgotado ao conectar com ${network}.` 
+            : `Erro ao publicar no ${network}: ${webhookErr.message}`;
           
-          const errorMsg = webhookErr.name === 'AbortError' 
-            ? `Tempo de conexão esgotado no ${network}. A operação foi interrompida.`
-            : `Falha crítica ao publicar no ${network}: ${webhookErr.message}`;
-          
-          toast.error(errorMsg, { id: tId });
+          toast.error(msg, { id: tId });
           setSaving(false);
-          return; // Interrompe a execução completamente em caso de erro
+          return; // Para execução imediatamente
         }
       }
 
@@ -141,15 +142,15 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       setImagem(null);
       setFileToUpload(null);
       setFileName(null);
-
       onCreated();
+
     } catch (e: any) {
-      console.error("Erro interrompido:", e);
-      toast.error(e.message || "Erro inesperado. A operação foi cancelada.", { id: tId });
+      console.error("Erro na publicação:", e);
+      toast.error(e.message || "Erro crítico na publicação.", { id: tId });
     } finally {
       setSaving(false);
     }
-  };
+  }, [legenda, fileToUpload, networks, tipo, saving, onCreated]);
 
   return (
     <Card className="p-6 space-y-6 max-w-4xl mx-auto border-zinc-200 shadow-sm">
