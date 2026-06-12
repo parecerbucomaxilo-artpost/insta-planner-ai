@@ -32,16 +32,24 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
 
 export function FeedMockup({ mode, imagem, texto, perfil, loading }: Props) {
   const [recentImgs, setRecentImgs] = useState<string[]>([]);
+  const [isPublishedReal, setIsPublishedReal] = useState(false);
 
   useEffect(() => {
     if (mode !== "instagram") return;
-    (async () => {
+    const fetchPosts = async () => {
       const { data } = await supabase
         .from("posts")
-        .select("url_imagem, imagens_carrossel")
+        .select("url_imagem, imagens_carrossel, status")
         .order("created_at", { ascending: false })
         .limit(20);
       if (!data) return;
+      
+      if (data.length > 0 && data[0].status === "Publicado") {
+        setIsPublishedReal(true);
+      } else {
+        setIsPublishedReal(false);
+      }
+
       const imgs: string[] = [];
       for (const row of data) {
         const r = row as { url_imagem: string | null; imagens_carrossel: unknown };
@@ -52,7 +60,11 @@ export function FeedMockup({ mode, imagem, texto, perfil, loading }: Props) {
         if (imgs.length >= 9) break;
       }
       setRecentImgs(imgs.slice(0, 8));
-    })();
+    };
+
+    fetchPosts();
+    const interval = setInterval(fetchPosts, 3000);
+    return () => clearInterval(interval);
   }, [mode, imagem]);
 
   if (mode === "instagram") {
@@ -91,8 +103,11 @@ export function FeedMockup({ mode, imagem, texto, perfil, loading }: Props) {
                 <div className="h-full w-full bg-gradient-to-br from-slate-100 to-slate-200" />
               )}
               {i === 0 && (
-                <span className="absolute top-1.5 left-1.5 text-[9px] uppercase tracking-wider bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
-                  novo
+                <span className={cn(
+                  "absolute top-1.5 left-1.5 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded font-semibold",
+                  isPublishedReal ? "bg-emerald-500 text-white" : "bg-amber-500 text-white shadow-sm"
+                )}>
+                  {isPublishedReal ? "feed" : "rascunho"}
                 </span>
               )}
               {i === 0 && loading && (
