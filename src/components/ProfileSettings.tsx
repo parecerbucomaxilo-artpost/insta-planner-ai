@@ -367,18 +367,49 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
         description="Foto de perfil pública e @ usado na bio."
       />
 
-      <NetworkSection
-        title="LinkedIn"
-        Icon={Linkedin}
-        gradient="from-sky-600 to-blue-700"
-        nameLabel="Nome Profissional Oficial"
-        namePlaceholder="Dr. João Silva, CD, MSc"
-        nameValue={liNome}
-        onNameChange={setLiNome}
-        photo={liFoto}
-        onPhoto={setLiFoto}
-        description="Use foto formal/corporativa e seu nome completo com títulos."
-      />
+      <Card className="p-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-sky-600 to-blue-700 flex items-center justify-center text-white">
+            <Linkedin className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="font-semibold leading-tight">LinkedIn</h3>
+            <p className="text-xs text-muted-foreground">Conecte sua conta para publicar automaticamente.</p>
+          </div>
+        </div>
+
+        <div className="pt-2">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-2 border-blue-200 hover:bg-blue-50 text-blue-700"
+            onClick={async () => {
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'linkedin_oidc',
+                options: {
+                  redirectTo: window.location.origin + '/settings',
+                  scopes: 'openid profile email w_member_social'
+                }
+              });
+              if (error) toast.error("Erro ao iniciar login LinkedIn: " + error.message);
+            }}
+          >
+            <Linkedin className="h-4 w-4" />
+            Conectar conta do LinkedIn
+          </Button>
+          <p className="text-[10px] text-muted-foreground mt-2 italic">
+            Ao clicar, você será redirecionado para autorizar o Planner Chico no LinkedIn.
+          </p>
+        </div>
+
+        <div className="space-y-2 pt-2 border-t border-zinc-100">
+          <Label className="text-sm">Nome Profissional Oficial</Label>
+          <Input 
+            value={liNome} 
+            onChange={(e) => setLiNome(e.target.value)} 
+            placeholder="Dr. João Silva, CD, MSc" 
+          />
+        </div>
+      </Card>
 
       <Card className="p-5 space-y-4 border-primary/20 bg-primary/5">
         <div className="flex items-center gap-3">
