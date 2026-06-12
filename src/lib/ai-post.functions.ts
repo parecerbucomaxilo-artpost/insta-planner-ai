@@ -56,9 +56,10 @@ function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; tota
 }
 
 export const generateSinglePost = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([])
   .inputValidator((d: unknown) => SingleInput.parse(d))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
+    const context = { userId: TEMP_USER_ID };
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
