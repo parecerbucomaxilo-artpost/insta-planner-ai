@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as ApiPublicPostsAgendadosRouteImport } from './routes/api/public/posts-agendados'
 
+const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
+  id: '/politica-de-privacidade',
+  path: '/politica-de-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -43,11 +49,13 @@ const ApiPublicPostsAgendadosRoute = ApiPublicPostsAgendadosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
@@ -56,19 +64,31 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/settings' | '/api/public/posts-agendados'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/politica-de-privacidade'
+    | '/settings'
+    | '/api/public/posts-agendados'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/settings' | '/' | '/api/public/posts-agendados'
+  to:
+    | '/auth'
+    | '/politica-de-privacidade'
+    | '/settings'
+    | '/'
+    | '/api/public/posts-agendados'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/politica-de-privacidade'
     | '/_authenticated/settings'
     | '/_authenticated/'
     | '/api/public/posts-agendados'
@@ -77,11 +97,19 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   ApiPublicPostsAgendadosRoute: typeof ApiPublicPostsAgendadosRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/politica-de-privacidade': {
+      id: '/politica-de-privacidade'
+      path: '/politica-de-privacidade'
+      fullPath: '/politica-de-privacidade'
+      preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -136,8 +164,19 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   ApiPublicPostsAgendadosRoute: ApiPublicPostsAgendadosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
