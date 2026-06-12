@@ -91,6 +91,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
 
 
+
       toast.success("Post publicado com sucesso! ✨", { id: tId });
       
       setLegenda("");
