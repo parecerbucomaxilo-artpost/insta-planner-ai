@@ -3,11 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: () => {
     // Autenticação temporariamente desativada a pedido do usuário
-    // const { data, error } = await supabase.auth.getUser();
-    // if (error || !data.user) throw redirect({ to: "/auth" });
-    // return { user: data.user };
     return { user: { id: "temp-user" } };
   },
   component: () => <Outlet />,
