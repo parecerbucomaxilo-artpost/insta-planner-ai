@@ -585,31 +585,27 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const handleUploadSingle = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (formato === "Vídeo/Reels" && !file.type.startsWith("video/")) {
-        toast.error("Envie um arquivo de vídeo (MP4).");
-        e.target.value = "";
-        return;
-      }
-      if (formato === "Imagem" && !file.type.startsWith("image/")) {
-        toast.error("Envie uma imagem.");
-        e.target.value = "";
-        return;
-      }
       if (file.size > 25 * 1024 * 1024) {
         toast.error("Arquivo grande demais (máx 25MB).");
         e.target.value = "";
         return;
       }
 
-      // 1. Gera URL temporária para prévia imediata
-      const previewUrl = URL.createObjectURL(file);
-      setImagem(previewUrl);
-      
-      // 2. Guarda o objeto File para upload no momento do salvamento
-      setFileToUpload(file);
-      toast.success("Mídia selecionada!");
+      // Usando FileReader tradicional para ler como DataURL (Base64)
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        // Joga o resultado direto no estado da imagem para o preview (src da img)
+        setImagem(base64);
+        // Guarda o objeto File para o upload definitivo
+        setFileToUpload(file);
+        toast.success("Mídia carregada com sucesso!");
+      };
+      reader.onerror = () => {
+        toast.error("Erro ao ler o arquivo.");
+      };
+      reader.readAsDataURL(file);
     }
-    e.target.value = "";
   };
 
   const addCarouselPage = () => {
@@ -1294,6 +1290,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
                     <span className="text-[11px] text-muted-foreground mt-1">Selecione uma foto do seu computador</span>
                     <input
                       type="file"
+                      id="media-input"
                       accept="image/*"
                       className="hidden"
                       onChange={handleUploadSingle}
@@ -1314,7 +1311,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
                   {formato === "Vídeo/Reels" ? (
                     <video src={imagem} controls className="w-full aspect-square object-cover bg-black" />
                   ) : (
-                    <img src={imagem} alt="prévia" className="w-full aspect-square object-cover" />
+                    <img id="preview-img" src={imagem} alt="prévia" className="w-full aspect-square object-cover" />
                   )}
                   <Button size="icon" variant="destructive" className="absolute top-2 right-2 h-8 w-8" onClick={() => setImagem(null)}>
                     <X className="h-4 w-4" />
@@ -1341,6 +1338,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
                     </span>
                     <input
                       type="file"
+                      id="media-input"
                       accept="video/mp4,video/*"
                       className="hidden"
                       onChange={handleUploadSingle}
