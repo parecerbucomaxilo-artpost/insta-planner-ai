@@ -31,11 +31,8 @@ function AuthPage() {
 
   // Se já estiver logado, manda para o app
   useEffect(() => {
-    let active = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (active && data.user) navigate({ to: "/", replace: true });
-    });
-    return () => { active = false; };
+    // Redireciona sempre para o dashboard enquanto o login estiver desativado
+    navigate({ to: "/", replace: true });
   }, [navigate]);
 
   const handleEmail = async (e: React.FormEvent) => {
