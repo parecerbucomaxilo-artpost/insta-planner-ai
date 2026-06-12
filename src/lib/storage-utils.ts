@@ -26,8 +26,8 @@ export async function uploadGeneratedImage(dataUrl: string): Promise<string> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   const userId = userData?.user?.id || 'anonymous';
   
-  // Nome único com UUID e timestamp
-  const fileName = `${userId}/${Date.now()}-${crypto.randomUUID()}.png`;
+  // Nome único com UUID e timestamp na raiz do bucket
+  const fileName = `${Date.now()}-${crypto.randomUUID()}.png`;
   
   const { data, error } = await supabase.storage
     .from("post-images")
