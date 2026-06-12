@@ -6,8 +6,6 @@ import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { useServerFn } from "@tanstack/react-start";
-import { dispatchAlbato } from "@/lib/webhooks/albato.functions";
 import { toast } from "sonner";
 import type { PostRow } from "@/lib/posts-types";
 
@@ -19,7 +17,7 @@ const statusColor: Record<string, string> = {
 };
 
 export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () => void }) {
-  const sendAlbato = useServerFn(dispatchAlbato);
+  // const sendAlbato = useServerFn(dispatchAlbato); // Removido para reset logic
   const [publishingId, setPublishingId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
@@ -29,45 +27,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   };
 
   const handlePostNow = async (p: PostRow) => {
-    if (publishingId) return;
-    setPublishingId(p.id);
-    const loadingId = toast.loading("Publicando agora nas redes integradas…");
-    try {
-      const rawMediaUrl = p.url_imagem ?? p.imagens_carrossel?.[0] ?? null;
-      const mediaUrl = p.url_imagem ?? (p.imagens_carrossel?.[0] as string) ?? null;
-      const caption = p.legenda_instagram || p.legenda_linkedin || p.legenda || "";
-      const nowIso = new Date().toISOString();
-
-      const r = await sendAlbato({
-        data: {
-          media_url: mediaUrl,
-          caption,
-          data_agendamento: nowIso,
-          post_id: p.id,
-          status: "Publicado",
-        },
-      });
-
-      if (!r.ok) {
-        toast.error(`Falha no webhook (status ${r.status})`, { id: loadingId });
-        return;
-      }
-
-      const { error } = await supabase
-        .from("posts")
-        .update({ status: "Publicado", data_agendamento: nowIso })
-        .eq("id", p.id);
-      if (error) {
-        toast.error(`Publicado nas redes, mas falhou ao atualizar status: ${error.message}`, { id: loadingId });
-      } else {
-        toast.success("✅ Post publicado agora!", { id: loadingId });
-        onChange();
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao publicar", { id: loadingId });
-    } finally {
-      setPublishingId(null);
-    }
+    toast.info("A lógica de publicação foi resetada e será reconstruída em breve.");
   };
 
   if (posts.length === 0) {

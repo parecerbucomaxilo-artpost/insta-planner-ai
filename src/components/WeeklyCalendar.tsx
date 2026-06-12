@@ -2,9 +2,6 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
-import { useServerFn } from "@tanstack/react-start";
-import { weeklyPlan } from "@/lib/ai/weekly-plan.functions";
-import { generateImage } from "@/lib/ai/generate-image.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -16,9 +13,9 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import type { Perfil } from "@/components/ProfileSettings";
 import { DirectReplyCard } from "./DirectReplyCard";
-import { applyDoctorBadge, applyWatermark } from "@/lib/watermark";
+// import { applyDoctorBadge, applyWatermark } from "@/lib/watermark";
 import brandLogo from "@/assets/logo-clinica.png";
-import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
+// import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
 
 type PostPlano = {
   date: Date;
@@ -150,9 +147,9 @@ function fmtDate(d: Date) {
 }
 
 export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { perfil: Perfil | null; onCreated: () => void; autoGenerate?: boolean }) {
-  const genPlan = useServerFn(weeklyPlan);
-  const genImage = useServerFn(generateImage);
-  const genIdea = useServerFn(suggestIdea);
+  const genPlan = async () => ({ posts: [] });
+  const genImage = async () => ({ dataUrl: "" });
+  const genIdea = async () => ({ tema: "" });
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels" | "Carrossel">("Feed");
   const [loading, setLoading] = useState(false);
@@ -194,89 +191,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
   }, [weekStart]);
 
   const handleRegenerar = async (idx: number) => {
-    const post = posts[idx];
-    if (!post || post.status === "regerando") return;
-    
-    setPosts(prev => prev.map((p, i) => i === idx ? { ...p, status: "regerando" as const } : p));
-    const tId = toast.loading("Gerando nova ideia para este horário...");
-    
-    try {
-      const apiKey = (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
-      
-      const r = await genIdea({
-        data: {
-          networks: ["instagram"],
-          apiKey,
-          perfil: perfil ? {
-            nome: perfil.nome_profissional,
-            cro_uf: perfil.cro_uf,
-            subespecialidades: perfil.subespecialidades,
-            tom_voz: perfil.tom_voz
-          } : undefined,
-          estilo: "padrao"
-        }
-      }) as any;
-
-      let finalUrl: string | null = null;
-      
-      if (generateImages) {
-        const { dataUrl } = await genImage({
-          data: {
-            prompt: r.prompt_imagem,
-            aspect: post.formato === "Stories" ? "9:16" : "1:1"
-          }
-        });
-
-        finalUrl = dataUrl;
-        
-        try {
-          finalUrl = await applyWatermark(finalUrl, brandLogo, {
-            position: "tr",
-            sizeRatio: 0.08,
-            opacity: 0.8,
-          });
-        } catch (e) { console.error(e); }
-
-        try {
-          if (perfil?.nome_profissional || perfil?.cro_uf) {
-            finalUrl = await applyDoctorBadge(finalUrl, {
-              nome: perfil.nome_profissional ?? "",
-              cro: perfil.cro_uf ?? "",
-            });
-          }
-        } catch (e) { console.error(e); }
-      }
-
-      setPosts(prev => prev.map((p, i) => i === idx ? {
-        ...p,
-        titulo: r.tema,
-        legenda: r.legenda_instagram || "",
-        mensagemDirect: r.mensagem_direct || "",
-        promptImagem: r.prompt_imagem,
-        imagem: finalUrl,
-        status: "pronto" as const
-      } : p));
-
-      toast.success("Novo post gerado com sucesso!", { id: tId });
-      
-      const cached = readWeekCache(weekStart.toISOString());
-      if (cached) {
-        const updated = cached.map((p, i) => i === idx ? {
-          ...p,
-          titulo: r.tema,
-          legenda: r.legenda_instagram || "",
-          mensagemDirect: r.mensagem_direct || "",
-          promptImagem: r.prompt_imagem,
-          imagem: finalUrl,
-          status: "pronto" as const
-        } : p);
-        writeWeekCache(weekStart.toISOString(), updated as any);
-      }
-
-    } catch (e) {
-      toast.error("Erro ao regerar post", { id: tId });
-      setPosts(prev => prev.map((p, i) => i === idx ? { ...p, status: "pronto" as const } : p));
-    }
+    toast.info("A IA foi resetada para reconstrução.");
   };
 
   const autoGenTriggered = useRef(false);
@@ -294,146 +209,7 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
   }, [weekStart]);
 
   const handleGerar = async () => {
-    if (loading) return;
-    setLoading(true);
-    const tId = toast.loading(`Gerando seu cronograma de 7 dias com 2 ${formato.toLowerCase()} por dia…`);
-    try {
-      const apiKey =
-        (typeof window !== "undefined" && window.localStorage.getItem("anthropic_api_key")) || undefined;
-      const r = await genPlan({
-        data: {
-          apiKey,
-          perfil: perfil
-            ? {
-                nome: perfil.nome_profissional,
-                cro_uf: perfil.cro_uf,
-                subespecialidades: perfil.subespecialidades,
-                tom_voz: perfil.tom_voz,
-              }
-            : undefined,
-          formato: formato,
-        },
-      }) as any;
-
-      if (!r.posts) throw new Error("Falha ao obter lista de posts.");
-
-      setPosts((arr) =>
-        arr.map((p, i) => ({
-          ...p,
-          titulo: r.posts[i]?.titulo ?? p.titulo,
-          legenda: r.posts[i]?.legenda_instagram ?? "",
-          mensagemDirect: r.posts[i]?.mensagem_direct ?? "",
-          promptImagem: r.posts[i]?.prompt_imagem ?? "",
-          horaAgendamento: r.posts[i]?.hora_agendamento ?? p.horaAgendamento,
-          slidesData: r.posts[i]?.carrossel_slides,
-          status: "gerando",
-        })),
-      );
-
-      // Gera as imagens individualmente se a opção estiver habilitada
-      if (generateImages) {
-        toast.loading("Agendando geração de imagens para os posts…", { id: tId });
-        
-        // Processa posts sequencialmente para evitar sobrecarga, mas cada post é "independente" no UI
-        // Aumentando o tempo limite de espera entre posts e reduzindo carga paralela
-        for (let i = 0; i < r.posts.length; i++) {
-          const p = r.posts[i];
-          const isCarousel = formato === "Carrossel" && p.carrossel_slides?.length > 0;
-          
-          try {
-            if (isCarousel) {
-              const carouselImages: string[] = [];
-              for (let sIdx = 0; sIdx < p.carrossel_slides.length; sIdx++) {
-                const slide = p.carrossel_slides[sIdx];
-                const res = await genImage({ 
-                  data: { 
-                    prompt: slide.prompt_visual, 
-                    aspect: "1:1",
-                    slideRole: sIdx === 0 ? "carousel-hook" : sIdx === p.carrossel_slides.length - 1 ? "carousel-cta" : "carousel-middle",
-                    title: slide.titulo_slide,
-                    subtitle: slide.subtitulo_slide,
-                    bullets: slide.bullets,
-                    doctorName: perfil?.nome_profissional,
-                    cro: perfil?.cro_uf,
-                    slideIndex: sIdx,
-                    totalSlides: p.carrossel_slides.length
-                  } 
-                });
-                
-                let currentUrl = res.dataUrl as string;
-                try {
-                  currentUrl = await applyWatermark(currentUrl, brandLogo, { position: "tr", sizeRatio: 0.08, opacity: 0.8 });
-                } catch (e) { console.error("Erro watermark:", e); }
-
-                carouselImages.push(currentUrl);
-                
-                // Atualiza parcial para o usuário ver progresso do carrossel
-                setPosts((arr) => {
-                  const updated = [...arr];
-                  updated[i] = { ...updated[i], imagens: [...carouselImages] };
-                  return updated;
-                });
-              }
-              
-              setPosts((arr) => {
-                const updated = [...arr];
-                updated[i] = { ...updated[i], imagens: carouselImages, imagem: carouselImages[0], status: "pronto" as const };
-                writeWeekCache(weekStart.toISOString(), updated);
-                return updated;
-              });
-            } else {
-              const res = await genImage({ 
-                data: { 
-                  prompt: p.prompt_imagem, 
-                  aspect: formato === "Stories" ? "9:16" : "1:1" 
-                } 
-              });
-              
-              let currentUrl = res.dataUrl as string;
-
-              try {
-                currentUrl = await applyWatermark(currentUrl, brandLogo, { position: "tr", sizeRatio: 0.08, opacity: 0.8 });
-              } catch (e) { console.error("Erro watermark:", e); }
-
-              try {
-                if (perfil?.nome_profissional || perfil?.cro_uf) {
-                  currentUrl = await applyDoctorBadge(currentUrl, {
-                    nome: perfil.nome_profissional ?? "",
-                    cro: perfil.cro_uf ?? "",
-                  });
-                }
-              } catch (e) { console.error("Erro badge:", e); }
-
-              setPosts((arr) => {
-                const updated = [...arr];
-                updated[i] = { ...updated[i], imagem: currentUrl, imagens: [currentUrl], status: "pronto" as const };
-                writeWeekCache(weekStart.toISOString(), updated);
-                return updated;
-              });
-            }
-          } catch (err) {
-            console.error(`Erro ao gerar imagem ${i}:`, err);
-            setPosts((arr) => {
-              const updated = [...arr];
-              updated[i] = { ...updated[i], status: "pronto" as const };
-              return updated;
-            });
-          }
-        }
-      } else {
-        setPosts((arr) => {
-          const updated = arr.map(p => ({ ...p, status: "pronto" as const }));
-          writeWeekCache(weekStart.toISOString(), updated);
-          return updated;
-        });
-      }
-
-      toast.success("Cronograma pronto! ✨", { id: tId });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao gerar cronograma", { id: tId });
-    } finally {
-      setLoading(false);
-    }
+    toast.info("O gerador de cronograma foi resetado.");
   };
 
   const salvarDia = async (i: number, agendar: boolean) => {

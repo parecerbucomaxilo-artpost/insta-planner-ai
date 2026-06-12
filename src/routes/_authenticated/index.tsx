@@ -15,7 +15,7 @@ import { InsightsPanel } from "@/components/InsightsPanel";
 import { AutomationKeys } from "@/components/AutomationKeys";
 import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar";
-import { claimLegacyData } from "@/lib/claim-legacy.functions";
+// import { claimLegacyData } from "@/lib/claim-legacy.functions";
 import type { PostRow } from "@/lib/posts-types";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -50,7 +50,7 @@ function Dashboard() {
   useEffect(() => { const c = readPerfilCache(); if (c) setPerfil(c); }, []);
   const [tab, setTab] = useState("criar");
   const [autoGenWeekly, setAutoGenWeekly] = useState(false);
-  const claim = useServerFn(claimLegacyData);
+  const claim = async () => {};
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false });
@@ -179,9 +179,7 @@ function Dashboard() {
 
           <TabsContent value="criar" className="mt-6">
             <PostComposer 
-              perfil={perfil} 
               onCreated={() => { load(); setTab("todos"); }} 
-              onTriggerWeekly={() => { setAutoGenWeekly(true); setTab("semana"); }}
             />
           </TabsContent>
           <TabsContent value="semana" className="mt-6">
