@@ -98,6 +98,13 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       }
 
       toast.success("Post salvo com sucesso! ✨", { id: tId });
+      
+      // Reset local state
+      setLegenda("");
+      setImagem(null);
+      setFileToUpload(null);
+      setFileName(null);
+
       onCreated();
     } catch (e) {
       console.error("Erro completo no processo:", e);
