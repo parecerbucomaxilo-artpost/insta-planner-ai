@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+// Auth desativada no projeto — usamos um user_id temporário fixo.
+const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
 const SingleInput = z.object({
@@ -55,9 +56,10 @@ function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; tota
 }
 
 export const generateSinglePost = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([])
   .inputValidator((d: unknown) => SingleInput.parse(d))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
+    const context = { userId: TEMP_USER_ID };
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
@@ -173,7 +175,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
   });
 
 export const generateWeekThemes = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([])
   .inputValidator((d: unknown) => WeekInput.parse(d))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
