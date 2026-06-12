@@ -25,7 +25,7 @@ import { applyWatermark } from "@/lib/watermark";
 import brandLogo from "@/assets/logo-clinica.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { uploadGeneratedImage } from "@/lib/storage-utils";
+import { uploadGeneratedImage, uploadFile } from "@/lib/storage-utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 
@@ -599,9 +599,22 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         e.target.value = "";
         return;
       }
-      const dataUrl = await fileToDataUrl(file);
-      const storageUrl = await uploadGeneratedImage(dataUrl);
-      setImagem(storageUrl);
+
+      const tId = toast.loading("Enviando arquivo para o Storage...");
+      try {
+        // 1. Garante que o input de arquivo capture o objeto File correto (já capturado em 'file')
+        // 2. Faz o upload usando a função que encapsula o supabase.storage.from('post-images').upload()
+        // 3. Captura o erro do upload (dentro do uploadFile e aqui no try/catch)
+        const storageUrl = await uploadFile(file);
+        
+        // 4. Se o upload der certo, a URL pública já é retornada pela função
+        setImagem(storageUrl);
+        toast.success("Arquivo enviado com sucesso!", { id: tId });
+      } catch (error) {
+        // 3. Exibe um alerta em vermelho na tela (toast) mostrando a mensagem do erro
+        console.error("Erro no upload:", error);
+        toast.error(error instanceof Error ? `Erro no upload: ${error.message}` : "Erro desconhecido no upload", { id: tId });
+      }
     }
     e.target.value = "";
   };
