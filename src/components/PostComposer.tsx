@@ -889,12 +889,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       return;
     }
 
-    if (!perfil?.buffer_access_token) {
-      toast.error("Configure sua Chave API Buffer em Configurações -> Integrações.");
-      return;
-    }
-
-    setSaving(true);
+    setIsPublishingDirect(true);
     const tId = toast.loading("Publicando nas redes sociais...");
 
     try {
@@ -908,19 +903,24 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         body: {
           imageUrl: finalImageUrl,
           caption: textoParaEnviar,
-          bufferToken: perfil.buffer_access_token
+          plataformas: isX ? ["instagram"] : networks
         }
       });
 
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast.success("Publicado com sucesso!", { id: tId });
-      if (onCreated) onCreated();
+      if (data.success) {
+        toast.success("Publicado com sucesso!", { id: tId });
+        if (onCreated) onCreated();
+      } else {
+        throw new Error("Falha ao publicar em algumas redes.");
+      }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao publicar direto");
+      console.error("[PublishDirectError]", e);
+      toast.error(e instanceof Error ? e.message : "Falha ao publicar direto", { id: tId });
     } finally {
-      setSaving(false);
+      setIsPublishingDirect(false);
     }
   };
 
