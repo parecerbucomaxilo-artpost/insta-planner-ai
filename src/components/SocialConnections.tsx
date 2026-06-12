@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+// import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Linkedin, Instagram, Loader2, CheckCircle2, AlertCircle, ExternalLink, 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
-import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
+// import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
 const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
 
@@ -19,8 +19,10 @@ type LiStatus =
   | null;
 
 export function SocialConnections() {
-  const fetchStatus = useServerFn(getLinkedInStatus);
-  const sendLinkedIn = useServerFn(publishToLinkedIn);
+  // const fetchStatus = useServerFn(getLinkedInStatus);
+  // const sendLinkedIn = useServerFn(publishToLinkedIn);
+  const fetchStatus = async () => ({ connected: false });
+  const sendLinkedIn = async () => ({ ok: false, error: "Reset" });
   const [status, setStatus] = useState<LiStatus>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);

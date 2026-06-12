@@ -2,9 +2,8 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
-import { useServerFn } from "@tanstack/react-start";
-import { weeklyPlan } from "@/lib/ai/weekly-plan.functions";
-import { generateImage } from "@/lib/ai/generate-image.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { getAuthedUserId } from "@/lib/auth-utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -16,9 +15,9 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import type { Perfil } from "@/components/ProfileSettings";
 import { DirectReplyCard } from "./DirectReplyCard";
-import { applyDoctorBadge, applyWatermark } from "@/lib/watermark";
+// import { applyDoctorBadge, applyWatermark } from "@/lib/watermark";
 import brandLogo from "@/assets/logo-clinica.png";
-import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
+// import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
 
 type PostPlano = {
   date: Date;
@@ -150,9 +149,9 @@ function fmtDate(d: Date) {
 }
 
 export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { perfil: Perfil | null; onCreated: () => void; autoGenerate?: boolean }) {
-  const genPlan = useServerFn(weeklyPlan);
-  const genImage = useServerFn(generateImage);
-  const genIdea = useServerFn(suggestIdea);
+  const genPlan = async () => ({ posts: [] });
+  const genImage = async () => ({ dataUrl: "" });
+  const genIdea = async () => ({ tema: "" });
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels" | "Carrossel">("Feed");
   const [loading, setLoading] = useState(false);
