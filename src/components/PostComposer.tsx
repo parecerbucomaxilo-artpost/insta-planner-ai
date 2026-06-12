@@ -85,7 +85,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       
       console.log("Post salvo com sucesso:", dbData);
 
-      // 3. Dispara publicação via Webhooks específicos
+      // 3. Dispara publicação via Webhooks específicos com timeout de 10s
       const { data: perfilData } = await supabase
         .from("perfil_usuario")
         .select("instagram_webhook_url, linkedin_webhook_url, webhook_url")
@@ -98,12 +98,16 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           : (perfilData?.linkedin_webhook_url || "https://hook.us2.make.com/4tics3gdoow4y02vo1rh4wcmeshu4psv");
 
         const webhookUrl = specificWebhook;
-
         toast.loading(`Publicando no ${network}...`, { id: tId });
+
         try {
-          await fetch(webhookUrl, {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+
+          const response = await fetch(webhookUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
             body: JSON.stringify({
               texto: legenda,
               imagemUrl: publicUrl,
@@ -111,8 +115,20 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
               timestamp: new Date().toISOString()
             }),
           });
-        } catch (webhookErr) {
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            throw new Error(`Falha no webhook: ${response.statusText}`);
+          }
+        } catch (webhookErr: any) {
           console.error(`Erro ao disparar webhook para ${network}:`, webhookErr);
+          if (webhookErr.name === 'AbortError') {
+            toast.error(`Tempo esgotado ao publicar no ${network}. Verifique sua conexão.`, { id: tId });
+          } else {
+            toast.error(`Erro ao publicar no ${network}.`, { id: tId });
+          }
+          // Continuamos para a próxima rede se houver
         }
       }
 
