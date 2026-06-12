@@ -194,7 +194,8 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
       experimental_output: Output.object({ schema }),
       system: `Você é estrategista de conteúdo de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar.
 Crie 1 tema por slot do cronograma abaixo (${slots.length} slots), sobre: ${data.especialidade}.
-Mistura obrigatória: IG feed (linguagem leiga/empática + ganchos de dor), IG stories (curto, direto, enquete/pergunta), LinkedIn (formal/científico, dados/evidência).
+Mistura obrigatória: IG feed (CARROSSEL, linguagem leiga/empática + ganchos de dor), IG stories (teaser/chamada do FEED do MESMO DIA — pode ser repetição/pergunta sobre o tema do feed), LinkedIn (formal/científico, dados/evidência).
+IMPORTANTE: o tema dos STORIES deve coincidir com o tema do POST FEED do mesmo dia (story de manhã ↔ feed de 9h, story de tarde ↔ feed de 15h, story de noite ↔ feed de 19h). Não invente temas novos para stories — eles divulgam o feed.
 Domingos = tom leve, motivacional, agradecimento, reflexão sobre cuidado e bem-estar — SEM gancho agressivo de dor.
 Cada tema deve atacar uma DOR REAL (siso, ATM, trauma facial, infecção odontogênica, apneia, etc.) salvo nos domingos.
 NUNCA CTA "agende consulta" — sempre WhatsApp/Link na Bio.
@@ -204,8 +205,8 @@ ${slotsResumo}`,
       prompt: "Gere os temas agora, um por slot, na ordem.",
     });
 
-    // Anexa metadados do slot a cada tema
-    const temas = out.temas
+    // Anexa metadados + força stories a herdarem o tema do feed do mesmo dia
+    const enriquecidos = out.temas
       .sort((a, b) => a.slotIndex - b.slotIndex)
       .map((t) => {
         const s = slots[t.slotIndex - 1] ?? slots[0];
@@ -214,10 +215,39 @@ ${slotsResumo}`,
           rede: s.rede,
           tipo: s.tipo,
           quando: s.quando.toISOString(),
+          dataKey: s.quando.toISOString().slice(0, 10),
+          hora: s.hora,
+          formato: (s.rede === "instagram" && s.tipo === "feed"
+            ? "Carrossel"
+            : s.tipo === "stories"
+              ? "Story"
+              : "Post Único") as "Carrossel" | "Story" | "Post Único",
           tema: t.tema,
           gancho: t.gancho,
         };
       });
 
+    // Para cada story, copia o tema/gancho do feed IG mais próximo (mesmo dia)
+    const feedsIgPorDia = new Map<string, typeof enriquecidos>();
+    for (const e of enriquecidos) {
+      if (e.rede === "instagram" && e.tipo === "feed") {
+        const arr = feedsIgPorDia.get(e.dataKey) ?? [];
+        arr.push(e);
+        feedsIgPorDia.set(e.dataKey, arr);
+      }
+    }
+    for (const e of enriquecidos) {
+      if (e.rede === "instagram" && e.tipo === "stories") {
+        const feeds = feedsIgPorDia.get(e.dataKey) ?? [];
+        if (feeds.length === 0) continue;
+        const mais = feeds.reduce((best, f) =>
+          Math.abs(f.hora - e.hora) < Math.abs(best.hora - e.hora) ? f : best,
+        );
+        e.tema = mais.tema;
+        e.gancho = `Teaser do feed ${String(mais.hora).padStart(2, "0")}h: ${mais.gancho}`;
+      }
+    }
+
+    const temas = enriquecidos.map(({ dataKey, hora, ...rest }) => rest);
     return { temas };
   });
