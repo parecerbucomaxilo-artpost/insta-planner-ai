@@ -5,71 +5,55 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const WORKER_URL = 'https://workers.dev'
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { imageUrl, caption, bufferToken } = await req.json()
+    const { imageUrl, caption, plataformas } = await req.json()
 
-    console.log('Publishing started:', { 
-      hasImage: !!imageUrl, 
-      hasBuffer: !!bufferToken
-    })
+    console.log('Publishing started:', { hasImage: !!imageUrl, hasCaption: !!caption })
 
-    if (!bufferToken) {
-      throw new Error('Chave API do Buffer não configurada.')
-    }
+    if (!caption) throw new Error('Legenda (texto) é obrigatória.')
+    if (!imageUrl) throw new Error('URL da imagem é obrigatória.')
 
-    let bufferResult = null
+    const targets: Array<'instagram' | 'linkedin'> =
+      Array.isArray(plataformas) && plataformas.length > 0
+        ? plataformas
+        : ['instagram', 'linkedin']
 
-    // REQUISIÇÃO PARA WORKERS.DEV (Conforme solicitado)
-    console.log('Forwarding to workers.dev...')
-    try {
-      const platforms = []
-      // Se tivermos redes selecionadas explicitamente no app, podemos usar elas, 
-      // ou apenas enviar as duas principais se o usuário quiser simplificar.
-      // Aqui vamos enviar individualmente para cada plataforma suportada pelo endpoint do usuário.
-      
-      const requests = ['instagram', 'linkedin'].map(plataforma => {
-        return fetch('https://workers.dev', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            plataforma,
-            texto: caption,
-            imagemUrl: imageUrl
+    const results = await Promise.all(
+      targets.map(async (plataforma) => {
+        try {
+          const res = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plataforma, texto: caption, imagemUrl: imageUrl }),
           })
-        }).catch(err => {
-          console.error(`Failed to send to workers.dev for ${plataforma}:`, err)
-          return null
-        })
-      })
-
-      await Promise.all(requests)
-      console.log('Forwarded to workers.dev successfully')
-    } catch (err) {
-      console.warn('Error forwarding to workers.dev (non-blocking):', err)
-    }
-
-    // INTEGRAÇÃO BUFFER API (Mantida como principal)
-    console.log('Publishing to Buffer...')
-    try {
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        buffer: bufferResult 
+          const text = await res.text()
+          console.log(`[${plataforma}] status=${res.status} body=${text.slice(0, 200)}`)
+          return { plataforma, ok: res.ok, status: res.status, response: text }
+        } catch (err) {
+          console.error(`[${plataforma}] fetch error`, err)
+          return { plataforma, ok: false, error: err instanceof Error ? err.message : String(err) }
+        }
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
+    const anyOk = results.some((r) => r.ok)
+
+    return new Response(
+      JSON.stringify({ success: anyOk, results }),
+      { status: anyOk ? 200 : 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    )
   } catch (error) {
     console.error('Publishing error:', error)
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : String(error) }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   }
 })
