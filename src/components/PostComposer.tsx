@@ -1208,7 +1208,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
 
             {/* POST ÚNICO */}
             <TabsContent value="Post Único" className="mt-4 space-y-4">
-              {formato === "Imagem" ? (
+              {formato === "Imagem" && (
                 <div className="space-y-4">
                   <div className="rounded-lg border bg-accent/30 p-4 space-y-3">
                     <Label className="flex items-center gap-2 text-sm">
@@ -1298,7 +1298,9 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
                     />
                   </label>
                 </div>
-              ) : (
+              )}
+
+              {formato === "Vídeo/Reels" && (
                 <div className="rounded-lg border bg-violet-500/5 p-4 text-sm text-muted-foreground">
                   <Film className="h-4 w-4 inline mr-1.5 text-violet-600" />
                   Faça upload do arquivo MP4 abaixo. A geração via IA é exclusiva para imagens.
@@ -1328,29 +1330,21 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
                   <span className="text-[10px] text-muted-foreground">A legenda já está acima ↑</span>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-lg cursor-pointer hover:bg-accent transition-colors">
-                  {formato === "Vídeo/Reels" ? (
-                    <>
-                      <Film className="h-10 w-10 text-violet-500 mb-2" />
-                      <span className="text-sm font-medium">Enviar vídeo (MP4)</span>
-                      <span className="text-xs text-muted-foreground mt-1 text-center px-4">
-                        Será publicado como Reels no Instagram e vídeo no LinkedIn.
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <ImgIcon className="h-10 w-10 text-muted-foreground mb-2" />
-                      <span className="text-sm text-muted-foreground">A imagem gerada aparecerá aqui</span>
-                      <span className="text-xs text-muted-foreground mt-1">ou clique para enviar manualmente</span>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    accept={formato === "Vídeo/Reels" ? "video/mp4,video/*" : "image/*"}
-                    className="hidden"
-                    onChange={handleUploadSingle}
-                  />
-                </label>
+                formato === "Vídeo/Reels" && (
+                  <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-lg cursor-pointer hover:bg-accent transition-colors">
+                    <Film className="h-10 w-10 text-violet-500 mb-2" />
+                    <span className="text-sm font-medium">Enviar vídeo (MP4)</span>
+                    <span className="text-xs text-muted-foreground mt-1 text-center px-4">
+                      Será publicado como Reels no Instagram e vídeo no LinkedIn.
+                    </span>
+                    <input
+                      type="file"
+                      accept="video/mp4,video/*"
+                      className="hidden"
+                      onChange={handleUploadSingle}
+                    />
+                  </label>
+                )
               )}
             </TabsContent>
 
