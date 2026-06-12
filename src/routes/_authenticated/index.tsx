@@ -50,7 +50,7 @@ function Dashboard() {
   useEffect(() => { const c = readPerfilCache(); if (c) setPerfil(c); }, []);
   const [tab, setTab] = useState("criar");
   const [autoGenWeekly, setAutoGenWeekly] = useState(false);
-  const claim = async () => {};
+  const claim = useCallback(async () => {}, []);
 
   const load = useCallback(async () => {
     console.log("[Reset] Carregando posts...");
