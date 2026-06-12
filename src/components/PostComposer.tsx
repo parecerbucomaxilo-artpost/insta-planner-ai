@@ -100,10 +100,10 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         const webhookUrl = specificWebhook;
         toast.loading(`Publicando no ${network}...`, { id: tId });
 
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
+        try {
           const response = await fetch(webhookUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -119,31 +119,33 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           clearTimeout(timeoutId);
 
           if (!response.ok) {
-            throw new Error(`Falha no webhook: ${response.statusText}`);
+            throw new Error(`O servidor do ${network} retornou um erro (${response.status}).`);
           }
         } catch (webhookErr: any) {
-          console.error(`Erro ao disparar webhook para ${network}:`, webhookErr);
-          if (webhookErr.name === 'AbortError') {
-            toast.error(`Tempo esgotado ao publicar no ${network}. Verifique sua conexão.`, { id: tId });
-          } else {
-            toast.error(`Erro ao publicar no ${network}.`, { id: tId });
-          }
-          // Continuamos para a próxima rede se houver
+          clearTimeout(timeoutId);
+          console.error(`Erro fatal ao disparar webhook para ${network}:`, webhookErr);
+          
+          const errorMsg = webhookErr.name === 'AbortError' 
+            ? `Tempo de conexão esgotado no ${network}. A operação foi interrompida.`
+            : `Falha crítica ao publicar no ${network}: ${webhookErr.message}`;
+          
+          toast.error(errorMsg, { id: tId });
+          setSaving(false);
+          return; // Interrompe a execução completamente em caso de erro
         }
       }
 
-      toast.success("Post salvo com sucesso! ✨", { id: tId });
+      toast.success("Post publicado com sucesso! ✨", { id: tId });
       
-      // Reset local state
       setLegenda("");
       setImagem(null);
       setFileToUpload(null);
       setFileName(null);
 
       onCreated();
-    } catch (e) {
-      console.error("Erro completo no processo:", e);
-      toast.error(e instanceof Error ? e.message : "Erro crítico no processo", { id: tId });
+    } catch (e: any) {
+      console.error("Erro interrompido:", e);
+      toast.error(e.message || "Erro inesperado. A operação foi cancelada.", { id: tId });
     } finally {
       setSaving(false);
     }
