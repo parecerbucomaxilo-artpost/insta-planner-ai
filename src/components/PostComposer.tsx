@@ -150,6 +150,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
   const [orientacoes, setOrientacoes] = useState("");
   const [imagem, setImagem] = useState<string | null>(null);
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [carrossel, setCarrossel] = useState<string[]>([]);
   const [carouselPrompts, setCarouselPrompts] = useState<string[]>([""]);
   const [data, setData] = useState("");
@@ -599,7 +600,7 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
         setImagem(base64);
         // Guarda o objeto File para o upload definitivo
         setFileToUpload(file);
-        toast.success("Mídia carregada com sucesso!");
+        setFileName(file.name);
       };
       reader.onerror = () => {
         toast.error("Erro ao ler o arquivo.");
@@ -1296,6 +1297,13 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
                       onChange={handleUploadSingle}
                     />
                   </label>
+
+                  {fileToUpload && (
+                    <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-md text-[11px] flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                      <Check className="h-3 w-3" />
+                      <span>[OK] Arquivo selecionado: <span className="font-bold">{fileName}</span></span>
+                    </div>
+                  )}
                 </div>
               )}
 
