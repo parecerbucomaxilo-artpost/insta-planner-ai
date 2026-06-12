@@ -130,7 +130,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         slidesSpec.map((s) =>
           generateImageBase64({
             apiKey: key,
-            prompt: imageSystemPrompt(data.tema, data.rede, s),
+            prompt: imageSystemPrompt(tema, data.rede, s),
             size,
           }),
         ),
@@ -141,7 +141,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
     } else {
       const b64 = await generateImageBase64({
         apiKey: key,
-        prompt: imageSystemPrompt(data.tema, data.rede),
+        prompt: imageSystemPrompt(tema, data.rede),
         size,
       });
       urlImagem = await uploadOne(b64);
@@ -163,7 +163,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         postar_linkedin: data.rede === "linkedin",
         status: data.quando ? "Agendado" : "Rascunho",
         data_agendamento: data.quando ?? null,
-        prompt_ia: data.tema,
+        prompt_ia: tema,
       } as any)
       .select()
       .single();
