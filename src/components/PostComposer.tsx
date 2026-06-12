@@ -1209,69 +1209,94 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
             {/* POST ÚNICO */}
             <TabsContent value="Post Único" className="mt-4 space-y-4">
               {formato === "Imagem" ? (
-                <div className="space-y-3 rounded-lg border bg-accent/30 p-4">
-                  <Label className="flex items-center gap-2 text-sm">
-                    <Sparkles className="h-4 w-4 text-primary" /> Geração de Imagem
-                    <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">
-                      100% Google Gemini
-                    </span>
-                  </Label>
+                <div className="space-y-4">
+                  <div className="rounded-lg border bg-accent/30 p-4 space-y-3">
+                    <Label className="flex items-center gap-2 text-sm">
+                      <Sparkles className="h-4 w-4 text-primary" /> Geração de Imagem
+                      <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">
+                        100% Google Gemini
+                      </span>
+                    </Label>
 
-                  {/* Seletor de modo */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {([
-                      { id: "auto", label: "Gerar Automaticamente por IA", hint: "Usa a legenda do post." },
-                      { id: "manual", label: "Fornecer Minhas Orientações", hint: "Você descreve em PT." },
-                    ] as const).map((m) => {
-                      const active = imageMode === m.id;
-                      return (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={() => setImageMode(m.id)}
-                          className={cn(
-                            "flex flex-col items-start text-left p-3 rounded-lg border-2 transition-all",
-                            active ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40",
-                          )}
-                        >
-                          <span className="text-xs font-semibold">{m.label}</span>
-                          <span className="text-[10px] text-muted-foreground mt-0.5">{m.hint}</span>
-                        </button>
-                      );
-                    })}
+                    {/* Seletor de modo */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {([
+                        { id: "auto", label: "Gerar Automaticamente por IA", hint: "Usa a legenda do post." },
+                        { id: "manual", label: "Fornecer Minhas Orientações", hint: "Você descreve em PT." },
+                      ] as const).map((m) => {
+                        const active = imageMode === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => setImageMode(m.id)}
+                            className={cn(
+                              "flex flex-col items-start text-left p-3 rounded-lg border-2 transition-all",
+                              active ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40",
+                            )}
+                          >
+                            <span className="text-xs font-semibold">{m.label}</span>
+                            <span className="text-[10px] text-muted-foreground mt-0.5">{m.hint}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {imageMode === "auto" ? (
+                      <div className="space-y-1">
+                        <p className="text-[11px] text-muted-foreground">
+                          Prompt automático (somente leitura) — gerado a partir da legenda da rede ativa.
+                        </p>
+                        <Textarea
+                          value={buildAutoPrompt(legendaIg || legendaLi)}
+                          readOnly
+                          rows={3}
+                          className="bg-muted/40 text-xs cursor-not-allowed"
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <Label className="text-xs">Suas orientações</Label>
+                        <Textarea
+                          value={orientacoes}
+                          onChange={(e) => setOrientacoes(e.target.value)}
+                          rows={3}
+                          placeholder="Digite o que você quer ver na imagem (ex: cores, elementos, estilo)"
+                        />
+                      </div>
+                    )}
+
+                    <Button onClick={handleGenerateSingle} disabled={loadingAi} className="w-full">
+                      {loadingAi ? (
+                        <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando via Gemini...</>
+                      ) : (
+                        <><Sparkles className="h-4 w-4 mr-2" /> Gerar Imagem via Gemini</>
+                      )}
+                    </Button>
                   </div>
 
-                  {imageMode === "auto" ? (
-                    <div className="space-y-1">
-                      <p className="text-[11px] text-muted-foreground">
-                        Prompt automático (somente leitura) — gerado a partir da legenda da rede ativa.
-                      </p>
-                      <Textarea
-                        value={buildAutoPrompt(legendaIg || legendaLi)}
-                        readOnly
-                        rows={3}
-                        className="bg-muted/40 text-xs cursor-not-allowed"
-                      />
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-muted-foreground/20" />
                     </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <Label className="text-xs">Suas orientações</Label>
-                      <Textarea
-                        value={orientacoes}
-                        onChange={(e) => setOrientacoes(e.target.value)}
-                        rows={3}
-                        placeholder="Digite o que você quer ver na imagem (ex: cores, elementos, estilo)"
-                      />
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Ou envie seu próprio arquivo</span>
                     </div>
-                  )}
+                  </div>
 
-                  <Button onClick={handleGenerateSingle} disabled={loadingAi} className="w-full">
-                    {loadingAi ? (
-                      <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando via Gemini...</>
-                    ) : (
-                      <><Sparkles className="h-4 w-4 mr-2" /> Gerar Imagem via Gemini</>
-                    )}
-                  </Button>
+                  <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-primary/30 rounded-lg cursor-pointer hover:bg-primary/5 hover:border-primary transition-all group bg-card shadow-sm">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <ImgIcon className="h-6 w-6 text-primary" />
+                    </div>
+                    <span className="text-sm font-semibold text-primary">Upload de Imagem</span>
+                    <span className="text-[11px] text-muted-foreground mt-1">Selecione uma foto do seu computador</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleUploadSingle}
+                    />
+                  </label>
                 </div>
               ) : (
                 <div className="rounded-lg border bg-violet-500/5 p-4 text-sm text-muted-foreground">
