@@ -255,7 +255,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x">("instagram");
   const [busy, setBusy] = useState<null | "single" | "week">(null);
-  const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tema: string; gancho: string }> | null>(null);
+  const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; quando?: string; tema: string; gancho: string }> | null>(null);
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
 
@@ -279,11 +279,11 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const handleWeek = async () => {
     setBusy("week");
     const tid = "ai-week";
-    toast.loading("IA planejando 7 dias...", { id: tid });
+    toast.loading("IA planejando 7 dias (cronograma fixo)...", { id: tid });
     try {
       const out = await genWeek({ data: { especialidade } });
-      setTemas(out.temas);
-      toast.success("Cronograma gerado. Aprove os temas e gere as imagens.", { id: tid });
+      setTemas(out.temas as any);
+      toast.success(`${out.temas.length} slots gerados. Aprove para criar imagem + agendar.`, { id: tid });
     } catch (e: any) {
       toast.error(e.message || "Falha no cronograma.", { id: tid });
     } finally {
@@ -291,19 +291,30 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     }
   };
 
-  const approveTheme = async (t: { rede: string; tema: string }) => {
+  const approveTheme = async (t: { rede: string; tipo?: string; quando?: string; tema: string }) => {
     const r = (t.rede === "linkedin" ? "linkedin" : t.rede === "estilo-x" ? "estilo-x" : "instagram") as
       | "instagram" | "linkedin" | "estilo-x";
     const tid = `ai-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
-      await genSingle({ data: { tema: t.tema, especialidade, rede: r } });
-      toast.success("Gerado!", { id: tid });
+      await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, quando: t.quando } });
+      toast.success(t.quando ? "Agendado!" : "Gerado!", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       onCreated();
     } catch (e: any) {
       toast.error(e.message || "Falha", { id: tid });
     }
+  };
+
+  const approveAll = async () => {
+    if (!temas) return;
+    setBusy("week");
+    for (const t of temas) {
+      // sequencial para não estourar rate-limit de imagem
+      // eslint-disable-next-line no-await-in-loop
+      await approveTheme(t);
+    }
+    setBusy(null);
   };
 
   return (
@@ -375,22 +386,45 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           Programar 7 dias com IA
         </Button>
       </div>
+      <p className="text-[11px] text-indigo-700/80 bg-indigo-50/60 rounded-md p-2 leading-relaxed">
+        <strong>Cronograma fixo (seg-sáb):</strong> IG feed 09h / 15h / 19h · IG stories 08h / 13h / 17h · LinkedIn 09h e 17h30.
+        <br />
+        <strong>Domingo:</strong> mensagem especial automática (IG 10h + story 9h · LinkedIn 11h).
+      </p>
 
       {temas && temas.length > 0 && (
         <div className="space-y-2 pt-3 border-t border-indigo-200">
-          <p className="text-xs font-semibold text-indigo-900">Aprove os temas para gerar imagem + legenda:</p>
-          {temas.map((t) => (
-            <div key={t.dia} className="flex items-start gap-2 p-2 bg-white rounded-md border border-indigo-100">
-              <span className="text-xs font-bold text-indigo-600 w-12">Dia {t.dia}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{t.tema}</p>
-                <p className="text-xs text-zinc-500 truncate">{t.gancho} · {t.rede}</p>
-              </div>
-              <Button size="sm" variant="ghost" onClick={() => approveTheme(t)}>
-                <Check className="w-4 h-4 text-emerald-600" />
-              </Button>
-            </div>
-          ))}
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-indigo-900">
+              {temas.length} slots no cronograma fixo — aprove para gerar imagem + agendar:
+            </p>
+            <Button size="sm" variant="default" onClick={approveAll} disabled={busy !== null} className="bg-emerald-600 hover:bg-emerald-700">
+              {busy === "week" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
+              Aprovar tudo
+            </Button>
+          </div>
+          <div className="max-h-80 overflow-y-auto space-y-1.5">
+            {temas.map((t) => {
+              const dt = t.quando ? new Date(t.quando) : null;
+              const dow = dt ? ["dom","seg","ter","qua","qui","sex","sáb"][dt.getDay()] : "";
+              const hhmm = dt ? `${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}` : "";
+              return (
+                <div key={`${t.dia}-${t.tema}`} className="flex items-start gap-2 p-2 bg-white rounded-md border border-indigo-100">
+                  <span className="text-[10px] font-bold text-indigo-600 w-20 leading-tight uppercase">
+                    {dow} {hhmm}<br />
+                    <span className="text-zinc-500 font-medium normal-case">{t.rede} {t.tipo}</span>
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{t.tema}</p>
+                    <p className="text-xs text-zinc-500 truncate">{t.gancho}</p>
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => approveTheme(t)}>
+                    <Check className="w-4 h-4 text-emerald-600" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </Card>

@@ -6,6 +6,8 @@ const SingleInput = z.object({
   tema: z.string().min(1),
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
   rede: z.enum(["instagram", "linkedin", "estilo-x"]).default("instagram"),
+  tipo: z.enum(["feed", "stories"]).optional(),
+  quando: z.string().datetime().optional(), // ISO; se vier, agenda
 });
 
 const WeekInput = z.object({
@@ -88,11 +90,13 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         user_id: context.userId,
         tipo_post: data.rede === "estilo-x" ? "Carrossel" : "Post Único",
         estilo_layout: data.rede === "estilo-x" ? "Estilo X" : "Padrão",
+        formato_midia: data.tipo === "stories" ? "Story" : "Imagem",
         legenda,
         url_imagem: pub.publicUrl,
         postar_instagram: data.rede !== "linkedin",
         postar_linkedin: data.rede === "linkedin",
-        status: "Rascunho",
+        status: data.quando ? "Agendado" : "Rascunho",
+        data_agendamento: data.quando ?? null,
         prompt_ia: data.tema,
       } as any)
       .select()
@@ -111,29 +115,57 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
 
     const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
     const { generateText, Output } = await import("ai");
+    const { buildScheduleSlots } = await import("@/lib/schedule-config");
 
     const gateway = createLovableAiGatewayProvider(key);
     const model = gateway("google/gemini-3-flash-preview");
 
+    // Slots reais dos próximos 7 dias
+    const slots = buildScheduleSlots(new Date(), 7);
+    const slotsResumo = slots.map((s, i) => {
+      const dow = ["DOM","SEG","TER","QUA","QUI","SEX","SAB"][s.diaSemana];
+      const hhmm = `${String(s.hora).padStart(2,"0")}:${String(s.minuto).padStart(2,"0")}`;
+      const dominical = s.diaSemana === 0 ? " [MENSAGEM DE DOMINGO — tom leve/inspiracional]" : "";
+      return `${i + 1}. ${dow} ${hhmm} · ${s.rede} ${s.tipo}${dominical}`;
+    }).join("\n");
+
     const schema = z.object({
       temas: z.array(z.object({
-        dia: z.number(),
-        rede: z.enum(["instagram", "linkedin", "estilo-x"]),
+        slotIndex: z.number(),
         tema: z.string(),
         gancho: z.string(),
-      })).length(7),
+      })).length(slots.length),
     });
 
     const { experimental_output: out } = await generateText({
       model,
       experimental_output: Output.object({ schema }),
       system: `Você é estrategista de conteúdo de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar.
-Crie um cronograma de 7 dias (1 post/dia) sobre: ${data.especialidade}.
-Misture: IG (linguagem leiga/empática), LinkedIn (formal/científico) e 1 Estilo X (tweet visual).
-Cada tema deve atacar uma DOR REAL do paciente (terceiros molares, ATM, trauma facial, infecção odontogênica, apneia, etc.).
-Nunca CTA "agende consulta" — sempre WhatsApp/Link na Bio.`,
-      prompt: "Gere os 7 temas agora.",
+Crie 1 tema por slot do cronograma abaixo (${slots.length} slots), sobre: ${data.especialidade}.
+Mistura obrigatória: IG feed (linguagem leiga/empática + ganchos de dor), IG stories (curto, direto, enquete/pergunta), LinkedIn (formal/científico, dados/evidência).
+Domingos = tom leve, motivacional, agradecimento, reflexão sobre cuidado e bem-estar — SEM gancho agressivo de dor.
+Cada tema deve atacar uma DOR REAL (siso, ATM, trauma facial, infecção odontogênica, apneia, etc.) salvo nos domingos.
+NUNCA CTA "agende consulta" — sempre WhatsApp/Link na Bio.
+
+Slots:
+${slotsResumo}`,
+      prompt: "Gere os temas agora, um por slot, na ordem.",
     });
 
-    return out;
+    // Anexa metadados do slot a cada tema
+    const temas = out.temas
+      .sort((a, b) => a.slotIndex - b.slotIndex)
+      .map((t) => {
+        const s = slots[t.slotIndex - 1] ?? slots[0];
+        return {
+          dia: t.slotIndex,
+          rede: s.rede,
+          tipo: s.tipo,
+          quando: s.quando.toISOString(),
+          tema: t.tema,
+          gancho: t.gancho,
+        };
+      });
+
+    return { temas };
   });
