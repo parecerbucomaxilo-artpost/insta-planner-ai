@@ -77,7 +77,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       }).select();
 
       if (dbError) {
-        console.error("Erro ao inserir post no banco de dados:", dbError);
+        console.error("ERRO DETALHADO DO SUPABASE:", dbError);
+        const errorInfo = `Tabela: ${dbError.details || 'posts'}\nMensagem: ${dbError.message}\nCódigo: ${dbError.code}`;
+        alert(`Erro de Banco (RLS?):\n\n${errorInfo}`);
         throw new Error(`Erro no banco: ${dbError.message}`);
       }
       
