@@ -8,52 +8,64 @@ const corsHeaders = {
 const WORKER_URL = 'https://workers.dev'
 
 serve(async (req) => {
+  // Resposta simples para OPTIONS para evitar problemas de CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { imageUrl, caption, plataformas } = await req.json()
+    // Recebe o corpo da requisição do frontend
+    // Esperamos as mesmas propriedades que o frontend já envia
+    const body = await req.json()
+    console.log('Publishing request received:', body)
 
-    console.log('Publishing started:', { hasImage: !!imageUrl, hasCaption: !!caption })
+    // Estrutura EXATA solicitada pelo usuário:
+    // { "plataforma": "instagram", "texto": "Legenda de teste", "imagemUrl": "https://unsplash.com" }
+    const payload = {
+      plataforma: "instagram",
+      texto: body.caption || "Legenda de teste",
+      imagemUrl: body.imageUrl || "https://unsplash.com"
+    }
 
-    if (!caption) throw new Error('Legenda (texto) é obrigatória.')
-    if (!imageUrl) throw new Error('URL da imagem é obrigatória.')
+    console.log('Sending payload to server:', payload)
 
-    const targets: Array<'instagram' | 'linkedin'> =
-      Array.isArray(plataformas) && plataformas.length > 0
-        ? plataformas
-        : ['instagram', 'linkedin']
+    // Disparo POST simples para a URL do servidor
+    // Removendo cabeçalhos complexos (mantendo apenas o básico)
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+    })
 
-    const results = await Promise.all(
-      targets.map(async (plataforma) => {
-        try {
-          const res = await fetch(WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ plataforma, texto: caption, imagemUrl: imageUrl }),
-          })
-          const text = await res.text()
-          console.log(`[${plataforma}] status=${res.status} body=${text.slice(0, 200)}`)
-          return { plataforma, ok: res.ok, status: res.status, response: text }
-        } catch (err) {
-          console.error(`[${plataforma}] fetch error`, err)
-          return { plataforma, ok: false, error: err instanceof Error ? err.message : String(err) }
-        }
-      }),
-    )
+    const responseText = await res.text()
+    console.log('Server response status:', res.status)
+    console.log('Server response body:', responseText)
 
-    const anyOk = results.some((r) => r.ok)
-
+    // Retorna a resposta bruta para o frontend exibir
     return new Response(
-      JSON.stringify({ success: anyOk, results }),
-      { status: anyOk ? 200 : 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      JSON.stringify({ 
+        success: res.ok, 
+        rawResponse: responseText,
+        status: res.status
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      },
     )
   } catch (error) {
     console.error('Publishing error:', error)
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : String(error) }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      }),
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      },
     )
   }
 })

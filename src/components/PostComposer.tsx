@@ -908,13 +908,18 @@ export function PostComposer({ onCreated, perfil, onTriggerWeekly }: { onCreated
       });
 
       if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      
+      // Captura a resposta bruta para depuração técnica conforme solicitado
+      if (data.rawResponse) {
+        setWebhookResponse(data.rawResponse);
+        setShowResponseDialog(true);
+      }
 
       if (data.success) {
         toast.success("Publicado com sucesso!", { id: tId });
         if (onCreated) onCreated();
       } else {
-        throw new Error("Falha ao publicar em algumas redes.");
+        toast.error(`Erro: ${data.error || "Resposta negativa do servidor"}`, { id: tId });
       }
     } catch (e) {
       console.error("[PublishDirectError]", e);
