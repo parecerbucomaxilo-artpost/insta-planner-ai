@@ -40,7 +40,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   };
 
   const handleSave = useCallback(async () => {
+    // Evita múltiplos cliques imediatos desativando a lógica se já estiver salvando
     if (saving) return;
+    
     if (!legenda.trim()) return toast.error("Escreva uma legenda primeiro.");
     if (!fileToUpload) return toast.error("Selecione uma imagem primeiro.");
     
@@ -51,10 +53,10 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     try {
       const userId = await getAuthedUserId();
       
-      // 1. Upload imagem
+      // 1. Upload imagem (direto, sem retries)
       const publicUrl = await uploadPostImage(fileToUpload);
       
-      // 2. Salva no banco (O Webhook do Supabase cuidará do resto)
+      // 2. Salva no banco (comando insert direto)
       const { error: dbError } = await supabase.from("posts").insert({
         user_id: userId,
         legenda: legenda,
@@ -64,12 +66,13 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         postar_linkedin: networks.includes("linkedin"),
         postar_instagram: networks.includes("instagram"),
         formato_midia: "Imagem"
-      } as any);
+      });
 
-      if (dbError) throw new Error(`Erro ao salvar: ${dbError.message}`);
+      if (dbError) throw dbError;
 
-      toast.success("Post salvo com sucesso! O sistema processará a publicação.", { id: tId });
+      toast.success("Post salvo com sucesso!", { id: tId });
       
+      // Reseta o estado do formulário
       setLegenda("");
       setImagem(null);
       setFileToUpload(null);
@@ -78,8 +81,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
     } catch (e: any) {
       console.error("Erro na publicação:", e);
-      toast.error(e.message || "Falha na publicação. Tente novamente.", { id: tId });
+      toast.error("Falha ao salvar. Tente novamente.", { id: tId });
     } finally {
+      // O botão será reabilitado apenas após a conclusão (sucesso ou erro)
       setSaving(false);
     }
   }, [legenda, fileToUpload, networks, tipo, saving, onCreated]);
