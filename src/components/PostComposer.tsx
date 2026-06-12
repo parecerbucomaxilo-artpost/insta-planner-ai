@@ -36,11 +36,12 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       setFileToUpload(file);
       setFileName(file.name);
       
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setImagem(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Gera URL local temporária para prévia rápida
+      const localUrl = URL.createObjectURL(file);
+      setImagem(localUrl);
+
+      // Limpeza automática da URL anterior se houver
+      return () => URL.revokeObjectURL(localUrl);
     }
   };
 
@@ -119,7 +120,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
               </label>
               {fileName && (
                 <p className="text-xs text-green-600 font-medium flex items-center gap-1">
-                  <Check className="w-3 h-3" /> [OK] Arquivo selecionado: {fileName}
+                  <Check className="w-3 h-3" /> Arquivo carregado com sucesso no aplicativo
                 </p>
               )}
             </div>
