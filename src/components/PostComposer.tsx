@@ -389,19 +389,37 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
 
       {temas && temas.length > 0 && (
         <div className="space-y-2 pt-3 border-t border-indigo-200">
-          <p className="text-xs font-semibold text-indigo-900">Aprove os temas para gerar imagem + legenda:</p>
-          {temas.map((t) => (
-            <div key={t.dia} className="flex items-start gap-2 p-2 bg-white rounded-md border border-indigo-100">
-              <span className="text-xs font-bold text-indigo-600 w-12">Dia {t.dia}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{t.tema}</p>
-                <p className="text-xs text-zinc-500 truncate">{t.gancho} · {t.rede}</p>
-              </div>
-              <Button size="sm" variant="ghost" onClick={() => approveTheme(t)}>
-                <Check className="w-4 h-4 text-emerald-600" />
-              </Button>
-            </div>
-          ))}
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-indigo-900">
+              {temas.length} slots no cronograma fixo — aprove para gerar imagem + agendar:
+            </p>
+            <Button size="sm" variant="default" onClick={approveAll} disabled={busy !== null} className="bg-emerald-600 hover:bg-emerald-700">
+              {busy === "week" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
+              Aprovar tudo
+            </Button>
+          </div>
+          <div className="max-h-80 overflow-y-auto space-y-1.5">
+            {temas.map((t) => {
+              const dt = t.quando ? new Date(t.quando) : null;
+              const dow = dt ? ["dom","seg","ter","qua","qui","sex","sáb"][dt.getDay()] : "";
+              const hhmm = dt ? `${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}` : "";
+              return (
+                <div key={`${t.dia}-${t.tema}`} className="flex items-start gap-2 p-2 bg-white rounded-md border border-indigo-100">
+                  <span className="text-[10px] font-bold text-indigo-600 w-20 leading-tight uppercase">
+                    {dow} {hhmm}<br />
+                    <span className="text-zinc-500 font-medium normal-case">{t.rede} {t.tipo}</span>
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{t.tema}</p>
+                    <p className="text-xs text-zinc-500 truncate">{t.gancho}</p>
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => approveTheme(t)}>
+                    <Check className="w-4 h-4 text-emerald-600" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </Card>
