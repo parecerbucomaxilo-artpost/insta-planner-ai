@@ -51,22 +51,14 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     toast.loading("Publicando post...", { id: tId });
     
     try {
-      const userId = await getAuthedUserId();
-      
       // 1. Upload imagem (direto, sem retries)
       const publicUrl = await uploadPostImage(fileToUpload);
-      
-      // 2. Salva no banco (comando insert direto)
+
+      // 2. Insert simples: apenas texto + url_da_imagem
       const { error: dbError } = await supabase.from("posts").insert({
-        user_id: userId,
-        legenda: legenda,
-        url_imagem: publicUrl,
-        tipo_post: tipo,
-        status: "Publicado",
-        postar_linkedin: networks.includes("linkedin"),
-        postar_instagram: networks.includes("instagram"),
-        formato_midia: "Imagem"
-      });
+        texto: legenda,
+        url_da_imagem: publicUrl,
+      } as any);
 
       if (dbError) throw dbError;
 
