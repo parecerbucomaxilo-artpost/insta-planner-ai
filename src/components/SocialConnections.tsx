@@ -28,9 +28,12 @@ export function SocialConnections() {
   const [testing, setTesting] = useState(false);
 
   const [igWebhook, setIgWebhook] = useState("");
+  const [liWebhook, setLiWebhook] = useState("");
   const [igLoading, setIgLoading] = useState(true);
   const [igSaving, setIgSaving] = useState(false);
+  const [liSaving, setLiSaving] = useState(false);
   const [igTesting, setIgTesting] = useState(false);
+  const [liTesting, setLiTesting] = useState(false);
   const [perfilId, setPerfilId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,13 +51,14 @@ export function SocialConnections() {
       try {
         const { data } = await supabase
           .from("perfil_usuario")
-          .select("id, webhook_url")
+          .select("id, instagram_webhook_url, linkedin_webhook_url, webhook_url")
           .order("created_at", { ascending: true })
           .limit(1)
           .maybeSingle();
         if (data) {
           setPerfilId(data.id);
-          setIgWebhook(data.webhook_url || DEFAULT_MAKE_WEBHOOK);
+          setIgWebhook(data.instagram_webhook_url || data.webhook_url || DEFAULT_MAKE_WEBHOOK);
+          setLiWebhook(data.linkedin_webhook_url || "");
         } else {
           setIgWebhook(DEFAULT_MAKE_WEBHOOK);
         }
@@ -66,16 +70,16 @@ export function SocialConnections() {
 
   const handleSaveIgWebhook = async () => {
     const url = igWebhook.trim();
-    if (!/^https?:\/\//i.test(url)) {
+    if (url && !/^https?:\/\//i.test(url)) {
       toast.error("Informe uma URL válida começando com https://");
       return;
     }
     setIgSaving(true);
     try {
       const uid = await getAuthedUserId();
-      const payload = { user_id: uid, webhook_url: url };
+      const payload = { user_id: uid, instagram_webhook_url: url, webhook_url: url };
       const res = perfilId
-        ? await supabase.from("perfil_usuario").update({ webhook_url: url }).eq("id", perfilId).select("id").maybeSingle()
+        ? await supabase.from("perfil_usuario").update(payload).eq("id", perfilId).select("id").maybeSingle()
         : await supabase.from("perfil_usuario").insert(payload).select("id").maybeSingle();
       if (res.error) throw res.error;
       if (res.data?.id) setPerfilId(res.data.id);
@@ -87,26 +91,72 @@ export function SocialConnections() {
     }
   };
 
+  const handleSaveLiWebhook = async () => {
+    const url = liWebhook.trim();
+    if (url && !/^https?:\/\//i.test(url)) {
+      toast.error("Informe uma URL válida começando com https://");
+      return;
+    }
+    setLiSaving(true);
+    try {
+      const uid = await getAuthedUserId();
+      const payload = { user_id: uid, linkedin_webhook_url: url };
+      const res = perfilId
+        ? await supabase.from("perfil_usuario").update(payload).eq("id", perfilId).select("id").maybeSingle()
+        : await supabase.from("perfil_usuario").insert(payload).select("id").maybeSingle();
+      if (res.error) throw res.error;
+      if (res.data?.id) setPerfilId(res.data.id);
+      toast.success("Webhook do LinkedIn salvo ✅");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao salvar");
+    } finally {
+      setLiSaving(false);
+    }
+  };
+
   const handleTestIgWebhook = async () => {
     const url = igWebhook.trim();
-    if (!/^https?:\/\//i.test(url)) return toast.error("Salve uma URL válida antes de testar.");
+    if (!url) return toast.error("Insira a URL do webhook do Instagram primeiro.");
     setIgTesting(true);
-    const tid = toast.loading("Disparando teste para o Make…");
+    const tid = toast.loading("Disparando teste para Instagram (Make)…");
     try {
       const r = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          texto: "✅ Teste do Planner Chico — webhook conectado.",
-          plataforma: "Teste"
+          texto: "✅ Teste Instagram — webhook conectado.",
+          plataforma: "Instagram"
         }),
       });
       if (!r.ok) throw new Error(`Make respondeu ${r.status}`);
-      toast.success("Webhook respondeu OK — verifique seu cenário no Make.", { id: tid });
+      toast.success("Webhook Instagram OK!", { id: tid });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha no teste", { id: tid });
     } finally {
       setIgTesting(false);
+    }
+  };
+
+  const handleTestLiWebhook = async () => {
+    const url = liWebhook.trim();
+    if (!url) return toast.error("Insira a URL do webhook do LinkedIn primeiro.");
+    setLiTesting(true);
+    const tid = toast.loading("Disparando teste para LinkedIn (Make)…");
+    try {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          texto: "✅ Teste LinkedIn — webhook conectado.",
+          plataforma: "LinkedIn"
+        }),
+      });
+      if (!r.ok) throw new Error(`Make respondeu ${r.status}`);
+      toast.success("Webhook LinkedIn OK!", { id: tid });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha no teste", { id: tid });
+    } finally {
+      setLiTesting(false);
     }
   };
 
@@ -143,14 +193,29 @@ export function SocialConnections() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs text-blue-900 dark:text-blue-100 leading-relaxed mb-4">
-            <strong>Configuração Unificada:</strong> O LinkedIn agora utiliza o mesmo Webhook do Instagram configurado abaixo para enviar as postagens.
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleTestIgWebhook} disabled={igTesting} variant="outline" size="sm">
-              {igTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Testar disparo LinkedIn
-            </Button>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="li-webhook" className="flex items-center gap-1.5 text-sm">
+                <LinkIcon className="h-3.5 w-3.5" /> URL do Webhook do LinkedIn (Make)
+              </Label>
+              <Input
+                id="li-webhook"
+                value={liWebhook}
+                onChange={(e) => setLiWebhook(e.target.value)}
+                placeholder="https://hook.us2.make.com/…"
+                className="font-mono text-xs"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleSaveLiWebhook} disabled={liSaving || igLoading} size="sm">
+                {liSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Salvar LinkedIn Webhook
+              </Button>
+              <Button onClick={handleTestLiWebhook} disabled={liTesting || igLoading} variant="outline" size="sm">
+                {liTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Testar disparo LinkedIn
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -176,7 +241,7 @@ export function SocialConnections() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="ig-webhook" className="flex items-center gap-1.5 text-sm">
-              <LinkIcon className="h-3.5 w-3.5" /> URL do Webhook (Make)
+              <LinkIcon className="h-3.5 w-3.5" /> URL do Webhook do Instagram (Make)
             </Label>
             {igLoading ? (
               <div className="h-9 rounded-md bg-muted animate-pulse" />
