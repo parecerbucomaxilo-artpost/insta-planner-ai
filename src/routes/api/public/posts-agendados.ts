@@ -51,16 +51,30 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
             );
           }
 
-          const { signPostMediaUrls } = await import("@/lib/storage-url");
-          const post = await signPostMediaUrls(data);
+          let urlImagem = data.url_imagem;
+          if (urlImagem) {
+            try {
+              const url = new URL(urlImagem);
+              const parts = url.pathname.split("/").filter(Boolean);
+              const objectIndex = parts.findIndex((part) => part === "object");
+              const bucket = objectIndex >= 0 ? parts[objectIndex + 2] : null;
+              const path = objectIndex >= 0 ? parts.slice(objectIndex + 3).map(decodeURIComponent).join("/") : null;
+              if (bucket && path) {
+                const { data: signed } = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, 60 * 60 * 24 * 7);
+                urlImagem = signed?.signedUrl ?? urlImagem;
+              }
+            } catch {
+              urlImagem = data.url_imagem;
+            }
+          }
 
           return new Response(
             JSON.stringify({
-              id: post.id,
-              tipo_post: post.tipo_post,
-              url_imagem: post.url_imagem,
-              legenda_instagram: post.legenda_instagram,
-              legenda_linkedin: post.legenda_linkedin,
+              id: data.id,
+              tipo_post: data.tipo_post,
+              url_imagem: urlImagem,
+              legenda_instagram: data.legenda_instagram,
+              legenda_linkedin: data.legenda_linkedin,
             }),
             {
               status: 200,
