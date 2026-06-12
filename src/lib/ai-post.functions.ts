@@ -175,7 +175,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
   });
 
 export const generateWeekThemes = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([])
   .inputValidator((d: unknown) => WeekInput.parse(d))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
