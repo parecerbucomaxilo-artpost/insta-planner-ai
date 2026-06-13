@@ -257,7 +257,7 @@ export const approvePost = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const status = data.acao === "publicar" ? "Publicado" : data.acao === "agendar" ? "Agendado" : "Rascunho";
-    const patch: Record<string, unknown> = { status };
+    const patch: any = { status };
     if (data.acao === "publicar") patch.data_agendamento = new Date().toISOString();
     const { error } = await supabaseAdmin.from("posts").update(patch).eq("id", data.id);
     if (error) throw new Error(`DB: ${error.message}`);
