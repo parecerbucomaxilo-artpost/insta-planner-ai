@@ -349,6 +349,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo } });
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
+      setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
       onCreated();
     } catch (e: any) {
