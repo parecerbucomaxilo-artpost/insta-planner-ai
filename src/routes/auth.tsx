@@ -1,8 +1,60 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { Loader2, Stethoscope } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { lovable } from "@/integrations/lovable";
+import { toast } from "sonner";
+
+function normalizeRedirect(value: unknown) {
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : "/";
+}
 
 export const Route = createFileRoute("/auth")({
-  beforeLoad: () => {
-    throw redirect({ to: "/", replace: true });
-  },
-  component: () => null,
+  ssr: false,
+  validateSearch: (search) => ({
+    redirect: normalizeRedirect(search.redirect),
+  }),
+  component: AuthPage,
 });
+
+function AuthPage() {
+  const { redirect } = Route.useSearch();
+  const [loading, setLoading] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}${redirect}`,
+      });
+      if (result.error) throw result.error;
+      if (!result.redirected) window.location.assign(redirect);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao iniciar login");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center space-y-3">
+          <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center ring-1 ring-primary/20">
+            <Stethoscope className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <CardTitle>Entrar no Planner Chico</CardTitle>
+            <CardDescription>Faça login para conectar o Instagram oficial com segurança.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Button className="w-full" onClick={handleGoogleLogin} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Entrar com Google
+          </Button>
+        </CardContent>
+      </Card>
+    </main>
+  );
+}
