@@ -336,6 +336,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [discarding, setDiscarding] = useState(false);
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
+  const discardFn = useServerFn(discardPost);
 
 
   const handleSingle = async () => {
