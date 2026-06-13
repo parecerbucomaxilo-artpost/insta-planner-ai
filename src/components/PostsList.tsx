@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { PostRow } from "@/lib/posts-types";
+import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 
 const statusColor: Record<string, string> = {
   Rascunho: "bg-[var(--status-draft)]",
@@ -18,6 +20,7 @@ const statusColor: Record<string, string> = {
 
 export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () => void }) {
   // const sendAlbato = useServerFn(dispatchAlbato); // Removido para reset logic
+  const publishIg = useServerFn(publishInstagramNow);
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [slideIdx, setSlideIdx] = useState<Record<string, number>>({});
 
@@ -36,12 +39,8 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   const handlePostNow = async (p: PostRow) => {
     setPublishingId(p.id);
     try {
-      const { error } = await supabase
-        .from("posts")
-        .update({ status: "Publicado", data_agendamento: new Date().toISOString() } as any)
-        .eq("id", p.id);
-      if (error) throw error;
-      toast.success("Post (re)publicado!");
+      const out = await publishIg({ data: { id: p.id } });
+      toast.success(out.via === "meta" ? "Publicado no Instagram!" : "Enviado para o Make publicar no Instagram!");
       onChange();
     } catch (e: any) {
       toast.error(e.message || "Falha ao publicar");
