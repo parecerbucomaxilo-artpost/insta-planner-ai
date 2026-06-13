@@ -620,7 +620,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       )}
 
       <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null); }}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-xl w-[92vw] sm:w-auto max-h-[85vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Pré-visualização do post</DialogTitle>
             <DialogDescription>
