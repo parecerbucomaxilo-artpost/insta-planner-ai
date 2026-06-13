@@ -26,7 +26,7 @@ export async function logErrorForAllUsers(input: ErrorNotifInput): Promise<void>
       titulo: input.titulo,
       mensagem: input.mensagem.slice(0, 1000),
       post_id: input.postId ?? null,
-      contexto: input.contexto ?? {},
+      contexto: (input.contexto ?? {}) as any,
     }));
     await supabaseAdmin.from("notificacoes_erro").insert(rows);
   } catch (err) {
