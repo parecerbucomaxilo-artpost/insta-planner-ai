@@ -245,6 +245,25 @@ export const discardPost = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Aprova um post pendente de revisão — define status final (Rascunho/Agendado/Publicado).
+export const approvePost = createServerFn({ method: "POST" })
+  .middleware([])
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      acao: z.enum(["arquivar", "agendar", "publicar"]).default("arquivar"),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const status = data.acao === "publicar" ? "Publicado" : data.acao === "agendar" ? "Agendado" : "Rascunho";
+    const patch: Record<string, unknown> = { status };
+    if (data.acao === "publicar") patch.data_agendamento = new Date().toISOString();
+    const { error } = await supabaseAdmin.from("posts").update(patch).eq("id", data.id);
+    if (error) throw new Error(`DB: ${error.message}`);
+    return { ok: true, status };
+  });
+
 export const generateWeekThemes = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) => WeekInput.parse(d))
