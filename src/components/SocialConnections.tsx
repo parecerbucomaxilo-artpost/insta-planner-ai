@@ -24,6 +24,7 @@ export function SocialConnections() {
   // const sendLinkedIn = useServerFn(publishToLinkedIn);
   const fetchStatus = async () => ({ connected: false });
   const sendLinkedIn = async () => ({ ok: false, error: "Reset" });
+  const ensurePerfilFn = useServerFn(ensurePerfil);
   const [status, setStatus] = useState<LiStatus>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
