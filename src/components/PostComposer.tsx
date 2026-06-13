@@ -345,9 +345,10 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = "ai-single";
     toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
     try {
-      await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo } });
-      toast.success("Post gerado! Veja em 'Todos os posts'.", { id: tid });
+      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo } });
+      toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
+      setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
       onCreated();
     } catch (e: any) {
       toast.error(e.message || "Falha na geração.", { id: tid });
