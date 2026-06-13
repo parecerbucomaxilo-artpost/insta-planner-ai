@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Heart, MessageCircle, Repeat2, Share, Twitter } from "lucide-react";
 import type { Perfil } from "@/components/ProfileSettings";
+import { signPostMediaUrls } from "@/lib/storage-url";
 
 type Mode = "instagram" | "x";
 
@@ -39,7 +40,7 @@ export function FeedMockup({ mode, imagem, texto, perfil, loading }: Props) {
     const fetchPosts = async () => {
       const { data } = await supabase
         .from("posts")
-        .select("url_imagem, imagens_carrossel, status")
+        .select("id, url_imagem, imagens_carrossel, url_imagem_cache, url_imagem_cache_expires_at, imagens_carrossel_cache, imagens_carrossel_cache_expires_at, status")
         .order("created_at", { ascending: false })
         .limit(20);
       if (!data) return;
@@ -51,7 +52,7 @@ export function FeedMockup({ mode, imagem, texto, perfil, loading }: Props) {
       }
 
       const imgs: string[] = [];
-      for (const row of data) {
+      for (const row of await Promise.all(data.map((post) => signPostMediaUrls(post)))) {
         const r = row as { url_imagem: string | null; imagens_carrossel: unknown };
         if (r.url_imagem) imgs.push(r.url_imagem);
         if (Array.isArray(r.imagens_carrossel)) {
@@ -63,7 +64,7 @@ export function FeedMockup({ mode, imagem, texto, perfil, loading }: Props) {
     };
 
     fetchPosts();
-    const interval = setInterval(fetchPosts, 3000);
+    const interval = setInterval(fetchPosts, 30000);
     return () => clearInterval(interval);
   }, [mode, imagem]);
 

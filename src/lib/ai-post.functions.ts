@@ -111,16 +111,20 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
 
     const uploadOne = async (b64: string) => {
       const buf = Buffer.from(b64, "base64");
-      const fileName = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.png`;
+      const fileName = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
       const { error } = await supabaseAdmin.storage
         .from("post-images")
-        .upload(fileName, buf, { contentType: "image/png", upsert: false });
+        .upload(fileName, buf, { contentType: "image/jpeg", upsert: false, cacheControl: "604800" });
       if (error) throw new Error(`Upload: ${error.message}`);
-      return supabaseAdmin.storage.from("post-images").getPublicUrl(fileName).data.publicUrl;
+      const publicUrl = supabaseAdmin.storage.from("post-images").getPublicUrl(fileName).data.publicUrl;
+      const { data: signed } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, 60 * 60 * 24 * 7);
+      return { publicUrl, signedUrl: signed?.signedUrl ?? publicUrl };
     };
 
     let urlImagem: string;
     let imagensCarrossel: string[] = [];
+    let urlImagemCache: string | null = null;
+    let imagensCarrosselCache: string[] = [];
 
     if (formato === "Carrossel") {
       const slidesSpec = [
@@ -137,16 +141,20 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
           }),
         ),
       );
-      const urls = await Promise.all(b64s.map(uploadOne));
-      urlImagem = urls[0];
-      imagensCarrossel = urls;
+      const uploads = await Promise.all(b64s.map(uploadOne));
+      urlImagem = uploads[0].publicUrl;
+      urlImagemCache = uploads[0].signedUrl;
+      imagensCarrossel = uploads.map((upload) => upload.publicUrl);
+      imagensCarrosselCache = uploads.map((upload) => upload.signedUrl);
     } else {
       const b64 = await generateImageBase64({
         apiKey: key,
         prompt: imageSystemPrompt(tema, data.rede),
         size,
       });
-      urlImagem = await uploadOne(b64);
+      const upload = await uploadOne(b64);
+      urlImagem = upload.publicUrl;
+      urlImagemCache = upload.signedUrl;
     }
 
     const tipoPost = formato === "Carrossel" ? "Carrossel" : "Post Único";
@@ -160,7 +168,11 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         formato_midia: isStory ? "Story" : "Imagem",
         legenda,
         url_imagem: urlImagem,
+        url_imagem_cache: urlImagemCache,
+        url_imagem_cache_expires_at: urlImagemCache ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString() : null,
         imagens_carrossel: imagensCarrossel,
+        imagens_carrossel_cache: imagensCarrosselCache,
+        imagens_carrossel_cache_expires_at: imagensCarrosselCache.length ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString() : null,
         postar_instagram: data.rede !== "linkedin",
         postar_linkedin: data.rede === "linkedin",
         status: data.quando ? "Agendado" : "Rascunho",

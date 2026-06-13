@@ -101,6 +101,8 @@ export type Database = {
           formato_midia: string
           id: string
           imagens_carrossel: Json
+          imagens_carrossel_cache: Json
+          imagens_carrossel_cache_expires_at: string | null
           legenda: string
           legenda_instagram: string | null
           legenda_linkedin: string | null
@@ -111,6 +113,8 @@ export type Database = {
           tipo_post: string
           updated_at: string
           url_imagem: string | null
+          url_imagem_cache: string | null
+          url_imagem_cache_expires_at: string | null
           user_id: string | null
           visualizacoes: number
         }
@@ -122,6 +126,8 @@ export type Database = {
           formato_midia?: string
           id?: string
           imagens_carrossel?: Json
+          imagens_carrossel_cache?: Json
+          imagens_carrossel_cache_expires_at?: string | null
           legenda?: string
           legenda_instagram?: string | null
           legenda_linkedin?: string | null
@@ -132,6 +138,8 @@ export type Database = {
           tipo_post: string
           updated_at?: string
           url_imagem?: string | null
+          url_imagem_cache?: string | null
+          url_imagem_cache_expires_at?: string | null
           user_id?: string | null
           visualizacoes?: number
         }
@@ -143,6 +151,8 @@ export type Database = {
           formato_midia?: string
           id?: string
           imagens_carrossel?: Json
+          imagens_carrossel_cache?: Json
+          imagens_carrossel_cache_expires_at?: string | null
           legenda?: string
           legenda_instagram?: string | null
           legenda_linkedin?: string | null
@@ -153,6 +163,8 @@ export type Database = {
           tipo_post?: string
           updated_at?: string
           url_imagem?: string | null
+          url_imagem_cache?: string | null
+          url_imagem_cache_expires_at?: string | null
           user_id?: string | null
           visualizacoes?: number
         }
