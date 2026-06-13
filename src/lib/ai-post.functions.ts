@@ -216,7 +216,19 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       .single();
     if (insErr) throw new Error(`DB: ${insErr.message}`);
 
-    return { id: (inserted as any).id, url: urlImagem, legenda, slides: imagensCarrossel.length || 1 };
+    const urls = imagensCarrossel.length ? imagensCarrossel : [urlImagem];
+    return { id: (inserted as any).id, url: urlImagem, legenda, slides: imagensCarrossel.length || 1, urls };
+  });
+
+// Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado da IA.
+export const discardPost = createServerFn({ method: "POST" })
+  .middleware([])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("posts").delete().eq("id", data.id);
+    if (error) throw new Error(`DB: ${error.message}`);
+    return { ok: true };
   });
 
 export const generateWeekThemes = createServerFn({ method: "POST" })
