@@ -231,7 +231,7 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
               userId: due.user_id || TEMP_USER_ID,
             });
             return new Response(
-              JSON.stringify({ ok: true, published: 1, post_id: due.id, ...result }),
+              JSON.stringify({ published: 1, post_id: due.id, ...result }),
               { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
             );
           } catch (err) {
