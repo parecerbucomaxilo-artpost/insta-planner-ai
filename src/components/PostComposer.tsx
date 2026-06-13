@@ -179,10 +179,10 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         </div>
       </div>
 
-      {/* Quando — Postar agora vs Programar 7 dias */}
+      {/* Quando — Postar agora, Agendar data ou Programar 7 dias */}
       <div className="space-y-2">
-        <Label>Quando</Label>
-        <div className="grid grid-cols-2 gap-3">
+        <Label>Postar quando?</Label>
+        <div className="grid grid-cols-3 gap-3">
           <button
             type="button"
             onClick={() => setQuando("agora")}
@@ -193,7 +193,19 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
                 : "border-zinc-200 text-zinc-600 hover:border-zinc-300",
             )}
           >
-            <Zap className="w-4 h-4" /> Postar agora
+            <Zap className="w-4 h-4" /> Agora
+          </button>
+          <button
+            type="button"
+            onClick={() => setQuando("data")}
+            className={cn(
+              "flex items-center gap-2 justify-center p-3 rounded-lg border-2 font-semibold transition-all",
+              quando === "data"
+                ? "border-violet-500 bg-violet-50 text-violet-700"
+                : "border-zinc-200 text-zinc-600 hover:border-zinc-300",
+            )}
+          >
+            <CalendarIcon className="w-4 h-4" /> Escolher data
           </button>
           <button
             type="button"
@@ -205,10 +217,49 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
                 : "border-zinc-200 text-zinc-600 hover:border-zinc-300",
             )}
           >
-            <Clock className="w-4 h-4" /> Programar 7 dias
+            <Clock className="w-4 h-4" /> Próximos 7 dias
           </button>
         </div>
+
+        {quando === "data" && (
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal min-w-[220px]",
+                    !dataAgendada && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="w-4 h-4 mr-2" />
+                  {dataAgendada
+                    ? format(dataAgendada, "PPP", { locale: ptBR })
+                    : "Selecione a data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dataAgendada}
+                  onSelect={setDataAgendada}
+                  disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                  initialFocus
+                  locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            <Input
+              type="time"
+              value={horaAgendada}
+              onChange={(e) => setHoraAgendada(e.target.value)}
+              className="w-[130px]"
+            />
+          </div>
+        )}
       </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
