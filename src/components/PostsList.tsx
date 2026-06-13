@@ -117,13 +117,13 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                 <Button
                   size="sm"
                   onClick={() => handlePostNow(p)}
-                  disabled={isPublishing || alreadyPublished}
+                  disabled={isPublishing}
                   className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm hover:shadow-md hover:-translate-y-px disabled:opacity-60"
                 >
                   {isPublishing ? (
                     <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Publicando…</>
                   ) : alreadyPublished ? (
-                    <>✓ Publicado</>
+                    <><Send className="h-4 w-4 mr-1.5" /> Republicar Agora</>
                   ) : (
                     <><Send className="h-4 w-4 mr-1.5" /> Postar Agora</>
                   )}
@@ -139,6 +139,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
+
             </div>
           </Card>
         );
