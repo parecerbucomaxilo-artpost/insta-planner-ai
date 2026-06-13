@@ -341,7 +341,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = "ai-single";
     toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
     try {
-      await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo } });
+      await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo } });
       toast.success("Post gerado! Veja em 'Todos os posts'.", { id: tid });
       setTema("");
       onCreated();
