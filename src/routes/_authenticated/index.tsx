@@ -15,6 +15,7 @@ import { InsightsPanel } from "@/components/InsightsPanel";
 import { AutomationKeys } from "@/components/AutomationKeys";
 import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar";
+import { NotificationsBell } from "@/components/NotificationsBell";
 // import { claimLegacyData } from "@/lib/claim-legacy.functions";
 import type { PostRow } from "@/lib/posts-types";
 import { signPostMediaUrls } from "@/lib/storage-url";
