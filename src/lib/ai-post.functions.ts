@@ -183,6 +183,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
             apiKey: key,
             prompt: imageSystemPrompt(tema, data.rede, s, data.inserirLogo),
             size,
+            model: data.modeloImagem,
           }),
         ),
       );
@@ -196,6 +197,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         apiKey: key,
         prompt: imageSystemPrompt(tema, data.rede, undefined, data.inserirLogo),
         size,
+        model: data.modeloImagem,
       });
       const upload = await uploadOne(b64);
       urlImagem = upload.publicUrl;
