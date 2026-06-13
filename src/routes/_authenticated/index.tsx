@@ -15,6 +15,7 @@ import { InsightsPanel } from "@/components/InsightsPanel";
 import { AutomationKeys } from "@/components/AutomationKeys";
 import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar";
+import { NotificationsBell } from "@/components/NotificationsBell";
 // import { claimLegacyData } from "@/lib/claim-legacy.functions";
 import type { PostRow } from "@/lib/posts-types";
 import { signPostMediaUrls } from "@/lib/storage-url";
@@ -151,6 +152,7 @@ function Dashboard() {
             <span className="text-sm text-muted-foreground">
               {posts.length} {posts.length === 1 ? "post" : "posts"}
             </span>
+            <NotificationsBell />
             <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/settings" })} aria-label="Configurações">
               <Settings className="h-4 w-4 mr-1.5" /> Configurações
             </Button>

@@ -236,6 +236,15 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
             );
           } catch (err) {
             const message = err instanceof Error ? err.message : "Erro desconhecido";
+            try {
+              const { logErrorForAllUsers } = await import("@/lib/notify-error.server");
+              await logErrorForAllUsers({
+                tipo: "publicacao_instagram",
+                titulo: "Falha ao publicar no Instagram",
+                mensagem: message,
+                postId: due.id,
+              });
+            } catch {}
             return new Response(
               JSON.stringify({ ok: false, post_id: due.id, error: message }),
               { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders } },

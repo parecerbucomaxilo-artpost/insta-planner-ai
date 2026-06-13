@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      notificacoes_erro: {
+        Row: {
+          contexto: Json | null
+          created_at: string
+          enviada_no_resumo: boolean
+          id: string
+          lida: boolean
+          mensagem: string
+          post_id: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          contexto?: Json | null
+          created_at?: string
+          enviada_no_resumo?: boolean
+          id?: string
+          lida?: boolean
+          mensagem: string
+          post_id?: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          contexto?: Json | null
+          created_at?: string
+          enviada_no_resumo?: boolean
+          id?: string
+          lida?: boolean
+          mensagem?: string
+          post_id?: string | null
+          tipo?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       perfil_usuario: {
         Row: {
           arroba_usuario: string

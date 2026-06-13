@@ -117,6 +117,15 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : "Erro desconhecido";
+          try {
+            const { logErrorForAllUsers } = await import("@/lib/notify-error.server");
+            await logErrorForAllUsers({
+              tipo: "geracao",
+              titulo: "Falha ao gerar próximo post",
+              mensagem: message,
+              contexto: { endpoint: "gerar-proximo" },
+            });
+          } catch {}
           return json({ error: message }, 500);
         }
       },
