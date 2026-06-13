@@ -6,7 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
@@ -14,10 +16,13 @@ import { XStyleIcon } from "@/components/icons/XStyleIcon";
 import { BRANDING } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { generateSinglePost, generateWeekThemes } from "@/lib/ai-post.functions";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type Network = "instagram" | "linkedin";
 type Formato = "Post Único" | "Carrossel" | "Estilo X";
-type Quando = "agora" | "7dias";
+type Quando = "agora" | "7dias" | "data";
+
 
 const FORMATOS: { id: Formato; label: string; icon: React.ComponentType<{ className?: string }>; desc: string }[] = [
   { id: "Post Único", label: "Post Único", icon: Square, desc: "1 imagem" },
