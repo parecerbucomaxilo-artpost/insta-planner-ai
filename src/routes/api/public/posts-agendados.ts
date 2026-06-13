@@ -14,6 +14,68 @@ function isCacheValid(expiresAt: string | null | undefined) {
   return new Date(expiresAt).getTime() - Date.now() > CACHE_REFRESH_MARGIN_MS;
 }
 
+function isFetchableCachedUrl(value: string | null | undefined) {
+  return Boolean(value && !value.startsWith("data:") && !value.startsWith("blob:"));
+}
+
+function normalizeCarousel(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string" && item.length > 0);
+  if (typeof value !== "string" || !value.trim()) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.filter((item): item is string => typeof item === "string" && item.length > 0);
+  } catch {
+    return [value];
+  }
+  return [];
+}
+
+function parseDataUrl(value: string) {
+  const match = value.match(/^data:([^;,]+)?(;base64)?,(.*)$/s);
+  if (!match) return null;
+  const mimeType = match[1] || "image/png";
+  const isBase64 = Boolean(match[2]);
+  const raw = match[3] || "";
+  const buffer = isBase64 ? Buffer.from(raw, "base64") : Buffer.from(decodeURIComponent(raw));
+  const ext = mimeType.includes("jpeg") || mimeType.includes("jpg") ? "jpg" : mimeType.includes("webp") ? "webp" : "png";
+  return { buffer, mimeType, ext };
+}
+
+function getStorageObjectRef(value: string | null | undefined) {
+  if (!value || value.startsWith("blob:") || value.startsWith("data:")) return null;
+  try {
+    const url = new URL(value);
+    const parts = url.pathname.split("/").filter(Boolean);
+    const objectIndex = parts.findIndex((part) => part === "object");
+    const bucket = objectIndex >= 0 ? parts[objectIndex + 2] : null;
+    const path = objectIndex >= 0 ? parts.slice(objectIndex + 3).map(decodeURIComponent).join("/") : null;
+    return bucket && path ? { bucket, path } : null;
+  } catch {
+    return null;
+  }
+}
+
+async function createFetchableUrl(supabaseAdmin: any, value: string | null | undefined) {
+  if (!value) return null;
+  if (value.startsWith("data:")) {
+    const parsed = parseDataUrl(value);
+    if (!parsed) return value;
+    const fileName = `scheduled/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${parsed.ext}`;
+    const { error } = await supabaseAdmin.storage
+      .from("post-images")
+      .upload(fileName, parsed.buffer, { contentType: parsed.mimeType, cacheControl: "604800", upsert: false });
+    if (error) throw new Error(`Upload da imagem agendada falhou: ${error.message}`);
+    const { data, error: signError } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
+    if (signError || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${signError?.message || fileName}`);
+    return data.signedUrl;
+  }
+  const ref = getStorageObjectRef(value);
+  if (!ref) return value;
+  const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
+  if (error || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${error?.message || ref.path}`);
+  return data.signedUrl;
+}
+
 export const Route = createFileRoute("/api/public/posts-agendados")({
   server: {
     handlers: {
@@ -31,7 +93,7 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
           const { data, error } = await supabaseAdmin
             .from("posts")
             .select(
-              "id, tipo_post, url_imagem, url_imagem_cache, url_imagem_cache_expires_at, legenda, legenda_instagram, legenda_linkedin, data_agendamento"
+              "id, tipo_post, url_imagem, url_imagem_cache, url_imagem_cache_expires_at, imagens_carrossel, imagens_carrossel_cache, imagens_carrossel_cache_expires_at, legenda, legenda_instagram, legenda_linkedin, data_agendamento"
             )
             .eq("status", "Agendado")
             .lte("data_agendamento", nowIso)
@@ -59,38 +121,35 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
             );
           }
 
-          let urlImagem = data.url_imagem_cache && isCacheValid(data.url_imagem_cache_expires_at)
-            ? data.url_imagem_cache
-            : data.url_imagem;
-          let refreshedCache = false;
-          if (urlImagem) {
-            try {
-              const url = new URL(urlImagem);
-              const parts = url.pathname.split("/").filter(Boolean);
-              const objectIndex = parts.findIndex((part) => part === "object");
-              const bucket = objectIndex >= 0 ? parts[objectIndex + 2] : null;
-              const path = objectIndex >= 0 ? parts.slice(objectIndex + 3).map(decodeURIComponent).join("/") : null;
-              if (bucket && path && !isCacheValid(data.url_imagem_cache_expires_at)) {
-                const { data: signed } = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
-                urlImagem = signed?.signedUrl ?? urlImagem;
-                refreshedCache = Boolean(signed?.signedUrl);
-              }
-            } catch {
-              urlImagem = data.url_imagem;
-            }
-          }
+          const cachedImagem = isFetchableCachedUrl(data.url_imagem_cache) && isCacheValid(data.url_imagem_cache_expires_at) ? data.url_imagem_cache : null;
+          const cachedCarousel = isCacheValid(data.imagens_carrossel_cache_expires_at)
+            ? normalizeCarousel(data.imagens_carrossel_cache).filter(isFetchableCachedUrl)
+            : [];
+          const originalCarousel = normalizeCarousel(data.imagens_carrossel);
+          const isCarousel = data.tipo_post === "Carrossel" && originalCarousel.length > 1;
+          const imageUrls = isCarousel
+            ? (cachedCarousel.length > 0 ? cachedCarousel : (await Promise.all(originalCarousel.map((url) => createFetchableUrl(supabaseAdmin, url)))).filter(Boolean) as string[])
+            : [cachedImagem || await createFetchableUrl(supabaseAdmin, data.url_imagem)].filter(Boolean) as string[];
+          const urlImagem = imageUrls[0] ?? null;
+          const refreshedImageCache = !cachedImagem && Boolean(urlImagem);
+          const refreshedCarouselCache = isCarousel && cachedCarousel.length === 0 && imageUrls.length > 0;
 
-          if (refreshedCache && urlImagem) {
+          if (refreshedImageCache || refreshedCarouselCache) {
             await supabaseAdmin
               .from("posts")
               .update({
-                url_imagem_cache: urlImagem,
-                url_imagem_cache_expires_at: new Date(Date.now() + SIGNED_URL_TTL_SECONDS * 1000).toISOString(),
+                ...(refreshedImageCache ? {
+                  url_imagem_cache: urlImagem,
+                  url_imagem_cache_expires_at: new Date(Date.now() + SIGNED_URL_TTL_SECONDS * 1000).toISOString(),
+                } : {}),
+                ...(refreshedCarouselCache ? {
+                  imagens_carrossel_cache: imageUrls,
+                  imagens_carrossel_cache_expires_at: new Date(Date.now() + SIGNED_URL_TTL_SECONDS * 1000).toISOString(),
+                } : {}),
               })
               .eq("id", data.id);
           }
 
-          const isCarousel = data.tipo_post === "Carrossel";
           const postType = isCarousel ? "carrossel" : "imagem";
 
           return new Response(
@@ -108,6 +167,10 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
               imagem_url: urlImagem,
               image_url: urlImagem,
               media_url: urlImagem,
+              arquivo_url: urlImagem,
+              imagens_carrossel: imageUrls,
+              image_urls: imageUrls,
+              images: imageUrls,
               legenda: data.legenda_instagram || data.legenda || "",
               texto: data.legenda_instagram || data.legenda || "",
               caption: data.legenda_instagram || data.legenda || "",
