@@ -356,7 +356,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       setTema("");
       setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
-      onCreated();
+      // Não chama onCreated() — post fica pendente até aprovação/descarte no preview.
     } catch (e: any) {
       toast.error(e.message || "Falha na geração.", { id: tid });
     } finally {
