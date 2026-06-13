@@ -332,6 +332,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
   const [busy, setBusy] = useState<null | "single" | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
+  const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[] } | null>(null);
+  const [discarding, setDiscarding] = useState(false);
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
 
