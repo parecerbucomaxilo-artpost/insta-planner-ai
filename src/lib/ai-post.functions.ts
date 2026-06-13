@@ -230,8 +230,12 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       .single();
     if (insErr) throw new Error(`DB: ${insErr.message}`);
 
-    const urls = imagensCarrossel.length ? imagensCarrossel : [urlImagem];
-    return { id: (inserted as any).id, url: urlImagem, legenda, slides: imagensCarrossel.length || 1, urls };
+    // Para preview usamos URLs assinadas (cache) porque o bucket é privado;
+    // fallback para a URL pública caso a assinada não exista.
+    const urls = imagensCarrosselCache.length
+      ? imagensCarrosselCache
+      : [urlImagemCache || urlImagem];
+    return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.length, urls };
   });
 
 // Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado da IA.
