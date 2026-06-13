@@ -505,9 +505,53 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Imagens sempre usam GPT-image-2. Claude pode exigir configuração adicional no gateway.
+          Modelo de texto para legenda/tema. Imagem é configurada abaixo.
         </p>
       </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs">Modelo de IA (imagem)</Label>
+        <div className="flex flex-wrap gap-2">
+          {MODELOS_IMAGEM.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setModeloImagem(m.id)}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
+                modeloImagem === m.id
+                  ? "bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm"
+                  : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-zinc-500">
+          Nano Banana é até 5x mais rápido que GPT-image-2. Use GPT-image-2 só para criativos finais premium.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs">Publicar em</Label>
+        <button
+          type="button"
+          onClick={() => setAmbasRedes((v) => !v)}
+          className={cn(
+            "w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-md border-2 font-semibold text-sm transition-all",
+            ambasRedes
+              ? "border-emerald-500 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white shadow-sm"
+              : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
+          )}
+        >
+          <Instagram className="w-4 h-4" /> + <Linkedin className="w-4 h-4" />
+          {ambasRedes ? "Publicando em AMBAS as redes" : "Postar em Instagram E LinkedIn ao mesmo tempo"}
+          {ambasRedes && <Check className="w-4 h-4" />}
+        </button>
+      </div>
+
+
 
 
 
