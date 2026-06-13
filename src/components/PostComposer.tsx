@@ -689,7 +689,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Legenda</Label>
-                  <Textarea value={preview.legenda} readOnly rows={14} className="text-sm resize-none" />
+                  <Textarea value={preview.legenda} readOnly rows={8} className="text-sm resize-none" />
                 </div>
               </div>
             );
