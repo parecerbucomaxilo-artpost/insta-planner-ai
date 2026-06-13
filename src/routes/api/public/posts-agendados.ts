@@ -61,7 +61,9 @@ async function createFetchableUrl(supabaseAdmin: any, value: string | null | und
       .from("post-images")
       .upload(fileName, parsed.buffer, { contentType: parsed.mimeType, cacheControl: "604800", upsert: false });
     if (error) throw new Error(`Upload da imagem agendada falhou: ${error.message}`);
-    return supabaseAdmin.storage.from("post-images").getPublicUrl(fileName).data.publicUrl;
+    const { data, error: signError } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
+    if (signError || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${signError?.message || fileName}`);
+    return data.signedUrl;
   }
   const ref = getStorageObjectRef(value);
   if (!ref) return value;
