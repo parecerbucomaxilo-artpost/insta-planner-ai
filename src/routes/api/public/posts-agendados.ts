@@ -115,38 +115,35 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
             );
           }
 
-          let urlImagem = data.url_imagem_cache && isCacheValid(data.url_imagem_cache_expires_at)
-            ? data.url_imagem_cache
-            : data.url_imagem;
-          let refreshedCache = false;
-          if (urlImagem) {
-            try {
-              const url = new URL(urlImagem);
-              const parts = url.pathname.split("/").filter(Boolean);
-              const objectIndex = parts.findIndex((part) => part === "object");
-              const bucket = objectIndex >= 0 ? parts[objectIndex + 2] : null;
-              const path = objectIndex >= 0 ? parts.slice(objectIndex + 3).map(decodeURIComponent).join("/") : null;
-              if (bucket && path && !isCacheValid(data.url_imagem_cache_expires_at)) {
-                const { data: signed } = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
-                urlImagem = signed?.signedUrl ?? urlImagem;
-                refreshedCache = Boolean(signed?.signedUrl);
-              }
-            } catch {
-              urlImagem = data.url_imagem;
-            }
-          }
+          const cachedImagem = data.url_imagem_cache && isCacheValid(data.url_imagem_cache_expires_at) ? data.url_imagem_cache : null;
+          const cachedCarousel = isCacheValid(data.imagens_carrossel_cache_expires_at)
+            ? normalizeCarousel(data.imagens_carrossel_cache)
+            : [];
+          const originalCarousel = normalizeCarousel(data.imagens_carrossel);
+          const isCarousel = data.tipo_post === "Carrossel" && originalCarousel.length > 1;
+          const imageUrls = isCarousel
+            ? (cachedCarousel.length > 0 ? cachedCarousel : (await Promise.all(originalCarousel.map((url) => createFetchableUrl(supabaseAdmin, url)))).filter(Boolean) as string[])
+            : [cachedImagem || await createFetchableUrl(supabaseAdmin, data.url_imagem)].filter(Boolean) as string[];
+          const urlImagem = imageUrls[0] ?? null;
+          const refreshedImageCache = !cachedImagem && Boolean(urlImagem);
+          const refreshedCarouselCache = isCarousel && cachedCarousel.length === 0 && imageUrls.length > 0;
 
-          if (refreshedCache && urlImagem) {
+          if (refreshedImageCache || refreshedCarouselCache) {
             await supabaseAdmin
               .from("posts")
               .update({
-                url_imagem_cache: urlImagem,
-                url_imagem_cache_expires_at: new Date(Date.now() + SIGNED_URL_TTL_SECONDS * 1000).toISOString(),
+                ...(refreshedImageCache ? {
+                  url_imagem_cache: urlImagem,
+                  url_imagem_cache_expires_at: new Date(Date.now() + SIGNED_URL_TTL_SECONDS * 1000).toISOString(),
+                } : {}),
+                ...(refreshedCarouselCache ? {
+                  imagens_carrossel_cache: imageUrls,
+                  imagens_carrossel_cache_expires_at: new Date(Date.now() + SIGNED_URL_TTL_SECONDS * 1000).toISOString(),
+                } : {}),
               })
               .eq("id", data.id);
           }
 
-          const isCarousel = data.tipo_post === "Carrossel";
           const postType = isCarousel ? "carrossel" : "imagem";
 
           return new Response(
