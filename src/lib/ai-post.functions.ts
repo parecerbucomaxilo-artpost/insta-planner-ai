@@ -156,7 +156,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
     } else {
       const b64 = await generateImageBase64({
         apiKey: key,
-        prompt: imageSystemPrompt(tema, data.rede),
+        prompt: imageSystemPrompt(tema, data.rede, undefined, data.inserirLogo),
         size,
       });
       const upload = await uploadOne(b64);
