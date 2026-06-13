@@ -143,7 +143,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         slidesSpec.map((s) =>
           generateImageBase64({
             apiKey: key,
-            prompt: imageSystemPrompt(tema, data.rede, s),
+            prompt: imageSystemPrompt(tema, data.rede, s, data.inserirLogo),
             size,
           }),
         ),
