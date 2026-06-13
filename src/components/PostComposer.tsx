@@ -390,7 +390,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
-      onCreated();
+      // Não chama onCreated() — fica pendente até aprovação no preview.
     } catch (e: any) {
       toast.error(e.message || "Falha", { id: tid });
     }
