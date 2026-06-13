@@ -75,6 +75,16 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
       const tipoDb = formato === "Estilo X" ? "Carrossel" : formato;
 
+      let dataAgendamentoIso: string | null = null;
+      if (quando === "data") {
+        if (!dataAgendada) throw new Error("Escolha uma data.");
+        const [hh, mm] = horaAgendada.split(":").map(Number);
+        const d = new Date(dataAgendada);
+        d.setHours(hh || 9, mm || 0, 0, 0);
+        if (d.getTime() < Date.now()) throw new Error("A data/hora deve ser no futuro.");
+        dataAgendamentoIso = d.toISOString();
+      }
+
       const { error: dbError } = await supabase.from("posts").insert({
         user_id: userId,
         tipo_post: tipoDb,
@@ -83,6 +93,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         postar_instagram: networks.includes("instagram"),
         postar_linkedin: networks.includes("linkedin"),
         status: quando === "agora" ? "Publicado" : "Agendado",
+        data_agendamento: dataAgendamentoIso,
         estilo_layout: formato === "Estilo X" ? "Estilo X" : "Padrão",
       } as any);
 
@@ -90,6 +101,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
       toast.success(quando === "agora" ? "Post publicado!" : "Post agendado!", { id: tId });
       setLegenda(""); setImagem(null); setFileToUpload(null); setFileName(null);
+      setDataAgendada(undefined);
       onCreated();
     } catch (e: any) {
       console.error("Erro:", e);
@@ -97,7 +109,8 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     } finally {
       setSaving(false);
     }
-  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated]);
+  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated, dataAgendada, horaAgendada]);
+
 
   return (
     <Card className="p-6 space-y-6 max-w-4xl mx-auto border-zinc-200 shadow-sm">
