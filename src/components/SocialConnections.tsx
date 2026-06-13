@@ -49,8 +49,8 @@ export function SocialConnections() {
     })();
     (async () => {
       try {
-        const { data: auth } = await supabase.auth.getUser();
-        const uid = auth?.user?.id;
+        const { data: sess } = await supabase.auth.getSession();
+        const uid = sess?.session?.user?.id;
         let q = supabase
           .from("perfil_usuario")
           .select("id, instagram_webhook_url, linkedin_webhook_url, webhook_url")
