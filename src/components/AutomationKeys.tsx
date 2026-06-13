@@ -54,9 +54,13 @@ export function AutomationKeys() {
   useEffect(() => {
     async function loadWebhook() {
       try {
+        const { data: sess } = await supabase.auth.getSession();
+        const uid = sess.session?.user?.id;
+        if (!uid) return;
         const { data, error } = await supabase
           .from("perfil_usuario")
           .select("id, webhook_url")
+          .eq("user_id", uid)
           .limit(1)
           .maybeSingle();
         

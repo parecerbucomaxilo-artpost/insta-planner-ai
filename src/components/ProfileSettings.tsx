@@ -153,9 +153,16 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
 
   useEffect(() => {
     (async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess.session?.user?.id;
+      if (!uid) {
+        setLoading(false);
+        return;
+      }
       const { data } = await supabase
         .from("perfil_usuario")
         .select("*")
+        .eq("user_id", uid)
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();
