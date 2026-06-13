@@ -90,6 +90,12 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         dataAgendamentoIso = d.toISOString();
       }
 
+      const initialStatus = quando === "agora" && networks.includes("instagram")
+        ? "Agendado"
+        : quando === "agora"
+          ? "Publicado"
+          : "Agendado";
+
       const { data: inserted, error: dbError } = await supabase.from("posts").insert({
         user_id: userId,
         tipo_post: tipoDb,
@@ -97,7 +103,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         url_imagem: publicUrl,
         postar_instagram: networks.includes("instagram"),
         postar_linkedin: networks.includes("linkedin"),
-        status: quando === "agora" ? "Agendado" : "Agendado",
+        status: initialStatus,
         data_agendamento: dataAgendamentoIso,
         estilo_layout: formato === "Estilo X" ? "Estilo X" : "Padrão",
       } as any).select("id").single();
