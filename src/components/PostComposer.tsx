@@ -565,6 +565,63 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           </div>
         </div>
       )}
+
+      <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null); }}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Pré-visualização do post</DialogTitle>
+            <DialogDescription>
+              Confira a legenda e {preview && preview.urls.length > 1 ? `os ${preview.urls.length} cards` : "a imagem"} antes de publicar. Você pode descartar e gerar novamente.
+            </DialogDescription>
+          </DialogHeader>
+          {preview && (
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2 max-h-[420px] overflow-y-auto">
+                  {preview.urls.map((u, i) => (
+                    <div key={i} className="relative rounded-md overflow-hidden border bg-zinc-100">
+                      <img src={u} alt={`slide ${i + 1}`} className="w-full h-auto" />
+                      <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
+                        {i + 1}/{preview.urls.length}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Legenda</Label>
+                <Textarea value={preview.legenda} readOnly rows={14} className="text-sm resize-none" />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="destructive"
+              disabled={discarding}
+              onClick={async () => {
+                if (!preview) return;
+                setDiscarding(true);
+                try {
+                  await discardFn({ data: { id: preview.id } });
+                  toast.success("Post descartado.");
+                  setPreview(null);
+                  onCreated();
+                } catch (e: any) {
+                  toast.error(e.message || "Falha ao descartar.");
+                } finally {
+                  setDiscarding(false);
+                }
+              }}
+            >
+              {discarding ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Descartar
+            </Button>
+            <Button onClick={() => setPreview(null)} className="bg-indigo-600 hover:bg-indigo-700">
+              Manter e fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
