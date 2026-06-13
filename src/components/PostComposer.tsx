@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
