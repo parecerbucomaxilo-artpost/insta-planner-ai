@@ -28,27 +28,36 @@ export async function generateImageBase64(opts: {
   size?: "1024x1024" | "1024x1536" | "1536x1024";
   model?: ModeloImagem;
 }): Promise<string> {
+  const model = opts.model ?? "google/gemini-3.1-flash-image-preview";
+  const isGemini = model.startsWith("google/");
+  const body = isGemini
+    ? {
+        model,
+        messages: [{ role: "user", content: opts.prompt }],
+        modalities: ["image", "text"],
+      }
+    : {
+        model,
+        prompt: opts.prompt,
+        size: opts.size ?? "1024x1024",
+        quality: "low",
+        output_format: "jpeg",
+        output_compression: 80,
+        n: 1,
+      };
   const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Lovable-API-Key": opts.apiKey,
     },
-    body: JSON.stringify({
-      model: opts.model ?? "google/gemini-3.1-flash-image-preview",
-      prompt: opts.prompt,
-      size: opts.size ?? "1024x1024",
-      quality: "low",
-      output_format: "jpeg",
-      output_compression: 80,
-      n: 1,
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const txt = await res.text();
     throw new Error(`Image gen ${res.status}: ${txt}`);
   }
-  const json = (await res.json()) as { data: Array<{ b64_json?: string; url?: string }> };
+  const json = (await res.json()) as { data?: Array<{ b64_json?: string; url?: string }> };
   const item = json.data?.[0];
   if (item?.b64_json) return item.b64_json;
   if (item?.url) {
@@ -56,5 +65,5 @@ export async function generateImageBase64(opts: {
     const buf = Buffer.from(await r.arrayBuffer());
     return buf.toString("base64");
   }
-  throw new Error("Image gen: resposta sem b64_json nem url");
+  throw new Error(`Image gen: resposta sem b64_json nem url (${model}): ${JSON.stringify(json).slice(0, 300)}`);
 }
