@@ -263,8 +263,7 @@ export function SocialConnections() {
                   let pid = perfilId;
                   if (!pid) {
                     try {
-                      const { ensurePerfil } = await import("@/lib/perfil.functions");
-                      const r = await ensurePerfil();
+                      const r = await ensurePerfilFn();
                       pid = r.id;
                       setPerfilId(pid);
                     } catch (e) {
