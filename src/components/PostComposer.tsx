@@ -6,7 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
@@ -14,10 +16,13 @@ import { XStyleIcon } from "@/components/icons/XStyleIcon";
 import { BRANDING } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { generateSinglePost, generateWeekThemes } from "@/lib/ai-post.functions";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type Network = "instagram" | "linkedin";
 type Formato = "Post Único" | "Carrossel" | "Estilo X";
-type Quando = "agora" | "7dias";
+type Quando = "agora" | "7dias" | "data";
+
 
 const FORMATOS: { id: Formato; label: string; icon: React.ComponentType<{ className?: string }>; desc: string }[] = [
   { id: "Post Único", label: "Post Único", icon: Square, desc: "1 imagem" },
@@ -34,6 +39,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dataAgendada, setDataAgendada] = useState<Date | undefined>(undefined);
+  const [horaAgendada, setHoraAgendada] = useState("09:00");
+
 
   const toggleNetwork = (n: Network) => {
     setNetworks((prev) =>
@@ -67,6 +75,16 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
       const tipoDb = formato === "Estilo X" ? "Carrossel" : formato;
 
+      let dataAgendamentoIso: string | null = null;
+      if (quando === "data") {
+        if (!dataAgendada) throw new Error("Escolha uma data.");
+        const [hh, mm] = horaAgendada.split(":").map(Number);
+        const d = new Date(dataAgendada);
+        d.setHours(hh || 9, mm || 0, 0, 0);
+        if (d.getTime() < Date.now()) throw new Error("A data/hora deve ser no futuro.");
+        dataAgendamentoIso = d.toISOString();
+      }
+
       const { error: dbError } = await supabase.from("posts").insert({
         user_id: userId,
         tipo_post: tipoDb,
@@ -75,6 +93,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         postar_instagram: networks.includes("instagram"),
         postar_linkedin: networks.includes("linkedin"),
         status: quando === "agora" ? "Publicado" : "Agendado",
+        data_agendamento: dataAgendamentoIso,
         estilo_layout: formato === "Estilo X" ? "Estilo X" : "Padrão",
       } as any);
 
@@ -82,6 +101,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
       toast.success(quando === "agora" ? "Post publicado!" : "Post agendado!", { id: tId });
       setLegenda(""); setImagem(null); setFileToUpload(null); setFileName(null);
+      setDataAgendada(undefined);
       onCreated();
     } catch (e: any) {
       console.error("Erro:", e);
@@ -89,7 +109,8 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     } finally {
       setSaving(false);
     }
-  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated]);
+  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated, dataAgendada, horaAgendada]);
+
 
   return (
     <Card className="p-6 space-y-6 max-w-4xl mx-auto border-zinc-200 shadow-sm">
@@ -158,10 +179,10 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         </div>
       </div>
 
-      {/* Quando — Postar agora vs Programar 7 dias */}
+      {/* Quando — Postar agora, Agendar data ou Programar 7 dias */}
       <div className="space-y-2">
-        <Label>Quando</Label>
-        <div className="grid grid-cols-2 gap-3">
+        <Label>Postar quando?</Label>
+        <div className="grid grid-cols-3 gap-3">
           <button
             type="button"
             onClick={() => setQuando("agora")}
@@ -172,7 +193,19 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
                 : "border-zinc-200 text-zinc-600 hover:border-zinc-300",
             )}
           >
-            <Zap className="w-4 h-4" /> Postar agora
+            <Zap className="w-4 h-4" /> Agora
+          </button>
+          <button
+            type="button"
+            onClick={() => setQuando("data")}
+            className={cn(
+              "flex items-center gap-2 justify-center p-3 rounded-lg border-2 font-semibold transition-all",
+              quando === "data"
+                ? "border-violet-500 bg-violet-50 text-violet-700"
+                : "border-zinc-200 text-zinc-600 hover:border-zinc-300",
+            )}
+          >
+            <CalendarIcon className="w-4 h-4" /> Escolher data
           </button>
           <button
             type="button"
@@ -184,10 +217,49 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
                 : "border-zinc-200 text-zinc-600 hover:border-zinc-300",
             )}
           >
-            <Clock className="w-4 h-4" /> Programar 7 dias
+            <Clock className="w-4 h-4" /> Próximos 7 dias
           </button>
         </div>
+
+        {quando === "data" && (
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal min-w-[220px]",
+                    !dataAgendada && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="w-4 h-4 mr-2" />
+                  {dataAgendada
+                    ? format(dataAgendada, "PPP", { locale: ptBR })
+                    : "Selecione a data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dataAgendada}
+                  onSelect={setDataAgendada}
+                  disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                  initialFocus
+                  locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            <Input
+              type="time"
+              value={horaAgendada}
+              onChange={(e) => setHoraAgendada(e.target.value)}
+              className="w-[130px]"
+            />
+          </div>
+        )}
       </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
