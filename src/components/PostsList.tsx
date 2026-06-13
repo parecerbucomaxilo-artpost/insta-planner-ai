@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2 } from "lucide-react";
+import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ const statusColor: Record<string, string> = {
 export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () => void }) {
   // const sendAlbato = useServerFn(dispatchAlbato); // Removido para reset logic
   const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [slideIdx, setSlideIdx] = useState<Record<string, number>>({});
 
   const handleDelete = async (id: string) => {
     try {
@@ -62,22 +63,31 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {posts.map((p) => {
-        const rawThumb = p.url_imagem ?? (p as any).url_da_imagem ?? p.imagens_carrossel?.[0] ?? null;
-        const thumb = p.url_imagem ?? (p as any).url_da_imagem ?? (p.imagens_carrossel?.[0] as string) ?? null;
+        const carrosselUrls: string[] = Array.isArray(p.imagens_carrossel) ? (p.imagens_carrossel as string[]) : [];
+        const isCarrossel = p.tipo_post === "Carrossel" && carrosselUrls.length > 1;
+        const idx = slideIdx[p.id] ?? 0;
+        const safeIdx = isCarrossel ? Math.min(idx, carrosselUrls.length - 1) : 0;
+        const thumb = isCarrossel
+          ? carrosselUrls[safeIdx]
+          : (p.url_imagem ?? (p as any).url_da_imagem ?? carrosselUrls[0] ?? null);
         const isVideo = p.formato_midia === "Vídeo/Reels";
         const isViral = (p.visualizacoes ?? 0) >= 500;
         const isPublishing = publishingId === p.id;
         const alreadyPublished = p.status === "Publicado";
+        const goPrev = () =>
+          setSlideIdx((s) => ({ ...s, [p.id]: (safeIdx - 1 + carrosselUrls.length) % carrosselUrls.length }));
+        const goNext = () =>
+          setSlideIdx((s) => ({ ...s, [p.id]: (safeIdx + 1) % carrosselUrls.length }));
         return (
           <Card
             key={p.id}
             className={`overflow-hidden flex flex-col card-elevated transition-all ${isViral ? "ring-2 ring-amber-500/50" : ""}`}
           >
-            <div className="aspect-square bg-muted relative overflow-hidden">
+            <div className="aspect-square bg-muted relative overflow-hidden group">
               {isVideo && thumb ? (
                 <video src={thumb} className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.03]" muted playsInline />
               ) : thumb ? (
-                <img src={thumb} alt="" className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.03]" />
+                <img src={thumb} alt="" className="w-full h-full object-cover transition-transform duration-500" />
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground"><ImgIcon className="h-8 w-8" /></div>
               )}
@@ -88,7 +98,34 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                 </Badge>
               )}
               {!isVideo && p.tipo_post === "Carrossel" && (
-                <Badge variant="secondary" className="absolute top-2 right-2 shadow-sm">{p.imagens_carrossel?.length ?? 0} imgs</Badge>
+                <Badge variant="secondary" className="absolute top-2 right-2 shadow-sm">
+                  {isCarrossel ? `${safeIdx + 1}/${carrosselUrls.length}` : `${carrosselUrls.length} imgs`}
+                </Badge>
+              )}
+              {isCarrossel && (
+                <>
+                  <button
+                    type="button"
+                    onClick={goPrev}
+                    aria-label="Slide anterior"
+                    className="absolute left-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/55 hover:bg-black/75 text-white flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    aria-label="Próximo slide"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/55 hover:bg-black/75 text-white flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                    {carrosselUrls.map((_, i) => (
+                      <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === safeIdx ? "bg-white" : "bg-white/40"}`} />
+                    ))}
+                  </div>
+                </>
               )}
               {isViral && (
                 <Badge className="absolute bottom-2 left-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 animate-pulse shadow-sm">
@@ -100,8 +137,16 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
               <div className="flex gap-1 flex-wrap items-center">
                 <Badge variant="outline" className="text-xs">{p.tipo_post}</Badge>
                 <Badge variant="outline" className="text-xs">{p.estilo_layout}</Badge>
-                <span className="ml-auto text-xs text-muted-foreground flex items-center gap-1">
-                  <Eye className="h-3 w-3" /> {(p.visualizacoes ?? 0).toLocaleString("pt-BR")}
+                <span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+                  {(p as any).created_at && (
+                    <span className="flex items-center gap-1" title="Criado em">
+                      <Clock className="h-3 w-3" />
+                      {format(new Date((p as any).created_at), "dd/MM HH:mm", { locale: ptBR })}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1" title="Visualizações">
+                    <Eye className="h-3 w-3" /> {(p.visualizacoes ?? 0).toLocaleString("pt-BR")}
+                  </span>
                 </span>
               </div>
               <p className="text-sm line-clamp-3 flex-1 leading-relaxed">
