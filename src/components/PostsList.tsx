@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2 } from "lucide-react";
+import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
