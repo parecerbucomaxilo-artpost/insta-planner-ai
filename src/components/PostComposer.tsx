@@ -357,7 +357,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = "ai-week";
     toast.loading("IA planejando 7 dias (cronograma fixo)...", { id: tid });
     try {
-      const out = await genWeek({ data: { especialidade } });
+      const out = await genWeek({ data: { especialidade, modelo } });
       setTemas(out.temas as any);
       toast.success(`${out.temas.length} slots gerados. Aprove para criar imagem + agendar.`, { id: tid });
     } catch (e: any) {
