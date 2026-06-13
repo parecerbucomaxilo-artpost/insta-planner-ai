@@ -19,6 +19,7 @@ const statusColor: Record<string, string> = {
 export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () => void }) {
   // const sendAlbato = useServerFn(dispatchAlbato); // Removido para reset logic
   const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [slideIdx, setSlideIdx] = useState<Record<string, number>>({});
 
   const handleDelete = async (id: string) => {
     try {
