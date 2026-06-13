@@ -328,6 +328,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x">("instagram");
   const [inserirLogo, setInserirLogo] = useState(true);
+  const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
   const [busy, setBusy] = useState<null | "single" | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
   const genSingle = useServerFn(generateSinglePost);
