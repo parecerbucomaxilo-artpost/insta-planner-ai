@@ -152,9 +152,11 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
 
     if (formato === "Carrossel") {
       const slidesSpec = [
-        { n: 1, total: 3, papel: "GANCHO forte de conversão (pergunta/dor) + assinatura" },
-        { n: 2, total: 3, papel: "DESENVOLVIMENTO: explicação clara da causa/solução, citação científica curta no rodapé (sem assinatura)" },
-        { n: 3, total: 3, papel: "CTA final: WhatsApp/Link na Bio + assinatura" },
+        { n: 1, total: 5, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + assinatura. Layout impactante de revista." },
+        { n: 2, total: 5, papel: "PROBLEMA: aprofunda a dor/sintoma. Imagem clínica forte. Sem assinatura." },
+        { n: 3, total: 5, papel: "CAUSA / EXPLICAÇÃO CIENTÍFICA: didática, com citação curta no rodapé (Lancet/IJOMS/JOMS). Sem assinatura." },
+        { n: 4, total: 5, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve. Tom de autoridade. Sem assinatura." },
+        { n: 5, total: 5, papel: "CTA FINAL: WhatsApp / Link na Bio + assinatura. Slide de fechamento." },
       ];
       const b64s = await Promise.all(
         slidesSpec.map((s) =>
