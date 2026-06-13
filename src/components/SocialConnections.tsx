@@ -53,13 +53,17 @@ export function SocialConnections() {
       try {
         const { data: sess } = await supabase.auth.getSession();
         const uid = sess?.session?.user?.id;
-        let q = supabase
+        if (!uid) {
+          setIgWebhook(DEFAULT_MAKE_WEBHOOK);
+          return;
+        }
+        const { data } = await supabase
           .from("perfil_usuario")
           .select("id, instagram_webhook_url, linkedin_webhook_url, webhook_url")
+          .eq("user_id", uid)
           .order("created_at", { ascending: true })
-          .limit(1);
-        if (uid) q = q.eq("user_id", uid);
-        const { data } = await q.maybeSingle();
+          .limit(1)
+          .maybeSingle();
         if (data) {
           setPerfilId(data.id);
           setIgWebhook(data.instagram_webhook_url || data.webhook_url || DEFAULT_MAKE_WEBHOOK);
@@ -71,7 +75,7 @@ export function SocialConnections() {
         setIgLoading(false);
       }
     })();
-  }, [fetchStatus]);
+  }, []);
 
   const handleSaveIgWebhook = async () => {
     const url = igWebhook.trim();
@@ -260,6 +264,12 @@ export function SocialConnections() {
                 size="sm"
                 disabled={igLoading}
                 onClick={async () => {
+                  const { data: sess } = await supabase.auth.getSession();
+                  if (!sess.session?.user?.id) {
+                    toast.error("Faça login antes de conectar o Instagram oficial.");
+                    window.location.href = `/auth?redirect=${encodeURIComponent(window.location.pathname)}`;
+                    return;
+                  }
                   let pid = perfilId;
                   if (!pid) {
                     try {
@@ -270,7 +280,7 @@ export function SocialConnections() {
                       const msg = e instanceof Error ? e.message : String(e);
                       if (/unauthorized/i.test(msg)) {
                         toast.error("Sua sessão expirou. Redirecionando…");
-                        setTimeout(() => { window.location.href = "/auth"; }, 800);
+                        setTimeout(() => { window.location.href = `/auth?redirect=${encodeURIComponent(window.location.pathname)}`; }, 800);
                         return;
                       }
                       return toast.error(`Falha ao preparar perfil: ${msg}`);
