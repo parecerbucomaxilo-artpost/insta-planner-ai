@@ -33,6 +33,7 @@ const SingleInput = z.object({
 
 const WeekInput = z.object({
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("Ambas"),
+  modelo: ModeloEnum.optional().default("google/gemini-3-flash-preview"),
 });
 
 const WHATSAPP = "https://wa.me/5511947684004";
