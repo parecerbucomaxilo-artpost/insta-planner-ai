@@ -49,12 +49,15 @@ export function SocialConnections() {
     })();
     (async () => {
       try {
-        const { data } = await supabase
+        const { data: auth } = await supabase.auth.getUser();
+        const uid = auth?.user?.id;
+        let q = supabase
           .from("perfil_usuario")
           .select("id, instagram_webhook_url, linkedin_webhook_url, webhook_url")
           .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
+          .limit(1);
+        if (uid) q = q.eq("user_id", uid);
+        const { data } = await q.maybeSingle();
         if (data) {
           setPerfilId(data.id);
           setIgWebhook(data.instagram_webhook_url || data.webhook_url || DEFAULT_MAKE_WEBHOOK);
@@ -257,19 +260,32 @@ export function SocialConnections() {
                 onClick={async () => {
                   let pid = perfilId;
                   if (!pid) {
-                    try {
-                      const uid = await getAuthedUserId();
+                    const { data: auth } = await supabase.auth.getUser();
+                    const uid = auth?.user?.id;
+                    if (!uid) return toast.error("Faça login antes de conectar o Instagram.");
+                    // Try to find existing row first (legacy / created elsewhere)
+                    const existing = await supabase
+                      .from("perfil_usuario")
+                      .select("id")
+                      .eq("user_id", uid)
+                      .order("created_at", { ascending: true })
+                      .limit(1)
+                      .maybeSingle();
+                    if (existing.data?.id) {
+                      pid = existing.data.id;
+                    } else {
                       const res = await supabase
                         .from("perfil_usuario")
                         .insert({ user_id: uid })
                         .select("id")
                         .maybeSingle();
-                      if (res.error) throw res.error;
+                      if (res.error) {
+                        console.error("perfil insert error", res.error);
+                        return toast.error(`Falha ao criar perfil: ${res.error.message}`);
+                      }
                       pid = res.data?.id ?? null;
-                      if (pid) setPerfilId(pid);
-                    } catch (e) {
-                      return toast.error(e instanceof Error ? e.message : "Falha ao criar perfil");
                     }
+                    if (pid) setPerfilId(pid);
                   }
                   if (!pid) return toast.error("Não foi possível identificar o perfil");
                   window.location.href = `/api/public/meta-oauth/start?perfil_id=${pid}`;
