@@ -254,10 +254,12 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x">("instagram");
+  const [inserirLogo, setInserirLogo] = useState(true);
   const [busy, setBusy] = useState<null | "single" | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
+
 
   const handleSingle = async () => {
     const temaTrim = tema.trim();
@@ -265,7 +267,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = "ai-single";
     toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
     try {
-      await genSingle({ data: { tema: temaTrim, especialidade, rede } });
+      await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo } });
       toast.success("Post gerado! Veja em 'Todos os posts'.", { id: tid });
       setTema("");
       onCreated();
@@ -297,7 +299,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = `ai-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
-      await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando } });
+      await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, inserirLogo } });
       toast.success(t.quando ? "Agendado!" : "Gerado!", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       onCreated();
@@ -366,6 +368,18 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           </button>
         ))}
       </div>
+
+      <label className="flex items-center gap-2 text-xs text-indigo-900 cursor-pointer select-none bg-white/60 border border-indigo-200 rounded-md px-3 py-2 w-fit">
+        <input
+          type="checkbox"
+          checked={inserirLogo}
+          onChange={(e) => setInserirLogo(e.target.checked)}
+          className="w-4 h-4 accent-indigo-600"
+        />
+        <span className="font-semibold">Inserir logo Planner Chico nos criativos</span>
+        <span className="text-indigo-600/70">(recomendado)</span>
+      </label>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
         <Button
