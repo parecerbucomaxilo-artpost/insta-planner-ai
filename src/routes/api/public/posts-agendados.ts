@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 } as const;
+
+const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 const CACHE_REFRESH_MARGIN_MS = 60 * 60 * 1000;
