@@ -441,16 +441,36 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         ))}
       </div>
 
-      <label className="flex items-center gap-2 text-xs text-indigo-900 cursor-pointer select-none bg-white/60 border border-indigo-200 rounded-md px-3 py-2 w-fit">
-        <input
-          type="checkbox"
-          checked={inserirLogo}
-          onChange={(e) => setInserirLogo(e.target.checked)}
-          className="w-4 h-4 accent-indigo-600"
-        />
-        <span className="font-semibold">Inserir logo Planner Chico nos criativos</span>
-        <span className="text-indigo-600/70">(recomendado)</span>
-      </label>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Inserir logo Planner Chico nos criativos?</Label>
+        <div className="grid grid-cols-2 gap-2 max-w-xs">
+          <button
+            type="button"
+            onClick={() => setInserirLogo(true)}
+            className={cn(
+              "flex items-center gap-1.5 justify-center px-3 py-2 rounded-md border-2 font-semibold text-sm transition-all",
+              inserirLogo
+                ? "border-indigo-500 bg-indigo-600 text-white shadow-sm"
+                : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
+            )}
+          >
+            <Check className="w-3.5 h-3.5" /> Sim, com logo
+          </button>
+          <button
+            type="button"
+            onClick={() => setInserirLogo(false)}
+            className={cn(
+              "flex items-center gap-1.5 justify-center px-3 py-2 rounded-md border-2 font-semibold text-sm transition-all",
+              !inserirLogo
+                ? "border-zinc-500 bg-zinc-700 text-white shadow-sm"
+                : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
+            )}
+          >
+            Sem logo
+          </button>
+        </div>
+      </div>
+
 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
