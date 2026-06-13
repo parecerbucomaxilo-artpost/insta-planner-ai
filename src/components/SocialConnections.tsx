@@ -49,12 +49,15 @@ export function SocialConnections() {
     })();
     (async () => {
       try {
-        const { data } = await supabase
+        const { data: auth } = await supabase.auth.getUser();
+        const uid = auth?.user?.id;
+        let q = supabase
           .from("perfil_usuario")
           .select("id, instagram_webhook_url, linkedin_webhook_url, webhook_url")
           .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
+          .limit(1);
+        if (uid) q = q.eq("user_id", uid);
+        const { data } = await q.maybeSingle();
         if (data) {
           setPerfilId(data.id);
           setIgWebhook(data.instagram_webhook_url || data.webhook_url || DEFAULT_MAKE_WEBHOOK);
