@@ -349,7 +349,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = "ai-single";
     toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
     try {
-      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo } });
+      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo, modeloImagem, ambasRedes } });
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
