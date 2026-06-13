@@ -260,36 +260,20 @@ export function SocialConnections() {
                 onClick={async () => {
                   let pid = perfilId;
                   if (!pid) {
-                    const { data: sess } = await supabase.auth.getSession();
-                    const uid = sess?.session?.user?.id;
-                    if (!uid) {
-                      toast.error("Sua sessão expirou. Redirecionando para o login…");
-                      setTimeout(() => { window.location.href = "/auth"; }, 800);
-                      return;
-                    }
-                    // Try to find existing row first (legacy / created elsewhere)
-                    const existing = await supabase
-                      .from("perfil_usuario")
-                      .select("id")
-                      .eq("user_id", uid)
-                      .order("created_at", { ascending: true })
-                      .limit(1)
-                      .maybeSingle();
-                    if (existing.data?.id) {
-                      pid = existing.data.id;
-                    } else {
-                      const res = await supabase
-                        .from("perfil_usuario")
-                        .insert({ user_id: uid })
-                        .select("id")
-                        .maybeSingle();
-                      if (res.error) {
-                        console.error("perfil insert error", res.error);
-                        return toast.error(`Falha ao criar perfil: ${res.error.message}`);
+                    try {
+                      const { ensurePerfil } = await import("@/lib/perfil.functions");
+                      const r = await ensurePerfil();
+                      pid = r.id;
+                      setPerfilId(pid);
+                    } catch (e) {
+                      const msg = e instanceof Error ? e.message : String(e);
+                      if (/unauthorized/i.test(msg)) {
+                        toast.error("Sua sessão expirou. Redirecionando…");
+                        setTimeout(() => { window.location.href = "/auth"; }, 800);
+                        return;
                       }
-                      pid = res.data?.id ?? null;
+                      return toast.error(`Falha ao preparar perfil: ${msg}`);
                     }
-                    if (pid) setPerfilId(pid);
                   }
                   if (!pid) return toast.error("Não foi possível identificar o perfil");
                   window.location.href = `/api/public/meta-oauth/start?perfil_id=${pid}`;
