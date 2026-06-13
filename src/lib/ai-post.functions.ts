@@ -85,9 +85,9 @@ function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; tota
 - ESTILO: ultra premium, alto luxo médico, cinematográfico, fotografia clínica de revista científica top-tier. Iluminação dramática, profundidade, micro-texturas, qualidade 8K, ZERO aparência amadora ou "stock photo barato".
 - Paleta: azul profundo (#0c2340), branco puro, azul elétrico (#2dd4ff). Vermelho APENAS para sinalizar DOR/alerta clínico.
 - Tipografia bold sans-serif premium (estilo Inter/Söhne), alto contraste, hierarquia clara, kerning impecável.
-- Texto curto em PT-BR (com acentos corretos e ortografia perfeita) sobre: "${tema}".${assinaturaInfo}${logoInstr}
+- Texto curto em PT-BR (Português do Brasil) com acentuação correta, ortografia impecável, SEM palavras duplicadas/repetidas, SEM erros de concordância, SEM letras trocadas, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${logoInstr}
 - Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : "Formato quadrado 1:1."}${slideInfo}
-- PROIBIDO ABSOLUTO: inventar logotipo/marca/símbolo de marca em qualquer parte da imagem, texto em inglês, watermark de IA, estética genérica de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador.`;
+- PROIBIDO ABSOLUTO: inventar logotipo/marca/símbolo de marca em qualquer parte da imagem (a LOGO oficial do Planner Chico será aplicada como overlay pelo sistema, sem alteração), texto em inglês, palavras repetidas duas vezes seguidas (ex.: "dor dor", "do do"), tipografia com glitch, watermark de IA, estética genérica de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador.`;
 }
 
 
