@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const POST_MEDIA_BUCKETS = new Set(["post-images", "posts_media"]);
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
+const CACHE_REFRESH_MARGIN_MS = 60 * 60 * 1000;
 
 type StorageObjectRef = {
   bucket: string;
@@ -35,6 +36,11 @@ export function getPostStorageObjectRef(value: string | null | undefined): Stora
   }
 }
 
+function isCacheValid(expiresAt: string | null | undefined) {
+  if (!expiresAt) return false;
+  return new Date(expiresAt).getTime() - Date.now() > CACHE_REFRESH_MARGIN_MS;
+}
+
 export async function createPostMediaDisplayUrl(value: string | null | undefined): Promise<string | null> {
   if (!value) return null;
   const ref = getPostStorageObjectRef(value);
@@ -66,14 +72,44 @@ function normalizeCarousel(value: unknown): string[] {
   return [];
 }
 
-export async function signPostMediaUrls<T extends { url_imagem?: string | null; url_da_imagem?: string | null; imagens_carrossel?: unknown }>(
+export async function signPostMediaUrls<T extends {
+  id?: string;
+  url_imagem?: string | null;
+  url_da_imagem?: string | null;
+  imagens_carrossel?: unknown;
+  url_imagem_cache?: string | null;
+  url_imagem_cache_expires_at?: string | null;
+  imagens_carrossel_cache?: unknown;
+  imagens_carrossel_cache_expires_at?: string | null;
+}>(
   post: T,
 ): Promise<T & { imagens_carrossel: string[] }> {
+  const cachedImagem = isCacheValid(post.url_imagem_cache_expires_at) ? post.url_imagem_cache : null;
+  const cachedCarousel = isCacheValid(post.imagens_carrossel_cache_expires_at)
+    ? normalizeCarousel(post.imagens_carrossel_cache)
+    : [];
+
   const [urlImagem, urlDaImagem, imagensCarrossel] = await Promise.all([
-    createPostMediaDisplayUrl(post.url_imagem),
+    cachedImagem ? Promise.resolve(cachedImagem) : createPostMediaDisplayUrl(post.url_imagem),
     createPostMediaDisplayUrl(post.url_da_imagem),
-    Promise.all(normalizeCarousel(post.imagens_carrossel).map((url) => createPostMediaDisplayUrl(url))),
+    cachedCarousel.length > 0
+      ? Promise.resolve(cachedCarousel)
+      : Promise.all(normalizeCarousel(post.imagens_carrossel).map((url) => createPostMediaDisplayUrl(url))),
   ]);
+
+  if (post.id && (!cachedImagem || (normalizeCarousel(post.imagens_carrossel).length > 0 && cachedCarousel.length === 0))) {
+    void supabase
+      .from("posts")
+      .update({
+        ...(urlImagem && !cachedImagem
+          ? { url_imagem_cache: urlImagem, url_imagem_cache_expires_at: new Date(Date.now() + SIGNED_URL_TTL_SECONDS * 1000).toISOString() }
+          : {}),
+        ...(imagensCarrossel.length > 0 && cachedCarousel.length === 0
+          ? { imagens_carrossel_cache: imagensCarrossel, imagens_carrossel_cache_expires_at: new Date(Date.now() + SIGNED_URL_TTL_SECONDS * 1000).toISOString() }
+          : {}),
+      })
+      .eq("id", post.id);
+  }
 
   return {
     ...post,
