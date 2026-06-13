@@ -23,6 +23,28 @@ function normalizeCarousel(value: unknown): string[] {
   return [];
 }
 
+function parseDataUrl(value: string) {
+  const match = value.match(/^data:([^;,]+)?(;base64)?,(.*)$/s);
+  if (!match) return null;
+  const mimeType = match[1] || "image/png";
+  const isBase64 = Boolean(match[2]);
+  const raw = match[3] || "";
+  const buffer = isBase64 ? Buffer.from(raw, "base64") : Buffer.from(decodeURIComponent(raw));
+  const ext = mimeType.includes("jpeg") || mimeType.includes("jpg") ? "jpg" : mimeType.includes("webp") ? "webp" : "png";
+  return { buffer, mimeType, ext };
+}
+
+async function uploadDataUrl(supabaseAdmin: any, value: string) {
+  const parsed = parseDataUrl(value);
+  if (!parsed) return value;
+  const fileName = `published/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${parsed.ext}`;
+  const { error } = await supabaseAdmin.storage
+    .from("post-images")
+    .upload(fileName, parsed.buffer, { contentType: parsed.mimeType, cacheControl: "604800", upsert: false });
+  if (error) throw new Error(`Upload da imagem para publicação falhou: ${error.message}`);
+  return supabaseAdmin.storage.from("post-images").getPublicUrl(fileName).data.publicUrl;
+}
+
 function getStorageObjectRef(value: string | null | undefined) {
   if (!value || value.startsWith("blob:") || value.startsWith("data:")) return null;
   try {
@@ -39,6 +61,7 @@ function getStorageObjectRef(value: string | null | undefined) {
 
 async function createFetchableUrl(supabaseAdmin: any, value: string | null | undefined) {
   if (!value) return null;
+  if (value.startsWith("data:")) return uploadDataUrl(supabaseAdmin, value);
   const ref = getStorageObjectRef(value);
   if (!ref) return value;
   const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
