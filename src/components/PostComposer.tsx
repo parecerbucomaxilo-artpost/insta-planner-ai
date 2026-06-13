@@ -633,7 +633,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             const goPrev = () => setPreviewIdx((i) => (Math.min(i, total - 1) - 1 + total) % total);
             const goNext = () => setPreviewIdx((i) => (Math.min(i, total - 1) + 1) % total);
             return (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-3 max-w-full">
                 <div className="space-y-2">
                   <div className="relative rounded-md overflow-hidden border bg-zinc-100 aspect-square">
                     <img src={preview.urls[safeIdx]} alt={`slide ${safeIdx + 1}`} className="w-full h-full object-contain" />
