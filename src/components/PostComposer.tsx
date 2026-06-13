@@ -635,7 +635,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             return (
               <div className="grid sm:grid-cols-2 gap-3 max-w-full">
                 <div className="space-y-2">
-                  <div className="relative rounded-md overflow-hidden border bg-zinc-100 aspect-square">
+                  <div className="relative rounded-md overflow-hidden border bg-zinc-100 aspect-square max-w-[280px] mx-auto w-full">
                     <img src={preview.urls[safeIdx]} alt={`slide ${safeIdx + 1}`} className="w-full h-full object-contain" />
                     <span className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-0.5 rounded">
                       {safeIdx + 1}/{total}
