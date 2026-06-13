@@ -145,7 +145,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
   if (post.postar_instagram === false) throw new Error("Este post não está marcado para Instagram.");
 
   try {
-    const { data: perfil, error: perfilError } = await supabaseAdmin
+    let { data: perfil, error: perfilError } = await supabaseAdmin
       .from("perfil_usuario")
       .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
       .eq("user_id", userId)
@@ -154,6 +154,16 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       .maybeSingle();
 
     if (perfilError) throw new Error(`DB: ${perfilError.message}`);
+    if (!perfil) {
+      const fallback = await supabaseAdmin
+        .from("perfil_usuario")
+        .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (fallback.error) throw new Error(`DB: ${fallback.error.message}`);
+      perfil = fallback.data;
+    }
     if (!perfil) throw new Error("Configure seu perfil antes de publicar no Instagram.");
 
     const carousel = normalizeCarousel(post.imagens_carrossel);
