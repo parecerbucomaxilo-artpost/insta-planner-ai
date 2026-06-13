@@ -91,7 +91,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const gateway = createLovableAiGatewayProvider(key);
-    const model = gateway("google/gemini-3-flash-preview");
+    const model = gateway(data.modelo);
 
     // Resolve formato final
     const formato: "Carrossel" | "Story" | "Post Único" =
