@@ -40,7 +40,7 @@ FORMATO: legenda pronta para postar, com gancho forte na 1ª linha, 3-6 emojis e
 NÃO inclua a assinatura "${ASSINATURA}" no texto (ela vai como overlay na imagem).`;
 }
 
-function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; total: number; papel: string }) {
+function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; total: number; papel: string }, inserirLogo: boolean = true) {
   const slideInfo = slide
     ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.`
     : "";
@@ -49,13 +49,18 @@ function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; tota
       ? `\n- Rodapé OBRIGATÓRIO: "${ASSINATURA}".`
       : `\n- NÃO inclua a assinatura neste slide (vai apenas no 1º e último).`
     : `\n- Rodapé discreto: "${ASSINATURA}".`;
-  return `Cartaz médico premium em estilo Dr. Francisco Menezes:
-- Paleta: azul profundo (#0c2340), branco, azul elétrico (#2dd4ff). Vermelho APENAS para indicar dor.
-- Tipografia bold, alto contraste, layout limpo e autoridade médica premium.
-- Texto curto em PT-BR (com acentos corretos) sobre: "${tema}".${assinaturaInfo}
+  const logoInstr = inserirLogo
+    ? `\n- LOGO OBRIGATÓRIA: insira a LOGO "Planner Chico" / "Prof. Francisco Menezes" no CANTO SUPERIOR DIREITO da imagem, tamanho compacto (~10% da largura), com transparência sutil, SEM caixa branca atrás. A logo é um símbolo médico minimalista azul-elétrico sobre fundo escuro. NÃO esqueça a logo — ela é mandatória em TODOS os criativos.`
+    : `\n- SEM logo nesta imagem (cliente solicitou explicitamente).`;
+  return `CARTAZ MÉDICO ULTRA PREMIUM — autoridade hospitalar de cirurgia bucomaxilofacial, nível editorial Lancet/NEJM/Vogue Saúde:
+- ESTILO: ultra premium, alto luxo médico, cinematográfico, fotografia clínica de revista científica top-tier. Iluminação dramática, profundidade, micro-texturas, qualidade 8K, ZERO aparência amadora ou "stock photo barato".
+- Paleta: azul profundo (#0c2340), branco puro, azul elétrico (#2dd4ff). Vermelho APENAS para sinalizar DOR/alerta clínico.
+- Tipografia bold sans-serif premium (estilo Inter/Söhne), alto contraste, hierarquia clara, kerning impecável.
+- Texto curto em PT-BR (com acentos corretos e ortografia perfeita) sobre: "${tema}".${assinaturaInfo}${logoInstr}
 - Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : "Formato quadrado 1:1."}${slideInfo}
-- Sem texto inglês. Sem watermark de IA.`;
+- PROIBIDO: texto em inglês, watermark de IA, estética genérica de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador.`;
 }
+
 
 export const generateSinglePost = createServerFn({ method: "POST" })
   .middleware([])
