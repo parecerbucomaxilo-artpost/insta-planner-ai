@@ -620,7 +620,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       )}
 
       <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null); }}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-xl w-[92vw] sm:w-auto max-h-[85vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Pré-visualização do post</DialogTitle>
             <DialogDescription>
@@ -633,9 +633,9 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             const goPrev = () => setPreviewIdx((i) => (Math.min(i, total - 1) - 1 + total) % total);
             const goNext = () => setPreviewIdx((i) => (Math.min(i, total - 1) + 1) % total);
             return (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-3 max-w-full">
                 <div className="space-y-2">
-                  <div className="relative rounded-md overflow-hidden border bg-zinc-100 aspect-square">
+                  <div className="relative rounded-md overflow-hidden border bg-zinc-100 aspect-square max-w-[280px] mx-auto w-full">
                     <img src={preview.urls[safeIdx]} alt={`slide ${safeIdx + 1}`} className="w-full h-full object-contain" />
                     <span className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-0.5 rounded">
                       {safeIdx + 1}/{total}
@@ -689,7 +689,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Legenda</Label>
-                  <Textarea value={preview.legenda} readOnly rows={14} className="text-sm resize-none" />
+                  <Textarea value={preview.legenda} readOnly rows={8} className="text-sm resize-none" />
                 </div>
               </div>
             );
