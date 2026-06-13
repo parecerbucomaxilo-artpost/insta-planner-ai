@@ -12,11 +12,21 @@ export function createLovableAiGatewayProvider(lovableApiKey: string) {
   });
 }
 
+export const MODELOS_IMAGEM = [
+  { id: "google/gemini-3.1-flash-image-preview", label: "Nano Banana 2 (mais rápido)" },
+  { id: "google/gemini-2.5-flash-image", label: "Nano Banana (rápido)" },
+  { id: "openai/gpt-image-1-mini", label: "GPT-image-1 Mini (rápido)" },
+  { id: "openai/gpt-image-2", label: "GPT-image-2 (premium, mais lento)" },
+  { id: "google/gemini-3-pro-image-preview", label: "Gemini 3 Pro Image (alta qualidade)" },
+] as const;
+export type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
+
 // Lovable AI Gateway image generation (OpenAI-compatible /v1/images/generations).
 export async function generateImageBase64(opts: {
   apiKey: string;
   prompt: string;
   size?: "1024x1024" | "1024x1536" | "1536x1024";
+  model?: ModeloImagem;
 }): Promise<string> {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
     method: "POST",
@@ -25,12 +35,12 @@ export async function generateImageBase64(opts: {
       "Lovable-API-Key": opts.apiKey,
     },
     body: JSON.stringify({
-      model: "openai/gpt-image-2",
+      model: opts.model ?? "google/gemini-3.1-flash-image-preview",
       prompt: opts.prompt,
       size: opts.size ?? "1024x1024",
       quality: "low",
       output_format: "jpeg",
-      output_compression: 85,
+      output_compression: 80,
       n: 1,
     }),
   });

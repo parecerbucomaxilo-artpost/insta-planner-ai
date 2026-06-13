@@ -16,8 +16,9 @@ import { getAuthedUserId } from "@/lib/auth-utils";
 import { XStyleIcon } from "@/components/icons/XStyleIcon";
 import { BRANDING } from "@/lib/branding";
 import { cn } from "@/lib/utils";
-import { generateSinglePost, generateWeekThemes, discardPost, MODELOS_IA } from "@/lib/ai-post.functions";
+import { generateSinglePost, generateWeekThemes, discardPost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
+type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -330,6 +331,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x">("instagram");
   const [inserirLogo, setInserirLogo] = useState(true);
   const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("google/gemini-3.1-flash-image-preview");
+  const [ambasRedes, setAmbasRedes] = useState(false);
   const [busy, setBusy] = useState<null | "single" | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
   const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[] } | null>(null);
@@ -346,7 +349,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = "ai-single";
     toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
     try {
-      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo } });
+      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo, modeloImagem, ambasRedes } });
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
@@ -380,7 +383,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = `ai-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
-      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, inserirLogo, modelo } });
+      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, inserirLogo, modelo, modeloImagem, ambasRedes } });
       toast.success(t.quando ? "Agendado! Pré-visualize abaixo." : "Gerado! Pré-visualize abaixo.", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
@@ -502,9 +505,53 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Imagens sempre usam GPT-image-2. Claude pode exigir configuração adicional no gateway.
+          Modelo de texto para legenda/tema. Imagem é configurada abaixo.
         </p>
       </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs">Modelo de IA (imagem)</Label>
+        <div className="flex flex-wrap gap-2">
+          {MODELOS_IMAGEM.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setModeloImagem(m.id)}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
+                modeloImagem === m.id
+                  ? "bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm"
+                  : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-zinc-500">
+          Nano Banana é até 5x mais rápido que GPT-image-2. Use GPT-image-2 só para criativos finais premium.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs">Publicar em</Label>
+        <button
+          type="button"
+          onClick={() => setAmbasRedes((v) => !v)}
+          className={cn(
+            "w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-md border-2 font-semibold text-sm transition-all",
+            ambasRedes
+              ? "border-emerald-500 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white shadow-sm"
+              : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
+          )}
+        >
+          <Instagram className="w-4 h-4" /> + <Linkedin className="w-4 h-4" />
+          {ambasRedes ? "Publicando em AMBAS as redes" : "Postar em Instagram E LinkedIn ao mesmo tempo"}
+          {ambasRedes && <Check className="w-4 h-4" />}
+        </button>
+      </div>
+
+
 
 
 

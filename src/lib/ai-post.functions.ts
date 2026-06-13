@@ -18,6 +18,15 @@ const ModeloEnum = z.enum([
   "anthropic/claude-sonnet-4-5",
 ]);
 
+const ModeloImagemEnum = z.enum([
+  "google/gemini-3.1-flash-image-preview",
+  "google/gemini-2.5-flash-image",
+  "openai/gpt-image-1-mini",
+  "openai/gpt-image-2",
+  "google/gemini-3-pro-image-preview",
+]);
+export { MODELOS_IMAGEM } from "@/lib/ai-gateway.server";
+
 const SingleInput = z.object({
   // Se vazio, a IA escolhe um tema relevante automaticamente.
   tema: z.string().optional().default(""),
@@ -28,6 +37,9 @@ const SingleInput = z.object({
   quando: z.string().datetime().optional(),
   inserirLogo: z.boolean().optional().default(true),
   modelo: ModeloEnum.optional().default("google/gemini-3-flash-preview"),
+  modeloImagem: ModeloImagemEnum.optional().default("google/gemini-3.1-flash-image-preview"),
+  // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
+  ambasRedes: z.boolean().optional().default(false),
 });
 
 
@@ -171,6 +183,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
             apiKey: key,
             prompt: imageSystemPrompt(tema, data.rede, s, data.inserirLogo),
             size,
+            model: data.modeloImagem,
           }),
         ),
       );
@@ -184,6 +197,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         apiKey: key,
         prompt: imageSystemPrompt(tema, data.rede, undefined, data.inserirLogo),
         size,
+        model: data.modeloImagem,
       });
       const upload = await uploadOne(b64);
       urlImagem = upload.publicUrl;
@@ -206,8 +220,8 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         imagens_carrossel: imagensCarrossel,
         imagens_carrossel_cache: imagensCarrosselCache,
         imagens_carrossel_cache_expires_at: imagensCarrosselCache.length ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString() : null,
-        postar_instagram: data.rede !== "linkedin",
-        postar_linkedin: data.rede === "linkedin",
+        postar_instagram: data.ambasRedes || data.rede !== "linkedin",
+        postar_linkedin: data.ambasRedes || data.rede === "linkedin",
         status: data.quando ? "Agendado" : "Rascunho",
         data_agendamento: data.quando ?? null,
         prompt_ia: tema,
