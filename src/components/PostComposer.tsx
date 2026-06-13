@@ -341,6 +341,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
   const discardFn = useServerFn(discardPost);
+  const approveFn = useServerFn(approvePost);
+  const [approving, setApproving] = useState<null | "arquivar" | "agendar" | "publicar">(null);
 
 
   const handleSingle = async () => {
