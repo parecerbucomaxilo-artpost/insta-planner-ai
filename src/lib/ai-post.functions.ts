@@ -41,6 +41,8 @@ const SingleInput = z.object({
   modeloImagem: ModeloImagemEnum.optional().default("google/gemini-3.1-flash-image-preview"),
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
   ambasRedes: z.boolean().optional().default(false),
+  // Status inicial do post (PendenteAprovacao = revisão manual; Agendado = vai pro cron de publicação).
+  status: z.enum(["PendenteAprovacao", "Agendado"]).optional().default("PendenteAprovacao"),
 });
 
 
