@@ -90,11 +90,20 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
               .eq("id", data.id);
           }
 
+          const isCarousel = data.tipo_post === "Carrossel";
+          const postType = isCarousel ? "carrossel" : "imagem";
+
           return new Response(
             JSON.stringify({
               id: data.id,
               post_id: data.id,
+              type: "post",
+              tipo: postType,
+              post_type: postType,
+              media_type: postType,
+              formato: postType,
               tipo_post: data.tipo_post,
+              is_carousel: isCarousel,
               url_imagem: urlImagem,
               imagem_url: urlImagem,
               image_url: urlImagem,
