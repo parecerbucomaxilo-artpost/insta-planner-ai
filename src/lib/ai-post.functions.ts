@@ -151,13 +151,20 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
     let imagensCarrosselCache: string[] = [];
 
     if (formato === "Carrossel") {
-      const slidesSpec = [
+      // Estilo X (tweet 16:9) limita a 3 slides; demais carrosséis = 5 cards.
+      const fullSpec = [
         { n: 1, total: 5, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + assinatura. Layout impactante de revista." },
         { n: 2, total: 5, papel: "PROBLEMA: aprofunda a dor/sintoma. Imagem clínica forte. Sem assinatura." },
         { n: 3, total: 5, papel: "CAUSA / EXPLICAÇÃO CIENTÍFICA: didática, com citação curta no rodapé (Lancet/IJOMS/JOMS). Sem assinatura." },
         { n: 4, total: 5, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve. Tom de autoridade. Sem assinatura." },
         { n: 5, total: 5, papel: "CTA FINAL: WhatsApp / Link na Bio + assinatura. Slide de fechamento." },
       ];
+      const xSpec = [
+        { n: 1, total: 3, papel: "TWEET 1: gancho/pergunta forte com assinatura." },
+        { n: 2, total: 3, papel: "TWEET 2: explicação científica curta." },
+        { n: 3, total: 3, papel: "TWEET 3: CTA WhatsApp/Link na Bio + assinatura." },
+      ];
+      const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
       const b64s = await Promise.all(
         slidesSpec.map((s) =>
           generateImageBase64({
