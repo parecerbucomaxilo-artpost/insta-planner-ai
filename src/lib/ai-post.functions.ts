@@ -67,15 +67,15 @@ function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; tota
       : `\n- NÃO inclua a assinatura neste slide (vai apenas no 1º e último).`
     : `\n- Rodapé discreto: "${ASSINATURA}".`;
   const logoInstr = inserirLogo
-    ? `\n- LOGO OBRIGATÓRIA: insira a LOGO "Planner Chico" / "Prof. Francisco Menezes" no CANTO SUPERIOR DIREITO da imagem, tamanho compacto (~10% da largura), com transparência sutil, SEM caixa branca atrás. A logo é um símbolo médico minimalista azul-elétrico sobre fundo escuro. NÃO esqueça a logo — ela é mandatória em TODOS os criativos.`
-    : `\n- SEM logo nesta imagem (cliente solicitou explicitamente).`;
+    ? `\n- ÁREA DE LOGO (NÃO DESENHAR): RESERVE o canto superior direito (~14% da largura por ~14% da altura) com fundo LIMPO/uniforme (sem texto, sem ícone, sem símbolo, sem brasão). É PROIBIDO inventar logotipo, marca, monograma, escudo, cruz médica, símbolo de dente, "PC", "FM", "Planner", "Chico" ou qualquer letreiro nessa região — a LOGO REAL do Planner Chico será sobreposta DEPOIS pelo sistema. Apenas deixe o espaço limpo.`
+    : `\n- SEM logo nesta imagem (cliente solicitou explicitamente). Não desenhe nenhum letreiro/símbolo de marca.`;
   return `CARTAZ MÉDICO ULTRA PREMIUM — autoridade hospitalar de cirurgia bucomaxilofacial, nível editorial Lancet/NEJM/Vogue Saúde:
 - ESTILO: ultra premium, alto luxo médico, cinematográfico, fotografia clínica de revista científica top-tier. Iluminação dramática, profundidade, micro-texturas, qualidade 8K, ZERO aparência amadora ou "stock photo barato".
 - Paleta: azul profundo (#0c2340), branco puro, azul elétrico (#2dd4ff). Vermelho APENAS para sinalizar DOR/alerta clínico.
 - Tipografia bold sans-serif premium (estilo Inter/Söhne), alto contraste, hierarquia clara, kerning impecável.
 - Texto curto em PT-BR (com acentos corretos e ortografia perfeita) sobre: "${tema}".${assinaturaInfo}${logoInstr}
 - Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : "Formato quadrado 1:1."}${slideInfo}
-- PROIBIDO: texto em inglês, watermark de IA, estética genérica de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador.`;
+- PROIBIDO ABSOLUTO: inventar logotipo/marca/símbolo de marca em qualquer parte da imagem, texto em inglês, watermark de IA, estética genérica de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador.`;
 }
 
 
@@ -151,11 +151,20 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
     let imagensCarrosselCache: string[] = [];
 
     if (formato === "Carrossel") {
-      const slidesSpec = [
-        { n: 1, total: 3, papel: "GANCHO forte de conversão (pergunta/dor) + assinatura" },
-        { n: 2, total: 3, papel: "DESENVOLVIMENTO: explicação clara da causa/solução, citação científica curta no rodapé (sem assinatura)" },
-        { n: 3, total: 3, papel: "CTA final: WhatsApp/Link na Bio + assinatura" },
+      // Estilo X (tweet 16:9) limita a 3 slides; demais carrosséis = 5 cards.
+      const fullSpec = [
+        { n: 1, total: 5, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + assinatura. Layout impactante de revista." },
+        { n: 2, total: 5, papel: "PROBLEMA: aprofunda a dor/sintoma. Imagem clínica forte. Sem assinatura." },
+        { n: 3, total: 5, papel: "CAUSA / EXPLICAÇÃO CIENTÍFICA: didática, com citação curta no rodapé (Lancet/IJOMS/JOMS). Sem assinatura." },
+        { n: 4, total: 5, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve. Tom de autoridade. Sem assinatura." },
+        { n: 5, total: 5, papel: "CTA FINAL: WhatsApp / Link na Bio + assinatura. Slide de fechamento." },
       ];
+      const xSpec = [
+        { n: 1, total: 3, papel: "TWEET 1: gancho/pergunta forte com assinatura." },
+        { n: 2, total: 3, papel: "TWEET 2: explicação científica curta." },
+        { n: 3, total: 3, papel: "TWEET 3: CTA WhatsApp/Link na Bio + assinatura." },
+      ];
+      const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
       const b64s = await Promise.all(
         slidesSpec.map((s) =>
           generateImageBase64({
@@ -207,7 +216,19 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       .single();
     if (insErr) throw new Error(`DB: ${insErr.message}`);
 
-    return { id: (inserted as any).id, url: urlImagem, legenda, slides: imagensCarrossel.length || 1 };
+    const urls = imagensCarrossel.length ? imagensCarrossel : [urlImagem];
+    return { id: (inserted as any).id, url: urlImagem, legenda, slides: imagensCarrossel.length || 1, urls };
+  });
+
+// Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado da IA.
+export const discardPost = createServerFn({ method: "POST" })
+  .middleware([])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("posts").delete().eq("id", data.id);
+    if (error) throw new Error(`DB: ${error.message}`);
+    return { ok: true };
   });
 
 export const generateWeekThemes = createServerFn({ method: "POST" })

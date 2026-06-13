@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
@@ -15,7 +16,7 @@ import { getAuthedUserId } from "@/lib/auth-utils";
 import { XStyleIcon } from "@/components/icons/XStyleIcon";
 import { BRANDING } from "@/lib/branding";
 import { cn } from "@/lib/utils";
-import { generateSinglePost, generateWeekThemes, MODELOS_IA } from "@/lib/ai-post.functions";
+import { generateSinglePost, generateWeekThemes, discardPost, MODELOS_IA } from "@/lib/ai-post.functions";
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -331,8 +332,11 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
   const [busy, setBusy] = useState<null | "single" | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
+  const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[] } | null>(null);
+  const [discarding, setDiscarding] = useState(false);
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
+  const discardFn = useServerFn(discardPost);
 
 
   const handleSingle = async () => {
@@ -341,9 +345,10 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = "ai-single";
     toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
     try {
-      await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo } });
-      toast.success("Post gerado! Veja em 'Todos os posts'.", { id: tid });
+      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo } });
+      toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
+      setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
       onCreated();
     } catch (e: any) {
       toast.error(e.message || "Falha na geração.", { id: tid });
@@ -560,6 +565,63 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           </div>
         </div>
       )}
+
+      <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null); }}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Pré-visualização do post</DialogTitle>
+            <DialogDescription>
+              Confira a legenda e {preview && preview.urls.length > 1 ? `os ${preview.urls.length} cards` : "a imagem"} antes de publicar. Você pode descartar e gerar novamente.
+            </DialogDescription>
+          </DialogHeader>
+          {preview && (
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2 max-h-[420px] overflow-y-auto">
+                  {preview.urls.map((u, i) => (
+                    <div key={i} className="relative rounded-md overflow-hidden border bg-zinc-100">
+                      <img src={u} alt={`slide ${i + 1}`} className="w-full h-auto" />
+                      <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
+                        {i + 1}/{preview.urls.length}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Legenda</Label>
+                <Textarea value={preview.legenda} readOnly rows={14} className="text-sm resize-none" />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="destructive"
+              disabled={discarding}
+              onClick={async () => {
+                if (!preview) return;
+                setDiscarding(true);
+                try {
+                  await discardFn({ data: { id: preview.id } });
+                  toast.success("Post descartado.");
+                  setPreview(null);
+                  onCreated();
+                } catch (e: any) {
+                  toast.error(e.message || "Falha ao descartar.");
+                } finally {
+                  setDiscarding(false);
+                }
+              }}
+            >
+              {discarding ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Descartar
+            </Button>
+            <Button onClick={() => setPreview(null)} className="bg-indigo-600 hover:bg-indigo-700">
+              Manter e fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
