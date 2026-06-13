@@ -1,6 +1,7 @@
 const GRAPH_VERSION = "v21.0";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
+const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
 
 type PublishVia = "meta" | "webhook";
 
@@ -199,12 +200,12 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         isCarousel,
       });
     } else {
-      const webhookUrl = perfil.instagram_webhook_url || perfil.webhook_url;
-      if (!webhookUrl) throw new Error("Conecte o Instagram oficial ou salve o webhook do Make em Configurações.");
+      const webhookUrl = perfil.instagram_webhook_url || perfil.webhook_url || DEFAULT_MAKE_WEBHOOK;
       via = "webhook";
       await publishViaWebhook(webhookUrl, {
         id: post.id,
         post_id: post.id,
+        user_id: userId,
         plataforma: "Instagram",
         tipo: isStory ? "stories" : isCarousel ? "carrossel" : "imagem",
         legenda: caption,
