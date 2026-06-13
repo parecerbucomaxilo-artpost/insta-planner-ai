@@ -242,9 +242,31 @@ export function SocialConnections() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* OAuth direto Meta */}
+          <div className="p-4 rounded-lg border-2 border-primary/30 bg-primary/5 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold text-sm">🚀 Conexão Oficial via Meta</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Conecte sua conta Instagram Business com 1 clique. O app publica direto, sem webhook.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                disabled={!perfilId}
+                onClick={() => {
+                  if (!perfilId) return toast.error("Salve seu perfil primeiro");
+                  window.location.href = `/api/public/meta-oauth/start?perfil_id=${perfilId}`;
+                }}
+              >
+                <Instagram className="h-4 w-4 mr-1.5" /> Conectar Instagram
+              </Button>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="ig-webhook" className="flex items-center gap-1.5 text-sm">
-              <LinkIcon className="h-3.5 w-3.5" /> URL do Webhook do Instagram (Make)
+              <LinkIcon className="h-3.5 w-3.5" /> Alternativa: Webhook do Make
             </Label>
             {igLoading ? (
               <div className="h-9 rounded-md bg-muted animate-pulse" />
@@ -258,7 +280,7 @@ export function SocialConnections() {
               />
             )}
             <p className="text-[11px] text-muted-foreground">
-              Cole aqui a URL do cenário no Make. O app envia <code>{"{ texto }"}</code> via POST quando você clicar em <strong>Publicar agora</strong>.
+              Use só se preferir o Make em vez da conexão oficial acima.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
