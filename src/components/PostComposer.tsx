@@ -15,7 +15,8 @@ import { getAuthedUserId } from "@/lib/auth-utils";
 import { XStyleIcon } from "@/components/icons/XStyleIcon";
 import { BRANDING } from "@/lib/branding";
 import { cn } from "@/lib/utils";
-import { generateSinglePost, generateWeekThemes } from "@/lib/ai-post.functions";
+import { generateSinglePost, generateWeekThemes, MODELOS_IA } from "@/lib/ai-post.functions";
+type ModeloIA = (typeof MODELOS_IA)[number]["id"];
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -327,6 +328,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x">("instagram");
   const [inserirLogo, setInserirLogo] = useState(true);
+  const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
   const [busy, setBusy] = useState<null | "single" | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
   const genSingle = useServerFn(generateSinglePost);
@@ -339,7 +341,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = "ai-single";
     toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
     try {
-      await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo } });
+      await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo } });
       toast.success("Post gerado! Veja em 'Todos os posts'.", { id: tid });
       setTema("");
       onCreated();
@@ -355,7 +357,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = "ai-week";
     toast.loading("IA planejando 7 dias (cronograma fixo)...", { id: tid });
     try {
-      const out = await genWeek({ data: { especialidade } });
+      const out = await genWeek({ data: { especialidade, modelo } });
       setTemas(out.temas as any);
       toast.success(`${out.temas.length} slots gerados. Aprove para criar imagem + agendar.`, { id: tid });
     } catch (e: any) {
@@ -371,7 +373,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = `ai-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
-      await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, inserirLogo } });
+      await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, inserirLogo, modelo } });
       toast.success(t.quando ? "Agendado!" : "Gerado!", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       onCreated();
@@ -470,6 +472,31 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           </button>
         </div>
       </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs">Modelo de IA (texto)</Label>
+        <div className="flex flex-wrap gap-2">
+          {MODELOS_IA.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setModelo(m.id)}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
+                modelo === m.id
+                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                  : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-zinc-500">
+          Imagens sempre usam GPT-image-2. Claude pode exigir configuração adicional no gateway.
+        </p>
+      </div>
+
 
 
 

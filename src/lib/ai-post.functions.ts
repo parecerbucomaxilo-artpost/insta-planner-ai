@@ -3,6 +3,21 @@ import { createServerFn } from "@tanstack/react-start";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
+export const MODELOS_IA = [
+  { id: "google/gemini-3-flash-preview", label: "Gemini Flash (rápido, padrão)" },
+  { id: "google/gemini-2.5-pro", label: "Gemini Pro (mais profundo)" },
+  { id: "openai/gpt-5", label: "GPT-5 (premium)" },
+  { id: "openai/gpt-5-mini", label: "GPT-5 Mini (rápido OpenAI)" },
+  { id: "anthropic/claude-sonnet-4-5", label: "Claude Sonnet 4.5 (Anthropic)" },
+] as const;
+const ModeloEnum = z.enum([
+  "google/gemini-3-flash-preview",
+  "google/gemini-2.5-pro",
+  "openai/gpt-5",
+  "openai/gpt-5-mini",
+  "anthropic/claude-sonnet-4-5",
+]);
+
 const SingleInput = z.object({
   // Se vazio, a IA escolhe um tema relevante automaticamente.
   tema: z.string().optional().default(""),
@@ -12,11 +27,13 @@ const SingleInput = z.object({
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
   inserirLogo: z.boolean().optional().default(true),
+  modelo: ModeloEnum.optional().default("google/gemini-3-flash-preview"),
 });
 
 
 const WeekInput = z.object({
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("Ambas"),
+  modelo: ModeloEnum.optional().default("google/gemini-3-flash-preview"),
 });
 
 const WHATSAPP = "https://wa.me/5511947684004";
@@ -75,7 +92,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const gateway = createLovableAiGatewayProvider(key);
-    const model = gateway("google/gemini-3-flash-preview");
+    const model = gateway(data.modelo);
 
     // Resolve formato final
     const formato: "Carrossel" | "Story" | "Post Único" =
@@ -205,7 +222,7 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
     const { buildScheduleSlots } = await import("@/lib/schedule-config");
 
     const gateway = createLovableAiGatewayProvider(key);
-    const model = gateway("google/gemini-3-flash-preview");
+    const model = gateway(data.modelo);
 
     // Slots reais dos próximos 7 dias
     const slots = buildScheduleSlots(new Date(), 7);
