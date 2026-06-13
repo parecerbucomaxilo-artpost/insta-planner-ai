@@ -33,8 +33,22 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   };
 
   const handlePostNow = async (p: PostRow) => {
-    toast.info("A lógica de publicação foi resetada e será reconstruída em breve.");
+    setPublishingId(p.id);
+    try {
+      const { error } = await supabase
+        .from("posts")
+        .update({ status: "Publicado", data_agendamento: new Date().toISOString() } as any)
+        .eq("id", p.id);
+      if (error) throw error;
+      toast.success("Post (re)publicado!");
+      onChange();
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao publicar");
+    } finally {
+      setPublishingId(null);
+    }
   };
+
 
   if (posts.length === 0) {
     return (
