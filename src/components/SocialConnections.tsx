@@ -13,6 +13,7 @@ import { ensurePerfil } from "@/lib/perfil.functions";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
 const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
+const META_OAUTH_ORIGIN = "https://insta-planner-ai.lovable.app";
 
 type LiStatus =
   | { connected: true; name?: string; email?: string; picture?: string; sub?: string }
@@ -287,7 +288,7 @@ export function SocialConnections() {
                     }
                   }
                   if (!pid) return toast.error("Não foi possível identificar o perfil");
-                  const oauthUrl = `${window.location.origin}/api/public/meta-oauth/start?perfil_id=${pid}`;
+                  const oauthUrl = `${META_OAUTH_ORIGIN}/api/public/meta-oauth/start?perfil_id=${encodeURIComponent(pid)}`;
                   // Abre em nova aba para evitar bloqueio de iframe do Facebook (X-Frame-Options)
                   const win = window.open(oauthUrl, "_blank", "noopener,noreferrer");
                   if (!win) {
