@@ -215,7 +215,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         user_id: context.userId,
         tipo_post: tipoPost,
         estilo_layout: data.rede === "estilo-x" ? "Estilo X" : "Padrão",
-        formato_midia: isStory ? "Story" : "Imagem",
+        formato_midia: "Imagem",
         legenda,
         url_imagem: urlImagem,
         url_imagem_cache: urlImagemCache,
