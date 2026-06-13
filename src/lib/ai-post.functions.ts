@@ -41,6 +41,8 @@ const SingleInput = z.object({
   modeloImagem: ModeloImagemEnum.optional().default("google/gemini-3.1-flash-image-preview"),
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
   ambasRedes: z.boolean().optional().default(false),
+  // Status inicial do post (PendenteAprovacao = revisão manual; Agendado = vai pro cron de publicação).
+  status: z.enum(["PendenteAprovacao", "Agendado"]).optional().default("PendenteAprovacao"),
 });
 
 
@@ -223,7 +225,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         imagens_carrossel_cache_expires_at: imagensCarrosselCache.length ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString() : null,
         postar_instagram: data.ambasRedes || data.rede !== "linkedin",
         postar_linkedin: data.ambasRedes || data.rede === "linkedin",
-        status: "PendenteAprovacao",
+        status: data.status,
         data_agendamento: data.quando ?? null,
         prompt_ia: tema,
       } as any)
