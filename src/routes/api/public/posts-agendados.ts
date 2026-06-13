@@ -14,6 +14,10 @@ function isCacheValid(expiresAt: string | null | undefined) {
   return new Date(expiresAt).getTime() - Date.now() > CACHE_REFRESH_MARGIN_MS;
 }
 
+function isFetchableCachedUrl(value: string | null | undefined) {
+  return Boolean(value && !value.startsWith("data:") && !value.startsWith("blob:"));
+}
+
 function normalizeCarousel(value: unknown): string[] {
   if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string" && item.length > 0);
   if (typeof value !== "string" || !value.trim()) return [];
@@ -117,9 +121,9 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
             );
           }
 
-          const cachedImagem = data.url_imagem_cache && isCacheValid(data.url_imagem_cache_expires_at) ? data.url_imagem_cache : null;
+          const cachedImagem = isFetchableCachedUrl(data.url_imagem_cache) && isCacheValid(data.url_imagem_cache_expires_at) ? data.url_imagem_cache : null;
           const cachedCarousel = isCacheValid(data.imagens_carrossel_cache_expires_at)
-            ? normalizeCarousel(data.imagens_carrossel_cache)
+            ? normalizeCarousel(data.imagens_carrossel_cache).filter(isFetchableCachedUrl)
             : [];
           const originalCarousel = normalizeCarousel(data.imagens_carrossel);
           const isCarousel = data.tipo_post === "Carrossel" && originalCarousel.length > 1;
