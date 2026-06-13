@@ -200,6 +200,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     const caption = post.legenda_instagram || post.legenda || "";
     const isStory = /stor/i.test(post.formato_midia || "");
     const isCarousel = post.tipo_post === "Carrossel" && imageUrls.length > 1;
+    const postType = isStory ? "stories" : isCarousel ? "carrossel" : "imagem";
     let via: PublishVia;
     let externalId: string | undefined;
 
@@ -221,7 +222,13 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         post_id: post.id,
         user_id: userId,
         plataforma: "Instagram",
-        tipo: isStory ? "stories" : isCarousel ? "carrossel" : "imagem",
+        type: "post",
+        tipo: postType,
+        post_type: postType,
+        media_type: postType,
+        formato: postType,
+        tipo_post: post.tipo_post,
+        is_carousel: isCarousel,
         legenda: caption,
         caption,
         caption_instagram: caption,
