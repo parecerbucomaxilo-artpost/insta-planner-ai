@@ -16,7 +16,7 @@ import { getAuthedUserId } from "@/lib/auth-utils";
 import { XStyleIcon } from "@/components/icons/XStyleIcon";
 import { BRANDING } from "@/lib/branding";
 import { cn } from "@/lib/utils";
-import { generateSinglePost, generateWeekThemes, discardPost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
+import { generateSinglePost, generateWeekThemes, discardPost, approvePost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
 type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 import { format } from "date-fns";
@@ -341,6 +341,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
   const discardFn = useServerFn(discardPost);
+  const approveFn = useServerFn(approvePost);
+  const [approving, setApproving] = useState<null | "arquivar" | "agendar" | "publicar">(null);
 
 
   const handleSingle = async () => {
@@ -354,7 +356,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       setTema("");
       setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
-      onCreated();
+      // Não chama onCreated() — post fica pendente até aprovação/descarte no preview.
     } catch (e: any) {
       toast.error(e.message || "Falha na geração.", { id: tid });
     } finally {
@@ -388,7 +390,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
-      onCreated();
+      // Não chama onCreated() — fica pendente até aprovação no preview.
     } catch (e: any) {
       toast.error(e.message || "Falha", { id: tid });
     }
@@ -692,10 +694,10 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
               </div>
             );
           })()}
-          <DialogFooter className="gap-2 sm:gap-2">
+          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
             <Button
               variant="destructive"
-              disabled={discarding}
+              disabled={discarding || approving !== null}
               onClick={async () => {
                 if (!preview) return;
                 setDiscarding(true);
@@ -703,7 +705,6 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                   await discardFn({ data: { id: preview.id } });
                   toast.success("Post descartado.");
                   setPreview(null);
-                  onCreated();
                 } catch (e: any) {
                   toast.error(e.message || "Falha ao descartar.");
                 } finally {
@@ -714,13 +715,43 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
               {discarding ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Descartar
             </Button>
-            <Button onClick={() => setPreview(null)} className="bg-indigo-600 hover:bg-indigo-700">
-              Manter e fechar
-            </Button>
+            {(["arquivar", "agendar", "publicar"] as const).map((acao) => (
+              <Button
+                key={acao}
+                disabled={discarding || approving !== null}
+                onClick={async () => {
+                  if (!preview) return;
+                  setApproving(acao);
+                  try {
+                    await approveFn({ data: { id: preview.id, acao } });
+                    toast.success(
+                      acao === "publicar" ? "Publicado!" : acao === "agendar" ? "Agendado!" : "Arquivado em Rascunho.",
+                    );
+                    setPreview(null);
+                    onCreated();
+                  } catch (e: any) {
+                    toast.error(e.message || "Falha ao aprovar.");
+                  } finally {
+                    setApproving(null);
+                  }
+                }}
+                className={
+                  acao === "publicar"
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : acao === "agendar"
+                      ? "bg-violet-600 hover:bg-violet-700"
+                      : "bg-indigo-600 hover:bg-indigo-700"
+                }
+              >
+                {approving === acao ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {acao === "arquivar" ? "Arquivar (rascunho)" : acao === "agendar" ? "Agendar" : "Publicar agora"}
+              </Button>
+            ))}
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
+
   );
 }
 

@@ -222,7 +222,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         imagens_carrossel_cache_expires_at: imagensCarrosselCache.length ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString() : null,
         postar_instagram: data.ambasRedes || data.rede !== "linkedin",
         postar_linkedin: data.ambasRedes || data.rede === "linkedin",
-        status: data.quando ? "Agendado" : "Rascunho",
+        status: "PendenteAprovacao",
         data_agendamento: data.quando ?? null,
         prompt_ia: tema,
       } as any)
@@ -243,6 +243,25 @@ export const discardPost = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("posts").delete().eq("id", data.id);
     if (error) throw new Error(`DB: ${error.message}`);
     return { ok: true };
+  });
+
+// Aprova um post pendente de revisão — define status final (Rascunho/Agendado/Publicado).
+export const approvePost = createServerFn({ method: "POST" })
+  .middleware([])
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      acao: z.enum(["arquivar", "agendar", "publicar"]).default("arquivar"),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const status = data.acao === "publicar" ? "Publicado" : data.acao === "agendar" ? "Agendado" : "Rascunho";
+    const patch: any = { status };
+    if (data.acao === "publicar") patch.data_agendamento = new Date().toISOString();
+    const { error } = await supabaseAdmin.from("posts").update(patch).eq("id", data.id);
+    if (error) throw new Error(`DB: ${error.message}`);
+    return { ok: true, status };
   });
 
 export const generateWeekThemes = createServerFn({ method: "POST" })

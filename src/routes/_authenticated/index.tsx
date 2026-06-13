@@ -59,6 +59,7 @@ function Dashboard() {
     const { data, error } = await supabase
       .from("posts")
       .select("*")
+      .neq("status", "PendenteAprovacao")
       .order("created_at", { ascending: false })
       .limit(100); // Limite para evitar timeout em tabelas grandes
 
