@@ -41,8 +41,9 @@ async function createFetchableUrl(supabaseAdmin: any, value: string | null | und
   if (!value) return null;
   const ref = getStorageObjectRef(value);
   if (!ref) return value;
-  const { data } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
-  return data?.signedUrl ?? value;
+  const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
+  if (error || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${error?.message || ref.path}`);
+  return data.signedUrl;
 }
 
 async function graphPost(edge: string, params: Record<string, string | number | boolean>) {
@@ -222,10 +223,17 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         plataforma: "Instagram",
         tipo: isStory ? "stories" : isCarousel ? "carrossel" : "imagem",
         legenda: caption,
+        caption,
+        caption_instagram: caption,
         texto: caption,
         url_imagem: imageUrls[0],
         imagem_url: imageUrls[0],
+        image_url: imageUrls[0],
+        media_url: imageUrls[0],
+        arquivo_url: imageUrls[0],
         imagens_carrossel: imageUrls,
+        image_urls: imageUrls,
+        images: imageUrls,
       });
     }
 
