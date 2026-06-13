@@ -262,7 +262,11 @@ export function SocialConnections() {
                   if (!pid) {
                     const { data: sess } = await supabase.auth.getSession();
                     const uid = sess?.session?.user?.id;
-                    if (!uid) return toast.error("Faça login antes de conectar o Instagram.");
+                    if (!uid) {
+                      toast.error("Sua sessão expirou. Redirecionando para o login…");
+                      setTimeout(() => { window.location.href = "/auth"; }, 800);
+                      return;
+                    }
                     // Try to find existing row first (legacy / created elsewhere)
                     const existing = await supabase
                       .from("perfil_usuario")
