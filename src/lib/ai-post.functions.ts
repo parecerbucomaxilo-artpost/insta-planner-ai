@@ -111,10 +111,10 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
 
     const uploadOne = async (b64: string) => {
       const buf = Buffer.from(b64, "base64");
-      const fileName = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.png`;
+      const fileName = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
       const { error } = await supabaseAdmin.storage
         .from("post-images")
-        .upload(fileName, buf, { contentType: "image/png", upsert: false });
+        .upload(fileName, buf, { contentType: "image/jpeg", upsert: false, cacheControl: "604800" });
       if (error) throw new Error(`Upload: ${error.message}`);
       return supabaseAdmin.storage.from("post-images").getPublicUrl(fileName).data.publicUrl;
     };

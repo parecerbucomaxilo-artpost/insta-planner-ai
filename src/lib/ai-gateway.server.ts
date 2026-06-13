@@ -29,6 +29,8 @@ export async function generateImageBase64(opts: {
       prompt: opts.prompt,
       size: opts.size ?? "1024x1024",
       quality: "low",
+      output_format: "jpeg",
+      output_compression: 85,
       n: 1,
     }),
   });
