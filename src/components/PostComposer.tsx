@@ -333,6 +333,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [busy, setBusy] = useState<null | "single" | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
   const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[] } | null>(null);
+  const [previewIdx, setPreviewIdx] = useState(0);
   const [discarding, setDiscarding] = useState(false);
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
