@@ -263,7 +263,21 @@ export const approvePost = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (data.acao === "publicar") {
       const { publishInstagramPostById } = await import("@/lib/social/instagram-publish.server");
-      return publishInstagramPostById({ supabaseAdmin, postId: data.id, userId: context.userId });
+      try {
+        return await publishInstagramPostById({ supabaseAdmin, postId: data.id, userId: context.userId });
+      } catch (err: any) {
+        const msg = String(err?.message || "");
+        // Sem destino de publicação configurado → salva como Agendado em vez de quebrar.
+        if (/webhook do Make|Instagram oficial|Configure seu perfil/i.test(msg)) {
+          const { error } = await supabaseAdmin
+            .from("posts")
+            .update({ status: "Agendado", user_id: context.userId })
+            .eq("id", data.id);
+          if (error) throw new Error(`DB: ${error.message}`);
+          return { ok: true, status: "Agendado", warning: msg };
+        }
+        throw err;
+      }
     }
     const status = data.acao === "agendar" ? "Agendado" : "Rascunho";
     const patch: any = { status, user_id: context.userId };
