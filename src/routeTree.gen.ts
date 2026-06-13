@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as ApiPublicPostsAgendadosRouteImport } from './routes/api/public/posts-agendados'
+import { Route as ApiPublicBackfillImagesRouteImport } from './routes/api/public/backfill-images'
 
 const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
   id: '/politica-de-privacidade',
@@ -45,12 +46,18 @@ const ApiPublicPostsAgendadosRoute = ApiPublicPostsAgendadosRouteImport.update({
   path: '/api/public/posts-agendados',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBackfillImagesRoute = ApiPublicBackfillImagesRouteImport.update({
+  id: '/api/public/backfill-images',
+  path: '/api/public/backfill-images',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
 }
 export interface FileRoutesByTo {
@@ -58,6 +65,7 @@ export interface FileRoutesByTo {
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
+  '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
 }
 export interface FileRoutesById {
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
 }
 export interface FileRouteTypes {
@@ -76,6 +85,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/politica-de-privacidade'
     | '/settings'
+    | '/api/public/backfill-images'
     | '/api/public/posts-agendados'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -83,6 +93,7 @@ export interface FileRouteTypes {
     | '/politica-de-privacidade'
     | '/settings'
     | '/'
+    | '/api/public/backfill-images'
     | '/api/public/posts-agendados'
   id:
     | '__root__'
@@ -91,6 +102,7 @@ export interface FileRouteTypes {
     | '/politica-de-privacidade'
     | '/_authenticated/settings'
     | '/_authenticated/'
+    | '/api/public/backfill-images'
     | '/api/public/posts-agendados'
   fileRoutesById: FileRoutesById
 }
@@ -98,6 +110,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
+  ApiPublicBackfillImagesRoute: typeof ApiPublicBackfillImagesRoute
   ApiPublicPostsAgendadosRoute: typeof ApiPublicPostsAgendadosRoute
 }
 
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPostsAgendadosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/backfill-images': {
+      id: '/api/public/backfill-images'
+      path: '/api/public/backfill-images'
+      fullPath: '/api/public/backfill-images'
+      preLoaderRoute: typeof ApiPublicBackfillImagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -165,6 +185,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
+  ApiPublicBackfillImagesRoute: ApiPublicBackfillImagesRoute,
   ApiPublicPostsAgendadosRoute: ApiPublicPostsAgendadosRoute,
 }
 export const routeTree = rootRouteImport
