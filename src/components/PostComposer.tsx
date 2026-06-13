@@ -369,6 +369,18 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         ))}
       </div>
 
+      <label className="flex items-center gap-2 text-xs text-indigo-900 cursor-pointer select-none bg-white/60 border border-indigo-200 rounded-md px-3 py-2 w-fit">
+        <input
+          type="checkbox"
+          checked={inserirLogo}
+          onChange={(e) => setInserirLogo(e.target.checked)}
+          className="w-4 h-4 accent-indigo-600"
+        />
+        <span className="font-semibold">Inserir logo Planner Chico nos criativos</span>
+        <span className="text-indigo-600/70">(recomendado)</span>
+      </label>
+
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
         <Button
           onClick={handleSingle}
