@@ -59,7 +59,7 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
             );
           }
 
-          let urlImagem = isCacheValid(data.url_imagem_cache_expires_at)
+          let urlImagem = data.url_imagem_cache && isCacheValid(data.url_imagem_cache_expires_at)
             ? data.url_imagem_cache
             : data.url_imagem;
           let refreshedCache = false;

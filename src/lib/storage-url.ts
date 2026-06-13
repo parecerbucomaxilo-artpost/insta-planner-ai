@@ -84,7 +84,7 @@ export async function signPostMediaUrls<T extends {
 }>(
   post: T,
 ): Promise<T & { imagens_carrossel: string[] }> {
-  const cachedImagem = isCacheValid(post.url_imagem_cache_expires_at) ? post.url_imagem_cache : null;
+  const cachedImagem = post.url_imagem_cache && isCacheValid(post.url_imagem_cache_expires_at) ? post.url_imagem_cache : null;
   const cachedCarousel = isCacheValid(post.imagens_carrossel_cache_expires_at)
     ? normalizeCarousel(post.imagens_carrossel_cache)
     : [];
@@ -108,7 +108,10 @@ export async function signPostMediaUrls<T extends {
           ? { imagens_carrossel_cache: imagensCarrossel, imagens_carrossel_cache_expires_at: new Date(Date.now() + SIGNED_URL_TTL_SECONDS * 1000).toISOString() }
           : {}),
       })
-      .eq("id", post.id);
+      .eq("id", post.id)
+      .then(({ error }) => {
+        if (error) console.warn("Não foi possível salvar cache de mídia:", error.message);
+      });
   }
 
   return {
