@@ -67,15 +67,15 @@ function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; tota
       : `\n- NÃO inclua a assinatura neste slide (vai apenas no 1º e último).`
     : `\n- Rodapé discreto: "${ASSINATURA}".`;
   const logoInstr = inserirLogo
-    ? `\n- LOGO OBRIGATÓRIA: insira a LOGO "Planner Chico" / "Prof. Francisco Menezes" no CANTO SUPERIOR DIREITO da imagem, tamanho compacto (~10% da largura), com transparência sutil, SEM caixa branca atrás. A logo é um símbolo médico minimalista azul-elétrico sobre fundo escuro. NÃO esqueça a logo — ela é mandatória em TODOS os criativos.`
-    : `\n- SEM logo nesta imagem (cliente solicitou explicitamente).`;
+    ? `\n- ÁREA DE LOGO (NÃO DESENHAR): RESERVE o canto superior direito (~14% da largura por ~14% da altura) com fundo LIMPO/uniforme (sem texto, sem ícone, sem símbolo, sem brasão). É PROIBIDO inventar logotipo, marca, monograma, escudo, cruz médica, símbolo de dente, "PC", "FM", "Planner", "Chico" ou qualquer letreiro nessa região — a LOGO REAL do Planner Chico será sobreposta DEPOIS pelo sistema. Apenas deixe o espaço limpo.`
+    : `\n- SEM logo nesta imagem (cliente solicitou explicitamente). Não desenhe nenhum letreiro/símbolo de marca.`;
   return `CARTAZ MÉDICO ULTRA PREMIUM — autoridade hospitalar de cirurgia bucomaxilofacial, nível editorial Lancet/NEJM/Vogue Saúde:
 - ESTILO: ultra premium, alto luxo médico, cinematográfico, fotografia clínica de revista científica top-tier. Iluminação dramática, profundidade, micro-texturas, qualidade 8K, ZERO aparência amadora ou "stock photo barato".
 - Paleta: azul profundo (#0c2340), branco puro, azul elétrico (#2dd4ff). Vermelho APENAS para sinalizar DOR/alerta clínico.
 - Tipografia bold sans-serif premium (estilo Inter/Söhne), alto contraste, hierarquia clara, kerning impecável.
 - Texto curto em PT-BR (com acentos corretos e ortografia perfeita) sobre: "${tema}".${assinaturaInfo}${logoInstr}
 - Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : "Formato quadrado 1:1."}${slideInfo}
-- PROIBIDO: texto em inglês, watermark de IA, estética genérica de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador.`;
+- PROIBIDO ABSOLUTO: inventar logotipo/marca/símbolo de marca em qualquer parte da imagem, texto em inglês, watermark de IA, estética genérica de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador.`;
 }
 
 
