@@ -151,6 +151,7 @@ function Dashboard() {
             <span className="text-sm text-muted-foreground">
               {posts.length} {posts.length === 1 ? "post" : "posts"}
             </span>
+            <NotificationsBell />
             <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/settings" })} aria-label="Configurações">
               <Settings className="h-4 w-4 mr-1.5" /> Configurações
             </Button>
