@@ -287,7 +287,13 @@ export function SocialConnections() {
                     }
                   }
                   if (!pid) return toast.error("Não foi possível identificar o perfil");
-                  window.location.href = `/api/public/meta-oauth/start?perfil_id=${pid}`;
+                  const oauthUrl = `${window.location.origin}/api/public/meta-oauth/start?perfil_id=${pid}`;
+                  // Abre em nova aba para evitar bloqueio de iframe do Facebook (X-Frame-Options)
+                  const win = window.open(oauthUrl, "_blank", "noopener,noreferrer");
+                  if (!win) {
+                    // Fallback: força navegação no topo da janela
+                    try { window.top!.location.href = oauthUrl; } catch { window.location.href = oauthUrl; }
+                  }
                 }}
               >
                 <Instagram className="h-4 w-4 mr-1.5" /> Conectar Instagram
