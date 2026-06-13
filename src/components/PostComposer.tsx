@@ -17,6 +17,7 @@ import { XStyleIcon } from "@/components/icons/XStyleIcon";
 import { BRANDING } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { generateSinglePost, generateWeekThemes, discardPost, approvePost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
+import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
 type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 import { format } from "date-fns";
@@ -34,6 +35,7 @@ const FORMATOS: { id: Formato; label: string; icon: React.ComponentType<{ classN
 ];
 
 export function PostComposer({ onCreated }: { onCreated: () => void }) {
+  const publishIg = useServerFn(publishInstagramNow);
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
   const [formato, setFormato] = useState<Formato>("Post Único");
   const [quando, setQuando] = useState<Quando>("agora");
@@ -88,7 +90,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         dataAgendamentoIso = d.toISOString();
       }
 
-      const { error: dbError } = await supabase.from("posts").insert({
+      const { data: inserted, error: dbError } = await supabase.from("posts").insert({
         user_id: userId,
         tipo_post: tipoDb,
         legenda,
@@ -98,11 +100,14 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         status: quando === "agora" ? "Publicado" : "Agendado",
         data_agendamento: dataAgendamentoIso,
         estilo_layout: formato === "Estilo X" ? "Estilo X" : "Padrão",
-      } as any);
+      } as any).select("id").single();
 
       if (dbError) throw dbError;
+      if (quando === "agora" && networks.includes("instagram") && inserted?.id) {
+        await publishIg({ data: { id: inserted.id } });
+      }
 
-      toast.success(quando === "agora" ? "Post publicado!" : "Post agendado!", { id: tId });
+      toast.success(quando === "agora" ? "Post enviado para publicação!" : "Post agendado!", { id: tId });
       setLegenda(""); setImagem(null); setFileToUpload(null); setFileName(null);
       setDataAgendada(undefined);
       onCreated();
@@ -112,7 +117,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     } finally {
       setSaving(false);
     }
-  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated, dataAgendada, horaAgendada]);
+  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated, dataAgendada, horaAgendada, publishIg]);
 
 
   return (
