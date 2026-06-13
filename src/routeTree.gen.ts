@@ -16,6 +16,8 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as ApiPublicPostsAgendadosRouteImport } from './routes/api/public/posts-agendados'
 import { Route as ApiPublicBackfillImagesRouteImport } from './routes/api/public/backfill-images'
+import { Route as ApiPublicMetaOauthStartRouteImport } from './routes/api/public/meta-oauth.start'
+import { Route as ApiPublicMetaOauthCallbackRouteImport } from './routes/api/public/meta-oauth.callback'
 
 const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
   id: '/politica-de-privacidade',
@@ -51,6 +53,17 @@ const ApiPublicBackfillImagesRoute = ApiPublicBackfillImagesRouteImport.update({
   path: '/api/public/backfill-images',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMetaOauthStartRoute = ApiPublicMetaOauthStartRouteImport.update({
+  id: '/api/public/meta-oauth/start',
+  path: '/api/public/meta-oauth/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicMetaOauthCallbackRoute =
+  ApiPublicMetaOauthCallbackRouteImport.update({
+    id: '/api/public/meta-oauth/callback',
+    path: '/api/public/meta-oauth/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -59,6 +72,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
+  '/api/public/meta-oauth/callback': typeof ApiPublicMetaOauthCallbackRoute
+  '/api/public/meta-oauth/start': typeof ApiPublicMetaOauthStartRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -67,6 +82,8 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
+  '/api/public/meta-oauth/callback': typeof ApiPublicMetaOauthCallbackRoute
+  '/api/public/meta-oauth/start': typeof ApiPublicMetaOauthStartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,6 +94,8 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
+  '/api/public/meta-oauth/callback': typeof ApiPublicMetaOauthCallbackRoute
+  '/api/public/meta-oauth/start': typeof ApiPublicMetaOauthStartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -87,6 +106,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/public/backfill-images'
     | '/api/public/posts-agendados'
+    | '/api/public/meta-oauth/callback'
+    | '/api/public/meta-oauth/start'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -95,6 +116,8 @@ export interface FileRouteTypes {
     | '/'
     | '/api/public/backfill-images'
     | '/api/public/posts-agendados'
+    | '/api/public/meta-oauth/callback'
+    | '/api/public/meta-oauth/start'
   id:
     | '__root__'
     | '/_authenticated'
@@ -104,6 +127,8 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/api/public/backfill-images'
     | '/api/public/posts-agendados'
+    | '/api/public/meta-oauth/callback'
+    | '/api/public/meta-oauth/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -112,6 +137,8 @@ export interface RootRouteChildren {
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   ApiPublicBackfillImagesRoute: typeof ApiPublicBackfillImagesRoute
   ApiPublicPostsAgendadosRoute: typeof ApiPublicPostsAgendadosRoute
+  ApiPublicMetaOauthCallbackRoute: typeof ApiPublicMetaOauthCallbackRoute
+  ApiPublicMetaOauthStartRoute: typeof ApiPublicMetaOauthStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -165,6 +192,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBackfillImagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/meta-oauth/start': {
+      id: '/api/public/meta-oauth/start'
+      path: '/api/public/meta-oauth/start'
+      fullPath: '/api/public/meta-oauth/start'
+      preLoaderRoute: typeof ApiPublicMetaOauthStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/meta-oauth/callback': {
+      id: '/api/public/meta-oauth/callback'
+      path: '/api/public/meta-oauth/callback'
+      fullPath: '/api/public/meta-oauth/callback'
+      preLoaderRoute: typeof ApiPublicMetaOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -187,6 +228,8 @@ const rootRouteChildren: RootRouteChildren = {
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   ApiPublicBackfillImagesRoute: ApiPublicBackfillImagesRoute,
   ApiPublicPostsAgendadosRoute: ApiPublicPostsAgendadosRoute,
+  ApiPublicMetaOauthCallbackRoute: ApiPublicMetaOauthCallbackRoute,
+  ApiPublicMetaOauthStartRoute: ApiPublicMetaOauthStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
