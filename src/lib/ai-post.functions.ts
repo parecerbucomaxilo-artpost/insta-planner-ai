@@ -222,7 +222,7 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
     const { buildScheduleSlots } = await import("@/lib/schedule-config");
 
     const gateway = createLovableAiGatewayProvider(key);
-    const model = gateway("google/gemini-3-flash-preview");
+    const model = gateway(data.modelo);
 
     // Slots reais dos próximos 7 dias
     const slots = buildScheduleSlots(new Date(), 7);
