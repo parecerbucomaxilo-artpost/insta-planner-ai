@@ -16,7 +16,7 @@ import { getAuthedUserId } from "@/lib/auth-utils";
 import { XStyleIcon } from "@/components/icons/XStyleIcon";
 import { BRANDING } from "@/lib/branding";
 import { cn } from "@/lib/utils";
-import { generateSinglePost, generateWeekThemes, discardPost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
+import { generateSinglePost, generateWeekThemes, discardPost, approvePost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
 type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 import { format } from "date-fns";
