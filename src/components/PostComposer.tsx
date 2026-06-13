@@ -578,26 +578,73 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
               Confira a legenda e {preview && preview.urls.length > 1 ? `os ${preview.urls.length} cards` : "a imagem"} antes de publicar. Você pode descartar e gerar novamente.
             </DialogDescription>
           </DialogHeader>
-          {preview && (
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2 max-h-[420px] overflow-y-auto">
-                  {preview.urls.map((u, i) => (
-                    <div key={i} className="relative rounded-md overflow-hidden border bg-zinc-100">
-                      <img src={u} alt={`slide ${i + 1}`} className="w-full h-auto" />
-                      <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
-                        {i + 1}/{preview.urls.length}
-                      </span>
+          {preview && (() => {
+            const total = preview.urls.length;
+            const safeIdx = Math.min(previewIdx, total - 1);
+            const goPrev = () => setPreviewIdx((i) => (Math.min(i, total - 1) - 1 + total) % total);
+            const goNext = () => setPreviewIdx((i) => (Math.min(i, total - 1) + 1) % total);
+            return (
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="relative rounded-md overflow-hidden border bg-zinc-100 aspect-square">
+                    <img src={preview.urls[safeIdx]} alt={`slide ${safeIdx + 1}`} className="w-full h-full object-contain" />
+                    <span className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-0.5 rounded">
+                      {safeIdx + 1}/{total}
+                    </span>
+                    {total > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={goPrev}
+                          aria-label="Slide anterior"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={goNext}
+                          aria-label="Próximo slide"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                          {preview.urls.map((_, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setPreviewIdx(i)}
+                              aria-label={`Ir para slide ${i + 1}`}
+                              className={`h-2 w-2 rounded-full transition ${i === safeIdx ? "bg-white" : "bg-white/50 hover:bg-white/80"}`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {total > 1 && (
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {preview.urls.map((u, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setPreviewIdx(i)}
+                          className={`relative rounded overflow-hidden border-2 transition ${i === safeIdx ? "border-indigo-500" : "border-transparent opacity-70 hover:opacity-100"}`}
+                        >
+                          <img src={u} alt={`miniatura ${i + 1}`} className="w-full h-full object-cover aspect-square" />
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Legenda</Label>
+                  <Textarea value={preview.legenda} readOnly rows={14} className="text-sm resize-none" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Legenda</Label>
-                <Textarea value={preview.legenda} readOnly rows={14} className="text-sm resize-none" />
-              </div>
-            </div>
-          )}
+            );
+          })()}
           <DialogFooter className="gap-2 sm:gap-2">
             <Button
               variant="destructive"
