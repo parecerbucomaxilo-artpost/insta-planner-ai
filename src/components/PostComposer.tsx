@@ -97,7 +97,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         url_imagem: publicUrl,
         postar_instagram: networks.includes("instagram"),
         postar_linkedin: networks.includes("linkedin"),
-        status: quando === "agora" ? "Publicado" : "Agendado",
+        status: quando === "agora" ? "Agendado" : "Agendado",
         data_agendamento: dataAgendamentoIso,
         estilo_layout: formato === "Estilo X" ? "Estilo X" : "Padrão",
       } as any).select("id").single();
