@@ -1,0 +1,1 @@
+UPDATE public.perfil_usuario SET instagram_webhook_url = 'https://hook.us2.make.com/r8skxj3kp6191mi6mf6ps0u4au9y7vfm', webhook_url = 'https://hook.us2.make.com/r8skxj3kp6191mi6mf6ps0u4au9y7vfm';
