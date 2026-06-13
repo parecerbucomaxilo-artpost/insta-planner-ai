@@ -473,6 +473,31 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         </div>
       </div>
 
+      <div className="space-y-1.5">
+        <Label className="text-xs">Modelo de IA (texto)</Label>
+        <div className="flex flex-wrap gap-2">
+          {MODELOS_IA.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setModelo(m.id)}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
+                modelo === m.id
+                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                  : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-zinc-500">
+          Imagens sempre usam GPT-image-2. Claude pode exigir configuração adicional no gateway.
+        </p>
+      </div>
+
+
 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
