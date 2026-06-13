@@ -253,10 +253,26 @@ export function SocialConnections() {
               </div>
               <Button
                 size="sm"
-                disabled={!perfilId}
-                onClick={() => {
-                  if (!perfilId) return toast.error("Salve seu perfil primeiro");
-                  window.location.href = `/api/public/meta-oauth/start?perfil_id=${perfilId}`;
+                disabled={igLoading}
+                onClick={async () => {
+                  let pid = perfilId;
+                  if (!pid) {
+                    try {
+                      const uid = await getAuthedUserId();
+                      const res = await supabase
+                        .from("perfil_usuario")
+                        .insert({ user_id: uid })
+                        .select("id")
+                        .maybeSingle();
+                      if (res.error) throw res.error;
+                      pid = res.data?.id ?? null;
+                      if (pid) setPerfilId(pid);
+                    } catch (e) {
+                      return toast.error(e instanceof Error ? e.message : "Falha ao criar perfil");
+                    }
+                  }
+                  if (!pid) return toast.error("Não foi possível identificar o perfil");
+                  window.location.href = `/api/public/meta-oauth/start?perfil_id=${pid}`;
                 }}
               >
                 <Instagram className="h-4 w-4 mr-1.5" /> Conectar Instagram
