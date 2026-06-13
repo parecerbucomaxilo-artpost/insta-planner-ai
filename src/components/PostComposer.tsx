@@ -74,9 +74,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     toast.loading(quando === "agora" ? "Publicando..." : "Agendando...", { id: tId });
 
     try {
-      const publicUrl = await uploadPostImage(fileToUpload);
       const userId = await getAuthedUserId();
       if (!userId) throw new Error("Você precisa estar logado.");
+      const publicUrl = await uploadPostImage(fileToUpload, userId);
 
       const tipoDb = formato === "Estilo X" ? "Carrossel" : formato;
 
