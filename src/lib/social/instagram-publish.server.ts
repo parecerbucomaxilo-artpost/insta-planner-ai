@@ -145,6 +145,13 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
   if (post.postar_instagram === false) throw new Error("Este post não está marcado para Instagram.");
 
   try {
+    const hasDestino = (p: any) =>
+      !!p && (
+        (p.instagram_access_token && p.instagram_business_account_id) ||
+        p.instagram_webhook_url ||
+        p.webhook_url
+      );
+
     let { data: perfil, error: perfilError } = await supabaseAdmin
       .from("perfil_usuario")
       .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
@@ -154,16 +161,20 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       .maybeSingle();
 
     if (perfilError) throw new Error(`DB: ${perfilError.message}`);
-    if (!perfil) {
-      const fallback = await supabaseAdmin
+
+    // Se o perfil do usuário não tem destino configurado, procura qualquer perfil que tenha.
+    if (!hasDestino(perfil)) {
+      const { data: configured, error: cfgErr } = await supabaseAdmin
         .from("perfil_usuario")
         .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
+        .or("instagram_webhook_url.not.is.null,webhook_url.not.is.null,instagram_access_token.not.is.null")
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();
-      if (fallback.error) throw new Error(`DB: ${fallback.error.message}`);
-      perfil = fallback.data;
+      if (cfgErr) throw new Error(`DB: ${cfgErr.message}`);
+      if (configured) perfil = configured;
     }
+
     if (!perfil) throw new Error("Configure seu perfil antes de publicar no Instagram.");
 
     const carousel = normalizeCarousel(post.imagens_carrossel);
