@@ -9,9 +9,10 @@ const SCOPES = [
   "business_management",
 ].join(",");
 
+const META_OAUTH_ORIGIN = "https://insta-planner-ai.lovable.app";
+
 function getRedirectUri(request: Request) {
-  const url = new URL(request.url);
-  return `${url.origin}/api/public/meta-oauth/callback`;
+  return `${META_OAUTH_ORIGIN}/api/public/meta-oauth/callback`;
 }
 
 export const Route = createFileRoute("/api/public/meta-oauth/start")({

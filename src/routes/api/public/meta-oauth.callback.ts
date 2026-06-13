@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 
+const META_OAUTH_ORIGIN = "https://insta-planner-ai.lovable.app";
+
 function getRedirectUri(request: Request) {
-  const url = new URL(request.url);
-  return `${url.origin}/api/public/meta-oauth/callback`;
+  return `${META_OAUTH_ORIGIN}/api/public/meta-oauth/callback`;
 }
 
 function htmlPage(title: string, body: string) {
