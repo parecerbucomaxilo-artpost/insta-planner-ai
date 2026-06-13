@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const MODELOS_IA = [
   { id: "google/gemini-3-flash-preview", label: "Gemini Flash (rápido, padrão)" },
@@ -251,17 +252,21 @@ export const discardPost = createServerFn({ method: "POST" })
 
 // Aprova um post pendente de revisão — define status final (Rascunho/Agendado/Publicado).
 export const approvePost = createServerFn({ method: "POST" })
-  .middleware([])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       acao: z.enum(["arquivar", "agendar", "publicar"]).default("arquivar"),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.acao === "publicar") {
+      const { publishInstagramPostById } = await import("@/lib/social/instagram-publish.server");
+      return publishInstagramPostById({ supabaseAdmin, postId: data.id, userId: context.userId });
+    }
     const status = data.acao === "publicar" ? "Publicado" : data.acao === "agendar" ? "Agendado" : "Rascunho";
-    const patch: any = { status };
+    const patch: any = { status, user_id: context.userId };
     if (data.acao === "publicar") patch.data_agendamento = new Date().toISOString();
     const { error } = await supabaseAdmin.from("posts").update(patch).eq("id", data.id);
     if (error) throw new Error(`DB: ${error.message}`);
