@@ -265,9 +265,8 @@ export const approvePost = createServerFn({ method: "POST" })
       const { publishInstagramPostById } = await import("@/lib/social/instagram-publish.server");
       return publishInstagramPostById({ supabaseAdmin, postId: data.id, userId: context.userId });
     }
-    const status = data.acao === "publicar" ? "Publicado" : data.acao === "agendar" ? "Agendado" : "Rascunho";
+    const status = data.acao === "agendar" ? "Agendado" : "Rascunho";
     const patch: any = { status, user_id: context.userId };
-    if (data.acao === "publicar") patch.data_agendamento = new Date().toISOString();
     const { error } = await supabaseAdmin.from("posts").update(patch).eq("id", data.id);
     if (error) throw new Error(`DB: ${error.message}`);
     return { ok: true, status };
