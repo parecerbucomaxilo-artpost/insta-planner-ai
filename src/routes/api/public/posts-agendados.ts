@@ -195,6 +195,60 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
           );
         }
       },
+      POST: async () => {
+        try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { publishInstagramPostById } = await import("@/lib/social/instagram-publish.server");
+
+          const nowIso = new Date().toISOString();
+          const { data: due, error: dueError } = await supabaseAdmin
+            .from("posts")
+            .select("id,user_id")
+            .eq("status", "Agendado")
+            .lte("data_agendamento", nowIso)
+            .order("data_agendamento", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+
+          if (dueError) {
+            return new Response(JSON.stringify({ error: dueError.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            });
+          }
+
+          if (!due) {
+            return new Response(
+              JSON.stringify({ ok: true, published: 0, message: "Sem posts vencidos para publicar." }),
+              { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
+            );
+          }
+
+          try {
+            const result = await publishInstagramPostById({
+              supabaseAdmin,
+              postId: due.id,
+              userId: due.user_id || TEMP_USER_ID,
+            });
+            return new Response(
+              JSON.stringify({ ok: true, published: 1, post_id: due.id, ...result }),
+              { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
+            );
+          } catch (err) {
+            const message = err instanceof Error ? err.message : "Erro desconhecido";
+            return new Response(
+              JSON.stringify({ ok: false, post_id: due.id, error: message }),
+              { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders } },
+            );
+          }
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "Erro desconhecido";
+          return new Response(JSON.stringify({ error: message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+      },
     },
   },
 });
