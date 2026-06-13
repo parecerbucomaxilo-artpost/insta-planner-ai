@@ -124,13 +124,22 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
 async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 25_000);
-  const res = await fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    signal: controller.signal,
-  });
-  clearTimeout(timeout);
+  let res: Response;
+  try {
+    res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Webhook Instagram demorou para responder. Verifique o cenário no Make.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`Webhook Instagram respondeu ${res.status}${text ? `: ${text.slice(0, 180)}` : ""}`);
