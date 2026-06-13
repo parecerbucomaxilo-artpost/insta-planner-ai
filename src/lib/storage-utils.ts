@@ -25,7 +25,9 @@ async function compressImageForUpload(file: File): Promise<File> {
   return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
 }
 
-export async function uploadPostImage(file: File): Promise<string> {
+const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
+
+export async function uploadPostImage(file: File, userId: string = TEMP_USER_ID): Promise<string> {
   const uploadFile = await compressImageForUpload(file);
   // Sanitiza: remove acentos, troca espaços e remove qualquer char fora de [a-zA-Z0-9._-]
   const safeName = uploadFile.name
@@ -33,7 +35,8 @@ export async function uploadPostImage(file: File): Promise<string> {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, "_")
     .replace(/[^a-zA-Z0-9._-]/g, "");
-  const fileName = `${Date.now()}-${safeName}`;
+  const ownerFolder = userId || TEMP_USER_ID;
+  const fileName = `${ownerFolder}/${Date.now()}-${safeName}`;
 
   console.log("Iniciando upload direto para bucket post-images:", fileName);
   
