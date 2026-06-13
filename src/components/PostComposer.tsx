@@ -39,6 +39,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dataAgendada, setDataAgendada] = useState<Date | undefined>(undefined);
+  const [horaAgendada, setHoraAgendada] = useState("09:00");
+
 
   const toggleNetwork = (n: Network) => {
     setNetworks((prev) =>
