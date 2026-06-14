@@ -672,14 +672,44 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           {preview && (() => {
             const total = preview.urls.length;
             const safeIdx = Math.min(previewIdx, total - 1);
-            const goPrev = () => setPreviewIdx((i) => (Math.min(i, total - 1) - 1 + total) % total);
-            const goNext = () => setPreviewIdx((i) => (Math.min(i, total - 1) + 1) % total);
+            const scrollerRef = previewScrollerRef;
+            const scrollToIdx = (i: number) => {
+              const el = scrollerRef.current;
+              if (!el) return;
+              const w = el.clientWidth;
+              el.scrollTo({ left: i * w, behavior: "smooth" });
+            };
+            const goPrev = () => { const n = (safeIdx - 1 + total) % total; setPreviewIdx(n); scrollToIdx(n); };
+            const goNext = () => { const n = (safeIdx + 1) % total; setPreviewIdx(n); scrollToIdx(n); };
             return (
               <div className="grid sm:grid-cols-2 gap-3 max-w-full">
                 <div className="space-y-2">
                   <div className="relative rounded-md overflow-hidden border bg-zinc-100 aspect-square max-w-[280px] mx-auto w-full">
-                    <img src={preview.urls[safeIdx]} alt={`slide ${safeIdx + 1}`} className="w-full h-full object-contain" />
-                    <span className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-0.5 rounded">
+                    <div
+                      ref={scrollerRef}
+                      onScroll={(e) => {
+                        const el = e.currentTarget;
+                        const i = Math.round(el.scrollLeft / el.clientWidth);
+                        if (i !== safeIdx) setPreviewIdx(i);
+                      }}
+                      className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
+                        if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
+                      }}
+                    >
+                      {preview.urls.map((u, i) => (
+                        <img
+                          key={i}
+                          src={u}
+                          alt={`Slide ${i + 1} de ${total}`}
+                          draggable={false}
+                          className="w-full h-full flex-shrink-0 snap-center object-contain select-none"
+                        />
+                      ))}
+                    </div>
+                    <span className="pointer-events-none absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-0.5 rounded">
                       {safeIdx + 1}/{total}
                     </span>
                     {total > 1 && (
@@ -687,7 +717,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                         <button
                           type="button"
                           onClick={goPrev}
-                          aria-label="Slide anterior"
+                          aria-label="Página anterior"
                           className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm"
                         >
                           <ChevronLeft className="h-5 w-5" />
@@ -695,19 +725,16 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                         <button
                           type="button"
                           onClick={goNext}
-                          aria-label="Próximo slide"
+                          aria-label="Próxima página"
                           className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm"
                         >
                           <ChevronRight className="h-5 w-5" />
                         </button>
-                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                        <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
                           {preview.urls.map((_, i) => (
-                            <button
+                            <span
                               key={i}
-                              type="button"
-                              onClick={() => setPreviewIdx(i)}
-                              aria-label={`Ir para slide ${i + 1}`}
-                              className={`h-2 w-2 rounded-full transition ${i === safeIdx ? "bg-white" : "bg-white/50 hover:bg-white/80"}`}
+                              className={`h-2 w-2 rounded-full transition ${i === safeIdx ? "bg-white" : "bg-white/50"}`}
                             />
                           ))}
                         </div>
@@ -720,13 +747,18 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                         <button
                           key={i}
                           type="button"
-                          onClick={() => setPreviewIdx(i)}
+                          onClick={() => { setPreviewIdx(i); scrollToIdx(i); }}
                           className={`relative rounded overflow-hidden border-2 transition ${i === safeIdx ? "border-indigo-500" : "border-transparent opacity-70 hover:opacity-100"}`}
                         >
-                          <img src={u} alt={`miniatura ${i + 1}`} className="w-full h-full object-cover aspect-square" />
+                          <img src={u} alt={`Miniatura da página ${i + 1}`} className="w-full h-full object-cover aspect-square" />
                         </button>
                       ))}
                     </div>
+                  )}
+                  {total > 1 && (
+                    <p className="text-[11px] text-muted-foreground text-center">
+                      Arraste para o lado, use as setas do teclado ou toque nas miniaturas.
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
