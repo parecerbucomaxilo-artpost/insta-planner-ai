@@ -103,6 +103,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         url_imagem: publicUrl,
         postar_instagram: networks.includes("instagram"),
         postar_linkedin: networks.includes("linkedin"),
+        postar_google: networks.includes("google"),
         status: initialStatus,
         data_agendamento: dataAgendamentoIso,
         estilo_layout: formato === "Estilo X" ? "Estilo X" : "Padrão",
