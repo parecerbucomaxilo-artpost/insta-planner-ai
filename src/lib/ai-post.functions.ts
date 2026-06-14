@@ -226,7 +226,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
     }).then((r) => r.text);
 
     const size: "1024x1024" | "1536x1024" =
-      data.rede === "estilo-x" ? "1536x1024" : "1024x1024";
+      data.rede === "estilo-x" || data.rede === "google" ? "1536x1024" : "1024x1024";
 
     // Upload faz parte do pipeline; cada imagem é enviada assim que sai do modelo,
     // em vez de esperar todas terminarem.
