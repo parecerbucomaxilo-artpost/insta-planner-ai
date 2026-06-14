@@ -1,6 +1,6 @@
 // Aplica a LOGO REAL (círculo) no canto superior direito da imagem gerada pela IA.
 // Compatível com Cloudflare Workers (WASM puro, sem sharp/canvas).
-import { PhotonImage, resize, SamplingFilter } from "@cf-wasm/photon";
+import { PhotonImage, resize, watermark, SamplingFilter } from "@cf-wasm/photon";
 import logoAsset from "@/assets/logo-planner.png.asset.json";
 
 // Cache do PNG da logo entre invocações do mesmo isolate.
