@@ -41,7 +41,7 @@ export async function overlayLogo(imageB64: string, origin: string, sizePct = 14
     const x = Math.max(0, w - target - margin);
     const y = margin;
 
-    base.watermark(logo, BigInt(x), BigInt(y));
+    watermark(base, logo, BigInt(x), BigInt(y));
 
     const outBytes = base.get_bytes_jpeg(90);
     base.free();
