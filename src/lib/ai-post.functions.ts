@@ -65,8 +65,9 @@ const CTAS_PROIBIDOS = `PROIBIDO ABSOLUTO nos textos: "agende sua consulta", "ag
 const CTAS_PERMITIDOS_IG = `CTAs PERMITIDOS (IG/X): "Saiba mais pelo link da bio." | "Expliquei esse assunto em detalhes no link da bio." | "Veja o conteúdo completo através do link da bio." | "Link na Bio".`;
 const CTAS_PERMITIDOS_LI = `CTA permitido (LinkedIn): convite à discussão profissional entre colegas ou WhatsApp ${WHATSAPP} ("Fale comigo no WhatsApp").`;
 
-function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
+function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x" | "google", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
   if (nivel !== "auto") return nivel;
+  if (rede === "google") return "google-business";
   if (rede === "linkedin") return "linkedin-cientifico";
   if (tipo === "stories") return "ig-conversao";
   return "ig-autoridade";
@@ -79,12 +80,36 @@ function tonePrompt(nivel: Exclude<NivelConteudo, "auto">) {
   if (nivel === "ig-conversao") {
     return `TOM: linguagem ACESSÍVEL ao público leigo (25-75 anos), empática, neuromarketing médico. Comece pela DOR/queixa real ("Você sente...", "Já acordou com..."). Faça a pessoa se identificar. Sem jargão; quando inevitável, traduzir entre parênteses.`;
   }
+  if (nivel === "google-business") {
+    return `TOM: SEO local médico, didático, humano e profissional. Público: pacientes leigos que pesquisam no Google sintomas e dúvidas sobre cirurgia bucomaxilofacial, ATM, DTM, bruxismo, siso, cirurgia ortognática, trauma facial, apneia. Texto pensado para Google Meu Negócio: responde à intenção de busca, fortalece autoridade regional e melhora ranqueamento local.`;
+  }
   // ig-autoridade
   return `TOM: autoridade hospitalar de alto nível, ciência traduzida para leigos. Posicionamento de professor universitário/cirurgião referência. Apresente casos, dados e mecanismos com clareza, mas sem jargão impenetrável. Desperte confiança e busca espontânea por informação.`;
 }
 
-function captionSystem(rede: "instagram" | "linkedin" | "estilo-x", especialidade: string, nivel: Exclude<NivelConteudo, "auto">) {
+function captionSystem(rede: "instagram" | "linkedin" | "estilo-x" | "google", especialidade: string, nivel: Exclude<NivelConteudo, "auto">) {
   const isLI = nivel === "linkedin-cientifico";
+  const isGoogle = nivel === "google-business";
+
+  if (isGoogle) {
+    return `Você é especialista em SEO Local Médico, Google Business Profile (Google Meu Negócio) e posicionamento digital em saúde do ${ASSINATURA} (${ASSINATURA_SUBTITULO}).
+Especialidade do post: ${especialidade}.
+${tonePrompt(nivel)}
+
+ESTRUTURA OBRIGATÓRIA (Google Business Profile):
+1. TÍTULO SEO curto (até 70 caracteres) que reproduza uma pergunta real pesquisada no Google.
+2. Resposta direta em 1-2 frases.
+3. Explicação objetiva e didática (entre 150 e 300 palavras no total).
+4. Orientação educativa e sinais de especialização.
+5. CTA discreto: convidar o paciente a conhecer mais pelo perfil ou falar pelo WhatsApp ${WHATSAPP}.
+6. Bloco final com: "Palavras-chave SEO: ..." (5 a 8 termos, separados por vírgula, incluindo naturalmente: Cirurgião Bucomaxilofacial, Bucomaxilo, Cirurgia Bucomaxilofacial, Especialista em ATM, Odontologia Hospitalar, DTM, Bruxismo, Cirurgia Ortognática quando fizer sentido).
+7. Linha "ALT TEXT: ..." (texto alternativo objetivo descrevendo a imagem sugerida, 1 frase).
+
+FORMATO DA SAÍDA: texto corrido em PT-BR Brasil impecável, parágrafos curtos, sem emojis, sem hashtags, sem palavras duplicadas, sem inglês desnecessário. Comece pelo TÍTULO em negrito (use ** ao redor), pule linha, depois corpo, palavras-chave e ALT TEXT.
+${CTAS_PROIBIDOS}
+NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
+  }
+
   const estrutura = isLI
     ? `ESTRUTURA OBRIGATÓRIA (LinkedIn Científico):
 1. Título técnico forte.
