@@ -363,7 +363,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = "ai-single";
     toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
     try {
-      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo, modeloImagem, ambasRedes } });
+      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, inserirAvatar, modelo, modeloImagem, ambasRedes } });
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
@@ -397,7 +397,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = `ai-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
-      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, inserirLogo, modelo, modeloImagem, ambasRedes } });
+      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, inserirLogo, inserirAvatar, modelo, modeloImagem, ambasRedes } });
       toast.success(t.quando ? "Agendado! Pré-visualize abaixo." : "Gerado! Pré-visualize abaixo.", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
