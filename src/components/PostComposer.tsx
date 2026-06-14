@@ -1,4 +1,4 @@
-import { useState, useCallback, type ChangeEvent } from "react";
+import { useState, useCallback, useRef, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
