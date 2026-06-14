@@ -25,7 +25,7 @@ async function fetchLogoBytes(origin?: string): Promise<Uint8Array> {
  * @param sizePct tamanho da logo em % da largura da imagem (default 14)
  * @returns base64 JPEG resultante
  */
-export async function overlayLogo(imageB64: string, origin: string, sizePct = 14): Promise<string> {
+export async function overlayLogo(imageB64: string, origin?: string, sizePct = 14): Promise<string> {
   try {
     const baseBytes = Uint8Array.from(atob(imageB64), (c) => c.charCodeAt(0));
     const base = PhotonImage.new_from_byteslice(baseBytes);
