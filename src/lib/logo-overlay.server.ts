@@ -1,11 +1,9 @@
-// Aplica a LOGO REAL (círculo) no canto superior direito da imagem gerada pela IA.
-// Compatível com Cloudflare Workers (WASM puro, sem sharp/canvas).
-import { PhotonImage, resize, watermark, SamplingFilter } from "@cf-wasm/photon";
+// Aplica a LOGO REAL no canto superior direito da imagem gerada pela IA.
+// Import dinâmico do @cf-wasm/photon para não derrubar o módulo quando o
+// WASM não conseguir ser resolvido pelo bundler do Worker.
 import logoAsset from "@/assets/logo-planner.png.asset.json";
 
-// Cache do PNG da logo entre invocações do mesmo isolate.
 let logoBytesCache: Uint8Array | null = null;
-
 const DEFAULT_ORIGIN = "https://insta-planner-ai.lovable.app";
 
 async function fetchLogoBytes(origin?: string): Promise<Uint8Array> {
@@ -18,15 +16,15 @@ async function fetchLogoBytes(origin?: string): Promise<Uint8Array> {
   return logoBytesCache;
 }
 
-/**
- * Sobrepõe a logo oficial no canto superior direito.
- * @param imageB64 imagem-base em base64 (JPEG ou PNG)
- * @param origin domínio do app, usado para resolver URL relativa do asset
- * @param sizePct tamanho da logo em % da largura da imagem (default 14)
- * @returns base64 JPEG resultante
- */
 export async function overlayLogo(imageB64: string, origin?: string, sizePct = 14): Promise<string> {
   try {
+    const photon = await import("@cf-wasm/photon").catch((e) => {
+      console.warn("[overlayLogo] photon indisponível, pulando overlay:", e);
+      return null;
+    });
+    if (!photon) return imageB64;
+    const { PhotonImage, resize, watermark, SamplingFilter } = photon;
+
     const baseBytes = Uint8Array.from(atob(imageB64), (c) => c.charCodeAt(0));
     const base = PhotonImage.new_from_byteslice(baseBytes);
 
@@ -34,11 +32,9 @@ export async function overlayLogo(imageB64: string, origin?: string, sizePct = 1
     const logoFull = PhotonImage.new_from_byteslice(logoBytes);
 
     const w = base.get_width();
-    const h = base.get_height();
     const target = Math.max(48, Math.round((w * sizePct) / 100));
     const logo = resize(logoFull, target, target, SamplingFilter.Lanczos3);
 
-    // margem proporcional (~3% da largura) no canto superior direito
     const margin = Math.round(w * 0.03);
     const x = Math.max(0, w - target - margin);
     const y = margin;
