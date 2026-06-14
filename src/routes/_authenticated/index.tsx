@@ -171,13 +171,13 @@ function Dashboard() {
           <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <TabsList className="w-max">
               <TabsTrigger value="criar"><PlusCircle className="h-4 w-4 mr-1.5" /> Criar</TabsTrigger>
-              <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" /> Cronograma 7 Dias</TabsTrigger>
+              <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" /> Cronograma de 7 dias</TabsTrigger>
               <TabsTrigger value="calendario"><CalendarIcon className="h-4 w-4 mr-1.5" /> Calendário</TabsTrigger>
-              <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todos os posts</TabsTrigger>
-              <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" /> Insights</TabsTrigger>
+              <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todas as publicações</TabsTrigger>
+              <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" /> Desempenho</TabsTrigger>
               <TabsTrigger value="perfil"><Settings className="h-4 w-4 mr-1.5" /> Perfil</TabsTrigger>
-              <TabsTrigger value="chaves"><KeyRound className="h-4 w-4 mr-1.5" /> Chaves</TabsTrigger>
-              <TabsTrigger value="ia"><KeyRound className="h-4 w-4 mr-1.5" /> IA</TabsTrigger>
+              <TabsTrigger value="chaves"><KeyRound className="h-4 w-4 mr-1.5" /> Integrações</TabsTrigger>
+              <TabsTrigger value="ia"><KeyRound className="h-4 w-4 mr-1.5" /> Inteligência artificial</TabsTrigger>
             </TabsList>
           </div>
 
