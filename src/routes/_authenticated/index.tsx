@@ -153,7 +153,7 @@ function Dashboard() {
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
             <span className="hidden md:inline text-sm text-muted-foreground">
-              {posts.length} {posts.length === 1 ? "post" : "posts"}
+              {posts.length} {posts.length === 1 ? "publicação" : "publicações"}
             </span>
             <NotificationsBell />
             <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/settings" })} aria-label="Configurações" className="h-10 w-10 sm:w-auto px-2 sm:px-3">
@@ -171,13 +171,13 @@ function Dashboard() {
           <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <TabsList className="w-max">
               <TabsTrigger value="criar"><PlusCircle className="h-4 w-4 mr-1.5" /> Criar</TabsTrigger>
-              <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" /> Cronograma 7 Dias</TabsTrigger>
+              <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" /> Cronograma de 7 dias</TabsTrigger>
               <TabsTrigger value="calendario"><CalendarIcon className="h-4 w-4 mr-1.5" /> Calendário</TabsTrigger>
-              <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todos os posts</TabsTrigger>
-              <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" /> Insights</TabsTrigger>
+              <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todas as publicações</TabsTrigger>
+              <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" /> Desempenho</TabsTrigger>
               <TabsTrigger value="perfil"><Settings className="h-4 w-4 mr-1.5" /> Perfil</TabsTrigger>
-              <TabsTrigger value="chaves"><KeyRound className="h-4 w-4 mr-1.5" /> Chaves</TabsTrigger>
-              <TabsTrigger value="ia"><KeyRound className="h-4 w-4 mr-1.5" /> IA</TabsTrigger>
+              <TabsTrigger value="chaves"><KeyRound className="h-4 w-4 mr-1.5" /> Integrações</TabsTrigger>
+              <TabsTrigger value="ia"><KeyRound className="h-4 w-4 mr-1.5" /> Inteligência artificial</TabsTrigger>
             </TabsList>
           </div>
 
