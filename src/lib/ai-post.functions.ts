@@ -183,11 +183,12 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       if (!tema) throw new Error("IA não conseguiu escolher um tema.");
     }
 
-    // 1. Legenda (stories = texto curtíssimo)
+    // 1. Resolve nível editorial e gera legenda
+    const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
     const isStory = formato === "Story";
     const { text: legenda } = await generateText({
       model,
-      system: captionSystem(data.rede, data.especialidade),
+      system: captionSystem(data.rede, data.especialidade, nivel),
       prompt: isStory
         ? `Crie um TEXTO DE STORY (até 220 caracteres, 1-2 emojis, sem hashtags, CTA "Link na Bio") que CHAME ATENÇÃO para o post do FEED de hoje sobre: "${tema}". O story deve provocar curiosidade e mandar o usuário para o feed.`
         : `Crie a legenda completa para o post sobre: "${tema}".`,
