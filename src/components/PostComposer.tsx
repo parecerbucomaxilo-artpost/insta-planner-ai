@@ -452,7 +452,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {(["instagram", "linkedin", "estilo-x"] as const).map((r) => (
+        {(["instagram", "linkedin", "estilo-x", "google"] as const).map((r) => (
           <button
             key={r}
             type="button"
@@ -465,7 +465,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             {r === "instagram" && <Instagram className="w-3.5 h-3.5" />}
             {r === "linkedin" && <Linkedin className="w-3.5 h-3.5" />}
             {r === "estilo-x" && <XStyleIcon className="w-3.5 h-3.5" />}
-            {r === "estilo-x" ? "Estilo X" : r === "linkedin" ? "LinkedIn" : "Instagram"}
+            {r === "google" && <Globe className="w-3.5 h-3.5" />}
+            {r === "estilo-x" ? "Estilo X" : r === "linkedin" ? "LinkedIn" : r === "google" ? "Google Business" : "Instagram"}
           </button>
         ))}
       </div>
