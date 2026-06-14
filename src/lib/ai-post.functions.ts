@@ -28,6 +28,9 @@ const ModeloImagemEnum = z.enum([
 ]);
 export { MODELOS_IMAGEM } from "@/lib/ai-gateway.server";
 
+const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico"]);
+export type NivelConteudo = z.infer<typeof NivelEnum>;
+
 const SingleInput = z.object({
   // Se vazio, a IA escolhe um tema relevante automaticamente.
   tema: z.string().optional().default(""),
@@ -43,6 +46,8 @@ const SingleInput = z.object({
   ambasRedes: z.boolean().optional().default(false),
   // Status inicial do post (PendenteAprovacao = revisão manual; Agendado = vai pro cron de publicação).
   status: z.enum(["PendenteAprovacao", "Agendado"]).optional().default("PendenteAprovacao"),
+  // Nível editorial: define o tom/estrutura do conteúdo.
+  nivel: NivelEnum.optional().default("auto"),
 });
 
 
@@ -52,45 +57,89 @@ const WeekInput = z.object({
 });
 
 const WHATSAPP = "https://wa.me/5511947684004";
-const ASSINATURA = "Prof. Francisco Menezes — CROSP 53318";
+const ASSINATURA = "Prof. Francisco Menezes | CROSP 53318";
+const ASSINATURA_SUBTITULO = "Cirurgia e Traumatologia Bucomaxilofacial · Odontologia Hospitalar";
 
-function tonePrompt(rede: "instagram" | "linkedin" | "estilo-x") {
-  if (rede === "linkedin") {
-    return "TOM: formal, científico, dirigido a colegas dentistas/médicos. Pode usar terminologia técnica e dados epidemiológicos. Cite evidência quando possível.";
+const CTAS_PROIBIDOS = `PROIBIDO ABSOLUTO nos textos: "agende sua consulta", "agende sua avaliação", "marque consulta", "marque avaliação", "promoção", "oferta", "desconto", "últimas vagas", qualquer chamada comercial explícita.`;
+const CTAS_PERMITIDOS_IG = `CTAs PERMITIDOS (IG/X): "Saiba mais pelo link da bio." | "Expliquei esse assunto em detalhes no link da bio." | "Veja o conteúdo completo através do link da bio." | "Link na Bio".`;
+const CTAS_PERMITIDOS_LI = `CTA permitido (LinkedIn): convite à discussão profissional entre colegas ou WhatsApp ${WHATSAPP} ("Fale comigo no WhatsApp").`;
+
+function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
+  if (nivel !== "auto") return nivel;
+  if (rede === "linkedin") return "linkedin-cientifico";
+  if (tipo === "stories") return "ig-conversao";
+  return "ig-autoridade";
+}
+
+function tonePrompt(nivel: Exclude<NivelConteudo, "auto">) {
+  if (nivel === "linkedin-cientifico") {
+    return `TOM: professor universitário, pesquisador e líder de opinião em Cirurgia e Traumatologia Bucomaxilofacial. Público: cirurgiões BMF, dentistas, médicos, residentes, gestores hospitalares, professores e pesquisadores. Linguagem científica formal, evidência sempre. Cite fonte (The Lancet, Int. J. Oral Maxillofac. Surg., J. Oral Maxillofac. Surg., OSOMOPOR, BJOMS, Int. J. Oral Sci.) e DOI quando aplicável. Sem opiniões sem respaldo.`;
   }
-  return "TOM: linguagem ACESSÍVEL ao público leigo, empática, que faz o paciente se identificar com a DOR/QUEIXA (ex.: 'Você sente...', 'Já acordou com...'). Sem jargão; quando inevitável, traduzir entre parênteses.";
+  if (nivel === "ig-conversao") {
+    return `TOM: linguagem ACESSÍVEL ao público leigo (25-75 anos), empática, neuromarketing médico. Comece pela DOR/queixa real ("Você sente...", "Já acordou com..."). Faça a pessoa se identificar. Sem jargão; quando inevitável, traduzir entre parênteses.`;
+  }
+  // ig-autoridade
+  return `TOM: autoridade hospitalar de alto nível, ciência traduzida para leigos. Posicionamento de professor universitário/cirurgião referência. Apresente casos, dados e mecanismos com clareza, mas sem jargão impenetrável. Desperte confiança e busca espontânea por informação.`;
 }
 
-function captionSystem(rede: "instagram" | "linkedin" | "estilo-x", especialidade: string) {
-  return `Você é o copywriter do ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar.
-Tema da especialidade neste post: ${especialidade}.
-${tonePrompt(rede)}
-REGRAS DE CTA:
-- NUNCA use "agende sua consulta", "agende sua avaliação" ou similares.
-- Use SEMPRE como CTA: "Link na Bio" (IG/X) ou o link do WhatsApp: ${WHATSAPP} (LinkedIn).
-FORMATO: legenda pronta para postar, com gancho forte na 1ª linha, 3-6 emojis estratégicos, 5-8 hashtags ao final relevantes ao tema.
-NÃO inclua a assinatura "${ASSINATURA}" no texto (ela vai como overlay na imagem).`;
+function captionSystem(rede: "instagram" | "linkedin" | "estilo-x", especialidade: string, nivel: Exclude<NivelConteudo, "auto">) {
+  const isLI = nivel === "linkedin-cientifico";
+  const estrutura = isLI
+    ? `ESTRUTURA OBRIGATÓRIA (LinkedIn Científico):
+1. Título técnico forte.
+2. Contextualização clínica.
+3. Resumo do estudo (1-2 parágrafos curtos).
+4. Principais achados (bullets).
+5. Impacto para a prática clínica em CTBMF e Odontologia Hospitalar.
+6. Reflexão profissional do Prof. Francisco Menezes.
+7. Fonte consultada + DOI quando aplicável.`
+    : `ESTRUTURA OBRIGATÓRIA (Instagram):
+1. Gancho emocional forte (1ª linha).
+2. Problema frequentemente ignorado.
+3. Explicação simples e didática.
+4. Consequências da negligência.
+5. Soluções disponíveis (sem comercializar).
+6. Encerramento com CTA indireto permitido.`;
+
+  return `Você é diretor criativo e copywriter médico premium do ${ASSINATURA} (${ASSINATURA_SUBTITULO}).
+Especialidade do post: ${especialidade}.
+${tonePrompt(nivel)}
+
+${estrutura}
+
+${isLI ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}
+${CTAS_PROIBIDOS}
+
+FORMATO DA LEGENDA:
+${isLI
+  ? `- LinkedIn: 1200-2000 caracteres, parágrafos curtos, no máximo 1-2 emojis sóbrios. 3-6 hashtags técnicas ao final. Inclua "Fonte: …" e DOI quando citar estudo.`
+  : `- Instagram: gancho na 1ª linha, 3-6 emojis estratégicos, parágrafos curtos, 5-8 hashtags ao final relevantes ao tema. CTA indireto na última linha.`}
+NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
 }
 
-function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; total: number; papel: string }, inserirLogo: boolean = true) {
+function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }, inserirLogo: boolean = true) {
   const slideInfo = slide
     ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.`
     : "";
   const assinaturaInfo = slide
     ? slide.n === 1 || slide.n === slide.total
-      ? `\n- Rodapé OBRIGATÓRIO: "${ASSINATURA}".`
+      ? `\n- Rodapé OBRIGATÓRIO em 2 linhas pequenas: "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}".`
       : `\n- NÃO inclua a assinatura neste slide (vai apenas no 1º e último).`
-    : `\n- Rodapé discreto: "${ASSINATURA}".`;
+    : `\n- Rodapé discreto em 2 linhas: "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}".`;
   const logoInstr = inserirLogo
-    ? `\n- ÁREA DE LOGO (NÃO DESENHAR): RESERVE o canto superior direito (~14% da largura por ~14% da altura) com fundo LIMPO/uniforme (sem texto, sem ícone, sem símbolo, sem brasão). É PROIBIDO inventar logotipo, marca, monograma, escudo, cruz médica, símbolo de dente, "PC", "FM", "Planner", "Chico" ou qualquer letreiro nessa região — a LOGO REAL do Planner Chico será sobreposta DEPOIS pelo sistema. Apenas deixe o espaço limpo.`
-    : `\n- SEM logo nesta imagem (cliente solicitou explicitamente). Não desenhe nenhum letreiro/símbolo de marca.`;
-  return `CARTAZ MÉDICO ULTRA PREMIUM — autoridade hospitalar de cirurgia bucomaxilofacial, nível editorial Lancet/NEJM/Vogue Saúde:
-- ESTILO: ultra premium, alto luxo médico, cinematográfico, fotografia clínica de revista científica top-tier. Iluminação dramática, profundidade, micro-texturas, qualidade 8K, ZERO aparência amadora ou "stock photo barato".
-- Paleta: azul profundo (#0c2340), branco puro, azul elétrico (#2dd4ff). Vermelho APENAS para sinalizar DOR/alerta clínico.
-- Tipografia bold sans-serif premium (estilo Inter/Söhne), alto contraste, hierarquia clara, kerning impecável.
+    ? `\n- ÁREA DE LOGO (NÃO DESENHAR): RESERVE o canto superior direito (~14% × 14%) com fundo LIMPO/uniforme. PROIBIDO inventar logotipo, marca, monograma, escudo, cruz médica, símbolo de dente, "PC", "FM", "Planner", "Chico" ou qualquer letreiro — a LOGO REAL será sobreposta DEPOIS pelo sistema.`
+    : `\n- SEM logo nesta imagem (cliente solicitou). Não desenhe nenhum letreiro/símbolo de marca.`;
+  const refEditorial = nivel === "linkedin-cientifico"
+    ? "Referência editorial: The Lancet, NEJM, JOMS — capa de revista científica top-tier, estética acadêmica premium."
+    : "Referência editorial: Harvard Health, Mayo Clinic, Cleveland Clinic — hospital premium, autoridade institucional, luxo discreto.";
+  return `CARTAZ MÉDICO ULTRA PREMIUM — autoridade hospitalar em Cirurgia e Traumatologia Bucomaxilofacial + Odontologia Hospitalar.
+- ${refEditorial} Minimalismo editorial, ZERO aparência de anúncio ou banco de imagens.
+- Paleta OBRIGATÓRIA: azul petróleo profundo (#0c2340), azul ciano (#2dd4ff), branco puro, preto sofisticado. Vermelho APENAS para sinalizar DOR/alerta clínico.
+- Iluminação cinematográfica, profundidade, micro-texturas, qualidade 8K, hierarquia visual forte.
+- Tipografia bold sans-serif premium (Inter/Söhne), alto contraste, kerning impecável.
 - Texto curto em PT-BR (Português do Brasil) com acentuação correta, ortografia impecável, SEM palavras duplicadas/repetidas, SEM erros de concordância, SEM letras trocadas, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${logoInstr}
-- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : "Formato quadrado 1:1."}${slideInfo}
-- PROIBIDO ABSOLUTO: inventar logotipo/marca/símbolo de marca em qualquer parte da imagem (a LOGO oficial do Planner Chico será aplicada como overlay pelo sistema, sem alteração), texto em inglês, palavras repetidas duas vezes seguidas (ex.: "dor dor", "do do"), tipografia com glitch, watermark de IA, estética genérica de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador.`;
+- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : "Formato quadrado 1:1 (ou 4:5 quando aplicável)."}${slideInfo}
+- PROIBIDO ABSOLUTO: inventar logotipo/marca, texto em inglês, palavras repetidas duas vezes seguidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador, chamadas comerciais como "agende consulta" / "promoção" / "desconto".`;
 }
 
 
@@ -134,11 +183,12 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       if (!tema) throw new Error("IA não conseguiu escolher um tema.");
     }
 
-    // 1. Legenda (stories = texto curtíssimo)
+    // 1. Resolve nível editorial e gera legenda
+    const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
     const isStory = formato === "Story";
     const { text: legenda } = await generateText({
       model,
-      system: captionSystem(data.rede, data.especialidade),
+      system: captionSystem(data.rede, data.especialidade, nivel),
       prompt: isStory
         ? `Crie um TEXTO DE STORY (até 220 caracteres, 1-2 emojis, sem hashtags, CTA "Link na Bio") que CHAME ATENÇÃO para o post do FEED de hoje sobre: "${tema}". O story deve provocar curiosidade e mandar o usuário para o feed.`
         : `Crie a legenda completa para o post sobre: "${tema}".`,
@@ -184,7 +234,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         slidesSpec.map((s) =>
           generateImageBase64({
             apiKey: key,
-            prompt: imageSystemPrompt(tema, data.rede, s, data.inserirLogo),
+            prompt: imageSystemPrompt(tema, data.rede, nivel, s, data.inserirLogo),
             size,
             model: data.modeloImagem,
           }),
@@ -198,7 +248,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
     } else {
       const b64 = await generateImageBase64({
         apiKey: key,
-        prompt: imageSystemPrompt(tema, data.rede, undefined, data.inserirLogo),
+        prompt: imageSystemPrompt(tema, data.rede, nivel, undefined, data.inserirLogo),
         size,
         model: data.modeloImagem,
       });

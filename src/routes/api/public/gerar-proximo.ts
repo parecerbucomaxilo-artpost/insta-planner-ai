@@ -86,6 +86,19 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
             ? "Mensagem de domingo: descanso, gratidão e cuidado com a saúde bucomaxilofacial"
             : "";
 
+          // Define nível editorial:
+          // - LinkedIn → científico
+          // - IG stories → conversão (dor/teaser do feed)
+          // - IG feed → alterna entre conversão (manhã 9h) e autoridade (15h/19h)
+          const nivel: "ig-conversao" | "ig-autoridade" | "linkedin-cientifico" =
+            proximo.rede === "linkedin"
+              ? "linkedin-cientifico"
+              : proximo.tipo === "stories"
+                ? "ig-conversao"
+                : proximo.hora <= 9
+                  ? "ig-conversao"
+                  : "ig-autoridade";
+
           const result = await generateSinglePost({
             data: {
               tema: temaDomingo,
@@ -99,6 +112,7 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
               modeloImagem: "google/gemini-3.1-flash-image-preview",
               ambasRedes: false,
               status: "Agendado",
+              nivel,
             },
           });
 
