@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/public/publicar-agendados")({
 
           const post = pendentes[0];
           try {
-            const r = await publishLinkedInPostById({ supabaseAdmin, postId: post.id, userId: post.user_id });
+            const r = await publishLinkedInPostById({ supabaseAdmin, postId: post.id, userId: post.user_id ?? undefined });
             return json({ ok: true, published: 1, post_id: post.id, shareUrl: r.shareUrl });
           } catch (err: any) {
             await supabaseAdmin
