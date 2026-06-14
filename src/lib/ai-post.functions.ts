@@ -243,9 +243,13 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
     };
 
     const { overlayLogo } = await import("@/lib/logo-overlay.server");
-    const genAndUpload = (prompt: string, applyLogo: boolean) =>
+    const genAndUpload = (prompt: string, applyLogo: boolean, applyAvatar: boolean) =>
       generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem })
-        .then((b64) => (applyLogo ? overlayLogo(b64) : Promise.resolve(b64)))
+        .then((b64) =>
+          applyLogo || applyAvatar
+            ? overlayLogo(b64, undefined, 14, { withLogo: applyLogo, withAvatar: applyAvatar })
+            : Promise.resolve(b64),
+        )
         .then(uploadOne);
 
     let urlImagem: string;
@@ -269,9 +273,11 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
       const uploads = await Promise.all(
         slidesSpec.map((s) => {
-          // Regra: logo só na 1ª e última imagem do carrossel (e respeitando inserirLogo)
-          const applyLogo = !!data.inserirLogo && (s.n === 1 || s.n === s.total);
-          return genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s, data.inserirLogo, data.inserirAvatar), applyLogo);
+          // Regra: marca só na 1ª e última imagem do carrossel
+          const onCover = s.n === 1 || s.n === s.total;
+          const applyLogo = !!data.inserirLogo && onCover;
+          const applyAvatar = !!data.inserirAvatar && onCover;
+          return genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s, data.inserirLogo, data.inserirAvatar), applyLogo, applyAvatar);
         }),
       );
       urlImagem = uploads[0].publicUrl;
@@ -282,6 +288,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       const upload = await genAndUpload(
         imageSystemPrompt(tema, data.rede, nivel, undefined, data.inserirLogo, data.inserirAvatar),
         !!data.inserirLogo,
+        !!data.inserirAvatar,
       );
       urlImagem = upload.publicUrl;
       urlImagemCache = upload.signedUrl;
