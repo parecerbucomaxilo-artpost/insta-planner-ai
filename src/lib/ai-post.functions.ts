@@ -167,7 +167,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - Iluminação cinematográfica, profundidade, micro-texturas, qualidade 8K, hierarquia visual forte.
 - Tipografia bold sans-serif premium (Inter/Söhne), alto contraste, kerning impecável.
 - Texto curto em PT-BR (Português do Brasil) com acentuação correta, ortografia impecável, SEM palavras duplicadas/repetidas, SEM erros de concordância, SEM letras trocadas, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${logoInstr}${avatarInstr}
-- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : "Formato quadrado 1:1 (ou 4:5 quando aplicável)."}${slideInfo}
+- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), estilo Mayo/Cleveland Clinic, autoridade médica regional, foco em SEO local." : "Formato quadrado 1:1 (ou 4:5 quando aplicável)."}${slideInfo}
 - PROIBIDO ABSOLUTO: inventar logotipo/marca, texto em inglês, palavras repetidas duas vezes seguidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador, chamadas comerciais como "agende consulta" / "promoção" / "desconto".`;
 }
 
