@@ -341,6 +341,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x">("instagram");
   const [inserirLogo, setInserirLogo] = useState(true);
+  const [inserirAvatar, setInserirAvatar] = useState(false);
   const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("google/gemini-3.1-flash-image-preview");
   const [ambasRedes, setAmbasRedes] = useState(false);
@@ -362,7 +363,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = "ai-single";
     toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
     try {
-      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, modelo, modeloImagem, ambasRedes } });
+      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, inserirAvatar, modelo, modeloImagem, ambasRedes } });
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
@@ -396,7 +397,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = `ai-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
-      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, inserirLogo, modelo, modeloImagem, ambasRedes } });
+      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, inserirLogo, inserirAvatar, modelo, modeloImagem, ambasRedes } });
       toast.success(t.quando ? "Agendado! Pré-visualize abaixo." : "Gerado! Pré-visualize abaixo.", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
@@ -469,11 +470,11 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs">Inserir logo Planner Chico nos criativos?</Label>
-        <div className="grid grid-cols-2 gap-2 max-w-xs">
+        <Label className="text-xs">Marca nos criativos (canto sup. direito = logo; canto sup. esquerdo = avatar)</Label>
+        <div className="grid grid-cols-3 gap-2 max-w-md">
           <button
             type="button"
-            onClick={() => setInserirLogo(true)}
+            onClick={() => setInserirLogo(!inserirLogo)}
             className={cn(
               "flex items-center gap-1.5 justify-center px-3 py-2 rounded-md border-2 font-semibold text-sm transition-all",
               inserirLogo
@@ -481,19 +482,31 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                 : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
             )}
           >
-            <Check className="w-3.5 h-3.5" /> Sim, com logo
+            <Check className={cn("w-3.5 h-3.5", !inserirLogo && "opacity-0")} /> Logo
           </button>
           <button
             type="button"
-            onClick={() => setInserirLogo(false)}
+            onClick={() => setInserirAvatar(!inserirAvatar)}
             className={cn(
               "flex items-center gap-1.5 justify-center px-3 py-2 rounded-md border-2 font-semibold text-sm transition-all",
-              !inserirLogo
+              inserirAvatar
+                ? "border-cyan-500 bg-cyan-600 text-white shadow-sm"
+                : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
+            )}
+          >
+            <Check className={cn("w-3.5 h-3.5", !inserirAvatar && "opacity-0")} /> Avatar
+          </button>
+          <button
+            type="button"
+            onClick={() => { setInserirLogo(false); setInserirAvatar(false); }}
+            className={cn(
+              "flex items-center gap-1.5 justify-center px-3 py-2 rounded-md border-2 font-semibold text-sm transition-all",
+              !inserirLogo && !inserirAvatar
                 ? "border-zinc-500 bg-zinc-700 text-white shadow-sm"
                 : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
             )}
           >
-            Sem logo
+            Sem marca
           </button>
         </div>
       </div>
