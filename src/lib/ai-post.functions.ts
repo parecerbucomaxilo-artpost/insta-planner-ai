@@ -28,14 +28,14 @@ const ModeloImagemEnum = z.enum([
 ]);
 export { MODELOS_IMAGEM } from "@/lib/ai-gateway.server";
 
-const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico"]);
+const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico", "google-business"]);
 export type NivelConteudo = z.infer<typeof NivelEnum>;
 
 const SingleInput = z.object({
   // Se vazio, a IA escolhe um tema relevante automaticamente.
   tema: z.string().optional().default(""),
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
-  rede: z.enum(["instagram", "linkedin", "estilo-x"]).default("instagram"),
+  rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
