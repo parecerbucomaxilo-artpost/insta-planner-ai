@@ -44,7 +44,7 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
           const fim = slots[slots.length - 1].quando.toISOString();
           const { data: existentes, error: qErr } = await supabaseAdmin
             .from("posts")
-            .select("data_agendamento,postar_instagram,postar_linkedin,estilo_layout,formato_midia")
+            .select("data_agendamento,postar_instagram,postar_linkedin,postar_google,estilo_layout,formato_midia")
             .gte("data_agendamento", inicio)
             .lte("data_agendamento", fim)
             .in("status", ["Agendado", "PendenteAprovacao", "Publicado"]);
@@ -59,6 +59,7 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
             const tipo = (p.formato_midia || "").toLowerCase().includes("stor") ? "stories" : "feed";
             if (p.postar_instagram) ocupados.add(`${min}|instagram|${tipo}`);
             if (p.postar_linkedin) ocupados.add(`${min}|linkedin|${tipo}`);
+            if ((p as any).postar_google) ocupados.add(`${min}|google|${tipo}`);
           }
 
           // Encontra primeiro slot vazio.
