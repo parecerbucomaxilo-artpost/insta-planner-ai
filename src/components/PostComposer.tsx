@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays, CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays, CalendarIcon, ChevronLeft, ChevronRight, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
@@ -339,7 +339,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
-  const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x">("instagram");
+  const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x" | "google">("instagram");
   const [inserirLogo, setInserirLogo] = useState(true);
   const [inserirAvatar, setInserirAvatar] = useState(false);
   const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
@@ -452,7 +452,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {(["instagram", "linkedin", "estilo-x"] as const).map((r) => (
+        {(["instagram", "linkedin", "estilo-x", "google"] as const).map((r) => (
           <button
             key={r}
             type="button"
@@ -465,7 +465,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             {r === "instagram" && <Instagram className="w-3.5 h-3.5" />}
             {r === "linkedin" && <Linkedin className="w-3.5 h-3.5" />}
             {r === "estilo-x" && <XStyleIcon className="w-3.5 h-3.5" />}
-            {r === "estilo-x" ? "Estilo X" : r === "linkedin" ? "LinkedIn" : "Instagram"}
+            {r === "google" && <Globe className="w-3.5 h-3.5" />}
+            {r === "estilo-x" ? "Estilo X" : r === "linkedin" ? "LinkedIn" : r === "google" ? "Google Business" : "Instagram"}
           </button>
         ))}
       </div>
