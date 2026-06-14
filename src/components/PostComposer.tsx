@@ -148,7 +148,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       {/* Redes — botões separados com ícones e cores */}
       <div className="space-y-2">
         <Label>Publicar em</Label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <NetworkButton
             active={networks.includes("instagram")}
             onClick={() => toggleNetwork("instagram")}
@@ -162,6 +162,13 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
             icon={<Linkedin className="w-5 h-5" />}
             label="LinkedIn"
             activeClass="bg-[#0a66c2] text-white border-transparent shadow-md"
+          />
+          <NetworkButton
+            active={networks.includes("google")}
+            onClick={() => toggleNetwork("google")}
+            icon={<Globe className="w-5 h-5" />}
+            label="Google Business"
+            activeClass="bg-gradient-to-tr from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white border-transparent shadow-md"
           />
         </div>
       </div>
