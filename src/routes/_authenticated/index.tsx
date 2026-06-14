@@ -153,7 +153,7 @@ function Dashboard() {
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
             <span className="hidden md:inline text-sm text-muted-foreground">
-              {posts.length} {posts.length === 1 ? "post" : "posts"}
+              {posts.length} {posts.length === 1 ? "publicação" : "publicações"}
             </span>
             <NotificationsBell />
             <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/settings" })} aria-label="Configurações" className="h-10 w-10 sm:w-auto px-2 sm:px-3">
