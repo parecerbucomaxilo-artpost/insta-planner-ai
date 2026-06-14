@@ -17,6 +17,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as ApiPublicPublicarAgendadosRouteImport } from './routes/api/public/publicar-agendados'
 import { Route as ApiPublicPostsAgendadosRouteImport } from './routes/api/public/posts-agendados'
 import { Route as ApiPublicGerarProximoRouteImport } from './routes/api/public/gerar-proximo'
+import { Route as ApiPublicDispatchGbpRouteImport } from './routes/api/public/dispatch-gbp'
 import { Route as ApiPublicBackfillImagesRouteImport } from './routes/api/public/backfill-images'
 import { Route as ApiPublicMetaOauthStartRouteImport } from './routes/api/public/meta-oauth.start'
 import { Route as ApiPublicMetaOauthCallbackRouteImport } from './routes/api/public/meta-oauth.callback'
@@ -61,6 +62,11 @@ const ApiPublicGerarProximoRoute = ApiPublicGerarProximoRouteImport.update({
   path: '/api/public/gerar-proximo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDispatchGbpRoute = ApiPublicDispatchGbpRouteImport.update({
+  id: '/api/public/dispatch-gbp',
+  path: '/api/public/dispatch-gbp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBackfillImagesRoute = ApiPublicBackfillImagesRouteImport.update({
   id: '/api/public/backfill-images',
   path: '/api/public/backfill-images',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
+  '/api/public/dispatch-gbp': typeof ApiPublicDispatchGbpRoute
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
+  '/api/public/dispatch-gbp': typeof ApiPublicDispatchGbpRoute
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
+  '/api/public/dispatch-gbp': typeof ApiPublicDispatchGbpRoute
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/politica-de-privacidade'
     | '/settings'
     | '/api/public/backfill-images'
+    | '/api/public/dispatch-gbp'
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/'
     | '/api/public/backfill-images'
+    | '/api/public/dispatch-gbp'
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/'
     | '/api/public/backfill-images'
+    | '/api/public/dispatch-gbp'
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
@@ -161,6 +173,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   ApiPublicBackfillImagesRoute: typeof ApiPublicBackfillImagesRoute
+  ApiPublicDispatchGbpRoute: typeof ApiPublicDispatchGbpRoute
   ApiPublicGerarProximoRoute: typeof ApiPublicGerarProximoRoute
   ApiPublicPostsAgendadosRoute: typeof ApiPublicPostsAgendadosRoute
   ApiPublicPublicarAgendadosRoute: typeof ApiPublicPublicarAgendadosRoute
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGerarProximoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/dispatch-gbp': {
+      id: '/api/public/dispatch-gbp'
+      path: '/api/public/dispatch-gbp'
+      fullPath: '/api/public/dispatch-gbp'
+      preLoaderRoute: typeof ApiPublicDispatchGbpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/backfill-images': {
       id: '/api/public/backfill-images'
       path: '/api/public/backfill-images'
@@ -268,6 +288,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   ApiPublicBackfillImagesRoute: ApiPublicBackfillImagesRoute,
+  ApiPublicDispatchGbpRoute: ApiPublicDispatchGbpRoute,
   ApiPublicGerarProximoRoute: ApiPublicGerarProximoRoute,
   ApiPublicPostsAgendadosRoute: ApiPublicPostsAgendadosRoute,
   ApiPublicPublicarAgendadosRoute: ApiPublicPublicarAgendadosRoute,
@@ -277,3 +298,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
