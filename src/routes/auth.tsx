@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Loader2, Stethoscope } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import logoAsset from "@/assets/logo-planner.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { lovable } from "@/integrations/lovable";
