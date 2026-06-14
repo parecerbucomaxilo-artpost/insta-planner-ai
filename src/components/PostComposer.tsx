@@ -428,13 +428,13 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="md:col-span-2 space-y-1">
-          <Label className="text-xs">Tema do post <span className="text-zinc-400 font-normal">(opcional — deixe em branco para a IA escolher)</span></Label>
+          <Label className="text-xs">Tema do post</Label>
           <Input
-            placeholder="Ex.: Dor do siso que irradia para o ouvido — ou deixe vazio"
             value={tema}
             onChange={(e) => setTema(e.target.value)}
           />
         </div>
+
         <div className="space-y-1">
           <Label className="text-xs">Especialidade</Label>
           <select
@@ -548,21 +548,39 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
 
       <div className="space-y-1.5">
         <Label className="text-xs">Publicar em</Label>
-        <button
-          type="button"
-          onClick={() => setAmbasRedes((v) => !v)}
-          className={cn(
-            "w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-md border-2 font-semibold text-sm transition-all",
-            ambasRedes
-              ? "border-emerald-500 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white shadow-sm"
-              : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
-          )}
-        >
-          <Instagram className="w-4 h-4" /> + <Linkedin className="w-4 h-4" />
-          {ambasRedes ? "Publicando em AMBAS as redes" : "Postar em Instagram E LinkedIn ao mesmo tempo"}
-          {ambasRedes && <Check className="w-4 h-4" />}
-        </button>
+        <div className="grid grid-cols-3 gap-2">
+          {([
+            { id: "instagram", label: "Instagram", icon: <Instagram className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-fuchsia-500 via-pink-500 to-orange-400 text-white shadow-sm" },
+            { id: "linkedin", label: "LinkedIn", icon: <Linkedin className="w-4 h-4" />, activeClass: "border-transparent bg-[#0a66c2] text-white shadow-sm" },
+            { id: "ambas", label: "Ambas as redes", icon: (<><Instagram className="w-4 h-4" /><Linkedin className="w-4 h-4" /></>), activeClass: "border-transparent bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white shadow-sm" },
+          ] as const).map((opt) => {
+            const active = opt.id === "ambas" ? ambasRedes : !ambasRedes && rede === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => {
+                  if (opt.id === "ambas") {
+                    setAmbasRedes(true);
+                  } else {
+                    setAmbasRedes(false);
+                    setRede(opt.id);
+                  }
+                }}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-md border-2 font-semibold text-sm transition-all",
+                  active ? opt.activeClass : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
+                )}
+              >
+                {opt.icon}
+                <span>{opt.label}</span>
+                {active && <Check className="w-3.5 h-3.5" />}
+              </button>
+            );
+          })}
+        </div>
       </div>
+
 
 
 
