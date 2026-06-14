@@ -401,8 +401,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   };
 
   const approveTheme = async (t: { rede: string; tipo?: string; formato?: string; quando?: string; tema: string }) => {
-    const r = (t.rede === "linkedin" ? "linkedin" : t.rede === "estilo-x" ? "estilo-x" : "instagram") as
-      | "instagram" | "linkedin" | "estilo-x";
+    const r = (t.rede === "linkedin" ? "linkedin" : t.rede === "estilo-x" ? "estilo-x" : t.rede === "google" ? "google" : "instagram") as
+      | "instagram" | "linkedin" | "estilo-x" | "google";
     const tid = `ai-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
@@ -571,10 +571,11 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
 
       <div className="space-y-1.5">
         <Label className="text-xs">Publicar em</Label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {([
             { id: "instagram", label: "Instagram", icon: <Instagram className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-fuchsia-500 via-pink-500 to-orange-400 text-white shadow-sm" },
             { id: "linkedin", label: "LinkedIn", icon: <Linkedin className="w-4 h-4" />, activeClass: "border-transparent bg-[#0a66c2] text-white shadow-sm" },
+            { id: "google", label: "Google Business", icon: <Globe className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white shadow-sm" },
             { id: "ambas", label: "Ambas as redes", icon: (<><Instagram className="w-4 h-4" /><Linkedin className="w-4 h-4" /></>), activeClass: "border-transparent bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white shadow-sm" },
           ] as const).map((opt) => {
             const active = opt.id === "ambas" ? ambasRedes : !ambasRedes && rede === opt.id;
