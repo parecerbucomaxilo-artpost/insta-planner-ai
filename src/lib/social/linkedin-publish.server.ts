@@ -77,7 +77,7 @@ async function uploadImageAsset(ownerUrn: string, bytes: Uint8Array, contentType
   if (!uploadUrl || !asset) throw new Error("registerUpload sem uploadUrl/asset.");
 
   // 2) PUT bytes (signed URL — sem auth header)
-  const put = await fetch(uploadUrl, { method: "PUT", body: bytes, headers: { "Content-Type": contentType } });
+  const put = await fetch(uploadUrl, { method: "PUT", body: bytes as any, headers: { "Content-Type": contentType } });
   if (!put.ok && put.status !== 201) throw new Error(`Upload imagem ${put.status}`);
 
   return asset;
