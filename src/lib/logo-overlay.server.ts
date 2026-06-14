@@ -6,10 +6,12 @@ import logoAsset from "@/assets/logo-planner.png.asset.json";
 // Cache do PNG da logo entre invocações do mesmo isolate.
 let logoBytesCache: Uint8Array | null = null;
 
-async function fetchLogoBytes(origin: string): Promise<Uint8Array> {
+const DEFAULT_ORIGIN = "https://insta-planner-ai.lovable.app";
+
+async function fetchLogoBytes(origin?: string): Promise<Uint8Array> {
   if (logoBytesCache) return logoBytesCache;
-  // Asset CDN URL é absoluta a partir do domínio servindo o app.
-  const url = logoAsset.url.startsWith("http") ? logoAsset.url : `${origin}${logoAsset.url}`;
+  const base = origin || DEFAULT_ORIGIN;
+  const url = logoAsset.url.startsWith("http") ? logoAsset.url : `${base}${logoAsset.url}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Logo fetch ${res.status}`);
   logoBytesCache = new Uint8Array(await res.arrayBuffer());
