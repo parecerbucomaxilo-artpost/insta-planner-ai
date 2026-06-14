@@ -341,6 +341,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x">("instagram");
   const [inserirLogo, setInserirLogo] = useState(true);
+  const [inserirAvatar, setInserirAvatar] = useState(false);
   const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("google/gemini-3.1-flash-image-preview");
   const [ambasRedes, setAmbasRedes] = useState(false);
