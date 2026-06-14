@@ -187,21 +187,24 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       if (!tema) throw new Error("IA não conseguiu escolher um tema.");
     }
 
-    // 1. Resolve nível editorial e gera legenda
+    // 1. Resolve nível editorial
     const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
     const isStory = formato === "Story";
-    const { text: legenda } = await generateText({
+
+    // 2. Dispara legenda + imagens EM PARALELO (não dependem entre si).
+    const legendaPromise = generateText({
       model,
       system: captionSystem(data.rede, data.especialidade, nivel),
       prompt: isStory
         ? `Crie um TEXTO DE STORY (até 220 caracteres, 1-2 emojis, sem hashtags, CTA "Link na Bio") que CHAME ATENÇÃO para o post do FEED de hoje sobre: "${tema}". O story deve provocar curiosidade e mandar o usuário para o feed.`
         : `Crie a legenda completa para o post sobre: "${tema}".`,
-    });
+    }).then((r) => r.text);
 
-    // 2. Imagens — Carrossel = 3 slides em paralelo, demais = 1 imagem
     const size: "1024x1024" | "1536x1024" =
       data.rede === "estilo-x" ? "1536x1024" : "1024x1024";
 
+    // Upload faz parte do pipeline; cada imagem é enviada assim que sai do modelo,
+    // em vez de esperar todas terminarem.
     const uploadOne = async (b64: string) => {
       const buf = Buffer.from(b64, "base64");
       const fileName = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
@@ -214,13 +217,15 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       return { publicUrl, signedUrl: signed?.signedUrl ?? publicUrl };
     };
 
+    const genAndUpload = (prompt: string) =>
+      generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem }).then(uploadOne);
+
     let urlImagem: string;
     let imagensCarrossel: string[] = [];
     let urlImagemCache: string | null = null;
     let imagensCarrosselCache: string[] = [];
 
     if (formato === "Carrossel") {
-      // Estilo X (tweet 16:9) limita a 3 slides; demais carrosséis = 5 cards.
       const fullSpec = [
         { n: 1, total: 5, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + assinatura. Layout impactante de revista." },
         { n: 2, total: 5, papel: "PROBLEMA: aprofunda a dor/sintoma. Imagem clínica forte. Sem assinatura." },
@@ -234,32 +239,25 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         { n: 3, total: 3, papel: "TWEET 3: CTA WhatsApp/Link na Bio + assinatura." },
       ];
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
-      const b64s = await Promise.all(
+      const uploads = await Promise.all(
         slidesSpec.map((s) =>
-          generateImageBase64({
-            apiKey: key,
-            prompt: imageSystemPrompt(tema, data.rede, nivel, s, data.inserirLogo, data.inserirAvatar),
-            size,
-            model: data.modeloImagem,
-          }),
+          genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s, data.inserirLogo, data.inserirAvatar)),
         ),
       );
-      const uploads = await Promise.all(b64s.map(uploadOne));
       urlImagem = uploads[0].publicUrl;
       urlImagemCache = uploads[0].signedUrl;
-      imagensCarrossel = uploads.map((upload) => upload.publicUrl);
-      imagensCarrosselCache = uploads.map((upload) => upload.signedUrl);
+      imagensCarrossel = uploads.map((u) => u.publicUrl);
+      imagensCarrosselCache = uploads.map((u) => u.signedUrl);
     } else {
-      const b64 = await generateImageBase64({
-        apiKey: key,
-        prompt: imageSystemPrompt(tema, data.rede, nivel, undefined, data.inserirLogo, data.inserirAvatar),
-        size,
-        model: data.modeloImagem,
-      });
-      const upload = await uploadOne(b64);
+      const upload = await genAndUpload(
+        imageSystemPrompt(tema, data.rede, nivel, undefined, data.inserirLogo, data.inserirAvatar),
+      );
       urlImagem = upload.publicUrl;
       urlImagemCache = upload.signedUrl;
     }
+
+    const legenda = await legendaPromise;
+
 
     const tipoPost = formato === "Carrossel" ? "Carrossel" : "Post Único";
 
