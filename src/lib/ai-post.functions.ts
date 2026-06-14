@@ -40,6 +40,7 @@ const SingleInput = z.object({
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
   inserirLogo: z.boolean().optional().default(true),
+  inserirAvatar: z.boolean().optional().default(false),
   modelo: ModeloEnum.optional().default("google/gemini-3-flash-preview"),
   modeloImagem: ModeloImagemEnum.optional().default("google/gemini-3.1-flash-image-preview"),
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
