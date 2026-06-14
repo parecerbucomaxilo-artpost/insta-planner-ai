@@ -118,7 +118,7 @@ ${isLI
 NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
 }
 
-function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }, inserirLogo: boolean = true) {
+function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }, inserirLogo: boolean = true, inserirAvatar: boolean = false) {
   const slideInfo = slide
     ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.`
     : "";
@@ -129,7 +129,10 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
     : `\n- Rodapé discreto em 2 linhas: "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}".`;
   const logoInstr = inserirLogo
     ? `\n- ÁREA DE LOGO (NÃO DESENHAR): RESERVE o canto superior direito (~14% × 14%) com fundo LIMPO/uniforme. PROIBIDO inventar logotipo, marca, monograma, escudo, cruz médica, símbolo de dente, "PC", "FM", "Planner", "Chico" ou qualquer letreiro — a LOGO REAL será sobreposta DEPOIS pelo sistema.`
-    : `\n- SEM logo nesta imagem (cliente solicitou). Não desenhe nenhum letreiro/símbolo de marca.`;
+    : `\n- SEM logo nesta imagem. Não desenhe nenhum letreiro/símbolo de marca no canto superior direito.`;
+  const avatarInstr = inserirAvatar
+    ? `\n- ÁREA DE AVATAR (NÃO DESENHAR): RESERVE o canto superior esquerdo (~14% × 14%, circular) com fundo LIMPO/uniforme. PROIBIDO desenhar rosto, retrato, médico genérico ou qualquer pessoa nesse círculo — a FOTO REAL do Prof. Francisco Menezes será sobreposta DEPOIS pelo sistema.`
+    : "";
   const refEditorial = nivel === "linkedin-cientifico"
     ? "Referência editorial: The Lancet, NEJM, JOMS — capa de revista científica top-tier, estética acadêmica premium."
     : "Referência editorial: Harvard Health, Mayo Clinic, Cleveland Clinic — hospital premium, autoridade institucional, luxo discreto.";
