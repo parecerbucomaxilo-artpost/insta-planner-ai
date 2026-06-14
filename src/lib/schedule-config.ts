@@ -2,7 +2,7 @@
 // Segunda a Sábado: horários definidos. Domingo: posts especiais "mensagem de domingo".
 
 export type SlotTipo = "feed" | "stories";
-export type SlotRede = "instagram" | "linkedin";
+export type SlotRede = "instagram" | "linkedin" | "google";
 
 export interface Slot {
   rede: SlotRede;
@@ -24,6 +24,9 @@ export const SLOTS_SEMANA: Slot[] = [
   // LinkedIn
   { rede: "linkedin", tipo: "feed", hora: 9, minuto: 0 },
   { rede: "linkedin", tipo: "feed", hora: 17, minuto: 30 },
+  // Google Business Profile (SEO local) — 1 post pela manhã + 1 à tarde
+  { rede: "google", tipo: "feed", hora: 10, minuto: 30 },
+  { rede: "google", tipo: "feed", hora: 16, minuto: 30 },
 ];
 
 // Domingo: mensagem mais leve / inspiracional
@@ -31,6 +34,7 @@ export const SLOTS_DOMINGO: Slot[] = [
   { rede: "instagram", tipo: "feed", hora: 10, minuto: 0 },
   { rede: "instagram", tipo: "stories", hora: 9, minuto: 0 },
   { rede: "linkedin", tipo: "feed", hora: 11, minuto: 0 },
+  { rede: "google", tipo: "feed", hora: 11, minuto: 30 },
 ];
 
 /**

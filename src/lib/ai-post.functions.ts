@@ -28,14 +28,14 @@ const ModeloImagemEnum = z.enum([
 ]);
 export { MODELOS_IMAGEM } from "@/lib/ai-gateway.server";
 
-const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico"]);
+const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico", "google-business"]);
 export type NivelConteudo = z.infer<typeof NivelEnum>;
 
 const SingleInput = z.object({
   // Se vazio, a IA escolhe um tema relevante automaticamente.
   tema: z.string().optional().default(""),
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
-  rede: z.enum(["instagram", "linkedin", "estilo-x"]).default("instagram"),
+  rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
@@ -65,8 +65,9 @@ const CTAS_PROIBIDOS = `PROIBIDO ABSOLUTO nos textos: "agende sua consulta", "ag
 const CTAS_PERMITIDOS_IG = `CTAs PERMITIDOS (IG/X): "Saiba mais pelo link da bio." | "Expliquei esse assunto em detalhes no link da bio." | "Veja o conteúdo completo através do link da bio." | "Link na Bio".`;
 const CTAS_PERMITIDOS_LI = `CTA permitido (LinkedIn): convite à discussão profissional entre colegas ou WhatsApp ${WHATSAPP} ("Fale comigo no WhatsApp").`;
 
-function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
+function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x" | "google", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
   if (nivel !== "auto") return nivel;
+  if (rede === "google") return "google-business";
   if (rede === "linkedin") return "linkedin-cientifico";
   if (tipo === "stories") return "ig-conversao";
   return "ig-autoridade";
@@ -79,12 +80,36 @@ function tonePrompt(nivel: Exclude<NivelConteudo, "auto">) {
   if (nivel === "ig-conversao") {
     return `TOM: linguagem ACESSÍVEL ao público leigo (25-75 anos), empática, neuromarketing médico. Comece pela DOR/queixa real ("Você sente...", "Já acordou com..."). Faça a pessoa se identificar. Sem jargão; quando inevitável, traduzir entre parênteses.`;
   }
+  if (nivel === "google-business") {
+    return `TOM: SEO local médico, didático, humano e profissional. Público: pacientes leigos que pesquisam no Google sintomas e dúvidas sobre cirurgia bucomaxilofacial, ATM, DTM, bruxismo, siso, cirurgia ortognática, trauma facial, apneia. Texto pensado para Google Meu Negócio: responde à intenção de busca, fortalece autoridade regional e melhora ranqueamento local.`;
+  }
   // ig-autoridade
   return `TOM: autoridade hospitalar de alto nível, ciência traduzida para leigos. Posicionamento de professor universitário/cirurgião referência. Apresente casos, dados e mecanismos com clareza, mas sem jargão impenetrável. Desperte confiança e busca espontânea por informação.`;
 }
 
-function captionSystem(rede: "instagram" | "linkedin" | "estilo-x", especialidade: string, nivel: Exclude<NivelConteudo, "auto">) {
+function captionSystem(rede: "instagram" | "linkedin" | "estilo-x" | "google", especialidade: string, nivel: Exclude<NivelConteudo, "auto">) {
   const isLI = nivel === "linkedin-cientifico";
+  const isGoogle = nivel === "google-business";
+
+  if (isGoogle) {
+    return `Você é especialista em SEO Local Médico, Google Business Profile (Google Meu Negócio) e posicionamento digital em saúde do ${ASSINATURA} (${ASSINATURA_SUBTITULO}).
+Especialidade do post: ${especialidade}.
+${tonePrompt(nivel)}
+
+ESTRUTURA OBRIGATÓRIA (Google Business Profile):
+1. TÍTULO SEO curto (até 70 caracteres) que reproduza uma pergunta real pesquisada no Google.
+2. Resposta direta em 1-2 frases.
+3. Explicação objetiva e didática (entre 150 e 300 palavras no total).
+4. Orientação educativa e sinais de especialização.
+5. CTA discreto: convidar o paciente a conhecer mais pelo perfil ou falar pelo WhatsApp ${WHATSAPP}.
+6. Bloco final com: "Palavras-chave SEO: ..." (5 a 8 termos, separados por vírgula, incluindo naturalmente: Cirurgião Bucomaxilofacial, Bucomaxilo, Cirurgia Bucomaxilofacial, Especialista em ATM, Odontologia Hospitalar, DTM, Bruxismo, Cirurgia Ortognática quando fizer sentido).
+7. Linha "ALT TEXT: ..." (texto alternativo objetivo descrevendo a imagem sugerida, 1 frase).
+
+FORMATO DA SAÍDA: texto corrido em PT-BR Brasil impecável, parágrafos curtos, sem emojis, sem hashtags, sem palavras duplicadas, sem inglês desnecessário. Comece pelo TÍTULO em negrito (use ** ao redor), pule linha, depois corpo, palavras-chave e ALT TEXT.
+${CTAS_PROIBIDOS}
+NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
+  }
+
   const estrutura = isLI
     ? `ESTRUTURA OBRIGATÓRIA (LinkedIn Científico):
 1. Título técnico forte.
@@ -142,7 +167,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - Iluminação cinematográfica, profundidade, micro-texturas, qualidade 8K, hierarquia visual forte.
 - Tipografia bold sans-serif premium (Inter/Söhne), alto contraste, kerning impecável.
 - Texto curto em PT-BR (Português do Brasil) com acentuação correta, ortografia impecável, SEM palavras duplicadas/repetidas, SEM erros de concordância, SEM letras trocadas, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${logoInstr}${avatarInstr}
-- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : "Formato quadrado 1:1 (ou 4:5 quando aplicável)."}${slideInfo}
+- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), estilo Mayo/Cleveland Clinic, autoridade médica regional, foco em SEO local." : "Formato quadrado 1:1 (ou 4:5 quando aplicável)."}${slideInfo}
 - PROIBIDO ABSOLUTO: inventar logotipo/marca, texto em inglês, palavras repetidas duas vezes seguidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador, chamadas comerciais como "agende consulta" / "promoção" / "desconto".`;
 }
 
@@ -201,7 +226,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
     }).then((r) => r.text);
 
     const size: "1024x1024" | "1536x1024" =
-      data.rede === "estilo-x" ? "1536x1024" : "1024x1024";
+      data.rede === "estilo-x" || data.rede === "google" ? "1536x1024" : "1024x1024";
 
     // Upload faz parte do pipeline; cada imagem é enviada assim que sai do modelo,
     // em vez de esperar todas terminarem.
@@ -272,7 +297,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       .insert({
         user_id: context.userId,
         tipo_post: tipoPost,
-        estilo_layout: data.rede === "estilo-x" ? "Estilo X" : "Padrão",
+        estilo_layout: data.rede === "estilo-x" ? "Estilo X" : data.rede === "google" ? "Google Business" : "Padrão",
         formato_midia: "Imagem",
         legenda,
         url_imagem: urlImagem,
@@ -281,8 +306,9 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         imagens_carrossel: imagensCarrossel,
         imagens_carrossel_cache: imagensCarrosselCache,
         imagens_carrossel_cache_expires_at: imagensCarrosselCache.length ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString() : null,
-        postar_instagram: data.ambasRedes || data.rede !== "linkedin",
-        postar_linkedin: data.ambasRedes || data.rede === "linkedin",
+        postar_instagram: data.rede === "google" ? false : (data.ambasRedes || data.rede !== "linkedin"),
+        postar_linkedin: data.rede === "google" ? false : (data.ambasRedes || data.rede === "linkedin"),
+        postar_google: data.rede === "google",
         status: data.status,
         data_agendamento: data.quando ?? null,
         prompt_ia: tema,

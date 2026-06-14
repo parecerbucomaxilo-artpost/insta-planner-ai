@@ -44,7 +44,7 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
           const fim = slots[slots.length - 1].quando.toISOString();
           const { data: existentes, error: qErr } = await supabaseAdmin
             .from("posts")
-            .select("data_agendamento,postar_instagram,postar_linkedin,estilo_layout,formato_midia")
+            .select("data_agendamento,postar_instagram,postar_linkedin,postar_google,estilo_layout,formato_midia")
             .gte("data_agendamento", inicio)
             .lte("data_agendamento", fim)
             .in("status", ["Agendado", "PendenteAprovacao", "Publicado"]);
@@ -59,6 +59,7 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
             const tipo = (p.formato_midia || "").toLowerCase().includes("stor") ? "stories" : "feed";
             if (p.postar_instagram) ocupados.add(`${min}|instagram|${tipo}`);
             if (p.postar_linkedin) ocupados.add(`${min}|linkedin|${tipo}`);
+            if ((p as any).postar_google) ocupados.add(`${min}|google|${tipo}`);
           }
 
           // Encontra primeiro slot vazio.
@@ -72,7 +73,7 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
           }
 
           // Define formato com base no slot.
-          // Seg-sáb feed IG = Carrossel; Story = Story; LinkedIn feed = Post Único; Domingo IG feed = Post Único (mensagem).
+          // Seg-sáb feed IG = Carrossel; Story = Story; LinkedIn/Google feed = Post Único; Domingo IG feed = Post Único (mensagem).
           const isDomingo = proximo.diaSemana === 0;
           const formato: "Carrossel" | "Story" | "Post Único" =
             proximo.tipo === "stories"
@@ -82,22 +83,25 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
                 : "Post Único";
 
           // Para slots de domingo, força tema de mensagem leve/inspiracional.
-          const temaDomingo = isDomingo
+          const temaDomingo = isDomingo && proximo.rede !== "google"
             ? "Mensagem de domingo: descanso, gratidão e cuidado com a saúde bucomaxilofacial"
             : "";
 
           // Define nível editorial:
+          // - Google → SEO local (google-business)
           // - LinkedIn → científico
           // - IG stories → conversão (dor/teaser do feed)
           // - IG feed → alterna entre conversão (manhã 9h) e autoridade (15h/19h)
-          const nivel: "ig-conversao" | "ig-autoridade" | "linkedin-cientifico" =
-            proximo.rede === "linkedin"
-              ? "linkedin-cientifico"
-              : proximo.tipo === "stories"
-                ? "ig-conversao"
-                : proximo.hora <= 9
+          const nivel: "ig-conversao" | "ig-autoridade" | "linkedin-cientifico" | "google-business" =
+            proximo.rede === "google"
+              ? "google-business"
+              : proximo.rede === "linkedin"
+                ? "linkedin-cientifico"
+                : proximo.tipo === "stories"
                   ? "ig-conversao"
-                  : "ig-autoridade";
+                  : proximo.hora <= 9
+                    ? "ig-conversao"
+                    : "ig-autoridade";
 
           const result = await generateSinglePost({
             data: {

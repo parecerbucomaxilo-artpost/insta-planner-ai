@@ -145,6 +145,7 @@ export type Database = {
           legenda: string
           legenda_instagram: string | null
           legenda_linkedin: string | null
+          postar_google: boolean
           postar_instagram: boolean
           postar_linkedin: boolean
           prompt_ia: string | null
@@ -170,6 +171,7 @@ export type Database = {
           legenda?: string
           legenda_instagram?: string | null
           legenda_linkedin?: string | null
+          postar_google?: boolean
           postar_instagram?: boolean
           postar_linkedin?: boolean
           prompt_ia?: string | null
@@ -195,6 +197,7 @@ export type Database = {
           legenda?: string
           legenda_instagram?: string | null
           legenda_linkedin?: string | null
+          postar_google?: boolean
           postar_instagram?: boolean
           postar_linkedin?: boolean
           prompt_ia?: string | null
