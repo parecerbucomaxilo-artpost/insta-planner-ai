@@ -23,7 +23,7 @@ type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-type Network = "instagram" | "linkedin";
+type Network = "instagram" | "linkedin" | "google";
 type Formato = "Post Único" | "Carrossel" | "Estilo X";
 type Quando = "agora" | "7dias" | "data";
 
