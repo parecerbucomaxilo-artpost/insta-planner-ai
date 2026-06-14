@@ -217,8 +217,11 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       return { publicUrl, signedUrl: signed?.signedUrl ?? publicUrl };
     };
 
-    const genAndUpload = (prompt: string) =>
-      generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem }).then(uploadOne);
+    const { overlayLogo } = await import("@/lib/logo-overlay.server");
+    const genAndUpload = (prompt: string, applyLogo: boolean) =>
+      generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem })
+        .then((b64) => (applyLogo ? overlayLogo(b64) : Promise.resolve(b64)))
+        .then(uploadOne);
 
     let urlImagem: string;
     let imagensCarrossel: string[] = [];
@@ -240,9 +243,11 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       ];
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
       const uploads = await Promise.all(
-        slidesSpec.map((s) =>
-          genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s, data.inserirLogo, data.inserirAvatar)),
-        ),
+        slidesSpec.map((s) => {
+          // Regra: logo só na 1ª e última imagem do carrossel (e respeitando inserirLogo)
+          const applyLogo = !!data.inserirLogo && (s.n === 1 || s.n === s.total);
+          return genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s, data.inserirLogo, data.inserirAvatar), applyLogo);
+        }),
       );
       urlImagem = uploads[0].publicUrl;
       urlImagemCache = uploads[0].signedUrl;
@@ -251,6 +256,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
     } else {
       const upload = await genAndUpload(
         imageSystemPrompt(tema, data.rede, nivel, undefined, data.inserirLogo, data.inserirAvatar),
+        !!data.inserirLogo,
       );
       urlImagem = upload.publicUrl;
       urlImagemCache = upload.signedUrl;
