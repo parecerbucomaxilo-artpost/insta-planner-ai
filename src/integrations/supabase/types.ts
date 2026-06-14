@@ -138,6 +138,7 @@ export type Database = {
           data_agendamento: string | null
           estilo_layout: string
           formato_midia: string
+          google_dispatched_at: string | null
           id: string
           imagens_carrossel: Json
           imagens_carrossel_cache: Json
@@ -164,6 +165,7 @@ export type Database = {
           data_agendamento?: string | null
           estilo_layout?: string
           formato_midia?: string
+          google_dispatched_at?: string | null
           id?: string
           imagens_carrossel?: Json
           imagens_carrossel_cache?: Json
@@ -190,6 +192,7 @@ export type Database = {
           data_agendamento?: string | null
           estilo_layout?: string
           formato_midia?: string
+          google_dispatched_at?: string | null
           id?: string
           imagens_carrossel?: Json
           imagens_carrossel_cache?: Json
