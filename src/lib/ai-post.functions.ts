@@ -318,22 +318,51 @@ export const approvePost = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (data.acao === "publicar") {
-      const { publishInstagramPostById } = await import("@/lib/social/instagram-publish.server");
-      try {
-        return await publishInstagramPostById({ supabaseAdmin, postId: data.id, userId: context.userId });
-      } catch (err: any) {
-        const msg = String(err?.message || "");
-        // Sem destino de publicação configurado → salva como Agendado em vez de quebrar.
-        if (/webhook do Make|Instagram oficial|Configure seu perfil/i.test(msg)) {
-          const { error } = await supabaseAdmin
-            .from("posts")
-            .update({ status: "Agendado", user_id: context.userId })
-            .eq("id", data.id);
-          if (error) throw new Error(`DB: ${error.message}`);
-          return { ok: true, status: "Agendado", warning: msg };
+      // Lê post para descobrir destinos.
+      const { data: post } = await supabaseAdmin
+        .from("posts")
+        .select("postar_instagram,postar_linkedin")
+        .eq("id", data.id)
+        .maybeSingle();
+
+      const results: any = { ok: true, status: "Publicado" };
+      const warnings: string[] = [];
+
+      if (post?.postar_linkedin) {
+        try {
+          const { publishLinkedInPostById } = await import("@/lib/social/linkedin-publish.server");
+          const r = await publishLinkedInPostById({ supabaseAdmin, postId: data.id, userId: context.userId });
+          results.linkedin = r;
+        } catch (err: any) {
+          warnings.push(`LinkedIn: ${err?.message || err}`);
         }
-        throw err;
       }
+
+      if (post?.postar_instagram) {
+        try {
+          const { publishInstagramPostById } = await import("@/lib/social/instagram-publish.server");
+          const r = await publishInstagramPostById({ supabaseAdmin, postId: data.id, userId: context.userId });
+          results.instagram = r;
+        } catch (err: any) {
+          const msg = String(err?.message || "");
+          if (/webhook do Make|Instagram oficial|Configure seu perfil/i.test(msg)) {
+            warnings.push(`Instagram não configurado: ${msg}`);
+          } else {
+            warnings.push(`Instagram: ${msg}`);
+          }
+        }
+      }
+
+      // Se nada publicou, marca como Agendado para retry.
+      if (!results.linkedin && !results.instagram) {
+        await supabaseAdmin.from("posts").update({ status: "Agendado", user_id: context.userId }).eq("id", data.id);
+        results.status = "Agendado";
+      } else {
+        await supabaseAdmin.from("posts").update({ status: "Publicado", user_id: context.userId }).eq("id", data.id);
+      }
+
+      if (warnings.length) results.warning = warnings.join(" | ");
+      return results;
     }
     const status = data.acao === "agendar" ? "Agendado" : "Rascunho";
     const patch: any = { status, user_id: context.userId };
