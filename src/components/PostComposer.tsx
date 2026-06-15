@@ -349,12 +349,10 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x" | "google">("instagram");
-  const [inserirLogo, setInserirLogo] = useState(true);
-  const [inserirAvatar, setInserirAvatar] = useState(false);
   const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("google/gemini-3.1-flash-image-preview");
   const [ambasRedes, setAmbasRedes] = useState(false);
-  const [busy, setBusy] = useState<null | "single" | "week">(null);
+  const [busy, setBusy] = useState<null | AiQuickFormat | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
   const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[] } | null>(null);
   const [previewIdx, setPreviewIdx] = useState(0);
@@ -367,13 +365,21 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [approving, setApproving] = useState<null | "arquivar" | "agendar" | "publicar">(null);
 
 
-  const handleSingle = async () => {
+  const handleSingle = async (quickFormat: AiQuickFormat = "feed") => {
     const temaTrim = tema.trim();
-    setBusy("single");
-    const tid = "ai-single";
-    toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
+    const config = {
+      story: { tipo: "stories" as const, formato: "Story" as const, label: "story único" },
+      feed: { tipo: "feed" as const, formato: "Post Único" as const, label: "post único feed" },
+      carrossel: { tipo: "feed" as const, formato: "Carrossel" as const, label: "carrossel com 6 imagens" },
+    }[quickFormat];
+    setBusy(quickFormat);
+    const tid = `ai-${quickFormat}`;
+    toast.loading(
+      temaTrim ? `IA criando ${config.label}...` : `IA escolhendo tema e criando ${config.label}...`,
+      { id: tid },
+    );
     try {
-      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, inserirAvatar, modelo, modeloImagem, ambasRedes } });
+      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede: "instagram", tipo: config.tipo, formato: config.formato, modelo, modeloImagem, ambasRedes: false } });
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
