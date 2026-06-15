@@ -243,14 +243,10 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       return { publicUrl, signedUrl: signed?.signedUrl ?? publicUrl };
     };
 
-    const { overlayLogo, ensureJpegB64 } = await import("@/lib/logo-overlay.server");
-    const genAndUpload = (prompt: string, applyLogo: boolean, applyAvatar: boolean) =>
+    const { ensureJpegB64 } = await import("@/lib/logo-overlay.server");
+    const genAndUpload = (prompt: string) =>
       generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem })
-        .then((b64) =>
-          applyLogo || applyAvatar
-            ? overlayLogo(b64, undefined, 14, { withLogo: applyLogo, withAvatar: applyAvatar })
-            : ensureJpegB64(b64),
-        )
+        .then((b64) => ensureJpegB64(b64))
         .then(uploadOne);
 
     let urlImagem: string;
