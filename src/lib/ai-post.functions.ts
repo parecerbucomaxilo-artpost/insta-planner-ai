@@ -262,12 +262,11 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
 
     if (formato === "Carrossel") {
       const fullSpec = [
-        { n: 1, total: 6, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + rodapé textual obrigatório. Layout impactante de revista." },
-        { n: 2, total: 6, papel: "PROBLEMA: aprofunda a dor/sintoma. Imagem clínica forte + rodapé textual obrigatório." },
-        { n: 3, total: 6, papel: "CAUSA / EXPLICAÇÃO CIENTÍFICA: didática, com citação curta + rodapé textual obrigatório." },
-        { n: 4, total: 6, papel: "MECANISMO / EVIDÊNCIA: dado clínico, número ou achado de estudo + rodapé textual obrigatório." },
-        { n: 5, total: 6, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve + rodapé textual obrigatório." },
-        { n: 6, total: 6, papel: "CTA FINAL: WhatsApp / Link na Bio + rodapé textual obrigatório. Slide de fechamento." },
+        { n: 1, total: 5, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + rodapé textual obrigatório. Layout impactante de revista." },
+        { n: 2, total: 5, papel: "PROBLEMA + CAUSA: aprofunda a dor/sintoma e explica de forma científica/didática + rodapé textual obrigatório." },
+        { n: 3, total: 5, papel: "MECANISMO / EVIDÊNCIA: dado clínico, número ou achado de estudo + rodapé textual obrigatório." },
+        { n: 4, total: 5, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve + rodapé textual obrigatório." },
+        { n: 5, total: 5, papel: "CTA FINAL: WhatsApp / Link na Bio + rodapé textual obrigatório. Slide de fechamento." },
       ];
       const xSpec = [
         { n: 1, total: 3, papel: "TWEET 1: gancho/pergunta forte com assinatura." },
@@ -275,12 +274,10 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         { n: 3, total: 3, papel: "TWEET 3: CTA WhatsApp/Link na Bio + assinatura." },
       ];
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
-      const uploads: Awaited<ReturnType<typeof genAndUpload>>[] = [];
-      for (let i = 0; i < slidesSpec.length; i += 2) {
-        const lote = slidesSpec.slice(i, i + 2);
-        const geradas = await Promise.all(lote.map((s) => genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s))));
-        uploads.push(...geradas);
-      }
+      // Gera TODAS as imagens em paralelo (3-5x mais rápido que lotes sequenciais).
+      const uploads = await Promise.all(
+        slidesSpec.map((s) => genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s)))
+      );
       urlImagem = uploads[0].publicUrl;
       urlImagemCache = uploads[0].signedUrl;
       imagensCarrossel = uploads.map((u) => u.publicUrl);
