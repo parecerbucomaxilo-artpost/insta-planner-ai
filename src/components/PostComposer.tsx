@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays, CalendarIcon, ChevronLeft, ChevronRight, Globe } from "lucide-react";
+import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays, CalendarIcon, ChevronLeft, ChevronRight, Globe, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
@@ -26,6 +26,7 @@ import { ptBR } from "date-fns/locale";
 type Network = "instagram" | "linkedin" | "google";
 type Formato = "Post Único" | "Carrossel" | "Estilo X";
 type Quando = "agora" | "7dias" | "data";
+type AiQuickFormat = "story" | "feed" | "carrossel";
 
 
 const FORMATOS: { id: Formato; label: string; icon: React.ComponentType<{ className?: string }>; desc: string }[] = [
@@ -348,12 +349,10 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x" | "google">("instagram");
-  const [inserirLogo, setInserirLogo] = useState(true);
-  const [inserirAvatar, setInserirAvatar] = useState(false);
   const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("google/gemini-3.1-flash-image-preview");
   const [ambasRedes, setAmbasRedes] = useState(false);
-  const [busy, setBusy] = useState<null | "single" | "week">(null);
+  const [busy, setBusy] = useState<null | AiQuickFormat | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
   const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[] } | null>(null);
   const [previewIdx, setPreviewIdx] = useState(0);
@@ -366,13 +365,21 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [approving, setApproving] = useState<null | "arquivar" | "agendar" | "publicar">(null);
 
 
-  const handleSingle = async () => {
+  const handleSingle = async (quickFormat: AiQuickFormat = "feed") => {
     const temaTrim = tema.trim();
-    setBusy("single");
-    const tid = "ai-single";
-    toast.loading(temaTrim ? "IA criando legenda + imagem..." : "IA escolhendo tema, legenda e imagem...", { id: tid });
+    const config = {
+      story: { tipo: "stories" as const, formato: "Story" as const, label: "story único" },
+      feed: { tipo: "feed" as const, formato: "Post Único" as const, label: "post único feed" },
+      carrossel: { tipo: "feed" as const, formato: "Carrossel" as const, label: "carrossel com 6 imagens" },
+    }[quickFormat];
+    setBusy(quickFormat);
+    const tid = `ai-${quickFormat}`;
+    toast.loading(
+      temaTrim ? `IA criando ${config.label}...` : `IA escolhendo tema e criando ${config.label}...`,
+      { id: tid },
+    );
     try {
-      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede, inserirLogo, inserirAvatar, modelo, modeloImagem, ambasRedes } });
+      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede: "instagram", tipo: config.tipo, formato: config.formato, modelo, modeloImagem, ambasRedes: false } });
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
@@ -406,7 +413,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = `ai-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
-      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, inserirLogo, inserirAvatar, modelo, modeloImagem, ambasRedes } });
+      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes } });
       toast.success(t.quando ? "Agendado! Pré-visualize abaixo." : "Gerado! Pré-visualize abaixo.", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
@@ -477,48 +484,6 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             {r === "estilo-x" ? "Estilo X" : r === "linkedin" ? "LinkedIn" : r === "google" ? "Google Business" : "Instagram"}
           </button>
         ))}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label className="text-xs">Marca nos criativos (canto sup. direito = logo; canto sup. esquerdo = avatar)</Label>
-        <div className="grid grid-cols-3 gap-2 max-w-md">
-          <button
-            type="button"
-            onClick={() => setInserirLogo(!inserirLogo)}
-            className={cn(
-              "flex items-center gap-1.5 justify-center px-3 py-2 rounded-md border-2 font-semibold text-sm transition-all",
-              inserirLogo
-                ? "border-indigo-500 bg-indigo-600 text-white shadow-sm"
-                : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
-            )}
-          >
-            <Check className={cn("w-3.5 h-3.5", !inserirLogo && "opacity-0")} /> Logo
-          </button>
-          <button
-            type="button"
-            onClick={() => setInserirAvatar(!inserirAvatar)}
-            className={cn(
-              "flex items-center gap-1.5 justify-center px-3 py-2 rounded-md border-2 font-semibold text-sm transition-all",
-              inserirAvatar
-                ? "border-cyan-500 bg-cyan-600 text-white shadow-sm"
-                : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
-            )}
-          >
-            <Check className={cn("w-3.5 h-3.5", !inserirAvatar && "opacity-0")} /> Avatar
-          </button>
-          <button
-            type="button"
-            onClick={() => { setInserirLogo(false); setInserirAvatar(false); }}
-            className={cn(
-              "flex items-center gap-1.5 justify-center px-3 py-2 rounded-md border-2 font-semibold text-sm transition-all",
-              !inserirLogo && !inserirAvatar
-                ? "border-zinc-500 bg-zinc-700 text-white shadow-sm"
-                : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
-            )}
-          >
-            Sem marca
-          </button>
-        </div>
       </div>
 
       <div className="space-y-1.5">
@@ -611,15 +576,33 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
 
 
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
         <Button
-          onClick={handleSingle}
+          onClick={() => handleSingle("story")}
           disabled={busy !== null}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+          className="font-semibold"
         >
-          {busy === "single" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-          {tema.trim() ? "Gerar 1 post (legenda + imagem)" : "IA escolhe tema + gera tudo"}
+          {busy === "story" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Smartphone className="w-4 h-4 mr-2" />}
+          Post único Story
         </Button>
+        <Button
+          onClick={() => handleSingle("feed")}
+          disabled={busy !== null}
+          className="font-semibold"
+        >
+          {busy === "feed" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Square className="w-4 h-4 mr-2" />}
+          Post único Feed
+        </Button>
+        <Button
+          onClick={() => handleSingle("carrossel")}
+          disabled={busy !== null}
+          className="font-semibold"
+        >
+          {busy === "carrossel" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Layers className="w-4 h-4 mr-2" />}
+          Carrossel 6 imagens
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 pt-1">
         <Button
           onClick={handleWeek}
           disabled={busy !== null}
@@ -808,8 +791,9 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                   if (!preview) return;
                   setApproving(acao);
                   try {
-                    await approveFn({ data: { id: preview.id, acao } });
-                    toast.success(
+                    const out = await approveFn({ data: { id: preview.id, acao } });
+                    if ((out as any)?.warning) toast.warning((out as any).warning);
+                    else toast.success(
                       acao === "publicar" ? "Publicado!" : acao === "agendar" ? "Agendado!" : "Arquivado em Rascunho.",
                     );
                     setPreview(null);

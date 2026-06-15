@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const MODELOS_IA = [
   { id: "google/gemini-3-flash-preview", label: "Gemini Flash (rápido, padrão)" },
@@ -39,8 +38,6 @@ const SingleInput = z.object({
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
-  inserirLogo: z.boolean().optional().default(true),
-  inserirAvatar: z.boolean().optional().default(false),
   modelo: ModeloEnum.optional().default("google/gemini-3-flash-preview"),
   modeloImagem: ModeloImagemEnum.optional().default("google/gemini-3.1-flash-image-preview"),
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
@@ -143,7 +140,7 @@ ${isLI
 NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
 }
 
-function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }, _inserirLogo: boolean = false, _inserirAvatar: boolean = false) {
+function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }) {
   const slideInfo = slide
     ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.`
     : "";
@@ -185,9 +182,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         ? "Carrossel"
         : data.tipo === "stories"
           ? "Story"
-          : data.tipo === "feed" && data.rede === "instagram"
-            ? "Carrossel"
-            : "Post Único");
+          : "Post Único");
 
     // 0. Se nenhum tema foi fornecido, a IA escolhe um automaticamente.
     let tema = (data.tema ?? "").trim();
@@ -244,8 +239,19 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
     };
 
     const { ensureJpegB64 } = await import("@/lib/logo-overlay.server");
+    const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
+      try {
+        return await generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message);
+        if (!retryable || attempt >= 4) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
+        return generateImageWithRetry(prompt, attempt + 1);
+      }
+    };
     const genAndUpload = (prompt: string) =>
-      generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem })
+      generateImageWithRetry(prompt)
         .then((b64) => ensureJpegB64(b64))
         .then(uploadOne);
 
@@ -256,12 +262,12 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
 
     if (formato === "Carrossel") {
       const fullSpec = [
-        { n: 1, total: 6, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + assinatura. Layout impactante de revista." },
-        { n: 2, total: 6, papel: "PROBLEMA: aprofunda a dor/sintoma. Imagem clínica forte. Sem assinatura." },
-        { n: 3, total: 6, papel: "CAUSA / EXPLICAÇÃO CIENTÍFICA: didática, com citação curta no rodapé (Lancet/IJOMS/JOMS). Sem assinatura." },
-        { n: 4, total: 6, papel: "MECANISMO / EVIDÊNCIA: dado clínico, número ou achado de estudo que reforça autoridade. Sem assinatura." },
-        { n: 5, total: 6, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve. Tom de autoridade. Sem assinatura." },
-        { n: 6, total: 6, papel: "CTA FINAL: WhatsApp / Link na Bio + assinatura. Slide de fechamento." },
+        { n: 1, total: 6, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + rodapé textual obrigatório. Layout impactante de revista." },
+        { n: 2, total: 6, papel: "PROBLEMA: aprofunda a dor/sintoma. Imagem clínica forte + rodapé textual obrigatório." },
+        { n: 3, total: 6, papel: "CAUSA / EXPLICAÇÃO CIENTÍFICA: didática, com citação curta + rodapé textual obrigatório." },
+        { n: 4, total: 6, papel: "MECANISMO / EVIDÊNCIA: dado clínico, número ou achado de estudo + rodapé textual obrigatório." },
+        { n: 5, total: 6, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve + rodapé textual obrigatório." },
+        { n: 6, total: 6, papel: "CTA FINAL: WhatsApp / Link na Bio + rodapé textual obrigatório. Slide de fechamento." },
       ];
       const xSpec = [
         { n: 1, total: 3, papel: "TWEET 1: gancho/pergunta forte com assinatura." },
@@ -269,9 +275,12 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         { n: 3, total: 3, papel: "TWEET 3: CTA WhatsApp/Link na Bio + assinatura." },
       ];
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
-      const uploads = await Promise.all(
-        slidesSpec.map((s) => genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s))),
-      );
+      const uploads: Awaited<ReturnType<typeof genAndUpload>>[] = [];
+      for (let i = 0; i < slidesSpec.length; i += 2) {
+        const lote = slidesSpec.slice(i, i + 2);
+        const geradas = await Promise.all(lote.map((s) => genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s))));
+        uploads.push(...geradas);
+      }
       urlImagem = uploads[0].publicUrl;
       urlImagemCache = uploads[0].signedUrl;
       imagensCarrossel = uploads.map((u) => u.publicUrl);
@@ -293,7 +302,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         user_id: context.userId,
         tipo_post: tipoPost,
         estilo_layout: data.rede === "estilo-x" ? "Estilo X" : data.rede === "google" ? "Google Business" : "Padrão",
-        formato_midia: "Imagem",
+        formato_midia: formato === "Story" ? "Story" : "Imagem",
         legenda,
         url_imagem: urlImagem,
         url_imagem_cache: urlImagemCache,
@@ -333,22 +342,23 @@ export const discardPost = createServerFn({ method: "POST" })
 
 // Aprova um post pendente de revisão — define status final (Rascunho/Agendado/Publicado).
 export const approvePost = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([])
   .inputValidator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       acao: z.enum(["arquivar", "agendar", "publicar"]).default("arquivar"),
     }).parse(d),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (data.acao === "publicar") {
       // Lê post para descobrir destinos.
       const { data: post } = await supabaseAdmin
         .from("posts")
-        .select("postar_instagram,postar_linkedin")
+        .select("user_id,postar_instagram,postar_linkedin")
         .eq("id", data.id)
         .maybeSingle();
+      const publishUserId = (post as any)?.user_id || TEMP_USER_ID;
 
       const results: any = { ok: true, status: "Publicado" };
       const warnings: string[] = [];
@@ -356,7 +366,7 @@ export const approvePost = createServerFn({ method: "POST" })
       if (post?.postar_linkedin) {
         try {
           const { publishLinkedInPostById } = await import("@/lib/social/linkedin-publish.server");
-          const r = await publishLinkedInPostById({ supabaseAdmin, postId: data.id, userId: context.userId });
+          const r = await publishLinkedInPostById({ supabaseAdmin, postId: data.id, userId: publishUserId });
           results.linkedin = r;
         } catch (err: any) {
           warnings.push(`LinkedIn: ${err?.message || err}`);
@@ -366,7 +376,7 @@ export const approvePost = createServerFn({ method: "POST" })
       if (post?.postar_instagram) {
         try {
           const { publishInstagramPostById } = await import("@/lib/social/instagram-publish.server");
-          const r = await publishInstagramPostById({ supabaseAdmin, postId: data.id, userId: context.userId });
+          const r = await publishInstagramPostById({ supabaseAdmin, postId: data.id, userId: publishUserId });
           results.instagram = r;
         } catch (err: any) {
           const msg = String(err?.message || "");
@@ -380,17 +390,20 @@ export const approvePost = createServerFn({ method: "POST" })
 
       // Se nada publicou, marca como Agendado para retry.
       if (!results.linkedin && !results.instagram) {
-        await supabaseAdmin.from("posts").update({ status: "Agendado", user_id: context.userId }).eq("id", data.id);
+        await supabaseAdmin.from("posts").update({ status: "Agendado", user_id: publishUserId }).eq("id", data.id);
         results.status = "Agendado";
       } else {
-        await supabaseAdmin.from("posts").update({ status: "Publicado", user_id: context.userId }).eq("id", data.id);
+        await supabaseAdmin.from("posts").update({ status: "Publicado", user_id: publishUserId }).eq("id", data.id);
       }
 
-      if (warnings.length) results.warning = warnings.join(" | ");
+      if (warnings.length) {
+        results.warning = warnings.join(" | ");
+        if (!results.linkedin && !results.instagram) throw new Error(results.warning);
+      }
       return results;
     }
     const status = data.acao === "agendar" ? "Agendado" : "Rascunho";
-    const patch: any = { status, user_id: context.userId };
+    const patch: any = { status };
     const { error } = await supabaseAdmin.from("posts").update(patch).eq("id", data.id);
     if (error) throw new Error(`DB: ${error.message}`);
     return { ok: true, status };

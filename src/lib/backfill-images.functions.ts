@@ -1,17 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 
 const WHATSAPP = "https://wa.me/5511947684004";
-const ASSINATURA = "Prof. Francisco Menezes — CROSP 53318";
+const ASSINATURA = "PROF. FRANCISCO MENEZES | CROSP:53318";
 
 function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; total: number; papel: string }) {
   const slideInfo = slide
     ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.`
     : "";
-  const assinaturaInfo = slide
-    ? slide.n === 1 || slide.n === slide.total
-      ? `\n- Rodapé OBRIGATÓRIO: "${ASSINATURA}".`
-      : `\n- NÃO inclua a assinatura neste slide (vai apenas no 1º e último).`
-    : `\n- Rodapé discreto: "${ASSINATURA}".`;
+  const assinaturaInfo = `\n- Rodapé OBRIGATÓRIO: "${ASSINATURA}".`;
   return `Cartaz médico premium em estilo Dr. Francisco Menezes:
 - Paleta: azul profundo (#0c2340), branco, azul elétrico (#2dd4ff). Vermelho APENAS para indicar dor.
 - Tipografia bold, alto contraste, layout limpo e autoridade médica premium.
@@ -63,9 +59,12 @@ export const backfillMissingImages = createServerFn({ method: "POST" })
 
         if (p.tipo_post === "Carrossel") {
           const slides = [
-            { n: 1, total: 3, papel: "GANCHO forte + assinatura" },
-            { n: 2, total: 3, papel: "DESENVOLVIMENTO: causa/solução" },
-            { n: 3, total: 3, papel: "CTA final + assinatura" },
+            { n: 1, total: 6, papel: "CAPA: gancho forte + rodapé textual" },
+            { n: 2, total: 6, papel: "PROBLEMA: dor/sintoma + rodapé textual" },
+            { n: 3, total: 6, papel: "CAUSA: explicação didática + rodapé textual" },
+            { n: 4, total: 6, papel: "EVIDÊNCIA: dado clínico + rodapé textual" },
+            { n: 5, total: 6, papel: "SOLUÇÃO: conduta/tratamento + rodapé textual" },
+            { n: 6, total: 6, papel: "CTA final Link na Bio/WhatsApp + rodapé textual" },
           ];
           const b64s = await Promise.all(
             slides.map((s) => generateImageBase64({ apiKey: key, prompt: imageSystemPrompt(tema, rede, s), size })),
@@ -79,7 +78,7 @@ export const backfillMissingImages = createServerFn({ method: "POST" })
             imagens_carrossel_cache: ups.map((u) => u.signedUrl),
             imagens_carrossel_cache_expires_at: expires,
           } as any).eq("id", p.id);
-          results.push({ id: p.id, ok: true, slides: 3 });
+          results.push({ id: p.id, ok: true, slides: 6 });
         } else {
           const b64 = await generateImageBase64({ apiKey: key, prompt: imageSystemPrompt(tema, rede), size });
           const up = await uploadOne(b64);

@@ -111,7 +111,6 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
               tipo: proximo.tipo,
               formato,
               quando: proximo.quando.toISOString(),
-              inserirLogo: true,
               modelo: "google/gemini-3-flash-preview",
               modeloImagem: "google/gemini-3.1-flash-image-preview",
               ambasRedes: false,
