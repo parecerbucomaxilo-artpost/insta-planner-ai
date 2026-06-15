@@ -58,7 +58,7 @@ const WeekInput = z.object({
 });
 
 const WHATSAPP = "https://wa.me/5511947684004";
-const ASSINATURA = "Prof. Francisco Menezes | CROSP 53318";
+const ASSINATURA = "PROF. FRANCISCO MENEZES | CROSP:53318";
 const ASSINATURA_SUBTITULO = "Cirurgia e Traumatologia Bucomaxilofacial · Odontologia Hospitalar";
 
 const CTAS_PROIBIDOS = `PROIBIDO ABSOLUTO nos textos: "agende sua consulta", "agende sua avaliação", "marque consulta", "marque avaliação", "promoção", "oferta", "desconto", "últimas vagas", qualquer chamada comercial explícita.`;
