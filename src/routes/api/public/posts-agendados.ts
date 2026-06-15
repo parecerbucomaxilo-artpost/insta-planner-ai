@@ -95,7 +95,7 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
           const { data, error } = await supabaseAdmin
             .from("posts")
             .select(
-              "id, tipo_post, url_imagem, url_imagem_cache, url_imagem_cache_expires_at, imagens_carrossel, imagens_carrossel_cache, imagens_carrossel_cache_expires_at, legenda, legenda_instagram, legenda_linkedin, data_agendamento"
+              "id, tipo_post, formato_midia, url_imagem, url_imagem_cache, url_imagem_cache_expires_at, imagens_carrossel, imagens_carrossel_cache, imagens_carrossel_cache_expires_at, legenda, legenda_instagram, legenda_linkedin, data_agendamento"
             )
             .eq("status", "Agendado")
             .lte("data_agendamento", nowIso)
@@ -152,13 +152,14 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
               .eq("id", data.id);
           }
 
-          const postType = isCarousel ? "carrossel" : "imagem";
+          const isStory = /stor/i.test(data.formato_midia || "");
+          const postType = isStory ? "story" : isCarousel ? "carrossel" : "feed";
 
           return new Response(
             JSON.stringify({
               id: data.id,
               post_id: data.id,
-              type: "post",
+              type: postType,
               tipo: postType,
               post_type: postType,
               media_type: postType,
