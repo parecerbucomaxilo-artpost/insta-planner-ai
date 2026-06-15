@@ -275,9 +275,12 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         { n: 3, total: 3, papel: "TWEET 3: CTA WhatsApp/Link na Bio + assinatura." },
       ];
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
-      const uploads = await Promise.all(
-        slidesSpec.map((s) => genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s))),
-      );
+      const uploads: Awaited<ReturnType<typeof genAndUpload>>[] = [];
+      for (let i = 0; i < slidesSpec.length; i += 2) {
+        const lote = slidesSpec.slice(i, i + 2);
+        const geradas = await Promise.all(lote.map((s) => genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s))));
+        uploads.push(...geradas);
+      }
       urlImagem = uploads[0].publicUrl;
       urlImagemCache = uploads[0].signedUrl;
       imagensCarrossel = uploads.map((u) => u.publicUrl);
