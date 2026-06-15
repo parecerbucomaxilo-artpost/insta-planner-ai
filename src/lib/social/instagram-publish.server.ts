@@ -308,7 +308,13 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     return { ok: true, via, externalId, profileId: perfil.id };
   } catch (error) {
-    await supabaseAdmin.from("posts").update({ status: "Erro", user_id: post.user_id === TEMP_USER_ID ? userId : post.user_id }).eq("id", post.id);
+    // Se a fila do Make estiver cheia, NÃO marca como Erro — o post continua agendado
+    // para que o usuário (ou o cron) tente novamente quando a fila esvaziar.
+    const msg = error instanceof Error ? error.message : String(error);
+    const isQueueFull = /queue\s*is\s*full|fila.*chei/i.test(msg);
+    if (!isQueueFull) {
+      await supabaseAdmin.from("posts").update({ status: "Erro", user_id: post.user_id === TEMP_USER_ID ? userId : post.user_id }).eq("id", post.id);
+    }
     throw error;
   }
 }
