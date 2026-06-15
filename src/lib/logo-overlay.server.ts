@@ -69,3 +69,22 @@ export async function overlayLogo(
     return imageB64;
   }
 }
+
+// Re-encoda qualquer imagem (PNG/WebP/JPEG) em JPEG para garantir aceitação pelo Instagram.
+export async function ensureJpegB64(imageB64: string, quality = 90): Promise<string> {
+  try {
+    const photon = await import("@cf-wasm/photon").catch(() => null);
+    if (!photon) return imageB64;
+    const { PhotonImage } = photon;
+    const bytes = Uint8Array.from(atob(imageB64), (c) => c.charCodeAt(0));
+    const img = PhotonImage.new_from_byteslice(bytes);
+    const out = img.get_bytes_jpeg(quality);
+    img.free();
+    let bin = "";
+    for (let i = 0; i < out.length; i++) bin += String.fromCharCode(out[i]);
+    return btoa(bin);
+  } catch (e) {
+    console.error("[ensureJpegB64] falha — devolvendo original:", e);
+    return imageB64;
+  }
+}
