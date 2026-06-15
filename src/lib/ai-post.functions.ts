@@ -270,24 +270,14 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
       ];
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
       const uploads = await Promise.all(
-        slidesSpec.map((s) => {
-          // Regra: marca só na 1ª e última imagem do carrossel
-          const onCover = s.n === 1 || s.n === s.total;
-          const applyLogo = !!data.inserirLogo && onCover;
-          const applyAvatar = !!data.inserirAvatar && onCover;
-          return genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s, data.inserirLogo, data.inserirAvatar), applyLogo, applyAvatar);
-        }),
+        slidesSpec.map((s) => genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s))),
       );
       urlImagem = uploads[0].publicUrl;
       urlImagemCache = uploads[0].signedUrl;
       imagensCarrossel = uploads.map((u) => u.publicUrl);
       imagensCarrosselCache = uploads.map((u) => u.signedUrl);
     } else {
-      const upload = await genAndUpload(
-        imageSystemPrompt(tema, data.rede, nivel, undefined, data.inserirLogo, data.inserirAvatar),
-        !!data.inserirLogo,
-        !!data.inserirAvatar,
-      );
+      const upload = await genAndUpload(imageSystemPrompt(tema, data.rede, nivel));
       urlImagem = upload.publicUrl;
       urlImagemCache = upload.signedUrl;
     }
