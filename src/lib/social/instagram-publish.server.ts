@@ -215,31 +215,46 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         p.webhook_url
       );
 
-    let { data: perfil, error: perfilError } = await supabaseAdmin
+    const hasMeta = (p: any) => !!p && !!p.instagram_access_token && !!p.instagram_business_account_id;
+
+    // 1) Procura QUALQUER perfil com token Meta válido (publicação direta — mais confiável que Make).
+    const { data: metaPerfil, error: metaErr } = await supabaseAdmin
       .from("perfil_usuario")
       .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: true })
+      .not("instagram_access_token", "is", null)
+      .not("instagram_business_account_id", "is", null)
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (metaErr) throw new Error(`DB: ${metaErr.message}`);
 
-    if (perfilError) throw new Error(`DB: ${perfilError.message}`);
+    let perfil: any = metaPerfil;
 
-    // Se o perfil do usuário não tem destino configurado, procura qualquer perfil que tenha.
-    if (!hasDestino(perfil)) {
-      const { data: configured, error: cfgErr } = await supabaseAdmin
+    // 2) Sem Meta token: fallback para o perfil do usuário (webhook Make).
+    if (!hasMeta(perfil)) {
+      const { data: ownPerfil, error: ownErr } = await supabaseAdmin
         .from("perfil_usuario")
         .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
-        .or("instagram_webhook_url.not.is.null,webhook_url.not.is.null,instagram_access_token.not.is.null")
+        .eq("user_id", userId)
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();
-      if (cfgErr) throw new Error(`DB: ${cfgErr.message}`);
-      if (configured) perfil = configured;
-    }
+      if (ownErr) throw new Error(`DB: ${ownErr.message}`);
+      perfil = ownPerfil;
 
-    if (!perfil) {
-      perfil = { id: "webhook-padrao", instagram_webhook_url: DEFAULT_MAKE_WEBHOOK, webhook_url: null } as any;
+      if (!hasDestino(perfil)) {
+        const { data: configured } = await supabaseAdmin
+          .from("perfil_usuario")
+          .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
+          .or("instagram_webhook_url.not.is.null,webhook_url.not.is.null")
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (configured) perfil = configured;
+      }
+      if (!perfil) {
+        perfil = { id: "webhook-padrao", instagram_webhook_url: DEFAULT_MAKE_WEBHOOK, webhook_url: null } as any;
+      }
     }
 
     const carousel = normalizeCarousel(post.imagens_carrossel);
