@@ -156,32 +156,45 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
 }
 
 async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25_000);
-  let res: Response;
-  try {
-    res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("Webhook Instagram demorou para responder. Verifique o cenário no Make.");
+  const maxAttempts = 4;
+  let lastErr = "";
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25_000);
+    let res: Response;
+    try {
+      res = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw new Error("Webhook Instagram demorou para responder. Verifique o cenário no Make.");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
     }
-    throw error;
-  } finally {
-    clearTimeout(timeout);
-  }
-  if (!res.ok) {
+    if (res.ok) return;
     const text = await res.text().catch(() => "");
-    console.error("[instagram-webhook] respondeu", res.status, "url=", webhookUrl, "body=", text);
-    const hint = res.status === 400
-      ? " — cenário do Make recusou o payload. Verifique se o cenário está ATIVO e se o webhook aceita os campos enviados (image_url/imagens_carrossel/caption)."
-      : "";
-    throw new Error(`Webhook Instagram respondeu ${res.status}${text ? `: ${text.slice(0, 240)}` : ""}${hint}`);
+    lastErr = text;
+    const isQueueFull = /queue\s*is\s*full|queue full|rate/i.test(text);
+    console.error(`[instagram-webhook] tentativa ${attempt}/${maxAttempts} respondeu`, res.status, "body=", text);
+    if (isQueueFull && attempt < maxAttempts) {
+      // Backoff: 5s, 15s, 30s — dá tempo do Make processar a fila.
+      await new Promise((r) => setTimeout(r, attempt === 1 ? 5_000 : attempt === 2 ? 15_000 : 30_000));
+      continue;
+    }
+    const hint = isQueueFull
+      ? " — fila do Make está cheia. Abra o cenário no Make → Scenario settings e desligue 'Sequential processing', ou aguarde a fila esvaziar."
+      : res.status === 400
+        ? " — cenário do Make recusou o payload. Verifique se o cenário está ATIVO."
+        : "";
+    throw new Error(`Webhook Instagram respondeu ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}${hint}`);
   }
+  throw new Error(`Webhook Instagram: fila cheia após ${maxAttempts} tentativas. ${lastErr.slice(0, 160)}`);
 }
 
 export async function publishInstagramPostById({ supabaseAdmin, postId, userId }: PublishPostInput) {
