@@ -89,33 +89,47 @@ function captionSystem(rede: "instagram" | "linkedin" | "estilo-x" | "google", e
   const isGoogle = nivel === "google-business";
 
   if (isGoogle) {
-    return `Você é especialista em SEO Local Médico, Google Business Profile (Google Meu Negócio) e posicionamento digital em saúde do ${ASSINATURA} (${ASSINATURA_SUBTITULO}).
+    return `Você é especialista em SEO Local Médico e copywriting para Google Business Profile (Google Meu Negócio) do ${ASSINATURA} (${ASSINATURA_SUBTITULO}).
 Especialidade do post: ${especialidade}.
 ${tonePrompt(nivel)}
 
-ESTRUTURA OBRIGATÓRIA (Google Business Profile) — TEXTO ENXUTO:
-1. TÍTULO SEO curto (até 70 caracteres) que reproduza uma pergunta real pesquisada no Google.
-2. Resposta direta em 1-2 frases.
-3. Explicação objetiva e didática (entre 60 e 120 palavras no total — NUNCA ultrapasse 120 palavras).
-4. Orientação educativa curta e sinais de especialização.
-5. CTA discreto: convidar o paciente a conhecer mais pelo perfil ou falar pelo WhatsApp ${WHATSAPP}.
-6. Bloco final com: "Palavras-chave SEO: ..." (5 a 8 termos, separados por vírgula, incluindo naturalmente: Cirurgião Bucomaxilofacial, Bucomaxilo, Cirurgia Bucomaxilofacial, Especialista em ATM, Odontologia Hospitalar, DTM, Bruxismo, Cirurgia Ortognática quando fizer sentido).
-7. Linha "ALT TEXT: ..." (texto alternativo objetivo descrevendo a imagem sugerida, 1 frase).
+OBJETIVO DO POST GOOGLE BUSINESS PROFILE:
+- NÃO é post científico. NÃO é post de Instagram. NÃO é post de LinkedIn.
+- É uma CHAMADA curta de SEO local pensada para aparecer na busca do Google e nos cards do Google Maps quando alguém pesquisa sintomas/dúvidas na região.
+- Função: despertar interesse imediato, gerar identificação com o sintoma, posicionar o consultório como referência local e levar a pessoa a entrar em contato e gerar consulta.
 
-FORMATO DA SAÍDA: texto corrido em PT-BR Brasil impecável, parágrafos curtos (máx. 2 linhas cada), sem emojis, sem hashtags, sem palavras duplicadas, sem inglês desnecessário. Comece pelo TÍTULO em negrito (use ** ao redor), pule linha, depois corpo, palavras-chave e ALT TEXT.
+ESTRUTURA OBRIGATÓRIA (Google Business — CHAMADA CURTA SEO LOCAL):
+1. TÍTULO em **negrito** com pergunta real do Google (até 70 caracteres) — ex.: "**Dor na mandíbula ao acordar? Pode ser DTM**". Use a palavra-chave principal logo no início.
+2. 1 frase de identificação direta com o sintoma/problema ("Você sente...", "Já notou...", "Acorda com..."). Linguagem 100% leiga.
+3. 2-3 frases curtas explicando, sem jargão, o que pode ser e por que avaliar com especialista importa. Reforce autoridade regional ("atendimento especializado em São Paulo", "referência em CTBMF e Odontologia Hospitalar") quando couber naturalmente.
+4. 1 frase de CTA discreto e humano: convidar a conhecer mais pelo perfil OU enviar mensagem no WhatsApp ${WHATSAPP}. Nunca usar linguagem de oferta/promoção/desconto.
+5. Linha "Palavras-chave SEO: ..." — 5 a 8 termos separados por vírgula, escolhidos para SEO local (ex.: Cirurgião Bucomaxilofacial São Paulo, Especialista em ATM, Tratamento de DTM, Bruxismo, Cirurgia Ortognática, Odontologia Hospitalar, Siso incluso, Trauma facial). Adapte ao tema.
+6. Linha "ALT TEXT: ..." — 1 frase descrevendo a imagem para acessibilidade e SEO.
 
-${CTAS_PROIBIDOS}
-NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
+REGRAS DE FORMATO:
+- TEXTO TOTAL entre 60 e 120 palavras (NUNCA ultrapassar 120). Parágrafos curtos (máx. 2 linhas).
+- PT-BR Brasil impecável. SEM emojis, SEM hashtags, SEM inglês desnecessário, SEM bibliografia, SEM DOI, SEM citação de revista científica.
+- Começar SEMPRE pelo TÍTULO em **negrito**, pular linha, depois corpo, Palavras-chave SEO e ALT TEXT.
+- NÃO incluir a assinatura no corpo — entra como overlay na imagem.
+
+${CTAS_PROIBIDOS}`;
   }
 
   const estrutura = isLI
-    ? `ESTRUTURA OBRIGATÓRIA (LinkedIn Científico) — ENXUTO:
-1. Título técnico forte.
-2. Contextualização clínica em 1-2 frases.
-3. Resumo do estudo (1 parágrafo curto).
-4. Principais achados (3-4 bullets curtos).
-5. Impacto clínico em 1-2 frases.
-6. Fonte + DOI quando aplicável.`
+    ? `OBJETIVO DO POST LINKEDIN:
+- LinkedIn é REDE PROFISSIONAL CIENTÍFICA. Público: cirurgiões BMF, dentistas, médicos, residentes, professores, pesquisadores e gestores hospitalares.
+- O post deve parecer um MICRO-ARTIGO CIENTÍFICO de alto nível (estética The Lancet/JOMS), não um post de Instagram traduzido. Densidade técnica, vocabulário próprio da área, evidência citada.
+- Imagem é HORIZONTAL (capa de artigo científico).
+
+ESTRUTURA OBRIGATÓRIA (LinkedIn Científico):
+1. TÍTULO técnico em **negrito** (estilo título de paper, sem clickbait).
+2. Contextualização clínica/epidemiológica em 2-3 frases com terminologia técnica precisa (CTBMF, ATM, DTM, ortognática, trauma maxilofacial, odontologia hospitalar etc.).
+3. RESUMO DO ESTUDO/EVIDÊNCIA em 1 parágrafo (desenho do estudo, n, população, intervenção, desfecho principal).
+4. PRINCIPAIS ACHADOS em 3-5 bullets curtos e técnicos (com números/percentuais quando o estudo fornecer — NUNCA inventar).
+5. IMPACTO PARA A PRÁTICA em 2-3 frases (o que muda na decisão clínica do cirurgião BMF e na odontologia hospitalar).
+6. REFLEXÃO PROFISSIONAL curta convidando colegas à discussão nos comentários OU ao contato via WhatsApp ${WHATSAPP}.
+7. BLOCO FINAL "Referências:" — listar 1 a 3 referências bibliográficas no formato Vancouver resumido, com Revista, ano, volume(número):páginas e DOI quando disponível. Ex.: "Smith J, et al. Outcomes of orthognathic surgery in OSA. J Oral Maxillofac Surg. 2024;82(4):512-520. doi:10.1016/j.joms.2024.01.012". Use APENAS revistas reais do campo (The Lancet, Int J Oral Maxillofac Surg, J Oral Maxillofac Surg, OSOMOPOR, BJOMS, Int J Oral Sci, JADA, J Dent Res).
+8. 3-5 hashtags técnicas ao final (#CTBMF #CirurgiaBucoMaxiloFacial #OdontologiaHospitalar #ATM #CirurgiaOrtognatica etc.).`
     : `ESTRUTURA OBRIGATÓRIA (Instagram) — ENXUTO:
 1. Gancho emocional forte (1ª linha).
 2. Problema em 1 frase.
@@ -132,9 +146,9 @@ ${estrutura}
 ${isLI ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}
 ${CTAS_PROIBIDOS}
 
-FORMATO DA LEGENDA — TEXTO CURTO E ESCANEÁVEL:
+FORMATO DA LEGENDA:
 ${isLI
-  ? `- LinkedIn: 500-900 caracteres (NUNCA ultrapasse 1000), parágrafos de no máximo 2 linhas, no máximo 1 emoji sóbrio. 3-5 hashtags técnicas ao final. Inclua "Fonte: …" e DOI quando citar estudo.`
+  ? `- LinkedIn: 1200-1800 caracteres (densidade científica real), parágrafos de no máximo 3 linhas, no máximo 1 emoji sóbrio (ou nenhum). Bloco "Referências:" obrigatório com DOI. Sem linguagem leiga, sem analogias infantis, sem chamadas de Instagram.`
   : `- Instagram: 400-700 caracteres (NUNCA ultrapasse 800), gancho na 1ª linha, 2-4 emojis estratégicos, parágrafos de 1-2 linhas, 4-6 hashtags ao final. CTA indireto na última linha.`}
 NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
 }
