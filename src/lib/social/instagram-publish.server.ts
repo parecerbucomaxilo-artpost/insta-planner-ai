@@ -227,7 +227,9 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       if (configured) perfil = configured;
     }
 
-    if (!perfil) throw new Error("Configure seu perfil antes de publicar no Instagram.");
+    if (!perfil) {
+      perfil = { id: "webhook-padrao", instagram_webhook_url: DEFAULT_MAKE_WEBHOOK, webhook_url: null } as any;
+    }
 
     const carousel = normalizeCarousel(post.imagens_carrossel);
     const sourceUrls = post.tipo_post === "Carrossel" && carousel.length > 0 ? carousel : [post.url_imagem].filter(Boolean);

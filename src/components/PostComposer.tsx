@@ -791,8 +791,9 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                   if (!preview) return;
                   setApproving(acao);
                   try {
-                    await approveFn({ data: { id: preview.id, acao } });
-                    toast.success(
+                    const out = await approveFn({ data: { id: preview.id, acao } });
+                    if ((out as any)?.warning) toast.warning((out as any).warning);
+                    else toast.success(
                       acao === "publicar" ? "Publicado!" : acao === "agendar" ? "Agendado!" : "Arquivado em Rascunho.",
                     );
                     setPreview(null);

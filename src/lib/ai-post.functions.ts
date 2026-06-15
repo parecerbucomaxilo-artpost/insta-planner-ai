@@ -396,7 +396,10 @@ export const approvePost = createServerFn({ method: "POST" })
         await supabaseAdmin.from("posts").update({ status: "Publicado", user_id: publishUserId }).eq("id", data.id);
       }
 
-      if (warnings.length) results.warning = warnings.join(" | ");
+      if (warnings.length) {
+        results.warning = warnings.join(" | ");
+        if (!results.linkedin && !results.instagram) throw new Error(results.warning);
+      }
       return results;
     }
     const status = data.acao === "agendar" ? "Agendado" : "Rascunho";
