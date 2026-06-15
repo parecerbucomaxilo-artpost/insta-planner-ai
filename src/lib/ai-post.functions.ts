@@ -39,8 +39,6 @@ const SingleInput = z.object({
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
-  inserirLogo: z.boolean().optional().default(true),
-  inserirAvatar: z.boolean().optional().default(false),
   modelo: ModeloEnum.optional().default("google/gemini-3-flash-preview"),
   modeloImagem: ModeloImagemEnum.optional().default("google/gemini-3.1-flash-image-preview"),
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
@@ -143,7 +141,7 @@ ${isLI
 NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
 }
 
-function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }, _inserirLogo: boolean = false, _inserirAvatar: boolean = false) {
+function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }) {
   const slideInfo = slide
     ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.`
     : "";
