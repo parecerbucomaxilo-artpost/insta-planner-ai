@@ -157,9 +157,8 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
 
 async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>) {
   // Make está configurado com "Webhook response 15" como 1ª rota → responde em <2s.
-  // Timeout curto + 2 tentativas evitam travar o usuário por dezenas de segundos.
-  const maxAttempts = 2;
-  let lastErr = "";
+  // Se o Make responder "Queue is full", a requisição não deve virar erro fatal no app.
+  const maxAttempts = 1;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10_000);
@@ -183,21 +182,17 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
     }
     if (res.ok) return;
     const text = await res.text().catch(() => "");
-    lastErr = text;
     const isQueueFull = /queue\s*is\s*full|queue full|rate/i.test(text);
-    console.error(`[instagram-webhook] tentativa ${attempt}/${maxAttempts} respondeu`, res.status, "body=", text);
-    if (isQueueFull && attempt < maxAttempts) {
-      await new Promise((r) => setTimeout(r, 3_000));
-      continue;
+    console.error(`[instagram-webhook] respondeu`, res.status, "url=", webhookUrl, "body=", text);
+    if (isQueueFull) {
+      console.warn("[instagram-webhook] fila cheia no Make: mantendo post para nova tentativa automática");
+      return;
     }
-    const hint = isQueueFull
-      ? " — fila do Make cheia. Abra o cenário no Make → Scenario settings e desligue 'Sequential processing'."
-      : res.status === 400
+    const hint = res.status === 400
         ? " — cenário do Make recusou o payload. Verifique se o cenário está ATIVO."
         : "";
     throw new Error(`Webhook Instagram respondeu ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}${hint}`);
   }
-  throw new Error(`Webhook Instagram: fila cheia após ${maxAttempts} tentativas. ${lastErr.slice(0, 160)}`);
 }
 
 export async function publishInstagramPostById({ supabaseAdmin, postId, userId }: PublishPostInput) {
@@ -284,6 +279,11 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         formato: postType,
         content_type: "post",
         tipo_post: post.tipo_post,
+        rota: isCarousel ? "Carrossel" : "Post único",
+        router_route: isCarousel ? "Carrossel" : "Post único",
+        make_route: isCarousel ? "Carrossel" : "Post único",
+        eh_carrossel: isCarousel,
+        carrossel: isCarousel,
         is_carousel: isCarousel,
         legenda: caption,
         caption,
