@@ -186,7 +186,7 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
     console.error(`[instagram-webhook] respondeu`, res.status, "url=", webhookUrl, "body=", text);
     if (isQueueFull) {
       console.warn("[instagram-webhook] fila cheia no Make: mantendo post para nova tentativa automática");
-      return;
+      throw new Error("Webhook Instagram: Queue is full — post mantido para nova tentativa automática.");
     }
     const hint = res.status === 400
         ? " — cenário do Make recusou o payload. Verifique se o cenário está ATIVO."
