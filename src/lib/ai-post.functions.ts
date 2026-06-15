@@ -244,7 +244,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         return await generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        const retryable = /queue|rate|429|503|tempor/i.test(message);
+        const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message);
         if (!retryable || attempt >= 4) throw error;
         await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
         return generateImageWithRetry(prompt, attempt + 1);
