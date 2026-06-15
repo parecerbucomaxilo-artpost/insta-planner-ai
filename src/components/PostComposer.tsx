@@ -603,7 +603,6 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         </Button>
       </div>
       <div className="grid grid-cols-1 pt-1">
-        </Button>
         <Button
           onClick={handleWeek}
           disabled={busy !== null}
