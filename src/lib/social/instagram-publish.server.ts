@@ -63,9 +63,17 @@ function getStorageObjectRef(value: string | null | undefined) {
 
 async function createFetchableUrl(supabaseAdmin: any, value: string | null | undefined) {
   if (!value) return null;
+  if (value.startsWith("blob:")) {
+    throw new Error("Imagem ainda não foi salva no servidor (blob local). Gere ou salve o post novamente antes de publicar.");
+  }
   if (value.startsWith("data:")) return uploadDataUrl(supabaseAdmin, value);
   const ref = getStorageObjectRef(value);
-  if (!ref) return value;
+  if (!ref) {
+    if (!/^https?:\/\//i.test(value)) {
+      throw new Error(`Imagem com URL inválida para publicação: ${value.slice(0, 80)}`);
+    }
+    return value;
+  }
   const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
   if (error || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${error?.message || ref.path}`);
   return data.signedUrl;
