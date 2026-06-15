@@ -251,12 +251,12 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
 
     if (formato === "Carrossel") {
       const fullSpec = [
-        { n: 1, total: 6, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + assinatura. Layout impactante de revista." },
-        { n: 2, total: 6, papel: "PROBLEMA: aprofunda a dor/sintoma. Imagem clínica forte. Sem assinatura." },
-        { n: 3, total: 6, papel: "CAUSA / EXPLICAÇÃO CIENTÍFICA: didática, com citação curta no rodapé (Lancet/IJOMS/JOMS). Sem assinatura." },
-        { n: 4, total: 6, papel: "MECANISMO / EVIDÊNCIA: dado clínico, número ou achado de estudo que reforça autoridade. Sem assinatura." },
-        { n: 5, total: 6, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve. Tom de autoridade. Sem assinatura." },
-        { n: 6, total: 6, papel: "CTA FINAL: WhatsApp / Link na Bio + assinatura. Slide de fechamento." },
+        { n: 1, total: 6, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + rodapé textual obrigatório. Layout impactante de revista." },
+        { n: 2, total: 6, papel: "PROBLEMA: aprofunda a dor/sintoma. Imagem clínica forte + rodapé textual obrigatório." },
+        { n: 3, total: 6, papel: "CAUSA / EXPLICAÇÃO CIENTÍFICA: didática, com citação curta + rodapé textual obrigatório." },
+        { n: 4, total: 6, papel: "MECANISMO / EVIDÊNCIA: dado clínico, número ou achado de estudo + rodapé textual obrigatório." },
+        { n: 5, total: 6, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve + rodapé textual obrigatório." },
+        { n: 6, total: 6, papel: "CTA FINAL: WhatsApp / Link na Bio + rodapé textual obrigatório. Slide de fechamento." },
       ];
       const xSpec = [
         { n: 1, total: 3, papel: "TWEET 1: gancho/pergunta forte com assinatura." },
