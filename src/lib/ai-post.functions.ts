@@ -268,11 +268,11 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
 
     if (formato === "Carrossel") {
       const fullSpec = [
-        { n: 1, total: 5, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + rodapé textual obrigatório. Layout impactante de revista." },
-        { n: 2, total: 5, papel: "PROBLEMA + CAUSA: aprofunda a dor/sintoma e explica de forma científica/didática + rodapé textual obrigatório." },
-        { n: 3, total: 5, papel: "MECANISMO / EVIDÊNCIA: dado clínico, número ou achado de estudo + rodapé textual obrigatório." },
-        { n: 4, total: 5, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve + rodapé textual obrigatório." },
-        { n: 5, total: 5, papel: "CTA FINAL: WhatsApp / Link na Bio + rodapé textual obrigatório. Slide de fechamento." },
+        { n: 1, total: 5, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + rodapé textual obrigatório. Layout impactante de revista. SEM bibliografia, SEM número científico." },
+        { n: 2, total: 5, papel: "PROBLEMA + CAUSA: aprofunda a dor/sintoma em linguagem leiga + rodapé textual obrigatório. SEM bibliografia, SEM número científico." },
+        { n: 3, total: 5, papel: "MECANISMO: explica COMO acontece com analogia visual simples (sem desenhar anatomia interna realista) + rodapé textual obrigatório. SEM bibliografia, SEM número científico." },
+        { n: 4, total: 5, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve, foco em alívio e autoridade hospitalar + rodapé textual obrigatório. SEM bibliografia, SEM número científico." },
+        { n: 5, total: 5, papel: "FECHAMENTO PREMIUM: CTA elegante 'Link na Bio' centralizado em tipografia grande, hierarquia editorial impecável estilo capa de revista médica top de linha + rodapé textual obrigatório. É o ÚLTIMO DEGRAU — deve ser o slide mais bonito e bem produzido do carrossel." },
       ];
       const xSpec = [
         { n: 1, total: 3, papel: "TWEET 1: gancho/pergunta forte com assinatura." },
