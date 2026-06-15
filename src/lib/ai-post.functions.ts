@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const MODELOS_IA = [
   { id: "google/gemini-3-flash-preview", label: "Gemini Flash (rápido, padrão)" },
@@ -329,22 +328,23 @@ export const discardPost = createServerFn({ method: "POST" })
 
 // Aprova um post pendente de revisão — define status final (Rascunho/Agendado/Publicado).
 export const approvePost = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([])
   .inputValidator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       acao: z.enum(["arquivar", "agendar", "publicar"]).default("arquivar"),
     }).parse(d),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (data.acao === "publicar") {
       // Lê post para descobrir destinos.
       const { data: post } = await supabaseAdmin
         .from("posts")
-        .select("postar_instagram,postar_linkedin")
+        .select("user_id,postar_instagram,postar_linkedin")
         .eq("id", data.id)
         .maybeSingle();
+      const publishUserId = (post as any)?.user_id || TEMP_USER_ID;
 
       const results: any = { ok: true, status: "Publicado" };
       const warnings: string[] = [];
@@ -352,7 +352,7 @@ export const approvePost = createServerFn({ method: "POST" })
       if (post?.postar_linkedin) {
         try {
           const { publishLinkedInPostById } = await import("@/lib/social/linkedin-publish.server");
-          const r = await publishLinkedInPostById({ supabaseAdmin, postId: data.id, userId: context.userId });
+          const r = await publishLinkedInPostById({ supabaseAdmin, postId: data.id, userId: publishUserId });
           results.linkedin = r;
         } catch (err: any) {
           warnings.push(`LinkedIn: ${err?.message || err}`);
@@ -362,7 +362,7 @@ export const approvePost = createServerFn({ method: "POST" })
       if (post?.postar_instagram) {
         try {
           const { publishInstagramPostById } = await import("@/lib/social/instagram-publish.server");
-          const r = await publishInstagramPostById({ supabaseAdmin, postId: data.id, userId: context.userId });
+          const r = await publishInstagramPostById({ supabaseAdmin, postId: data.id, userId: publishUserId });
           results.instagram = r;
         } catch (err: any) {
           const msg = String(err?.message || "");
@@ -376,17 +376,17 @@ export const approvePost = createServerFn({ method: "POST" })
 
       // Se nada publicou, marca como Agendado para retry.
       if (!results.linkedin && !results.instagram) {
-        await supabaseAdmin.from("posts").update({ status: "Agendado", user_id: context.userId }).eq("id", data.id);
+        await supabaseAdmin.from("posts").update({ status: "Agendado", user_id: publishUserId }).eq("id", data.id);
         results.status = "Agendado";
       } else {
-        await supabaseAdmin.from("posts").update({ status: "Publicado", user_id: context.userId }).eq("id", data.id);
+        await supabaseAdmin.from("posts").update({ status: "Publicado", user_id: publishUserId }).eq("id", data.id);
       }
 
       if (warnings.length) results.warning = warnings.join(" | ");
       return results;
     }
     const status = data.acao === "agendar" ? "Agendado" : "Rascunho";
-    const patch: any = { status, user_id: context.userId };
+    const patch: any = { status };
     const { error } = await supabaseAdmin.from("posts").update(patch).eq("id", data.id);
     if (error) throw new Error(`DB: ${error.message}`);
     return { ok: true, status };
