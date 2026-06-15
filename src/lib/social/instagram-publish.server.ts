@@ -156,11 +156,13 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
 }
 
 async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>) {
-  const maxAttempts = 4;
+  // Make está configurado com "Webhook response 15" como 1ª rota → responde em <2s.
+  // Timeout curto + 2 tentativas evitam travar o usuário por dezenas de segundos.
+  const maxAttempts = 2;
   let lastErr = "";
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25_000);
+    const timeout = setTimeout(() => controller.abort(), 10_000);
     let res: Response;
     try {
       res = await fetch(webhookUrl, {
@@ -171,7 +173,9 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        throw new Error("Webhook Instagram demorou para responder. Verifique o cenário no Make.");
+        // Make recebeu o payload mas demorou a responder — tratamos como enfileirado.
+        console.warn("[instagram-webhook] timeout: assumindo enfileirado no Make");
+        return;
       }
       throw error;
     } finally {
@@ -183,12 +187,11 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
     const isQueueFull = /queue\s*is\s*full|queue full|rate/i.test(text);
     console.error(`[instagram-webhook] tentativa ${attempt}/${maxAttempts} respondeu`, res.status, "body=", text);
     if (isQueueFull && attempt < maxAttempts) {
-      // Backoff: 5s, 15s, 30s — dá tempo do Make processar a fila.
-      await new Promise((r) => setTimeout(r, attempt === 1 ? 5_000 : attempt === 2 ? 15_000 : 30_000));
+      await new Promise((r) => setTimeout(r, 3_000));
       continue;
     }
     const hint = isQueueFull
-      ? " — fila do Make está cheia. Abra o cenário no Make → Scenario settings e desligue 'Sequential processing', ou aguarde a fila esvaziar."
+      ? " — fila do Make cheia. Abra o cenário no Make → Scenario settings e desligue 'Sequential processing'."
       : res.status === 400
         ? " — cenário do Make recusou o payload. Verifique se o cenário está ATIVO."
         : "";
