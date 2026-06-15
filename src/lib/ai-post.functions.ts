@@ -239,8 +239,19 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
     };
 
     const { ensureJpegB64 } = await import("@/lib/logo-overlay.server");
+    const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
+      try {
+        return await generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const retryable = /queue|rate|429|503|tempor/i.test(message);
+        if (!retryable || attempt >= 4) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
+        return generateImageWithRetry(prompt, attempt + 1);
+      }
+    };
     const genAndUpload = (prompt: string) =>
-      generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem })
+      generateImageWithRetry(prompt)
         .then((b64) => ensureJpegB64(b64))
         .then(uploadOne);
 
