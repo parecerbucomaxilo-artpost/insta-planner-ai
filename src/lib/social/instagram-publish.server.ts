@@ -176,7 +176,11 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
   }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Webhook Instagram respondeu ${res.status}${text ? `: ${text.slice(0, 180)}` : ""}`);
+    console.error("[instagram-webhook] respondeu", res.status, "url=", webhookUrl, "body=", text);
+    const hint = res.status === 400
+      ? " — cenário do Make recusou o payload. Verifique se o cenário está ATIVO e se o webhook aceita os campos enviados (image_url/imagens_carrossel/caption)."
+      : "";
+    throw new Error(`Webhook Instagram respondeu ${res.status}${text ? `: ${text.slice(0, 240)}` : ""}${hint}`);
   }
 }
 
