@@ -40,7 +40,7 @@ export async function generateImageBase64(opts: {
         model,
         prompt: opts.prompt,
         size: opts.size ?? "1024x1024",
-        quality: "low",
+        quality: model === "openai/gpt-image-2" ? "high" : "medium",
         output_format: "jpeg",
         output_compression: 80,
         n: 1,
