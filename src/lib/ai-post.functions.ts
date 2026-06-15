@@ -93,36 +93,35 @@ function captionSystem(rede: "instagram" | "linkedin" | "estilo-x" | "google", e
 Especialidade do post: ${especialidade}.
 ${tonePrompt(nivel)}
 
-ESTRUTURA OBRIGATÓRIA (Google Business Profile):
+ESTRUTURA OBRIGATÓRIA (Google Business Profile) — TEXTO ENXUTO:
 1. TÍTULO SEO curto (até 70 caracteres) que reproduza uma pergunta real pesquisada no Google.
 2. Resposta direta em 1-2 frases.
-3. Explicação objetiva e didática (entre 150 e 300 palavras no total).
-4. Orientação educativa e sinais de especialização.
+3. Explicação objetiva e didática (entre 60 e 120 palavras no total — NUNCA ultrapasse 120 palavras).
+4. Orientação educativa curta e sinais de especialização.
 5. CTA discreto: convidar o paciente a conhecer mais pelo perfil ou falar pelo WhatsApp ${WHATSAPP}.
 6. Bloco final com: "Palavras-chave SEO: ..." (5 a 8 termos, separados por vírgula, incluindo naturalmente: Cirurgião Bucomaxilofacial, Bucomaxilo, Cirurgia Bucomaxilofacial, Especialista em ATM, Odontologia Hospitalar, DTM, Bruxismo, Cirurgia Ortognática quando fizer sentido).
 7. Linha "ALT TEXT: ..." (texto alternativo objetivo descrevendo a imagem sugerida, 1 frase).
 
-FORMATO DA SAÍDA: texto corrido em PT-BR Brasil impecável, parágrafos curtos, sem emojis, sem hashtags, sem palavras duplicadas, sem inglês desnecessário. Comece pelo TÍTULO em negrito (use ** ao redor), pule linha, depois corpo, palavras-chave e ALT TEXT.
+FORMATO DA SAÍDA: texto corrido em PT-BR Brasil impecável, parágrafos curtos (máx. 2 linhas cada), sem emojis, sem hashtags, sem palavras duplicadas, sem inglês desnecessário. Comece pelo TÍTULO em negrito (use ** ao redor), pule linha, depois corpo, palavras-chave e ALT TEXT.
+
 ${CTAS_PROIBIDOS}
 NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
   }
 
   const estrutura = isLI
-    ? `ESTRUTURA OBRIGATÓRIA (LinkedIn Científico):
+    ? `ESTRUTURA OBRIGATÓRIA (LinkedIn Científico) — ENXUTO:
 1. Título técnico forte.
-2. Contextualização clínica.
-3. Resumo do estudo (1-2 parágrafos curtos).
-4. Principais achados (bullets).
-5. Impacto para a prática clínica em CTBMF e Odontologia Hospitalar.
-6. Reflexão profissional do Prof. Francisco Menezes.
-7. Fonte consultada + DOI quando aplicável.`
-    : `ESTRUTURA OBRIGATÓRIA (Instagram):
+2. Contextualização clínica em 1-2 frases.
+3. Resumo do estudo (1 parágrafo curto).
+4. Principais achados (3-4 bullets curtos).
+5. Impacto clínico em 1-2 frases.
+6. Fonte + DOI quando aplicável.`
+    : `ESTRUTURA OBRIGATÓRIA (Instagram) — ENXUTO:
 1. Gancho emocional forte (1ª linha).
-2. Problema frequentemente ignorado.
-3. Explicação simples e didática.
-4. Consequências da negligência.
-5. Soluções disponíveis (sem comercializar).
-6. Encerramento com CTA indireto permitido.`;
+2. Problema em 1 frase.
+3. Explicação simples (2-3 frases curtas).
+4. Consequência em 1 frase.
+5. CTA indireto.`;
 
   return `Você é diretor criativo e copywriter médico premium do ${ASSINATURA} (${ASSINATURA_SUBTITULO}).
 Especialidade do post: ${especialidade}.
@@ -133,12 +132,13 @@ ${estrutura}
 ${isLI ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}
 ${CTAS_PROIBIDOS}
 
-FORMATO DA LEGENDA:
+FORMATO DA LEGENDA — TEXTO CURTO E ESCANEÁVEL:
 ${isLI
-  ? `- LinkedIn: 1200-2000 caracteres, parágrafos curtos, no máximo 1-2 emojis sóbrios. 3-6 hashtags técnicas ao final. Inclua "Fonte: …" e DOI quando citar estudo.`
-  : `- Instagram: gancho na 1ª linha, 3-6 emojis estratégicos, parágrafos curtos, 5-8 hashtags ao final relevantes ao tema. CTA indireto na última linha.`}
+  ? `- LinkedIn: 500-900 caracteres (NUNCA ultrapasse 1000), parágrafos de no máximo 2 linhas, no máximo 1 emoji sóbrio. 3-5 hashtags técnicas ao final. Inclua "Fonte: …" e DOI quando citar estudo.`
+  : `- Instagram: 400-700 caracteres (NUNCA ultrapasse 800), gancho na 1ª linha, 2-4 emojis estratégicos, parágrafos de 1-2 linhas, 4-6 hashtags ao final. CTA indireto na última linha.`}
 NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
 }
+
 
 function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }) {
   const isUltimoSlide = !!slide && slide.n === slide.total;
