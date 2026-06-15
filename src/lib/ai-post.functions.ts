@@ -225,8 +225,18 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         : `Crie a legenda completa para o post sobre: "${tema}".`,
     }).then((r) => r.text);
 
-    const size: "1024x1024" | "1536x1024" =
-      data.rede === "estilo-x" || data.rede === "google" ? "1536x1024" : "1024x1024";
+    // Tamanho ideal por plataforma (gateway suporta 1024x1024, 1024x1536, 1536x1024):
+    // - IG Feed/Carrossel: vertical 4:5  → 1024x1536
+    // - IG Stories: vertical 9:16        → 1024x1536
+    // - LinkedIn: horizontal 1.91:1      → 1536x1024
+    // - Google Business: horizontal 4:3  → 1536x1024
+    // - Estilo X (tweet): horizontal 16:9 → 1536x1024
+    const size: "1024x1024" | "1024x1536" | "1536x1024" =
+      data.rede === "linkedin" || data.rede === "google" || data.rede === "estilo-x"
+        ? "1536x1024"
+        : isStory || formato === "Carrossel" || formato === "Post Único"
+          ? "1024x1536"
+          : "1024x1024";
 
     // Upload faz parte do pipeline; cada imagem é enviada assim que sai do modelo,
     // em vez de esperar todas terminarem.
