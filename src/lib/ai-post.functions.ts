@@ -167,7 +167,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - Iluminação cinematográfica, profundidade, micro-texturas, qualidade 8K, hierarquia visual forte.
 - Tipografia bold sans-serif premium (Inter/Söhne), alto contraste, kerning impecável.
 - Texto curto em PT-BR (Português do Brasil) com acentuação correta, ortografia impecável, SEM palavras duplicadas/repetidas, SEM erros de concordância, SEM letras trocadas, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${logoInstr}${avatarInstr}
-- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, 16:9." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), estilo Mayo/Cleveland Clinic, autoridade médica regional, foco em SEO local." : "Formato quadrado 1:1 (ou 4:5 quando aplicável)."}${slideInfo}
+- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, horizontal 16:9 (1536x1024)." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), estilo Mayo/Cleveland Clinic, autoridade médica regional, foco em SEO local." : rede === "linkedin" ? "LinkedIn: formato horizontal 1.91:1 (1200x627), capa de artigo científico premium tipo The Lancet/JOMS." : slide ? "Instagram Carrossel: vertical 4:5 (1080x1350), composição editorial premium aproveitando todo o canvas." : "Instagram: vertical 4:5 (1080x1350) para feed, ou 9:16 (1080x1920) para story."}${slideInfo}
 - PROIBIDO ABSOLUTO: inventar logotipo/marca, texto em inglês, palavras repetidas duas vezes seguidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador, chamadas comerciais como "agende consulta" / "promoção" / "desconto".`;
 }
 
@@ -225,8 +225,18 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         : `Crie a legenda completa para o post sobre: "${tema}".`,
     }).then((r) => r.text);
 
-    const size: "1024x1024" | "1536x1024" =
-      data.rede === "estilo-x" || data.rede === "google" ? "1536x1024" : "1024x1024";
+    // Tamanho ideal por plataforma (gateway suporta 1024x1024, 1024x1536, 1536x1024):
+    // - IG Feed/Carrossel: vertical 4:5  → 1024x1536
+    // - IG Stories: vertical 9:16        → 1024x1536
+    // - LinkedIn: horizontal 1.91:1      → 1536x1024
+    // - Google Business: horizontal 4:3  → 1536x1024
+    // - Estilo X (tweet): horizontal 16:9 → 1536x1024
+    const size: "1024x1024" | "1024x1536" | "1536x1024" =
+      data.rede === "linkedin" || data.rede === "google" || data.rede === "estilo-x"
+        ? "1536x1024"
+        : isStory || formato === "Carrossel" || formato === "Post Único"
+          ? "1024x1536"
+          : "1024x1024";
 
     // Upload faz parte do pipeline; cada imagem é enviada assim que sai do modelo,
     // em vez de esperar todas terminarem.
