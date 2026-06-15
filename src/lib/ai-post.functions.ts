@@ -141,11 +141,17 @@ NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na image
 }
 
 function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }) {
+  const isUltimoSlide = !!slide && slide.n === slide.total;
   const slideInfo = slide
-    ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.`
+    ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.${isUltimoSlide ? " SLIDE DE FECHAMENTO — CAPRICHE AO MÁXIMO: tipografia maior, hierarquia editorial impecável, CTA elegante centralizado, espaço negativo generoso, sensação de capa de revista médica top de linha. É o último degrau — DEVE ser o slide mais bonito do carrossel." : ""}`
     : "";
   const assinaturaInfo = `\n- RODAPÉ OBRIGATÓRIO em 2 linhas pequenas, centralizado, tipografia bold sans-serif branca sobre faixa azul petróleo (#0c2340): "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}".`;
   const semMarca = `\n- PROIBIDO desenhar QUALQUER logotipo, marca, monograma, escudo, cruz médica, símbolo de dente, avatar, retrato, foto de pessoa, rosto, médico genérico, "PC", "FM", "Planner" ou letreiro. Sem áreas reservadas nos cantos. A única identificação visual é o rodapé textual.`;
+  const semInvencao = `\n- NÃO INVENTE NADA QUE NÃO EXISTA: proibido desenhar aparelhos médicos específicos, instrumentos cirúrgicos detalhados, radiografias, tomografias, ressonâncias, anatomia interna complexa, próteses, implantes, dispositivos com marcas, gráficos com números fictícios, percentuais inventados, citações de estudos, DOIs, nomes de revistas científicas, autores ou datas dentro da imagem. Se aparecer número/percentual na imagem ele será FALSO por definição — EVITE. Quando o tema exigir representação clínica, use abstração geométrica, ícone minimalista ou silhueta — NUNCA ilustração realista de anatomia/equipamento.`;
+  const isPublicoGeral = nivel !== "linkedin-cientifico";
+  const semBibliografia = isPublicoGeral
+    ? `\n- PÚBLICO GERAL: ZERO bibliografia, ZERO referência científica, ZERO DOI, ZERO nome de revista, ZERO citação acadêmica na imagem e no texto sobreposto. Apenas mensagem clara, direta, emocional, autoridade visual.`
+    : "";
   const refEditorial = nivel === "linkedin-cientifico"
     ? "Referência editorial: The Lancet, NEJM, JOMS — capa de revista científica top-tier, estética acadêmica premium."
     : "Referência editorial: Harvard Health, Mayo Clinic, Cleveland Clinic — hospital premium, autoridade institucional, luxo discreto.";
@@ -154,7 +160,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - Paleta OBRIGATÓRIA: azul petróleo profundo (#0c2340), azul ciano (#2dd4ff), branco puro, preto sofisticado. Vermelho APENAS para sinalizar DOR/alerta clínico.
 - Iluminação cinematográfica, profundidade, micro-texturas, qualidade 8K, hierarquia visual forte.
 - Tipografia bold sans-serif premium (Inter/Söhne), alto contraste, kerning impecável.
-- Texto curto em PT-BR (Português do Brasil) com acentuação correta, ortografia impecável, SEM palavras duplicadas/repetidas, SEM erros de concordância, SEM letras trocadas, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${semMarca}
+- Texto curto em PT-BR (Português do Brasil) com acentuação correta, ortografia impecável, SEM palavras duplicadas/repetidas, SEM erros de concordância, SEM letras trocadas, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${semMarca}${semInvencao}${semBibliografia}
 - Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, horizontal 16:9 (1536x1024)." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), estilo Mayo/Cleveland Clinic, autoridade médica regional, foco em SEO local." : rede === "linkedin" ? "LinkedIn: formato horizontal 1.91:1 (1200x627), capa de artigo científico premium tipo The Lancet/JOMS." : slide ? "Instagram Carrossel: vertical 4:5 (1080x1350), composição editorial premium aproveitando todo o canvas." : "Instagram: vertical 4:5 (1080x1350) para feed, ou 9:16 (1080x1920) para story."}${slideInfo}
 - PROIBIDO ABSOLUTO: inventar logotipo/marca, desenhar pessoas/rostos/avatares, texto em inglês, palavras repetidas duas vezes seguidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador, chamadas comerciais como "agende consulta" / "promoção" / "desconto".`;
 }
