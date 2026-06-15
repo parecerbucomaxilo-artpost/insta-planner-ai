@@ -81,7 +81,7 @@ function tonePrompt(nivel: Exclude<NivelConteudo, "auto">) {
     return `TOM: SEO local médico, didático, humano e profissional. Público: pacientes leigos que pesquisam no Google sintomas e dúvidas sobre cirurgia bucomaxilofacial, ATM, DTM, bruxismo, siso, cirurgia ortognática, trauma facial, apneia. Texto pensado para Google Meu Negócio: responde à intenção de busca, fortalece autoridade regional e melhora ranqueamento local.`;
   }
   // ig-autoridade
-  return `TOM: autoridade hospitalar de alto nível, ciência traduzida para leigos. Posicionamento de professor universitário/cirurgião referência. Apresente casos, dados e mecanismos com clareza, mas sem jargão impenetrável. Desperte confiança e busca espontânea por informação.`;
+  return `TOM: autoridade hospitalar de alto nível, ciência traduzida para leigos, SEM bibliografia, SEM DOI, SEM citação de revista científica. Posicionamento de professor universitário/cirurgião referência falando em linguagem clara para o público geral. Apresente o mecanismo do problema com analogias simples. Desperte confiança e busca espontânea por informação.`;
 }
 
 function captionSystem(rede: "instagram" | "linkedin" | "estilo-x" | "google", especialidade: string, nivel: Exclude<NivelConteudo, "auto">) {
