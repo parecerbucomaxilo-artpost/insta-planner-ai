@@ -185,9 +185,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         ? "Carrossel"
         : data.tipo === "stories"
           ? "Story"
-          : data.tipo === "feed" && data.rede === "instagram"
-            ? "Carrossel"
-            : "Post Único");
+          : "Post Único");
 
     // 0. Se nenhum tema foi fornecido, a IA escolhe um automaticamente.
     let tema = (data.tema ?? "").trim();
@@ -293,7 +291,7 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
         user_id: context.userId,
         tipo_post: tipoPost,
         estilo_layout: data.rede === "estilo-x" ? "Estilo X" : data.rede === "google" ? "Google Business" : "Padrão",
-        formato_midia: "Imagem",
+        formato_midia: formato === "Story" ? "Story" : "Imagem",
         legenda,
         url_imagem: urlImagem,
         url_imagem_cache: urlImagemCache,
