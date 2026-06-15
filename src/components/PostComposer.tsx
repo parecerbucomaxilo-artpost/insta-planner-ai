@@ -576,14 +576,33 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
 
 
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
         <Button
-          onClick={handleSingle}
+          onClick={() => handleSingle("story")}
+          disabled={busy !== null}
+          className="bg-cyan-600 hover:bg-cyan-700 text-white"
+        >
+          {busy === "story" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Smartphone className="w-4 h-4 mr-2" />}
+          Post único Story
+        </Button>
+        <Button
+          onClick={() => handleSingle("feed")}
           disabled={busy !== null}
           className="bg-indigo-600 hover:bg-indigo-700 text-white"
         >
-          {busy === "single" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-          {tema.trim() ? "Gerar 1 post (legenda + imagem)" : "IA escolhe tema + gera tudo"}
+          {busy === "feed" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Square className="w-4 h-4 mr-2" />}
+          Post único Feed
+        </Button>
+        <Button
+          onClick={() => handleSingle("carrossel")}
+          disabled={busy !== null}
+          className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white"
+        >
+          {busy === "carrossel" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Layers className="w-4 h-4 mr-2" />}
+          Carrossel 6 imagens
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 pt-1">
         </Button>
         <Button
           onClick={handleWeek}
