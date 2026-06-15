@@ -413,7 +413,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const tid = `ai-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
-      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, inserirLogo, inserirAvatar, modelo, modeloImagem, ambasRedes } });
+      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes } });
       toast.success(t.quando ? "Agendado! Pré-visualize abaixo." : "Gerado! Pré-visualize abaixo.", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
@@ -484,48 +484,6 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             {r === "estilo-x" ? "Estilo X" : r === "linkedin" ? "LinkedIn" : r === "google" ? "Google Business" : "Instagram"}
           </button>
         ))}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label className="text-xs">Marca nos criativos (canto sup. direito = logo; canto sup. esquerdo = avatar)</Label>
-        <div className="grid grid-cols-3 gap-2 max-w-md">
-          <button
-            type="button"
-            onClick={() => setInserirLogo(!inserirLogo)}
-            className={cn(
-              "flex items-center gap-1.5 justify-center px-3 py-2 rounded-md border-2 font-semibold text-sm transition-all",
-              inserirLogo
-                ? "border-indigo-500 bg-indigo-600 text-white shadow-sm"
-                : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
-            )}
-          >
-            <Check className={cn("w-3.5 h-3.5", !inserirLogo && "opacity-0")} /> Logo
-          </button>
-          <button
-            type="button"
-            onClick={() => setInserirAvatar(!inserirAvatar)}
-            className={cn(
-              "flex items-center gap-1.5 justify-center px-3 py-2 rounded-md border-2 font-semibold text-sm transition-all",
-              inserirAvatar
-                ? "border-cyan-500 bg-cyan-600 text-white shadow-sm"
-                : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
-            )}
-          >
-            <Check className={cn("w-3.5 h-3.5", !inserirAvatar && "opacity-0")} /> Avatar
-          </button>
-          <button
-            type="button"
-            onClick={() => { setInserirLogo(false); setInserirAvatar(false); }}
-            className={cn(
-              "flex items-center gap-1.5 justify-center px-3 py-2 rounded-md border-2 font-semibold text-sm transition-all",
-              !inserirLogo && !inserirAvatar
-                ? "border-zinc-500 bg-zinc-700 text-white shadow-sm"
-                : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
-            )}
-          >
-            Sem marca
-          </button>
-        </div>
       </div>
 
       <div className="space-y-1.5">
