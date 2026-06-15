@@ -156,27 +156,53 @@ NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na image
 
 function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }) {
   const isUltimoSlide = !!slide && slide.n === slide.total;
+  const isInstagram = rede === "instagram";
   const slideInfo = slide
-    ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.${isUltimoSlide ? " SLIDE DE FECHAMENTO — CAPRICHE AO MÁXIMO: tipografia maior, hierarquia editorial impecável, CTA elegante centralizado, espaço negativo generoso, sensação de capa de revista médica top de linha. É o último degrau — DEVE ser o slide mais bonito do carrossel." : ""}`
+    ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.${isUltimoSlide ? " SLIDE DE FECHAMENTO — caprichar ao máximo: hierarquia limpa, CTA elegante, espaço negativo generoso." : ""}`
     : "";
-  const assinaturaInfo = `\n- RODAPÉ OBRIGATÓRIO em 2 linhas pequenas, centralizado, tipografia bold sans-serif branca sobre faixa azul petróleo (#0c2340): "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}".`;
-  const semMarca = `\n- PROIBIDO desenhar QUALQUER logotipo, marca, monograma, escudo, cruz médica, símbolo de dente, avatar, retrato, foto de pessoa, rosto, médico genérico, "PC", "FM", "Planner" ou letreiro. Sem áreas reservadas nos cantos. A única identificação visual é o rodapé textual.`;
-  const semInvencao = `\n- NÃO INVENTE NADA QUE NÃO EXISTA: proibido desenhar aparelhos médicos específicos, instrumentos cirúrgicos detalhados, radiografias, tomografias, ressonâncias, anatomia interna complexa, próteses, implantes, dispositivos com marcas, gráficos com números fictícios, percentuais inventados, citações de estudos, DOIs, nomes de revistas científicas, autores ou datas dentro da imagem. Se aparecer número/percentual na imagem ele será FALSO por definição — EVITE. Quando o tema exigir representação clínica, use abstração geométrica, ícone minimalista ou silhueta — NUNCA ilustração realista de anatomia/equipamento.`;
+  const assinaturaInfo = isInstagram
+    ? `\n- Reserve um espaço discreto no rodapé (faixa estreita azul petróleo #0c2340 OU canto inferior limpo) para a assinatura textual "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}" em tipografia pequena branca. Não dominar a composição.`
+    : `\n- RODAPÉ OBRIGATÓRIO em 2 linhas pequenas, centralizado, tipografia bold sans-serif branca sobre faixa azul petróleo (#0c2340): "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}".`;
+  const semMarca = `\n- PROIBIDO desenhar QUALQUER logotipo, marca, monograma, escudo, cruz médica, símbolo de dente, "PC", "FM", "Planner" ou letreiro inventado. Sem áreas reservadas nos cantos para logo. A única identificação textual é a assinatura no rodapé.`;
+  const semInvencao = `\n- NÃO INVENTE: proibido desenhar radiografias, tomografias, ressonâncias, anatomia interna detalhada, próteses, implantes, dispositivos com marcas, gráficos com números inventados, percentuais fictícios, citações de estudos, DOIs, nomes de revistas, autores ou datas dentro da imagem.`;
+  const semDiagnostico = isInstagram
+    ? `\n- PROIBIDO EXPRESSAR DIAGNÓSTICO na imagem: nada de "Você tem DTM", "Isso é bruxismo", "Diagnóstico: ...". A imagem desperta identificação com um SINTOMA/CENA do dia a dia, nunca afirma doença.`
+    : "";
   const isPublicoGeral = nivel !== "linkedin-cientifico";
   const semBibliografia = isPublicoGeral
-    ? `\n- PÚBLICO GERAL: ZERO bibliografia, ZERO referência científica, ZERO DOI, ZERO nome de revista, ZERO citação acadêmica na imagem e no texto sobreposto. Apenas mensagem clara, direta, emocional, autoridade visual.`
+    ? `\n- PÚBLICO GERAL: ZERO bibliografia, ZERO DOI, ZERO nome de revista, ZERO citação acadêmica na imagem.`
     : "";
+
+  // === INSTAGRAM CRIATIVO ===
+  if (isInstagram) {
+    const formatoIG = slide
+      ? "Instagram Carrossel: vertical 4:5 (1080x1350)."
+      : nivel === "ig-conversao" && !slide
+        ? "Instagram Story/Feed: vertical 9:16 ou 4:5."
+        : "Instagram Feed: vertical 4:5 (1080x1350).";
+    return `FOTOGRAFIA EDITORIAL REALISTA para Instagram — estética inspirada em campanhas Vogue Saúde, Kinfolk, Apple Health, Nike Well — humana, cinematográfica, emocional. NÃO é cartaz médico, NÃO é infográfico, NÃO parece anúncio de clínica.
+- ESTILO: foto realista 8K, lente 50mm f/1.8, profundidade de campo natural, luz suave de janela ou golden hour, grão fotográfico sutil, cores naturais e quentes (peles reais, tecidos, madeira, vidro, plantas). Composição editorial com muito espaço negativo.
+- CENA: situação cotidiana relacionada ao SINTOMA/MOMENTO do tema "${tema}" — ex.: mão tocando a mandíbula ao acordar, xícara de café na mesa de cabeceira, travesseiro amassado, espelho do banheiro embaçado, luz da manhã no rosto parcialmente fora de quadro. Mostrar EMOÇÃO/CONTEXTO, nunca anatomia clínica.
+- PESSOAS: pode aparecer parte de pessoa real (mãos, ombro, perfil de queixo, silhueta contra janela) — sempre natural, diverso, sem rosto inteiro em close clínico, sem sorriso publicitário, sem dente hiper-saturado.
+- TEXTO NA IMAGEM: MÍNIMO. No máximo 3-6 palavras curtas em uma frase de impacto OU NENHUM texto. Tipografia sans-serif leve, fina ou bold sutil, em canto da composição, branco ou azul petróleo. NUNCA texto longo, NUNCA parágrafo, NUNCA listas.${semDiagnostico}
+- Paleta sugerida: tons naturais (bege, areia, terracota suave, verde sálvia) + acento discreto em azul petróleo (#0c2340) ou azul ciano (#2dd4ff) apenas em detalhe pequeno (tipografia, objeto). Pode fugir do azul quando a cena pedir.
+- Tema: "${tema}". PT-BR Brasil impecável quando houver texto, sem palavras duplicadas, sem inglês, sem erros.${assinaturaInfo}${semMarca}${semInvencao}${semBibliografia}
+- ${formatoIG}${slideInfo}
+- PROIBIDO: estética de banco de imagens, dentes brancos artificiais, sorrisos clichês, jaleco genérico, fundo de consultório falso, ícones de dente, infográficos, gráficos, percentuais, watermark de IA, texto longo, chamadas comerciais ("agende", "promoção", "desconto"), AFIRMAR DIAGNÓSTICO.`;
+  }
+
+  // === LINKEDIN / GOOGLE / ESTILO-X — cartaz médico premium ===
   const refEditorial = nivel === "linkedin-cientifico"
-    ? "Referência editorial: The Lancet, NEJM, JOMS — capa de revista científica top-tier, estética acadêmica premium."
-    : "Referência editorial: Harvard Health, Mayo Clinic, Cleveland Clinic — hospital premium, autoridade institucional, luxo discreto.";
+    ? "Referência editorial: The Lancet, NEJM, JOMS — capa de artigo científico top-tier, estética acadêmica premium."
+    : "Referência editorial: Mayo Clinic, Cleveland Clinic, Harvard Health — autoridade institucional, luxo discreto.";
   return `CARTAZ MÉDICO ULTRA PREMIUM — autoridade hospitalar em Cirurgia e Traumatologia Bucomaxilofacial + Odontologia Hospitalar.
 - ${refEditorial} Minimalismo editorial, ZERO aparência de anúncio ou banco de imagens.
 - Paleta OBRIGATÓRIA: azul petróleo profundo (#0c2340), azul ciano (#2dd4ff), branco puro, preto sofisticado. Vermelho APENAS para sinalizar DOR/alerta clínico.
 - Iluminação cinematográfica, profundidade, micro-texturas, qualidade 8K, hierarquia visual forte.
 - Tipografia bold sans-serif premium (Inter/Söhne), alto contraste, kerning impecável.
-- Texto curto em PT-BR (Português do Brasil) com acentuação correta, ortografia impecável, SEM palavras duplicadas/repetidas, SEM erros de concordância, SEM letras trocadas, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${semMarca}${semInvencao}${semBibliografia}
-- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, horizontal 16:9 (1536x1024)." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), estilo Mayo/Cleveland Clinic, autoridade médica regional, foco em SEO local." : rede === "linkedin" ? "LinkedIn: formato horizontal 1.91:1 (1200x627), capa de artigo científico premium tipo The Lancet/JOMS." : slide ? "Instagram Carrossel: vertical 4:5 (1080x1350), composição editorial premium aproveitando todo o canvas." : "Instagram: vertical 4:5 (1080x1350) para feed, ou 9:16 (1080x1920) para story."}${slideInfo}
-- PROIBIDO ABSOLUTO: inventar logotipo/marca, desenhar pessoas/rostos/avatares, texto em inglês, palavras repetidas duas vezes seguidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas/saturadas demais, layout amador, chamadas comerciais como "agende consulta" / "promoção" / "desconto".`;
+- Texto curto em PT-BR Brasil com acentuação correta, ortografia impecável, SEM palavras duplicadas, SEM inglês, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${semMarca}${semInvencao}${semBibliografia}
+- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, horizontal 16:9 (1536x1024)." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), autoridade médica regional, foco em SEO local." : "LinkedIn: formato horizontal 1.91:1 (1200x627), capa de artigo científico premium tipo The Lancet/JOMS."}${slideInfo}
+- PROIBIDO ABSOLUTO: inventar logotipo/marca, desenhar rostos em close, texto em inglês, palavras repetidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas, chamadas comerciais.`;
 }
 
 
