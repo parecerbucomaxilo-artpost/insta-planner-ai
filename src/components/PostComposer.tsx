@@ -580,7 +580,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         <Button
           onClick={() => handleSingle("story")}
           disabled={busy !== null}
-          className="bg-cyan-600 hover:bg-cyan-700 text-white"
+          className="font-semibold"
         >
           {busy === "story" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Smartphone className="w-4 h-4 mr-2" />}
           Post único Story
@@ -588,7 +588,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         <Button
           onClick={() => handleSingle("feed")}
           disabled={busy !== null}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+          className="font-semibold"
         >
           {busy === "feed" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Square className="w-4 h-4 mr-2" />}
           Post único Feed
@@ -596,7 +596,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         <Button
           onClick={() => handleSingle("carrossel")}
           disabled={busy !== null}
-          className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white"
+          className="font-semibold"
         >
           {busy === "carrossel" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Layers className="w-4 h-4 mr-2" />}
           Carrossel 6 imagens
