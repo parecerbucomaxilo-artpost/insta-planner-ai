@@ -157,8 +157,13 @@ NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na image
 function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }) {
   const isUltimoSlide = !!slide && slide.n === slide.total;
   const isInstagram = rede === "instagram";
+  const isStory = !slide && nivel === "ig-conversao" && isInstagram; // heurística
+  const isPostUnicoComCTA = !slide && !isStory && rede !== "linkedin"; // único IG/Google ganha CTA forte
   const slideInfo = slide
     ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.${isUltimoSlide ? " SLIDE DE FECHAMENTO — caprichar ao máximo: hierarquia limpa, CTA elegante, espaço negativo generoso." : ""}`
+    : "";
+  const ctaForteInfo = (isUltimoSlide && rede !== "linkedin") || isPostUnicoComCTA
+    ? `\n- CTA FORTE OBRIGATÓRIO: incluir o ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat, NÃO inventar variações) no canto inferior direito + texto curto "LINK NA BIO" em tipografia bold grande. Pode incluir "+55 11 94768-4004" em corpo menor ao lado do ícone. Hierarquia limpa, sem poluir a composição.`
     : "";
   const assinaturaInfo = isInstagram
     ? `\n- Reserve um espaço discreto no rodapé (faixa estreita azul petróleo #0c2340 OU canto inferior limpo) para a assinatura textual "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}" em tipografia pequena branca. Não dominar a composição.`
