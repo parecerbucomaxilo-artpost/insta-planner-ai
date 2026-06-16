@@ -191,7 +191,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - PESSOAS: pode aparecer parte de pessoa real (mãos, ombro, perfil de queixo, silhueta contra janela) — sempre natural, diverso, sem rosto inteiro em close clínico, sem sorriso publicitário, sem dente hiper-saturado.
 - TEXTO NA IMAGEM: MÍNIMO. No máximo 3-6 palavras curtas em uma frase de impacto OU NENHUM texto. Tipografia sans-serif leve, fina ou bold sutil, em canto da composição, branco ou azul petróleo. NUNCA texto longo, NUNCA parágrafo, NUNCA listas.${semDiagnostico}
 - Paleta sugerida: tons naturais (bege, areia, terracota suave, verde sálvia) + acento discreto em azul petróleo (#0c2340) ou azul ciano (#2dd4ff) apenas em detalhe pequeno (tipografia, objeto). Pode fugir do azul quando a cena pedir.
-- Tema: "${tema}". PT-BR Brasil impecável quando houver texto, sem palavras duplicadas, sem inglês, sem erros.${assinaturaInfo}${semMarca}${semInvencao}${semBibliografia}
+- Tema: "${tema}". PT-BR Brasil impecável quando houver texto, sem palavras duplicadas, sem inglês, sem erros.${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semBibliografia}
 - ${formatoIG}${slideInfo}
 - PROIBIDO: estética de banco de imagens, dentes brancos artificiais, sorrisos clichês, jaleco genérico, fundo de consultório falso, ícones de dente, infográficos, gráficos, percentuais, watermark de IA, texto longo, chamadas comerciais ("agende", "promoção", "desconto"), AFIRMAR DIAGNÓSTICO.`;
   }
