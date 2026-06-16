@@ -103,9 +103,25 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
                     ? "ig-conversao"
                     : "ig-autoridade";
 
+          // TEMA DO DIA: reaproveita o tema do 1º post já gerado no mesmo dia,
+          // para que todas as postagens do dia tratem do MESMO assunto com
+          // abordagens diferentes (sem repetir texto nem imagem — isso é
+          // garantido pelos prompts de geração).
+          const inicioDia = new Date(proximo.quando); inicioDia.setHours(0, 0, 0, 0);
+          const fimDia = new Date(proximo.quando); fimDia.setHours(23, 59, 59, 999);
+          const { data: doDia } = await supabaseAdmin
+            .from("posts")
+            .select("prompt_ia,data_agendamento")
+            .gte("data_agendamento", inicioDia.toISOString())
+            .lte("data_agendamento", fimDia.toISOString())
+            .not("prompt_ia", "is", null)
+            .order("data_agendamento", { ascending: true })
+            .limit(1);
+          const temaDoDia = doDia?.[0]?.prompt_ia?.trim();
+
           const result = await generateSinglePost({
             data: {
-              tema: temaDomingo,
+              tema: temaDomingo || temaDoDia || "",
               especialidade: "Ambas",
               rede: proximo.rede,
               tipo: proximo.tipo,
@@ -114,7 +130,8 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
               modelo: "google/gemini-3-flash-preview",
               modeloImagem: "google/gemini-3.1-flash-image-preview",
               ambasRedes: false,
-              status: "Agendado",
+              // Aguarda aprovação manual no preview — nunca publica direto.
+              status: "PendenteAprovacao",
               nivel,
             },
           });

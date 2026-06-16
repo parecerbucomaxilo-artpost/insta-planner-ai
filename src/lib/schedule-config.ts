@@ -13,18 +13,17 @@ export interface Slot {
 
 // Seg-Sáb (dia da semana 1..6 em getDay())
 export const SLOTS_SEMANA: Slot[] = [
-  // Instagram FEED
+  // Instagram FEED (Carrossel) — 2/dia
   { rede: "instagram", tipo: "feed", hora: 9, minuto: 0 },
-  { rede: "instagram", tipo: "feed", hora: 15, minuto: 0 },
   { rede: "instagram", tipo: "feed", hora: 19, minuto: 0 },
-  // Instagram STORIES
+  // Instagram STORIES — 3/dia
   { rede: "instagram", tipo: "stories", hora: 8, minuto: 0 },
   { rede: "instagram", tipo: "stories", hora: 13, minuto: 0 },
   { rede: "instagram", tipo: "stories", hora: 17, minuto: 0 },
-  // LinkedIn
+  // LinkedIn — 2/dia
   { rede: "linkedin", tipo: "feed", hora: 9, minuto: 0 },
   { rede: "linkedin", tipo: "feed", hora: 17, minuto: 30 },
-  // Google Business Profile (SEO local) — 1 post pela manhã + 1 à tarde
+  // Google Business Profile — 2/dia
   { rede: "google", tipo: "feed", hora: 10, minuto: 30 },
   { rede: "google", tipo: "feed", hora: 16, minuto: 30 },
 ];

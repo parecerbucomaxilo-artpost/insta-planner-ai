@@ -157,8 +157,13 @@ NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na image
 function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }) {
   const isUltimoSlide = !!slide && slide.n === slide.total;
   const isInstagram = rede === "instagram";
+  const isStory = !slide && nivel === "ig-conversao" && isInstagram; // heurística
+  const isPostUnicoComCTA = !slide && !isStory && rede !== "linkedin"; // único IG/Google ganha CTA forte
   const slideInfo = slide
     ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.${isUltimoSlide ? " SLIDE DE FECHAMENTO — caprichar ao máximo: hierarquia limpa, CTA elegante, espaço negativo generoso." : ""}`
+    : "";
+  const ctaForteInfo = (isUltimoSlide && rede !== "linkedin") || isPostUnicoComCTA
+    ? `\n- CTA FORTE OBRIGATÓRIO: incluir o ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat, NÃO inventar variações) no canto inferior direito + texto curto "LINK NA BIO" em tipografia bold grande. Pode incluir "+55 11 94768-4004" em corpo menor ao lado do ícone. Hierarquia limpa, sem poluir a composição.`
     : "";
   const assinaturaInfo = isInstagram
     ? `\n- Reserve um espaço discreto no rodapé (faixa estreita azul petróleo #0c2340 OU canto inferior limpo) para a assinatura textual "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}" em tipografia pequena branca. Não dominar a composição.`
@@ -186,7 +191,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - PESSOAS: pode aparecer parte de pessoa real (mãos, ombro, perfil de queixo, silhueta contra janela) — sempre natural, diverso, sem rosto inteiro em close clínico, sem sorriso publicitário, sem dente hiper-saturado.
 - TEXTO NA IMAGEM: MÍNIMO. No máximo 3-6 palavras curtas em uma frase de impacto OU NENHUM texto. Tipografia sans-serif leve, fina ou bold sutil, em canto da composição, branco ou azul petróleo. NUNCA texto longo, NUNCA parágrafo, NUNCA listas.${semDiagnostico}
 - Paleta sugerida: tons naturais (bege, areia, terracota suave, verde sálvia) + acento discreto em azul petróleo (#0c2340) ou azul ciano (#2dd4ff) apenas em detalhe pequeno (tipografia, objeto). Pode fugir do azul quando a cena pedir.
-- Tema: "${tema}". PT-BR Brasil impecável quando houver texto, sem palavras duplicadas, sem inglês, sem erros.${assinaturaInfo}${semMarca}${semInvencao}${semBibliografia}
+- Tema: "${tema}". PT-BR Brasil impecável quando houver texto, sem palavras duplicadas, sem inglês, sem erros.${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semBibliografia}
 - ${formatoIG}${slideInfo}
 - PROIBIDO: estética de banco de imagens, dentes brancos artificiais, sorrisos clichês, jaleco genérico, fundo de consultório falso, ícones de dente, infográficos, gráficos, percentuais, watermark de IA, texto longo, chamadas comerciais ("agende", "promoção", "desconto"), AFIRMAR DIAGNÓSTICO.`;
   }
@@ -200,7 +205,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - Paleta OBRIGATÓRIA: azul petróleo profundo (#0c2340), azul ciano (#2dd4ff), branco puro, preto sofisticado. Vermelho APENAS para sinalizar DOR/alerta clínico.
 - Iluminação cinematográfica, profundidade, micro-texturas, qualidade 8K, hierarquia visual forte.
 - Tipografia bold sans-serif premium (Inter/Söhne), alto contraste, kerning impecável.
-- Texto curto em PT-BR Brasil com acentuação correta, ortografia impecável, SEM palavras duplicadas, SEM inglês, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${semMarca}${semInvencao}${semBibliografia}
+- Texto curto em PT-BR Brasil com acentuação correta, ortografia impecável, SEM palavras duplicadas, SEM inglês, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semBibliografia}
 - Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, horizontal 16:9 (1536x1024)." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), autoridade médica regional, foco em SEO local." : "LinkedIn: formato horizontal 1.91:1 (1200x627), capa de artigo científico premium tipo The Lancet/JOMS."}${slideInfo}
 - PROIBIDO ABSOLUTO: inventar logotipo/marca, desenhar rostos em close, texto em inglês, palavras repetidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas, chamadas comerciais.`;
 }
@@ -308,10 +313,11 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
 
     if (formato === "Carrossel") {
       const fullSpec = [
-        { n: 1, total: 4, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + rodapé textual obrigatório. Layout impactante de revista. SEM bibliografia, SEM número científico." },
-        { n: 2, total: 4, papel: "PROBLEMA + MECANISMO: aprofunda a dor em linguagem leiga e explica COMO acontece com analogia visual simples (sem anatomia interna realista) + rodapé textual obrigatório. SEM bibliografia, SEM número científico." },
-        { n: 3, total: 4, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve, foco em alívio e autoridade hospitalar + rodapé textual obrigatório. SEM bibliografia, SEM número científico." },
-        { n: 4, total: 4, papel: "FECHAMENTO PREMIUM: CTA elegante 'Link na Bio' centralizado em tipografia grande, hierarquia editorial impecável estilo capa de revista médica top de linha + rodapé textual obrigatório. É o ÚLTIMO DEGRAU — deve ser o slide mais bonito e bem produzido do carrossel." },
+        { n: 1, total: 5, papel: "CAPA: GANCHO forte de conversão (pergunta/dor real) + rodapé textual obrigatório. Layout impactante de revista. SEM bibliografia." },
+        { n: 2, total: 5, papel: "PROBLEMA: aprofunda a dor em linguagem leiga, faz a pessoa se identificar. SEM anatomia clínica interna." },
+        { n: 3, total: 5, papel: "MECANISMO: explica COMO o problema acontece com analogia visual simples. Reforço de autoridade hospitalar." },
+        { n: 4, total: 5, papel: "SOLUÇÃO/GANHO: como o cirurgião resolve. Foco no GANHO CONCRETO do paciente (dormir bem, mastigar sem dor, voltar a sorrir, respirar melhor)." },
+        { n: 5, total: 5, papel: "FECHAMENTO PREMIUM com CTA FORTE: tipografia grande 'LINK NA BIO' centralizada + ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat oficial, canto inferior direito) + número '+55 11 94768-4004' em tipografia pequena ao lado do ícone. Hierarquia editorial impecável estilo capa de revista médica top de linha. É o slide mais bonito do carrossel." },
       ];
       const xSpec = [
         { n: 1, total: 3, papel: "TWEET 1: gancho/pergunta forte com assinatura." },
