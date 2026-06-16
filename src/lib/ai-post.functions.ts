@@ -205,7 +205,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - Paleta OBRIGATÓRIA: azul petróleo profundo (#0c2340), azul ciano (#2dd4ff), branco puro, preto sofisticado. Vermelho APENAS para sinalizar DOR/alerta clínico.
 - Iluminação cinematográfica, profundidade, micro-texturas, qualidade 8K, hierarquia visual forte.
 - Tipografia bold sans-serif premium (Inter/Söhne), alto contraste, kerning impecável.
-- Texto curto em PT-BR Brasil com acentuação correta, ortografia impecável, SEM palavras duplicadas, SEM inglês, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${semMarca}${semInvencao}${semBibliografia}
+- Texto curto em PT-BR Brasil com acentuação correta, ortografia impecável, SEM palavras duplicadas, SEM inglês, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semBibliografia}
 - Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, horizontal 16:9 (1536x1024)." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), autoridade médica regional, foco em SEO local." : "LinkedIn: formato horizontal 1.91:1 (1200x627), capa de artigo científico premium tipo The Lancet/JOMS."}${slideInfo}
 - PROIBIDO ABSOLUTO: inventar logotipo/marca, desenhar rostos em close, texto em inglês, palavras repetidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas, chamadas comerciais.`;
 }
