@@ -308,10 +308,11 @@ Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem 
 
     if (formato === "Carrossel") {
       const fullSpec = [
-        { n: 1, total: 4, papel: "CAPA: GANCHO forte de conversão (pergunta/dor) + rodapé textual obrigatório. Layout impactante de revista. SEM bibliografia, SEM número científico." },
-        { n: 2, total: 4, papel: "PROBLEMA + MECANISMO: aprofunda a dor em linguagem leiga e explica COMO acontece com analogia visual simples (sem anatomia interna realista) + rodapé textual obrigatório. SEM bibliografia, SEM número científico." },
-        { n: 3, total: 4, papel: "SOLUÇÃO / TRATAMENTO: como o cirurgião resolve, foco em alívio e autoridade hospitalar + rodapé textual obrigatório. SEM bibliografia, SEM número científico." },
-        { n: 4, total: 4, papel: "FECHAMENTO PREMIUM: CTA elegante 'Link na Bio' centralizado em tipografia grande, hierarquia editorial impecável estilo capa de revista médica top de linha + rodapé textual obrigatório. É o ÚLTIMO DEGRAU — deve ser o slide mais bonito e bem produzido do carrossel." },
+        { n: 1, total: 5, papel: "CAPA: GANCHO forte de conversão (pergunta/dor real) + rodapé textual obrigatório. Layout impactante de revista. SEM bibliografia." },
+        { n: 2, total: 5, papel: "PROBLEMA: aprofunda a dor em linguagem leiga, faz a pessoa se identificar. SEM anatomia clínica interna." },
+        { n: 3, total: 5, papel: "MECANISMO: explica COMO o problema acontece com analogia visual simples. Reforço de autoridade hospitalar." },
+        { n: 4, total: 5, papel: "SOLUÇÃO/GANHO: como o cirurgião resolve. Foco no GANHO CONCRETO do paciente (dormir bem, mastigar sem dor, voltar a sorrir, respirar melhor)." },
+        { n: 5, total: 5, papel: "FECHAMENTO PREMIUM com CTA FORTE: tipografia grande 'LINK NA BIO' centralizada + ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat oficial, canto inferior direito) + número '+55 11 94768-4004' em tipografia pequena ao lado do ícone. Hierarquia editorial impecável estilo capa de revista médica top de linha. É o slide mais bonito do carrossel." },
       ];
       const xSpec = [
         { n: 1, total: 3, papel: "TWEET 1: gancho/pergunta forte com assinatura." },
