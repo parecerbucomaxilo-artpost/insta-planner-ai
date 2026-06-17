@@ -184,13 +184,20 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
     : "Referência editorial: Mayo Clinic, Cleveland Clinic, Harvard Health — autoridade institucional, luxo discreto.";
   return `CARTAZ MÉDICO ULTRA PREMIUM — autoridade hospitalar em Cirurgia e Traumatologia Bucomaxilofacial + Odontologia Hospitalar.
 - ${refEditorial} Minimalismo editorial, ZERO aparência de anúncio ou banco de imagens.
-- Paleta OBRIGATÓRIA: azul petróleo profundo (#0c2340), azul ciano (#2dd4ff), branco puro, preto sofisticado. Vermelho APENAS para sinalizar DOR/alerta clínico.
+- IDENTIDADE VISUAL OBRIGATÓRIA — paleta EXATA da logo "${ASSINATURA}" (NÃO desviar, NÃO inventar outras cores):
+    • AZUL PETRÓLEO PROFUNDO #0c2340 (cor principal, fundos, faixas, tipografia institucional)
+    • AZUL CIANO ELÉTRICO #2dd4ff (acento, destaques, detalhes finos, linhas)
+    • BRANCO PURO #FFFFFF (textos sobre azul, espaço negativo)
+    • PRETO SOFISTICADO #0a0a0a (microtexto, sombras profundas)
+    • VERMELHO #E11D2E APENAS quando sinalizar DOR/alerta clínico (uso pontual, nunca decorativo).
+  Proibido roxo, verde, laranja, amarelo, rosa, magenta, bege, marrom, gradientes coloridos, pastel, neon fora do ciano #2dd4ff.
 - Iluminação cinematográfica, profundidade, micro-texturas, qualidade 8K, hierarquia visual forte.
 - Tipografia bold sans-serif premium (Inter/Söhne), alto contraste, kerning impecável.
 - Texto curto em PT-BR Brasil com acentuação correta, ortografia impecável, SEM palavras duplicadas, SEM inglês, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semBibliografia}
 - Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, horizontal 16:9 (1536x1024)." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), autoridade médica regional, foco em SEO local." : "LinkedIn: formato horizontal 1.91:1 (1200x627), capa de artigo científico premium tipo The Lancet/JOMS."}${slideInfo}
-- PROIBIDO ABSOLUTO: inventar logotipo/marca, desenhar rostos em close, texto em inglês, palavras repetidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas, chamadas comerciais.
-- VARIAÇÃO VISUAL ÚNICA (seed ${Math.random().toString(36).slice(2, 10)}): composição, ângulo de câmera, enquadramento, paleta de apoio, elementos gráficos e tipografia DEVEM ser inéditos — não repetir layouts, fundos, cenas ou arranjos já usados em posts anteriores. Cada imagem é uma obra original.`;
+- PROIBIDO ABSOLUTO: inventar logotipo/marca, desenhar rostos em close, texto em inglês, palavras repetidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores fora da paleta acima, chamadas comerciais.
+- VARIAÇÃO VISUAL ÚNICA (seed ${Math.random().toString(36).slice(2, 10)}): composição, ângulo de câmera, enquadramento, elementos gráficos e tipografia DEVEM ser inéditos — não repetir layouts, fundos, cenas ou arranjos já usados em posts anteriores. Cada imagem é uma obra original DENTRO da paleta obrigatória acima.`;
+
 }
 
 
