@@ -288,6 +288,13 @@ Responda APENAS com a frase do tema, nada mais.`,
         const candidato = await escolher(i);
         if (!candidato) continue;
         const cn = norm(candidato);
+        const palavras = candidato.split(/\s+/).filter(Boolean);
+        const formaInvalida =
+          palavras.length < 8 ||
+          palavras.length > 18 ||
+          /[:;]\s*$/.test(candidato) ||
+          /^(tema|assunto|título|titulo)\s*[:\-]/i.test(candidato) ||
+          (candidato.match(/,/g)?.length ?? 0) >= 3; // lista de keywords
         const colide = usadosNorm.has(cn) || Array.from(usadosNorm).some((u) => {
           const a = new Set(cn.split(" ").filter((w) => w.length >= 4));
           const b = new Set(u.split(" ").filter((w) => w.length >= 4));
@@ -295,7 +302,7 @@ Responda APENAS com a frase do tema, nada mais.`,
           return inter >= 3;
         });
         tema = candidato;
-        if (!colide) break;
+        if (!colide && !formaInvalida) break;
       }
       if (!tema) throw new Error("IA não conseguiu escolher um tema.");
     }
