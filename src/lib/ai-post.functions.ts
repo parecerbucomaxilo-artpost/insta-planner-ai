@@ -189,7 +189,8 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - Tipografia bold sans-serif premium (Inter/Söhne), alto contraste, kerning impecável.
 - Texto curto em PT-BR Brasil com acentuação correta, ortografia impecável, SEM palavras duplicadas, SEM inglês, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semBibliografia}
 - Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, horizontal 16:9 (1536x1024)." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), autoridade médica regional, foco em SEO local." : "LinkedIn: formato horizontal 1.91:1 (1200x627), capa de artigo científico premium tipo The Lancet/JOMS."}${slideInfo}
-- PROIBIDO ABSOLUTO: inventar logotipo/marca, desenhar rostos em close, texto em inglês, palavras repetidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas, chamadas comerciais.`;
+- PROIBIDO ABSOLUTO: inventar logotipo/marca, desenhar rostos em close, texto em inglês, palavras repetidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores chapadas, chamadas comerciais.
+- VARIAÇÃO VISUAL ÚNICA (seed ${Math.random().toString(36).slice(2, 10)}): composição, ângulo de câmera, enquadramento, paleta de apoio, elementos gráficos e tipografia DEVEM ser inéditos — não repetir layouts, fundos, cenas ou arranjos já usados em posts anteriores. Cada imagem é uma obra original.`;
 }
 
 
@@ -217,19 +218,36 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           ? "Story"
           : "Post Único");
 
-    // 0. Se nenhum tema foi fornecido, a IA escolhe um automaticamente.
+    // 0. Se nenhum tema foi fornecido, a IA escolhe um automaticamente
+    //    EVITANDO temas dos últimos 60 dias (máxima abrangência editorial).
     let tema = (data.tema ?? "").trim();
     if (!tema) {
+      const desde = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: historico } = await supabaseAdmin
+        .from("posts")
+        .select("prompt_ia")
+        .gte("created_at", desde)
+        .not("prompt_ia", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(120);
+      const temasUsados = Array.from(
+        new Set((historico ?? []).map((p: any) => (p.prompt_ia || "").trim()).filter(Boolean))
+      ).slice(0, 80);
+      const blocoEvitar = temasUsados.length
+        ? `\n\nTEMAS JÁ PUBLICADOS NOS ÚLTIMOS 60 DIAS — É PROIBIDO REPETIR OU PARAFRASEAR QUALQUER UM DELES:\n${temasUsados.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
+        : "";
       const { text: temaEscolhido } = await generateText({
         model,
-        system: `Você é estrategista de conteúdo de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar (CTBMF + Odontologia Hospitalar).`,
-        prompt: `Escolha 1 TEMA de post para a rede ${data.rede} (formato ${formato}) dentro da especialidade "${data.especialidade}".
-Tema deve ser sobre uma DOR REAL do paciente (siso, ATM, trauma facial, infecção odontogênica, apneia obstrutiva, cirurgia ortognática, atendimento hospitalar, etc.) e ter potencial de conversão.
-Responda APENAS com o tema em 1 frase curta (máx. 12 palavras), sem aspas, sem prefixos, sem explicação.`,
+        system: `Você é estrategista editorial de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar (CTBMF + Odontologia Hospitalar). Sua missão é MAXIMIZAR ABRANGÊNCIA TEMÁTICA — cobrir todo o espectro da especialidade ao longo do tempo, sem repetir assunto.`,
+        prompt: `Escolha 1 TEMA INÉDITO de post para a rede ${data.rede} (formato ${formato}) dentro da especialidade "${data.especialidade}".
+Explore TODO o universo da CTBMF + Odontologia Hospitalar: siso (impactado, ectópico, complicações), ATM/DTM (disco, artrocentese, artroscopia, prótese), trauma facial (mandíbula, zigoma, órbita, maxila, Le Fort, NOE, frontal), cirurgia ortognática (classe II, III, assimetria, mordida aberta, apneia), infecções odontogênicas (Ludwig, abscesso, celulite cervical), apneia obstrutiva do sono (CPAP, AMO, MMA), patologia oral (cistos, tumores benignos e malignos, lesões brancas/vermelhas), reconstrução (enxerto, retalho, microcirurgia), implantes em paciente complexo, atendimento hospitalar (UTI, oncologia, queimados, pacientes especiais, gestantes, cardiopatas, transplantados), odontologia hospitalar preventiva (VAP, mucosite, endocardite), bisfosfonatos/MRONJ, glândulas salivares, nervo alveolar inferior, anestesia geral em odontologia, urgências bucomaxilofaciais.
+Tema deve falar de uma DOR/SITUAÇÃO REAL do paciente e ter potencial de conversão.${blocoEvitar}
+Responda APENAS com o tema em 1 frase curta (máx. 14 palavras), sem aspas, sem prefixos, sem explicação, sem numeração.`,
       });
       tema = temaEscolhido.trim().replace(/^["'`]+|["'`]+$/g, "").split("\n")[0];
       if (!tema) throw new Error("IA não conseguiu escolher um tema.");
     }
+
 
     // 1. Resolve nível editorial
     const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
