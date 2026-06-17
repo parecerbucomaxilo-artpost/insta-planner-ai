@@ -189,30 +189,30 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
           ? "FORMATO vertical 9:16 (1024x1536) — Instagram Stories, tela cheia mobile."
           : "FORMATO vertical 4:5 (1024x1536) — Instagram Feed/Carrossel, mobile-first.";
 
-  // === Estilo visual: varia entre fotografia, ilustração, quadrinhos, infográfico, colagem ===
+  // === Estilo visual: prioriza FOTOGRAFIA REALISTA premium. Quadrinho/colagem/infográfico foram REMOVIDOS por produzirem resultados ruins. ===
   const estilosPossiveis = [
-    "FOTOGRAFIA REALISTA cinematográfica (ambiente clínico/hospitalar, mãos, instrumental, luz natural premium) — sem rosto reconhecível de pessoa real",
-    "ILUSTRAÇÃO EDITORIAL minimalista vetorial premium (estilo The New Yorker / Lancet cover) com formas geométricas e ícones limpos",
-    "QUADRINHO/STORYBOARD em 2-3 quadros simples mostrando dor → solução, traço limpo, cores da paleta",
-    "INFOGRÁFICO ANATÔMICO editorial (silhueta estilizada de face/mandíbula/ATM, linhas finas, marcadores) — anatomia plausível, sem inventar estruturas",
-    "COLAGEM EDITORIAL fotografia + tipografia grande estilo revista médica premium",
+    "FOTOGRAFIA EDITORIAL HIPER-REALISTA estilo Mayo Clinic/Cleveland Clinic: cena clínica ou hospitalar autêntica, iluminação cinematográfica natural, profundidade de campo rasa, instrumental cirúrgico real, mãos com luvas, ambiente premium — qualidade de capa de revista médica internacional",
+    "FOTOGRAFIA EDITORIAL HIPER-REALISTA estilo Mayo Clinic/Cleveland Clinic: cena clínica ou hospitalar autêntica, iluminação cinematográfica natural, profundidade de campo rasa, instrumental cirúrgico real, mãos com luvas, ambiente premium — qualidade de capa de revista médica internacional",
+    "FOTOGRAFIA DOCUMENTAL DE PACIENTE em momento de sintoma real (mão tocando a mandíbula, expressão de desconforto, ambiente cotidiano) — luz natural, estilo Magnum/National Geographic Health, ZERO rosto reconhecível (corte acima do queixo, perfil, ou foco na mão/região afetada)",
+    "ILUSTRAÇÃO EDITORIAL MINIMALISTA premium estilo capa The Lancet: 1 elemento central forte (silhueta, ícone anatômico estilizado), muito espaço negativo, paleta restrita, tipografia bold",
   ];
   const estiloEscolhido = estilosPossiveis[Math.floor(Math.random() * estilosPossiveis.length)];
 
   const refEditorial = nivel === "linkedin-cientifico"
-    ? "Referência: The Lancet, NEJM, JOMS — capa científica top-tier."
-    : "Referência: Mayo Clinic, Cleveland Clinic, Harvard Health — autoridade institucional.";
+    ? "Referência visual: capa The Lancet / NEJM / JOMS."
+    : "Referência visual: Mayo Clinic, Cleveland Clinic, Harvard Health — fotografia médica premium.";
 
   return `IMAGEM MÉDICA ULTRA PREMIUM — autoridade hospitalar em CTBMF + Odontologia Hospitalar.
-- ${refEditorial} ZERO cara de anúncio ou banco de imagens.
+- ${refEditorial} ZERO cara de anúncio, banco de imagens, estoque, clipart ou "IA óbvia".
 - ${dimensoes}
-- ESTILO VISUAL DESTE POST: ${estiloEscolhido}.
-- REPRESENTAÇÃO LITERAL DO TEMA — a cena DEVE corresponder visualmente, de forma reconhecível, ao tema "${tema}". Se o tema fala de siso → região posterior da mandíbula; ATM → articulação/região pré-auricular; trauma facial → cena de trauma plausível; apneia → sono/CPAP; infecção → edema cervical; ortognática → perfil facial. NUNCA imagem genérica desconectada do tema.
-- POUCO TEXTO NA IMAGEM: máximo 1 headline curto (até 6 palavras) + 1 microtexto opcional. SEM parágrafos, listas, bullets, números longos ou legendas dentro da arte — o texto longo vai na legenda do post.
-- PALETA EXATA da logo: AZUL PETRÓLEO #0c2340 (principal) • AZUL CIANO #2dd4ff (acento) • BRANCO #FFFFFF • PRETO #0a0a0a (microtexto) • VERMELHO #E11D2E só para DOR/alerta. Proibido roxo, verde, laranja, amarelo, rosa, magenta, bege, marrom, gradientes coloridos, pastel.
-- Iluminação cinematográfica, profundidade, qualidade 8K, hierarquia visual forte. Tipografia bold sans-serif (Inter/Söhne), PT-BR com acentuação correta, sem inglês, sem palavras duplicadas.${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semDiagnostico}${semBibliografia}${slideInfo}
-- PROIBIDO: rostos reconhecíveis de pessoas reais, watermark de IA, dentes hiper-saturados, sorrisos clichês, cores fora da paleta, chamadas comerciais ("promoção", "desconto", "agende").
-- VARIAÇÃO ÚNICA (seed ${Math.random().toString(36).slice(2, 10)}): composição, ângulo, enquadramento e arranjo inéditos — nunca repetir layouts anteriores.`;
+- ESTILO OBRIGATÓRIO: ${estiloEscolhido}.
+- CENA LITERAL E RECONHECÍVEL do tema "${tema}": siso → região posterior da mandíbula; ATM → mão na região pré-auricular; trauma facial → cena de pronto-socorro plausível; apneia → pessoa dormindo / CPAP; infecção → edema cervical; ortognática → perfil facial; UTI/VAP → leito hospitalar com tubo orotraqueal. Jamais imagem genérica desconectada do tema.
+- ANATOMIA CORRETA: proporções humanas reais, mãos com exatamente 5 dedos, dentes em número e posição corretos, instrumental plausível. Se a IA tiver dúvida, prefira enquadramento que esconda a região (mão na boca, perfil, plano fechado em instrumental, foco seletivo).
+- TEXTO NA IMAGEM: NO MÁXIMO 1 headline curto (3 a 6 palavras) em tipografia bold sans-serif, PT-BR com acentuação perfeita. SEM parágrafos, listas, números, percentuais, bullets ou legendas — texto longo vai na legenda do post.
+- PALETA: dominante BRANCO + AZUL PETRÓLEO #0c2340, acento AZUL CIANO #2dd4ff. VERMELHO #E11D2E apenas em ponto de dor/alerta. Proibido roxo, verde, laranja, amarelo, rosa, magenta, gradientes coloridos, filtros saturados.
+- Iluminação cinematográfica, profundidade real, qualidade 8K, hierarquia limpa, muito espaço negativo.${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semDiagnostico}${semBibliografia}${slideInfo}
+- PROIBIDO: rostos reconhecíveis de pessoas reais, watermark de IA, dentes hiper-saturados, sorrisos clichês de banco de imagens, mãos deformadas, dedos a mais, anatomia impossível, texto em inglês, palavras duplicadas, cores fora da paleta, chamadas comerciais.
+- Variação única (seed ${Math.random().toString(36).slice(2, 10)}): composição, ângulo e enquadramento inéditos.`;
 
 }
 
