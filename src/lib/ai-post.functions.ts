@@ -229,29 +229,48 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     //    EVITANDO temas dos últimos 60 dias (máxima abrangência editorial).
     let tema = (data.tema ?? "").trim();
     if (!tema) {
-      const desde = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const desde = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
       const { data: historico } = await supabaseAdmin
         .from("posts")
         .select("prompt_ia")
         .gte("created_at", desde)
         .not("prompt_ia", "is", null)
         .order("created_at", { ascending: false })
-        .limit(120);
+        .limit(200);
+      const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
       const temasUsados = Array.from(
         new Set((historico ?? []).map((p: any) => (p.prompt_ia || "").trim()).filter(Boolean))
-      ).slice(0, 80);
-      const blocoEvitar = temasUsados.length
-        ? `\n\nTEMAS JÁ PUBLICADOS NOS ÚLTIMOS 60 DIAS — É PROIBIDO REPETIR OU PARAFRASEAR QUALQUER UM DELES:\n${temasUsados.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
-        : "";
-      const { text: temaEscolhido } = await generateText({
-        model,
-        system: `Você é estrategista editorial de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar (CTBMF + Odontologia Hospitalar). Sua missão é MAXIMIZAR ABRANGÊNCIA TEMÁTICA — cobrir todo o espectro da especialidade ao longo do tempo, sem repetir assunto.`,
-        prompt: `Escolha 1 TEMA INÉDITO de post para a rede ${data.rede} (formato ${formato}) dentro da especialidade "${data.especialidade}".
-Explore TODO o universo da CTBMF + Odontologia Hospitalar: siso (impactado, ectópico, complicações), ATM/DTM (disco, artrocentese, artroscopia, prótese), trauma facial (mandíbula, zigoma, órbita, maxila, Le Fort, NOE, frontal), cirurgia ortognática (classe II, III, assimetria, mordida aberta, apneia), infecções odontogênicas (Ludwig, abscesso, celulite cervical), apneia obstrutiva do sono (CPAP, AMO, MMA), patologia oral (cistos, tumores benignos e malignos, lesões brancas/vermelhas), reconstrução (enxerto, retalho, microcirurgia), implantes em paciente complexo, atendimento hospitalar (UTI, oncologia, queimados, pacientes especiais, gestantes, cardiopatas, transplantados), odontologia hospitalar preventiva (VAP, mucosite, endocardite), bisfosfonatos/MRONJ, glândulas salivares, nervo alveolar inferior, anestesia geral em odontologia, urgências bucomaxilofaciais.
+      ).slice(0, 150);
+      const usadosNorm = new Set(temasUsados.map(norm));
+
+      const escolher = async (tentativa: number) => {
+        const blocoEvitar = temasUsados.length
+          ? `\n\nTEMAS JÁ PUBLICADOS NOS ÚLTIMOS 90 DIAS — É TERMINANTEMENTE PROIBIDO REPETIR, PARAFRASEAR OU TANGENCIAR QUALQUER UM DELES:\n${temasUsados.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
+          : "";
+        const { text } = await generateText({
+          model,
+          system: `Você é estrategista editorial de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar. Sua missão é MAXIMIZAR ABRANGÊNCIA TEMÁTICA — JAMAIS repetir assunto.`,
+          prompt: `Escolha 1 TEMA 100% INÉDITO de post para a rede ${data.rede} (formato ${formato}) dentro da especialidade "${data.especialidade}".${tentativa > 0 ? " TENTATIVA " + (tentativa + 1) + ": o tema anterior foi rejeitado por similaridade — escolha um SUBTÓPICO COMPLETAMENTE DIFERENTE." : ""}
+Explore TODO o universo da CTBMF + Odontologia Hospitalar: siso, ATM/DTM, trauma facial (mandíbula, zigoma, órbita, maxila, Le Fort, NOE, frontal), cirurgia ortognática, infecções odontogênicas (Ludwig, abscesso, celulite cervical), apneia obstrutiva do sono (CPAP, AMO, MMA), patologia oral (cistos, tumores), reconstrução (enxerto, retalho, microcirurgia), implantes em paciente complexo, atendimento hospitalar (UTI, oncologia, queimados, gestantes, cardiopatas, transplantados), odontologia hospitalar preventiva (VAP, mucosite, endocardite), bisfosfonatos/MRONJ, glândulas salivares, nervo alveolar inferior, anestesia geral, urgências bucomaxilofaciais.
 Tema deve falar de uma DOR/SITUAÇÃO REAL do paciente e ter potencial de conversão.${blocoEvitar}
 Responda APENAS com o tema em 1 frase curta (máx. 14 palavras), sem aspas, sem prefixos, sem explicação, sem numeração.`,
-      });
-      tema = temaEscolhido.trim().replace(/^["'`]+|["'`]+$/g, "").split("\n")[0];
+        });
+        return text.trim().replace(/^["'`]+|["'`]+$/g, "").split("\n")[0];
+      };
+
+      for (let i = 0; i < 3; i++) {
+        const candidato = await escolher(i);
+        if (!candidato) continue;
+        const cn = norm(candidato);
+        const colide = usadosNorm.has(cn) || Array.from(usadosNorm).some((u) => {
+          const a = new Set(cn.split(" ").filter((w) => w.length >= 4));
+          const b = new Set(u.split(" ").filter((w) => w.length >= 4));
+          let inter = 0; a.forEach((w) => { if (b.has(w)) inter++; });
+          return inter >= 3;
+        });
+        tema = candidato;
+        if (!colide) break;
+      }
       if (!tema) throw new Error("IA não conseguiu escolher um tema.");
     }
 
