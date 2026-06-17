@@ -178,25 +178,41 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
     ? `\n- PÚBLICO GERAL: ZERO bibliografia, ZERO DOI, ZERO nome de revista, ZERO citação acadêmica na imagem.`
     : "";
 
-  // === TODAS AS REDES — cartaz médico premium (PERFIL MÉDICO PREMIUM padrão Mayo/Cleveland/Lancet) ===
+  // === Dimensões EXATAS por rede/formato ===
+  const dimensoes = rede === "estilo-x"
+    ? "FORMATO horizontal 16:9 (1536x1024) — estilo tweet visual."
+    : rede === "google"
+      ? "FORMATO horizontal 4:3 (1536x1024) — cartaz Google Meu Negócio, SEO local."
+      : rede === "linkedin"
+        ? "FORMATO horizontal 1.91:1 (1536x1024) — capa de artigo científico premium tipo The Lancet/JOMS."
+        : isStory
+          ? "FORMATO vertical 9:16 (1024x1536) — Instagram Stories, tela cheia mobile."
+          : "FORMATO vertical 4:5 (1024x1536) — Instagram Feed/Carrossel, mobile-first.";
+
+  // === Estilo visual: varia entre fotografia, ilustração, quadrinhos, infográfico, colagem ===
+  const estilosPossiveis = [
+    "FOTOGRAFIA REALISTA cinematográfica (ambiente clínico/hospitalar, mãos, instrumental, luz natural premium) — sem rosto reconhecível de pessoa real",
+    "ILUSTRAÇÃO EDITORIAL minimalista vetorial premium (estilo The New Yorker / Lancet cover) com formas geométricas e ícones limpos",
+    "QUADRINHO/STORYBOARD em 2-3 quadros simples mostrando dor → solução, traço limpo, cores da paleta",
+    "INFOGRÁFICO ANATÔMICO editorial (silhueta estilizada de face/mandíbula/ATM, linhas finas, marcadores) — anatomia plausível, sem inventar estruturas",
+    "COLAGEM EDITORIAL fotografia + tipografia grande estilo revista médica premium",
+  ];
+  const estiloEscolhido = estilosPossiveis[Math.floor(Math.random() * estilosPossiveis.length)];
+
   const refEditorial = nivel === "linkedin-cientifico"
-    ? "Referência editorial: The Lancet, NEJM, JOMS — capa de artigo científico top-tier, estética acadêmica premium."
-    : "Referência editorial: Mayo Clinic, Cleveland Clinic, Harvard Health — autoridade institucional, luxo discreto.";
-  return `CARTAZ MÉDICO ULTRA PREMIUM — autoridade hospitalar em Cirurgia e Traumatologia Bucomaxilofacial + Odontologia Hospitalar.
-- ${refEditorial} Minimalismo editorial, ZERO aparência de anúncio ou banco de imagens.
-- IDENTIDADE VISUAL OBRIGATÓRIA — paleta EXATA da logo "${ASSINATURA}" (NÃO desviar, NÃO inventar outras cores):
-    • AZUL PETRÓLEO PROFUNDO #0c2340 (cor principal, fundos, faixas, tipografia institucional)
-    • AZUL CIANO ELÉTRICO #2dd4ff (acento, destaques, detalhes finos, linhas)
-    • BRANCO PURO #FFFFFF (textos sobre azul, espaço negativo)
-    • PRETO SOFISTICADO #0a0a0a (microtexto, sombras profundas)
-    • VERMELHO #E11D2E APENAS quando sinalizar DOR/alerta clínico (uso pontual, nunca decorativo).
-  Proibido roxo, verde, laranja, amarelo, rosa, magenta, bege, marrom, gradientes coloridos, pastel, neon fora do ciano #2dd4ff.
-- Iluminação cinematográfica, profundidade, micro-texturas, qualidade 8K, hierarquia visual forte.
-- Tipografia bold sans-serif premium (Inter/Söhne), alto contraste, kerning impecável.
-- Texto curto em PT-BR Brasil com acentuação correta, ortografia impecável, SEM palavras duplicadas, SEM inglês, SEM caracteres estranhos. Tema: "${tema}".${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semBibliografia}
-- Rede de destino: ${rede}. ${rede === "estilo-x" ? "Estilo TWEET visual, horizontal 16:9 (1536x1024)." : rede === "google" ? "Google Meu Negócio: cartaz horizontal 4:3 (1200x900), autoridade médica regional, foco em SEO local." : "LinkedIn: formato horizontal 1.91:1 (1200x627), capa de artigo científico premium tipo The Lancet/JOMS."}${slideInfo}
-- PROIBIDO ABSOLUTO: inventar logotipo/marca, desenhar rostos em close, texto em inglês, palavras repetidas, tipografia com glitch, watermark de IA, estética de banco de imagens, dentes hiper-saturados, sorrisos clichês, cores fora da paleta acima, chamadas comerciais.
-- VARIAÇÃO VISUAL ÚNICA (seed ${Math.random().toString(36).slice(2, 10)}): composição, ângulo de câmera, enquadramento, elementos gráficos e tipografia DEVEM ser inéditos — não repetir layouts, fundos, cenas ou arranjos já usados em posts anteriores. Cada imagem é uma obra original DENTRO da paleta obrigatória acima.`;
+    ? "Referência: The Lancet, NEJM, JOMS — capa científica top-tier."
+    : "Referência: Mayo Clinic, Cleveland Clinic, Harvard Health — autoridade institucional.";
+
+  return `IMAGEM MÉDICA ULTRA PREMIUM — autoridade hospitalar em CTBMF + Odontologia Hospitalar.
+- ${refEditorial} ZERO cara de anúncio ou banco de imagens.
+- ${dimensoes}
+- ESTILO VISUAL DESTE POST: ${estiloEscolhido}.
+- REPRESENTAÇÃO LITERAL DO TEMA — a cena DEVE corresponder visualmente, de forma reconhecível, ao tema "${tema}". Se o tema fala de siso → região posterior da mandíbula; ATM → articulação/região pré-auricular; trauma facial → cena de trauma plausível; apneia → sono/CPAP; infecção → edema cervical; ortognática → perfil facial. NUNCA imagem genérica desconectada do tema.
+- POUCO TEXTO NA IMAGEM: máximo 1 headline curto (até 6 palavras) + 1 microtexto opcional. SEM parágrafos, listas, bullets, números longos ou legendas dentro da arte — o texto longo vai na legenda do post.
+- PALETA EXATA da logo: AZUL PETRÓLEO #0c2340 (principal) • AZUL CIANO #2dd4ff (acento) • BRANCO #FFFFFF • PRETO #0a0a0a (microtexto) • VERMELHO #E11D2E só para DOR/alerta. Proibido roxo, verde, laranja, amarelo, rosa, magenta, bege, marrom, gradientes coloridos, pastel.
+- Iluminação cinematográfica, profundidade, qualidade 8K, hierarquia visual forte. Tipografia bold sans-serif (Inter/Söhne), PT-BR com acentuação correta, sem inglês, sem palavras duplicadas.${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semDiagnostico}${semBibliografia}${slideInfo}
+- PROIBIDO: rostos reconhecíveis de pessoas reais, watermark de IA, dentes hiper-saturados, sorrisos clichês, cores fora da paleta, chamadas comerciais ("promoção", "desconto", "agende").
+- VARIAÇÃO ÚNICA (seed ${Math.random().toString(36).slice(2, 10)}): composição, ângulo, enquadramento e arranjo inéditos — nunca repetir layouts anteriores.`;
 
 }
 
@@ -251,8 +267,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           model,
           system: `Você é estrategista editorial de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar. Sua missão é MAXIMIZAR ABRANGÊNCIA TEMÁTICA — JAMAIS repetir assunto.`,
           prompt: `Escolha 1 TEMA 100% INÉDITO de post para a rede ${data.rede} (formato ${formato}) dentro da especialidade "${data.especialidade}".${tentativa > 0 ? " TENTATIVA " + (tentativa + 1) + ": o tema anterior foi rejeitado por similaridade — escolha um SUBTÓPICO COMPLETAMENTE DIFERENTE." : ""}
-Explore TODO o universo da CTBMF + Odontologia Hospitalar: siso, ATM/DTM, trauma facial (mandíbula, zigoma, órbita, maxila, Le Fort, NOE, frontal), cirurgia ortognática, infecções odontogênicas (Ludwig, abscesso, celulite cervical), apneia obstrutiva do sono (CPAP, AMO, MMA), patologia oral (cistos, tumores), reconstrução (enxerto, retalho, microcirurgia), implantes em paciente complexo, atendimento hospitalar (UTI, oncologia, queimados, gestantes, cardiopatas, transplantados), odontologia hospitalar preventiva (VAP, mucosite, endocardite), bisfosfonatos/MRONJ, glândulas salivares, nervo alveolar inferior, anestesia geral, urgências bucomaxilofaciais.
-Tema deve falar de uma DOR/SITUAÇÃO REAL do paciente e ter potencial de conversão.${blocoEvitar}
+PRIORIZE ASSUNTOS DE ALTA RELEVÂNCIA E ALTO VOLUME DE BUSCA NO GOOGLE BRASIL hoje sobre CTBMF + Odontologia Hospitalar: "dor no siso", "estalo na ATM", "bruxismo", "apneia do sono", "ronco", "mandíbula travada", "cirurgia ortognática antes e depois", "trauma na face", "infecção dente siso", "dor de ouvido ATM", "implante em fumante", "câncer de boca", "mucocele lábio", "freio lingual bebê", "anestesia geral em odontologia", "dente do siso incluso", "fratura mandíbula", "pós-operatório siso", "DTM tratamento", "MRONJ bisfosfonato", "VAP UTI higiene bucal".
+Varie ENTRE diferentes grupos de dor a cada chamada — não fixe em um só. Tema deve falar de uma DOR/SITUAÇÃO REAL do paciente, com potencial de conversão e busca orgânica.${blocoEvitar}
 Responda APENAS com o tema em 1 frase curta (máx. 14 palavras), sem aspas, sem prefixos, sem explicação, sem numeração.`,
         });
         return text.trim().replace(/^["'`]+|["'`]+$/g, "").split("\n")[0];
