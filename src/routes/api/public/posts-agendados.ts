@@ -206,6 +206,7 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
             .from("posts")
             .select("id,user_id")
             .eq("status", "Agendado")
+            .eq("postar_instagram", true)
             .lte("data_agendamento", nowIso)
             .order("data_agendamento", { ascending: true })
             .limit(1)
