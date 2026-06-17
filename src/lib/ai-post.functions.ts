@@ -267,9 +267,19 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           model,
           system: `Você é estrategista editorial de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar. Sua missão é MAXIMIZAR ABRANGÊNCIA TEMÁTICA — JAMAIS repetir assunto.`,
           prompt: `Escolha 1 TEMA 100% INÉDITO de post para a rede ${data.rede} (formato ${formato}) dentro da especialidade "${data.especialidade}".${tentativa > 0 ? " TENTATIVA " + (tentativa + 1) + ": o tema anterior foi rejeitado por similaridade — escolha um SUBTÓPICO COMPLETAMENTE DIFERENTE." : ""}
-PRIORIZE ASSUNTOS DE ALTA RELEVÂNCIA E ALTO VOLUME DE BUSCA NO GOOGLE BRASIL hoje sobre CTBMF + Odontologia Hospitalar: "dor no siso", "estalo na ATM", "bruxismo", "apneia do sono", "ronco", "mandíbula travada", "cirurgia ortognática antes e depois", "trauma na face", "infecção dente siso", "dor de ouvido ATM", "implante em fumante", "câncer de boca", "mucocele lábio", "freio lingual bebê", "anestesia geral em odontologia", "dente do siso incluso", "fratura mandíbula", "pós-operatório siso", "DTM tratamento", "MRONJ bisfosfonato", "VAP UTI higiene bucal".
-Varie ENTRE diferentes grupos de dor a cada chamada — não fixe em um só. Tema deve falar de uma DOR/SITUAÇÃO REAL do paciente, com potencial de conversão e busca orgânica.${blocoEvitar}
-Responda APENAS com o tema em 1 frase curta (máx. 14 palavras), sem aspas, sem prefixos, sem explicação, sem numeração.`,
+
+PRIORIZE ASSUNTOS DE ALTO VOLUME DE BUSCA NO GOOGLE BRASIL sobre CTBMF + Odontologia Hospitalar: dor no siso, estalo na ATM, bruxismo, apneia do sono, ronco, mandíbula travada, cirurgia ortognática, trauma facial, infecção odontogênica, dor de ouvido por DTM, implante em fumante, câncer de boca, mucocele, freio lingual em bebê, anestesia geral em odontologia, siso incluso, fratura de mandíbula, pós-operatório de siso, tratamento de DTM, MRONJ por bisfosfonato, higiene bucal na UTI (VAP). Varie o grupo de dor a cada chamada.
+
+REGRAS OBRIGATÓRIAS DE REDAÇÃO (descumprir = rejeitado):
+1. Português do Brasil impecável, gramática e ortografia corretas, com acentuação completa.
+2. UMA frase declarativa COMPLETA, com sujeito + verbo + complemento, fazendo sentido sozinha (NÃO é título de matéria, NÃO é lista de palavras-chave, NÃO é fragmento).
+3. Entre 8 e 16 palavras. Tom claro, humano, específico, sem jargão técnico opaco e sem palavras soltas separadas por vírgula.
+4. PROIBIDO: aspas, prefixos como "Tema:", emojis, hashtags, dois-pontos no início, abreviações estranhas, repetir palavras, misturar dois assuntos, frase truncada.
+5. Exemplos de forma CORRETA: "Por que o siso incluso causa dor que irradia até o ouvido"; "Como o bruxismo noturno desgasta os dentes e estala a ATM"; "Quando a apneia do sono exige avaliação do cirurgião bucomaxilofacial".
+
+Tema deve descrever uma DOR ou SITUAÇÃO REAL do paciente, com potencial de conversão e busca orgânica.${blocoEvitar}
+
+Responda APENAS com a frase do tema, nada mais.`,
         });
         return text.trim().replace(/^["'`]+|["'`]+$/g, "").split("\n")[0];
       };
