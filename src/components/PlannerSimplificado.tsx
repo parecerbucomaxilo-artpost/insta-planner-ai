@@ -102,7 +102,7 @@ export function PlannerSimplificado() {
     if (!conta) return toast.error("Selecione uma conta do Instagram.");
     setBusy(true);
     const tid = "ai-simple";
-    toast.loading("IA criando post...", { id: tid });
+    toast.loading("IA criando post para alunos...", { id: tid });
     try {
       const iso = buildAgendamentoIso();
       const out = await genSingle({ data: {
@@ -113,6 +113,7 @@ export function PlannerSimplificado() {
         formato: "Post Único",
         quando: iso,
         ambasRedes: false,
+        audiencia: "estudantes-graduacao",
       } as any });
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
