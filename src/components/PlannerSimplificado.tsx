@@ -55,12 +55,15 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [posts, setPosts] = useState<PostRow[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const lsKey = storageKey ?? ACCOUNT_KEY;
+
   useEffect(() => {
+    if (contaFixa) { setConta(contaFixa); setContaInput(contaFixa); return; }
     try {
-      const c = window.localStorage.getItem(ACCOUNT_KEY) || "";
+      const c = window.localStorage.getItem(lsKey) || "";
       setConta(c); setContaInput(c);
     } catch { /* ignore */ }
-  }, []);
+  }, [contaFixa, lsKey]);
 
   const normalize = (v: string) => v.trim().replace(/^@+/, "").toLowerCase();
 
@@ -68,7 +71,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     const n = normalize(contaInput);
     if (!n) return toast.error("Informe o @ da conta.");
     setConta(n);
-    try { window.localStorage.setItem(ACCOUNT_KEY, n); } catch { /* ignore */ }
+    try { window.localStorage.setItem(lsKey, n); } catch { /* ignore */ }
     toast.success(`Conta @${n} selecionada.`);
   };
 
