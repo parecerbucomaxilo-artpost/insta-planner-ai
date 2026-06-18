@@ -18,3 +18,4 @@ CTAs IG/X: "Link na Bio" / "Saiba mais pelo link da bio". CTA LinkedIn: WhatsApp
 - [Estilo e dimensões das imagens](mem://design/image-style-and-dimensions) — Dimensões por rede (IG 4:5, Stories 9:16, LinkedIn/Google/X 16:9/4:3), 5 estilos alternados (foto, ilustração, quadrinhos, infográfico, colagem), pouco texto, representação literal do tema, temas de alta busca.
 - [Estilo navy com headline de impacto](mem://design/navy-background-style) — Fundo navy luminoso, headline curto, paleta da logo.
 - [Ilustrações com realismo anatômico](mem://design/anatomical-illustration-style) — Estilo Netter / Gray's Anatomy / render 3D médico. Proibido cartoon, flat, infantil.
+- [Planner Simplificado — Estudantes](mem://features/planner-simplificado-estudantes) — Aba para alunos de graduação: cirurgia bucal básica, enquetes/curiosidades/técnicas, paleta navy+teal das logos, 2 logos no overlay (sem fundo branco).
