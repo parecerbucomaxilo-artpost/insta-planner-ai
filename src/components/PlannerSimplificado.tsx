@@ -245,14 +245,20 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         <Label className="flex items-center gap-2 text-sm font-semibold">
           <Instagram className="w-4 h-4" /> Conta do Instagram
         </Label>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">@</span>
-            <Input value={contaInput} onChange={(e) => setContaInput(e.target.value)} placeholder="minha_nova_conta" className="pl-7" />
-          </div>
-          <Button onClick={salvarConta}>Usar esta conta</Button>
-        </div>
-        {conta && <p className="text-xs text-zinc-500">Filtro ativo: <Badge variant="secondary">@{conta}</Badge></p>}
+        {contaFixa ? (
+          <p className="text-xs text-zinc-500">Conta fixa: <Badge variant="secondary">@{contaFixa}</Badge></p>
+        ) : (
+          <>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">@</span>
+                <Input value={contaInput} onChange={(e) => setContaInput(e.target.value)} placeholder="minha_nova_conta" className="pl-7" />
+              </div>
+              <Button onClick={salvarConta}>Usar esta conta</Button>
+            </div>
+            {conta && <p className="text-xs text-zinc-500">Filtro ativo: <Badge variant="secondary">@{conta}</Badge></p>}
+          </>
+        )}
       </Card>
 
       {conta && (
