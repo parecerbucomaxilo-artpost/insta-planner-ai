@@ -386,7 +386,6 @@ Responda APENAS com a frase do tema, nada mais.`,
     };
 
     const { ensureJpegB64, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
-    const isEstudantes = data.audiencia === "estudantes-graduacao";
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
       try {
         return await generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem });
