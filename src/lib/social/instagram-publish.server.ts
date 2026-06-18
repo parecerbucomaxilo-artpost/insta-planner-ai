@@ -236,9 +236,17 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       if (contaErr) throw new Error(`DB: ${contaErr.message}`);
       perfil = contaPerfil;
       if (!hasDestino(perfil)) {
-        // Sem perfil configurado para essa conta — usa webhook padrão com o @ no payload.
-        perfil = { id: "webhook-padrao", instagram_webhook_url: DEFAULT_MAKE_WEBHOOK, webhook_url: null, arroba_usuario: contaAlvo } as any;
+        // SEM perfil configurado para essa conta — NÃO publica em outra conta.
+        // O webhook padrão do Make está apontado para @drfranciscomenezes;
+        // cair nele aqui faria a Liga ser publicada na conta errada.
+        throw new Error(
+          `Conta @${contaAlvo} não tem destino configurado (token Meta ou webhook próprio). ` +
+          `Configure o perfil dessa conta em "Configurações > Perfil" antes de publicar — ` +
+          `senão o post seria publicado na conta errada.`,
+        );
       }
+      // Se o perfil dessa conta NÃO tem token Meta próprio mas tem webhook próprio, usa o webhook próprio.
+      // NUNCA reaproveitar o token Meta de outro perfil (publicaria no IG errado).
     } else {
       const { data: metaPerfil, error: metaErr } = await supabaseAdmin
         .from("perfil_usuario")
