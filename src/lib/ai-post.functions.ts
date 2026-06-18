@@ -218,6 +218,40 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 
 }
 
+// === PLANNER SIMPLIFICADO — AUDIÊNCIA: ESTUDANTES DE GRADUAÇÃO EM ODONTOLOGIA ===
+// Tom didático e simples sobre cirurgia bucal básica; inclui enquetes, curiosidades,
+// dicas de técnica e mitos x verdades. Sem CTA comercial. Cores das logos da
+// faculdade (navy escuro + verde-azulado/teal), SEM fundo branco. As 2 logos são
+// aplicadas como overlay real (canto inf. esq. + canto inf. dir.) pelo pipeline —
+// a IA NÃO desenha logos; apenas reserva os cantos inferiores limpos.
+function studentCaptionSystem() {
+  return `Você é professor universitário de Cirurgia Bucomaxilofacial escrevendo para ALUNOS DE GRADUAÇÃO em Odontologia.
+TOM: didático, claro, simples, instrutivo, próximo do aluno. Como se fosse um post de monitoria.
+TIPOS DE CONTEÚDO (varie a cada post): (a) ENQUETE — pergunta de múltipla escolha clínica curta ("Qual a técnica anestésica para exodontia de 38?"), (b) CURIOSIDADE — fato anatômico/histórico curto, (c) DICA DE TÉCNICA — passo-a-passo simples de cirurgia bucal básica (exodontia, sutura, anestesia, ulectomia, frenectomia, biópsia incisional, alveoloplastia), (d) MITO x VERDADE.
+ESTRUTURA DA LEGENDA (Instagram, 400-700 caracteres):
+1. Gancho de aluno na 1ª linha ("Provão chegando?", "Caiu na prova:", "Você sabia que...", "Enquete rápida:").
+2. Corpo didático com 2-3 frases curtas, linguagem acadêmica acessível, podendo usar termos técnicos básicos COM tradução curta.
+3. Se enquete: listar 3-4 alternativas (A, B, C, D) e pedir resposta nos comentários. Revelar a correta na próxima frase ou pedir para comentarem.
+4. Fechamento com 1 dica prática para a clínica/prova.
+5. 4-6 hashtags: #OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto + 1 do tema.
+PROIBIDO: chamadas comerciais ("agende", "promoção"), WhatsApp do consultório, bibliografia tipo Lancet/JOMS, jargão hospitalar pesado, tom de paciente leigo. Sem assinatura no corpo — entra como logos no overlay.`;
+}
+
+function studentImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }) {
+  const slideInfo = slide ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel didático. Papel: ${slide.papel}.` : "";
+  return `IMAGEM EDUCACIONAL PREMIUM para alunos de graduação em Odontologia (cirurgia bucal básica).
+- ESTILO: ilustração editorial didática limpa OU fotografia clínica realista de cirurgia bucal acadêmica (mão com luva, instrumental simples, dente, mandíbula). Referência: livro-texto de cirurgia bucal (Peterson, Hupp, Miloro) com estética moderna de Instagram acadêmico.
+- FORMATO: vertical 4:5 (Instagram Feed) — mobile-first.
+- CENA LITERAL do tema "${tema}": exodontia → fórceps + dente; anestesia → seringa carpule + nervo alveolar inferior; sutura → porta-agulhas + ponto; frenectomia → freio labial; biópsia → bisturi + tecido; alveoloplastia → lima de osso. Mostrar a TÉCNICA real.
+- PALETA OBRIGATÓRIA (cores das logos da faculdade): FUNDO dominante AZUL NAVY ESCURO #0a1a3a com gradiente sutil para VERDE-AZULADO TEAL #2080a0 (cor das logos). Detalhes em BRANCO e CINZA-PRATA #c0c0c0. NUNCA fundo branco. NUNCA cores fora desta paleta (sem roxo, laranja, amarelo, rosa).
+- TEXTO NA IMAGEM: 1 headline curto de 3-7 palavras tipo "ENQUETE", "DICA DE TÉCNICA", "VOCÊ SABIA?", "MITO OU VERDADE?", "CAIU NA PROVA", em tipografia bold sans-serif, BRANCA ou TEAL. Se for enquete, listar alternativas A/B/C/D em fonte limpa. Português impecável.
+- LOGOS: NÃO desenhe logos, marcas, monogramas ou letreiros inventados. APENAS reserve os 2 CANTOS INFERIORES (esq. e dir.) com cerca de 20% da largura LIMPOS, sem texto e sem elementos — duas logos reais serão sobrepostas pelo sistema. Sem fundo branco atrás dos cantos.
+- Iluminação clara, profissional, qualidade 8K, hierarquia limpa, muito espaço negativo navy.
+- PROIBIDO: rostos reconhecíveis, watermark de IA, anatomia errada, mãos com dedos a mais, texto em inglês, CTA comercial, WhatsApp, "agende consulta".${slideInfo}
+- Variação (seed ${Math.random().toString(36).slice(2, 10)}).`;
+}
+
+
 
 export const generateSinglePost = createServerFn({ method: "POST" })
   .middleware([])
