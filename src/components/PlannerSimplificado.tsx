@@ -122,7 +122,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         formato: "Post Único",
         quando: iso,
         ambasRedes: false,
-        audiencia: "estudantes-graduacao",
+        audiencia,
       } as any });
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
@@ -158,7 +158,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         rede: (t.rede === "estilo-x" ? "estilo-x" : "instagram") as any,
         tipo: t.tipo as any, formato: t.formato as any, quando: t.quando,
         ambasRedes: false,
-        audiencia: "estudantes-graduacao",
+        audiencia,
       } as any });
       await marcarConta(out.id);
       await approveFn({ data: { id: out.id, acao: "agendar" } });
