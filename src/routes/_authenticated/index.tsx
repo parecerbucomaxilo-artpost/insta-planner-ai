@@ -6,8 +6,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, TrendingUp, KeyRound, CalendarDays, LogOut } from "lucide-react";
+import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, TrendingUp, KeyRound, CalendarDays, LogOut, Sparkles } from "lucide-react";
 import { PostComposer } from "@/components/PostComposer";
+import { PlannerSimplificado } from "@/components/PlannerSimplificado";
 import { PostsCalendar } from "@/components/PostsCalendar";
 import { PostsList } from "@/components/PostsList";
 import { ProfileSettings, type Perfil } from "@/components/ProfileSettings";
@@ -171,6 +172,7 @@ function Dashboard() {
           <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <TabsList className="w-max">
               <TabsTrigger value="criar"><PlusCircle className="h-4 w-4 mr-1.5" /> Criar</TabsTrigger>
+              <TabsTrigger value="simplificado"><Sparkles className="h-4 w-4 mr-1.5" /> Planner Simplificado</TabsTrigger>
               <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" /> Cronograma de 7 dias</TabsTrigger>
               <TabsTrigger value="calendario"><CalendarIcon className="h-4 w-4 mr-1.5" /> Calendário</TabsTrigger>
               <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todas as publicações</TabsTrigger>
@@ -186,6 +188,9 @@ function Dashboard() {
             <PostComposer 
               onCreated={() => { load(); setTab("todos"); }} 
             />
+          </TabsContent>
+          <TabsContent value="simplificado" className="mt-6">
+            <PlannerSimplificado />
           </TabsContent>
           <TabsContent value="semana" className="mt-6">
             <WeeklyCalendar perfil={perfil} onCreated={load} autoGenerate={autoGenWeekly} />
