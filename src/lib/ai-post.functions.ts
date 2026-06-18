@@ -349,9 +349,10 @@ Responda APENAS com a frase do tema, nada mais.`,
     const isStory = formato === "Story";
 
     // 2. Dispara legenda + imagens EM PARALELO (não dependem entre si).
+    const isEstudantes = data.audiencia === "estudantes-graduacao";
     const legendaPromise = generateText({
       model,
-      system: captionSystem(data.rede, data.especialidade, nivel),
+      system: isEstudantes ? studentCaptionSystem() : captionSystem(data.rede, data.especialidade, nivel),
       prompt: isStory
         ? `Crie um TEXTO DE STORY (até 220 caracteres, 1-2 emojis, sem hashtags, CTA "Link na Bio") que CHAME ATENÇÃO para o post do FEED de hoje sobre: "${tema}". O story deve provocar curiosidade e mandar o usuário para o feed.`
         : `Crie a legenda completa para o post sobre: "${tema}".`,
