@@ -6,8 +6,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, TrendingUp, KeyRound, CalendarDays, LogOut } from "lucide-react";
+import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, TrendingUp, KeyRound, CalendarDays, LogOut, Sparkles } from "lucide-react";
 import { PostComposer } from "@/components/PostComposer";
+import { PlannerSimplificado } from "@/components/PlannerSimplificado";
 import { PostsCalendar } from "@/components/PostsCalendar";
 import { PostsList } from "@/components/PostsList";
 import { ProfileSettings, type Perfil } from "@/components/ProfileSettings";
@@ -186,6 +187,9 @@ function Dashboard() {
             <PostComposer 
               onCreated={() => { load(); setTab("todos"); }} 
             />
+          </TabsContent>
+          <TabsContent value="simplificado" className="mt-6">
+            <PlannerSimplificado />
           </TabsContent>
           <TabsContent value="semana" className="mt-6">
             <WeeklyCalendar perfil={perfil} onCreated={load} autoGenerate={autoGenWeekly} />
