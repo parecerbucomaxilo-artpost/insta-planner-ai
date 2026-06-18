@@ -173,6 +173,7 @@ function Dashboard() {
             <TabsList className="w-max">
               <TabsTrigger value="criar"><PlusCircle className="h-4 w-4 mr-1.5" /> Criar</TabsTrigger>
               <TabsTrigger value="simplificado"><Sparkles className="h-4 w-4 mr-1.5" /> Planner Simplificado Liga</TabsTrigger>
+              <TabsTrigger value="simplificado-chico"><Sparkles className="h-4 w-4 mr-1.5" /> Planner Simplificado Chico</TabsTrigger>
               <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" /> Cronograma de 7 dias</TabsTrigger>
               <TabsTrigger value="calendario"><CalendarIcon className="h-4 w-4 mr-1.5" /> Calendário</TabsTrigger>
               <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todas as publicações</TabsTrigger>
@@ -191,6 +192,13 @@ function Dashboard() {
           </TabsContent>
           <TabsContent value="simplificado" className="mt-6">
             <PlannerSimplificado />
+          </TabsContent>
+          <TabsContent value="simplificado-chico" className="mt-6">
+            <PlannerSimplificado
+              contaFixa="drfranciscomenezes"
+              storageKey="planner_simplificado_chico_v1"
+              audiencia="geral"
+            />
           </TabsContent>
           <TabsContent value="semana" className="mt-6">
             <WeeklyCalendar perfil={perfil} onCreated={load} autoGenerate={autoGenWeekly} />

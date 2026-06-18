@@ -21,7 +21,13 @@ import { ptBR } from "date-fns/locale";
 const ACCOUNT_KEY = "planner_simplificado_conta_v1";
 type Quando = "agora" | "data" | "7dias";
 
-export function PlannerSimplificado() {
+interface PlannerSimplificadoProps {
+  contaFixa?: string;        // se setado, trava a conta (sem seletor)
+  storageKey?: string;       // chave alternativa do localStorage
+  audiencia?: "estudantes-graduacao" | "geral";
+}
+
+export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao" }: PlannerSimplificadoProps = {}) {
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
   const approveFn = useServerFn(approvePost);
@@ -49,12 +55,15 @@ export function PlannerSimplificado() {
   const [posts, setPosts] = useState<PostRow[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const lsKey = storageKey ?? ACCOUNT_KEY;
+
   useEffect(() => {
+    if (contaFixa) { setConta(contaFixa); setContaInput(contaFixa); return; }
     try {
-      const c = window.localStorage.getItem(ACCOUNT_KEY) || "";
+      const c = window.localStorage.getItem(lsKey) || "";
       setConta(c); setContaInput(c);
     } catch { /* ignore */ }
-  }, []);
+  }, [contaFixa, lsKey]);
 
   const normalize = (v: string) => v.trim().replace(/^@+/, "").toLowerCase();
 
@@ -62,7 +71,7 @@ export function PlannerSimplificado() {
     const n = normalize(contaInput);
     if (!n) return toast.error("Informe o @ da conta.");
     setConta(n);
-    try { window.localStorage.setItem(ACCOUNT_KEY, n); } catch { /* ignore */ }
+    try { window.localStorage.setItem(lsKey, n); } catch { /* ignore */ }
     toast.success(`Conta @${n} selecionada.`);
   };
 
@@ -113,7 +122,7 @@ export function PlannerSimplificado() {
         formato: "Post Único",
         quando: iso,
         ambasRedes: false,
-        audiencia: "estudantes-graduacao",
+        audiencia,
       } as any });
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
@@ -149,7 +158,7 @@ export function PlannerSimplificado() {
         rede: (t.rede === "estilo-x" ? "estilo-x" : "instagram") as any,
         tipo: t.tipo as any, formato: t.formato as any, quando: t.quando,
         ambasRedes: false,
-        audiencia: "estudantes-graduacao",
+        audiencia,
       } as any });
       await marcarConta(out.id);
       await approveFn({ data: { id: out.id, acao: "agendar" } });
@@ -236,14 +245,20 @@ export function PlannerSimplificado() {
         <Label className="flex items-center gap-2 text-sm font-semibold">
           <Instagram className="w-4 h-4" /> Conta do Instagram
         </Label>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">@</span>
-            <Input value={contaInput} onChange={(e) => setContaInput(e.target.value)} placeholder="minha_nova_conta" className="pl-7" />
-          </div>
-          <Button onClick={salvarConta}>Usar esta conta</Button>
-        </div>
-        {conta && <p className="text-xs text-zinc-500">Filtro ativo: <Badge variant="secondary">@{conta}</Badge></p>}
+        {contaFixa ? (
+          <p className="text-xs text-zinc-500">Conta fixa: <Badge variant="secondary">@{contaFixa}</Badge></p>
+        ) : (
+          <>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">@</span>
+                <Input value={contaInput} onChange={(e) => setContaInput(e.target.value)} placeholder="minha_nova_conta" className="pl-7" />
+              </div>
+              <Button onClick={salvarConta}>Usar esta conta</Button>
+            </div>
+            {conta && <p className="text-xs text-zinc-500">Filtro ativo: <Badge variant="secondary">@{conta}</Badge></p>}
+          </>
+        )}
       </Card>
 
       {conta && (
