@@ -198,7 +198,7 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
 export async function publishInstagramPostById({ supabaseAdmin, postId, userId }: PublishPostInput) {
   const { data: post, error: postError } = await supabaseAdmin
     .from("posts")
-    .select("id,user_id,tipo_post,formato_midia,legenda,legenda_instagram,postar_instagram,url_imagem,imagens_carrossel")
+    .select("id,user_id,tipo_post,formato_midia,legenda,legenda_instagram,postar_instagram,url_imagem,imagens_carrossel,instagram_conta")
     .eq("id", postId)
     .maybeSingle();
 
@@ -217,43 +217,64 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     const hasMeta = (p: any) => !!p && !!p.instagram_access_token && !!p.instagram_business_account_id;
 
-    // 1) Procura QUALQUER perfil com token Meta válido (publicação direta — mais confiável que Make).
-    const { data: metaPerfil, error: metaErr } = await supabaseAdmin
-      .from("perfil_usuario")
-      .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
-      .not("instagram_access_token", "is", null)
-      .not("instagram_business_account_id", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (metaErr) throw new Error(`DB: ${metaErr.message}`);
+    const contaAlvo = (post as any).instagram_conta
+      ? String((post as any).instagram_conta).trim().replace(/^@+/, "").toLowerCase()
+      : null;
 
-    let perfil: any = metaPerfil;
+    let perfil: any = null;
 
-    // 2) Sem Meta token: fallback para o perfil do usuário (webhook Make).
-    if (!hasMeta(perfil)) {
-      const { data: ownPerfil, error: ownErr } = await supabaseAdmin
+    // 0) Se o post tem instagram_conta, ROTEAR estritamente para o perfil dessa conta.
+    //    Evita publicar Liga no @drfranciscomenezes (ou vice-versa).
+    if (contaAlvo) {
+      const { data: contaPerfil, error: contaErr } = await supabaseAdmin
         .from("perfil_usuario")
-        .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: true })
+        .select("id,arroba_usuario,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
+        .ilike("arroba_usuario", contaAlvo)
+        .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (ownErr) throw new Error(`DB: ${ownErr.message}`);
-      perfil = ownPerfil;
-
+      if (contaErr) throw new Error(`DB: ${contaErr.message}`);
+      perfil = contaPerfil;
       if (!hasDestino(perfil)) {
-        const { data: configured } = await supabaseAdmin
+        // Sem perfil configurado para essa conta — usa webhook padrão com o @ no payload.
+        perfil = { id: "webhook-padrao", instagram_webhook_url: DEFAULT_MAKE_WEBHOOK, webhook_url: null, arroba_usuario: contaAlvo } as any;
+      }
+    } else {
+      const { data: metaPerfil, error: metaErr } = await supabaseAdmin
+        .from("perfil_usuario")
+        .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
+        .not("instagram_access_token", "is", null)
+        .not("instagram_business_account_id", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (metaErr) throw new Error(`DB: ${metaErr.message}`);
+      perfil = metaPerfil;
+
+      if (!hasMeta(perfil)) {
+        const { data: ownPerfil, error: ownErr } = await supabaseAdmin
           .from("perfil_usuario")
           .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
-          .or("instagram_webhook_url.not.is.null,webhook_url.not.is.null")
+          .eq("user_id", userId)
           .order("created_at", { ascending: true })
           .limit(1)
           .maybeSingle();
-        if (configured) perfil = configured;
-      }
-      if (!perfil) {
-        perfil = { id: "webhook-padrao", instagram_webhook_url: DEFAULT_MAKE_WEBHOOK, webhook_url: null } as any;
+        if (ownErr) throw new Error(`DB: ${ownErr.message}`);
+        perfil = ownPerfil;
+
+        if (!hasDestino(perfil)) {
+          const { data: configured } = await supabaseAdmin
+            .from("perfil_usuario")
+            .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
+            .or("instagram_webhook_url.not.is.null,webhook_url.not.is.null")
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          if (configured) perfil = configured;
+        }
+        if (!perfil) {
+          perfil = { id: "webhook-padrao", instagram_webhook_url: DEFAULT_MAKE_WEBHOOK, webhook_url: null } as any;
+        }
       }
     }
 
@@ -286,6 +307,9 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         id: post.id,
         post_id: post.id,
         user_id: userId,
+        instagram_conta: contaAlvo || perfil.arroba_usuario || undefined,
+        conta: contaAlvo || perfil.arroba_usuario || undefined,
+        arroba: contaAlvo || perfil.arroba_usuario || undefined,
         plataforma: "Instagram",
         type: postType,
         tipo: postType,
