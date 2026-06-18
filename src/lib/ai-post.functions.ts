@@ -191,10 +191,10 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 
   // === Estilo visual: prioriza FOTOGRAFIA REALISTA premium. Quadrinho/colagem/infográfico foram REMOVIDOS por produzirem resultados ruins. ===
   const estilosPossiveis = [
-    "FOTOGRAFIA EDITORIAL HIPER-REALISTA estilo Mayo Clinic/Cleveland Clinic: cena clínica ou hospitalar autêntica, iluminação cinematográfica natural, profundidade de campo rasa, instrumental cirúrgico real, mãos com luvas, ambiente premium — qualidade de capa de revista médica internacional",
-    "FOTOGRAFIA EDITORIAL HIPER-REALISTA estilo Mayo Clinic/Cleveland Clinic: cena clínica ou hospitalar autêntica, iluminação cinematográfica natural, profundidade de campo rasa, instrumental cirúrgico real, mãos com luvas, ambiente premium — qualidade de capa de revista médica internacional",
-    "FOTOGRAFIA DOCUMENTAL DE PACIENTE em momento de sintoma real (mão tocando a mandíbula, expressão de desconforto, ambiente cotidiano) — luz natural, estilo Magnum/National Geographic Health, ZERO rosto reconhecível (corte acima do queixo, perfil, ou foco na mão/região afetada)",
-    "ILUSTRAÇÃO EDITORIAL MINIMALISTA premium estilo capa The Lancet: 1 elemento central forte (silhueta, ícone anatômico estilizado), muito espaço negativo, paleta restrita, tipografia bold",
+    "ILUSTRAÇÃO MÉDICA HIPER-REALISTA ANATÔMICA estilo Netter / Gray's Anatomy / Frank Netter / Atlas de Sobotta: renderização semi-3D de estruturas anatômicas reais (mandíbula, ATM, dentes, nervo alveolar, seios, músculos), proporções cientificamente corretas, sombreamento volumétrico, textura realista de osso/mucosa/dentina, qualidade de atlas médico premium — NÃO é desenho infantil, NÃO é cartoon, NÃO é flat design",
+    "ILUSTRAÇÃO MÉDICA HIPER-REALISTA ANATÔMICA estilo Netter / Gray's Anatomy: corte sagital ou coronal de cabeça/mandíbula com transparências realistas mostrando osso + dente + nervo, cores naturais de tecido (osso bege-marfim, mucosa rosada, esmalte branco-perolado), iluminação científica, fundo navy luminoso",
+    "RENDER 3D MÉDICO ULTRA-REALISTA tipo BioDigital / Visible Body / Zygote: anatomia bucomaxilofacial fotorrealista, materiais PBR (osso poroso real, esmalte translúcido, gengiva com subsurface scattering), profundidade cirúrgica, qualidade de simulador médico premium",
+    "FOTOGRAFIA EDITORIAL HIPER-REALISTA estilo Mayo/Cleveland Clinic: cena clínica autêntica, iluminação cinematográfica, instrumental cirúrgico real, mãos com luvas, ambiente premium — qualidade de capa de revista médica internacional",
   ];
   const estiloEscolhido = estilosPossiveis[Math.floor(Math.random() * estilosPossiveis.length)];
 
