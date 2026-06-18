@@ -46,6 +46,8 @@ const SingleInput = z.object({
   status: z.enum(["PendenteAprovacao", "Agendado"]).optional().default("PendenteAprovacao"),
   // Nível editorial: define o tom/estrutura do conteúdo.
   nivel: NivelEnum.optional().default("auto"),
+  // Audiência: "geral" (padrão) ou "estudantes-graduacao" (Planner Simplificado).
+  audiencia: z.enum(["geral", "estudantes-graduacao"]).optional().default("geral"),
 });
 
 
@@ -216,6 +218,40 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 
 }
 
+// === PLANNER SIMPLIFICADO — AUDIÊNCIA: ESTUDANTES DE GRADUAÇÃO EM ODONTOLOGIA ===
+// Tom didático e simples sobre cirurgia bucal básica; inclui enquetes, curiosidades,
+// dicas de técnica e mitos x verdades. Sem CTA comercial. Cores das logos da
+// faculdade (navy escuro + verde-azulado/teal), SEM fundo branco. As 2 logos são
+// aplicadas como overlay real (canto inf. esq. + canto inf. dir.) pelo pipeline —
+// a IA NÃO desenha logos; apenas reserva os cantos inferiores limpos.
+function studentCaptionSystem() {
+  return `Você é professor universitário de Cirurgia Bucomaxilofacial escrevendo para ALUNOS DE GRADUAÇÃO em Odontologia.
+TOM: didático, claro, simples, instrutivo, próximo do aluno. Como se fosse um post de monitoria.
+TIPOS DE CONTEÚDO (varie a cada post): (a) ENQUETE — pergunta de múltipla escolha clínica curta ("Qual a técnica anestésica para exodontia de 38?"), (b) CURIOSIDADE — fato anatômico/histórico curto, (c) DICA DE TÉCNICA — passo-a-passo simples de cirurgia bucal básica (exodontia, sutura, anestesia, ulectomia, frenectomia, biópsia incisional, alveoloplastia), (d) MITO x VERDADE.
+ESTRUTURA DA LEGENDA (Instagram, 400-700 caracteres):
+1. Gancho de aluno na 1ª linha ("Provão chegando?", "Caiu na prova:", "Você sabia que...", "Enquete rápida:").
+2. Corpo didático com 2-3 frases curtas, linguagem acadêmica acessível, podendo usar termos técnicos básicos COM tradução curta.
+3. Se enquete: listar 3-4 alternativas (A, B, C, D) e pedir resposta nos comentários. Revelar a correta na próxima frase ou pedir para comentarem.
+4. Fechamento com 1 dica prática para a clínica/prova.
+5. 4-6 hashtags: #OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto + 1 do tema.
+PROIBIDO: chamadas comerciais ("agende", "promoção"), WhatsApp do consultório, bibliografia tipo Lancet/JOMS, jargão hospitalar pesado, tom de paciente leigo. Sem assinatura no corpo — entra como logos no overlay.`;
+}
+
+function studentImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }) {
+  const slideInfo = slide ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel didático. Papel: ${slide.papel}.` : "";
+  return `IMAGEM EDUCACIONAL PREMIUM para alunos de graduação em Odontologia (cirurgia bucal básica).
+- ESTILO: ilustração editorial didática limpa OU fotografia clínica realista de cirurgia bucal acadêmica (mão com luva, instrumental simples, dente, mandíbula). Referência: livro-texto de cirurgia bucal (Peterson, Hupp, Miloro) com estética moderna de Instagram acadêmico.
+- FORMATO: vertical 4:5 (Instagram Feed) — mobile-first.
+- CENA LITERAL do tema "${tema}": exodontia → fórceps + dente; anestesia → seringa carpule + nervo alveolar inferior; sutura → porta-agulhas + ponto; frenectomia → freio labial; biópsia → bisturi + tecido; alveoloplastia → lima de osso. Mostrar a TÉCNICA real.
+- PALETA OBRIGATÓRIA (cores das logos da faculdade): FUNDO dominante AZUL NAVY ESCURO #0a1a3a com gradiente sutil para VERDE-AZULADO TEAL #2080a0 (cor das logos). Detalhes em BRANCO e CINZA-PRATA #c0c0c0. NUNCA fundo branco. NUNCA cores fora desta paleta (sem roxo, laranja, amarelo, rosa).
+- TEXTO NA IMAGEM: 1 headline curto de 3-7 palavras tipo "ENQUETE", "DICA DE TÉCNICA", "VOCÊ SABIA?", "MITO OU VERDADE?", "CAIU NA PROVA", em tipografia bold sans-serif, BRANCA ou TEAL. Se for enquete, listar alternativas A/B/C/D em fonte limpa. Português impecável.
+- LOGOS: NÃO desenhe logos, marcas, monogramas ou letreiros inventados. APENAS reserve os 2 CANTOS INFERIORES (esq. e dir.) com cerca de 20% da largura LIMPOS, sem texto e sem elementos — duas logos reais serão sobrepostas pelo sistema. Sem fundo branco atrás dos cantos.
+- Iluminação clara, profissional, qualidade 8K, hierarquia limpa, muito espaço negativo navy.
+- PROIBIDO: rostos reconhecíveis, watermark de IA, anatomia errada, mãos com dedos a mais, texto em inglês, CTA comercial, WhatsApp, "agende consulta".${slideInfo}
+- Variação (seed ${Math.random().toString(36).slice(2, 10)}).`;
+}
+
+
 
 export const generateSinglePost = createServerFn({ method: "POST" })
   .middleware([])
@@ -244,6 +280,27 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // 0. Se nenhum tema foi fornecido, a IA escolhe um automaticamente
     //    EVITANDO temas dos últimos 60 dias (máxima abrangência editorial).
     let tema = (data.tema ?? "").trim();
+    // Modo Estudantes: lista fixa de temas didáticos de cirurgia bucal básica.
+    if (!tema && data.audiencia === "estudantes-graduacao") {
+      const temasAluno = [
+        "Enquete: qual a técnica anestésica correta para exodontia do dente 38",
+        "Dica de técnica: passo a passo da sutura simples em mucosa oral",
+        "Você sabia que o nervo alveolar inferior corre dentro do canal mandibular",
+        "Mito ou verdade: tomar antibiótico antes de toda exodontia é obrigatório",
+        "Curiosidade anatômica sobre o forame mentual e o nervo mentoniano",
+        "Caiu na prova: indicações clínicas da alveoloplastia após exodontia",
+        "Dica de técnica: como posicionar o fórceps para extração de molar inferior",
+        "Enquete: qual sutura usar em ferida cirúrgica intraoral de mucosa",
+        "Mito ou verdade: deixar coágulo na boca após exodontia é prejudicial",
+        "Curiosidade: por que o siso incluso é o dente mais extraído do mundo",
+        "Dica clínica: como reconhecer e tratar a alveolite seca pós-exodontia",
+        "Você sabia que a frenectomia lingual pode ser indicada já no bebê",
+        "Enquete: qual a profundidade ideal da agulha no bloqueio do nervo alveolar inferior",
+        "Caiu na prova: principais complicações da exodontia de terceiros molares",
+        "Curiosidade histórica sobre a evolução do fórceps odontológico",
+      ];
+      tema = temasAluno[Math.floor(Math.random() * temasAluno.length)];
+    }
     if (!tema) {
       const desde = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
       const { data: historico } = await supabaseAdmin
@@ -313,9 +370,10 @@ Responda APENAS com a frase do tema, nada mais.`,
     const isStory = formato === "Story";
 
     // 2. Dispara legenda + imagens EM PARALELO (não dependem entre si).
+    const isEstudantes = data.audiencia === "estudantes-graduacao";
     const legendaPromise = generateText({
       model,
-      system: captionSystem(data.rede, data.especialidade, nivel),
+      system: isEstudantes ? studentCaptionSystem() : captionSystem(data.rede, data.especialidade, nivel),
       prompt: isStory
         ? `Crie um TEXTO DE STORY (até 220 caracteres, 1-2 emojis, sem hashtags, CTA "Link na Bio") que CHAME ATENÇÃO para o post do FEED de hoje sobre: "${tema}". O story deve provocar curiosidade e mandar o usuário para o feed.`
         : `Crie a legenda completa para o post sobre: "${tema}".`,
@@ -348,7 +406,7 @@ Responda APENAS com a frase do tema, nada mais.`,
       return { publicUrl, signedUrl: signed?.signedUrl ?? publicUrl };
     };
 
-    const { ensureJpegB64 } = await import("@/lib/logo-overlay.server");
+    const { ensureJpegB64, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
       try {
         return await generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem });
@@ -363,6 +421,7 @@ Responda APENAS com a frase do tema, nada mais.`,
     const genAndUpload = (prompt: string) =>
       generateImageWithRetry(prompt)
         .then((b64) => ensureJpegB64(b64))
+        .then((b64) => (isEstudantes ? overlayAlunoLogos(b64) : b64))
         .then(uploadOne);
 
     let urlImagem: string;
@@ -386,14 +445,18 @@ Responda APENAS com a frase do tema, nada mais.`,
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
       // Gera TODAS as imagens em paralelo (3-5x mais rápido que lotes sequenciais).
       const uploads = await Promise.all(
-        slidesSpec.map((s) => genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s)))
+        slidesSpec.map((s) => genAndUpload(
+          isEstudantes ? studentImagePrompt(tema, s) : imageSystemPrompt(tema, data.rede, nivel, s)
+        ))
       );
       urlImagem = uploads[0].publicUrl;
       urlImagemCache = uploads[0].signedUrl;
       imagensCarrossel = uploads.map((u) => u.publicUrl);
       imagensCarrosselCache = uploads.map((u) => u.signedUrl);
     } else {
-      const upload = await genAndUpload(imageSystemPrompt(tema, data.rede, nivel));
+      const upload = await genAndUpload(
+        isEstudantes ? studentImagePrompt(tema) : imageSystemPrompt(tema, data.rede, nivel)
+      );
       urlImagem = upload.publicUrl;
       urlImagemCache = upload.signedUrl;
     }
