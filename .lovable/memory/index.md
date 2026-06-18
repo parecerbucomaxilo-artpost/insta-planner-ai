@@ -1,7 +1,7 @@
 # Project Memory
 
 ## Core
-Toda geração de imagem segue o estilo Mayo/Cleveland/Lancet do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar): paleta azul petróleo #0c2340 / azul ciano #2dd4ff / branco puro / preto. Vermelho só para dor. Tipografia bold sans-serif, autoridade hospitalar premium, copy em PT-BR Brasil impecável (sem palavras duplicadas, sem inglês, sem caracteres estranhos).
+Toda geração de imagem segue o estilo Mayo/Cleveland/Lancet do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar) com FUNDO AZUL NAVY #0c2340 DOMINANDO TODA A IMAGEM (nunca branco como fundo). Paleta restrita às cores da logo: navy #0c2340 / ciano #2dd4ff / branco / preto. Vermelho só para dor. Headline curto de 3-6 palavras tipo manchete de impacto ("DOR NO SISO?", "RONCO MATA"), bold sans-serif, branco ou ciano. Texto longo só na legenda. PT-BR Brasil impecável.
 Assinatura oficial: "Prof. Francisco Menezes | CROSP 53318" + subtítulo "Cirurgia e Traumatologia Bucomaxilofacial · Odontologia Hospitalar". Em carrossel: só 1ª e última imagens.
 3 níveis de conteúdo: IG Conversão (dor/identificação, stories e feed 9h), IG Autoridade (caso/ciência traduzida, feed 15h e 19h), LinkedIn Científico (Lancet/IJOMS/JOMS + DOI). Cron `gerar-proximo` alterna automaticamente.
 Modelo de imagem padrão: google/gemini-3.1-flash-image-preview. Carrosséis padrão = 6 cards; Estilo X = 3 cards 16:9. Todas em paralelo.
