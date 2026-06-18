@@ -424,14 +424,18 @@ Responda APENAS com a frase do tema, nada mais.`,
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
       // Gera TODAS as imagens em paralelo (3-5x mais rápido que lotes sequenciais).
       const uploads = await Promise.all(
-        slidesSpec.map((s) => genAndUpload(imageSystemPrompt(tema, data.rede, nivel, s)))
+        slidesSpec.map((s) => genAndUpload(
+          isEstudantes ? studentImagePrompt(tema, s) : imageSystemPrompt(tema, data.rede, nivel, s)
+        ))
       );
       urlImagem = uploads[0].publicUrl;
       urlImagemCache = uploads[0].signedUrl;
       imagensCarrossel = uploads.map((u) => u.publicUrl);
       imagensCarrosselCache = uploads.map((u) => u.signedUrl);
     } else {
-      const upload = await genAndUpload(imageSystemPrompt(tema, data.rede, nivel));
+      const upload = await genAndUpload(
+        isEstudantes ? studentImagePrompt(tema) : imageSystemPrompt(tema, data.rede, nivel)
+      );
       urlImagem = upload.publicUrl;
       urlImagemCache = upload.signedUrl;
     }
