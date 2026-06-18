@@ -280,6 +280,27 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // 0. Se nenhum tema foi fornecido, a IA escolhe um automaticamente
     //    EVITANDO temas dos últimos 60 dias (máxima abrangência editorial).
     let tema = (data.tema ?? "").trim();
+    // Modo Estudantes: lista fixa de temas didáticos de cirurgia bucal básica.
+    if (!tema && data.audiencia === "estudantes-graduacao") {
+      const temasAluno = [
+        "Enquete: qual a técnica anestésica correta para exodontia do dente 38",
+        "Dica de técnica: passo a passo da sutura simples em mucosa oral",
+        "Você sabia que o nervo alveolar inferior corre dentro do canal mandibular",
+        "Mito ou verdade: tomar antibiótico antes de toda exodontia é obrigatório",
+        "Curiosidade anatômica sobre o forame mentual e o nervo mentoniano",
+        "Caiu na prova: indicações clínicas da alveoloplastia após exodontia",
+        "Dica de técnica: como posicionar o fórceps para extração de molar inferior",
+        "Enquete: qual sutura usar em ferida cirúrgica intraoral de mucosa",
+        "Mito ou verdade: deixar coágulo na boca após exodontia é prejudicial",
+        "Curiosidade: por que o siso incluso é o dente mais extraído do mundo",
+        "Dica clínica: como reconhecer e tratar a alveolite seca pós-exodontia",
+        "Você sabia que a frenectomia lingual pode ser indicada já no bebê",
+        "Enquete: qual a profundidade ideal da agulha no bloqueio do nervo alveolar inferior",
+        "Caiu na prova: principais complicações da exodontia de terceiros molares",
+        "Curiosidade histórica sobre a evolução do fórceps odontológico",
+      ];
+      tema = temasAluno[Math.floor(Math.random() * temasAluno.length)];
+    }
     if (!tema) {
       const desde = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
       const { data: historico } = await supabaseAdmin
