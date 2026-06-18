@@ -46,6 +46,8 @@ const SingleInput = z.object({
   status: z.enum(["PendenteAprovacao", "Agendado"]).optional().default("PendenteAprovacao"),
   // Nível editorial: define o tom/estrutura do conteúdo.
   nivel: NivelEnum.optional().default("auto"),
+  // Audiência: "geral" (padrão) ou "estudantes-graduacao" (Planner Simplificado).
+  audiencia: z.enum(["geral", "estudantes-graduacao"]).optional().default("geral"),
 });
 
 
