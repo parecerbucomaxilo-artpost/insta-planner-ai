@@ -193,6 +193,13 @@ function Dashboard() {
           <TabsContent value="simplificado" className="mt-6">
             <PlannerSimplificado />
           </TabsContent>
+          <TabsContent value="simplificado-chico" className="mt-6">
+            <PlannerSimplificado
+              contaFixa="drfranciscomenezes"
+              storageKey="planner_simplificado_chico_v1"
+              audiencia="geral"
+            />
+          </TabsContent>
           <TabsContent value="semana" className="mt-6">
             <WeeklyCalendar perfil={perfil} onCreated={load} autoGenerate={autoGenWeekly} />
           </TabsContent>
