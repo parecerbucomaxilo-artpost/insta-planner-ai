@@ -16,4 +16,5 @@ CTAs IG/X: "Link na Bio" / "Saiba mais pelo link da bio". CTA LinkedIn: WhatsApp
 - [Cronograma de postagens](mem://features/schedule-cadence) — Seg-Sáb: IG feed 9/15/19, stories 8/13/17, LinkedIn 9 e 17:30. Domingo: posts especiais automáticos.
 - [Nunca inventar logo](mem://constraints/no-fake-logo) — IA reserva canto superior direito limpo; logo real é overlay do sistema. Carrossel padrão = 6 cards.
 - [Estilo e dimensões das imagens](mem://design/image-style-and-dimensions) — Dimensões por rede (IG 4:5, Stories 9:16, LinkedIn/Google/X 16:9/4:3), 5 estilos alternados (foto, ilustração, quadrinhos, infográfico, colagem), pouco texto, representação literal do tema, temas de alta busca.
-- [Estilo navy com headline de impacto](mem://design/navy-background-style) — Fundo navy #0c2340 obrigatório em toda imagem, headline curto de gancho forte, paleta da logo.
+- [Estilo navy com headline de impacto](mem://design/navy-background-style) — Fundo navy luminoso, headline curto, paleta da logo.
+- [Ilustrações com realismo anatômico](mem://design/anatomical-illustration-style) — Estilo Netter / Gray's Anatomy / render 3D médico. Proibido cartoon, flat, infantil.
