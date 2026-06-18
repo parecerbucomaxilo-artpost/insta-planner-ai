@@ -407,9 +407,18 @@ Responda APENAS com a frase do tema, nada mais.`,
     };
 
     const { ensureJpegB64, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
+    // Modo Liga: passa as 2 logos como REFERÊNCIA VISUAL para o modelo amostrar
+    // literalmente as cores reais delas (em vez de descrever hex).
+    const logoRefs: string[] = [];
+    if (isEstudantes) {
+      const origin = process.env.PUBLIC_ORIGIN || "https://insta-planner-ai.lovable.app";
+      const a1 = (await import("@/assets/logo-aluno-1.png.asset.json")).default;
+      const a2 = (await import("@/assets/logo-aluno-2.png.asset.json")).default;
+      logoRefs.push(`${origin}${a1.url}`, `${origin}${a2.url}`);
+    }
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
       try {
-        return await generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem });
+        return await generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem, referenceImageUrls: logoRefs.length ? logoRefs : undefined });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message);
