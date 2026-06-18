@@ -27,13 +27,22 @@ export async function generateImageBase64(opts: {
   prompt: string;
   size?: "1024x1024" | "1024x1536" | "1536x1024";
   model?: ModeloImagem;
+  // URLs (https) de imagens de referência para o modelo amostrar (paleta de cores, estilo).
+  // Apenas modelos Gemini suportam — outros ignoram.
+  referenceImageUrls?: string[];
 }): Promise<string> {
   const model = opts.model ?? "google/gemini-3.1-flash-image-preview";
   const isGemini = model.startsWith("google/");
+  const content = isGemini && opts.referenceImageUrls?.length
+    ? [
+        { type: "text" as const, text: opts.prompt },
+        ...opts.referenceImageUrls.map((url) => ({ type: "image_url" as const, image_url: { url } })),
+      ]
+    : opts.prompt;
   const body = isGemini
     ? {
         model,
-        messages: [{ role: "user", content: opts.prompt }],
+        messages: [{ role: "user", content }],
         modalities: ["image", "text"],
       }
     : {

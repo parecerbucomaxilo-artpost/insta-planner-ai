@@ -243,7 +243,7 @@ function studentImagePrompt(tema: string, slide?: { n: number; total: number; pa
 - ESTILO: ilustração editorial didática limpa OU fotografia clínica realista de cirurgia bucal acadêmica (mão com luva, instrumental simples, dente, mandíbula). Referência: livro-texto de cirurgia bucal (Peterson, Hupp, Miloro) com estética moderna de Instagram acadêmico.
 - FORMATO: vertical 4:5 (Instagram Feed) — mobile-first.
 - CENA LITERAL do tema "${tema}": exodontia → fórceps + dente; anestesia → seringa carpule + nervo alveolar inferior; sutura → porta-agulhas + ponto; frenectomia → freio labial; biópsia → bisturi + tecido; alveoloplastia → lima de osso. Mostrar a TÉCNICA real.
-- PALETA ÚNICA E EXCLUSIVA — as 4 cores das 2 logos anexadas, NADA MAIS: AZUL NAVY ESCURO #102a4c, PRETO #000000, CINZA-PRATA #c0c0c0, TEAL #2090b0. Não use NENHUMA outra cor — ESQUEÇA qualquer paleta de outras contas (sem ciano luminoso #2dd4ff, sem azul-claro, sem branco puro como fundo, sem navy luminoso, sem vermelho, sem roxo, sem verde, sem laranja, sem amarelo, sem rosa). Fundo: navy #102a4c ou preto #000000 (ou gradiente entre os dois). Destaques e linhas: teal #2090b0 e prata #c0c0c0.
+- PALETA: as 2 IMAGENS DE REFERÊNCIA anexadas a esta requisição SÃO AS LOGOS oficiais da Liga Acadêmica. AMOSTRE LITERALMENTE AS CORES DELAS (eyedropper) e use SOMENTE essas cores na composição inteira — fundo, formas, texto, sombras. ESQUEÇA qualquer paleta padrão, qualquer ciano luminoso, qualquer navy luminoso de outra conta. PROIBIDO usar qualquer cor que NÃO esteja presente nas 2 logos anexadas. Fundo deve ser a cor mais escura predominante das logos. Destaques e tipografia nas cores claras/médias das logos.
 - TEXTO NA IMAGEM: 1 headline curto de 3-7 palavras tipo "ENQUETE", "DICA DE TÉCNICA", "VOCÊ SABIA?", "MITO OU VERDADE?", "CAIU NA PROVA", em tipografia bold sans-serif, na cor TEAL #2090b0 ou PRATA #c0c0c0. Se for enquete, listar A/B/C/D em prata #c0c0c0. Português impecável.
 - LOGOS: NÃO desenhe logos, marcas, monogramas ou letreiros inventados. APENAS reserve os 2 CANTOS INFERIORES (esq. e dir.) com cerca de 20% da largura LIMPOS, sem texto e sem elementos — duas logos reais serão sobrepostas pelo sistema. Sem fundo branco atrás dos cantos.
 - Iluminação clara, profissional, qualidade 8K, hierarquia limpa, muito espaço negativo navy.
@@ -407,9 +407,18 @@ Responda APENAS com a frase do tema, nada mais.`,
     };
 
     const { ensureJpegB64, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
+    // Modo Liga: passa as 2 logos como REFERÊNCIA VISUAL para o modelo amostrar
+    // literalmente as cores reais delas (em vez de descrever hex).
+    const logoRefs: string[] = [];
+    if (isEstudantes) {
+      const origin = process.env.PUBLIC_ORIGIN || "https://insta-planner-ai.lovable.app";
+      const a1 = (await import("@/assets/logo-aluno-1.png.asset.json")).default;
+      const a2 = (await import("@/assets/logo-aluno-2.png.asset.json")).default;
+      logoRefs.push(`${origin}${a1.url}`, `${origin}${a2.url}`);
+    }
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
       try {
-        return await generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem });
+        return await generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem, referenceImageUrls: logoRefs.length ? logoRefs : undefined });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message);
