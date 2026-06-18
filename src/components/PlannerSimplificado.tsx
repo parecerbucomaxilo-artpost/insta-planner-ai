@@ -21,7 +21,13 @@ import { ptBR } from "date-fns/locale";
 const ACCOUNT_KEY = "planner_simplificado_conta_v1";
 type Quando = "agora" | "data" | "7dias";
 
-export function PlannerSimplificado() {
+interface PlannerSimplificadoProps {
+  contaFixa?: string;        // se setado, trava a conta (sem seletor)
+  storageKey?: string;       // chave alternativa do localStorage
+  audiencia?: "estudantes-graduacao" | "geral";
+}
+
+export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao" }: PlannerSimplificadoProps = {}) {
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
   const approveFn = useServerFn(approvePost);
