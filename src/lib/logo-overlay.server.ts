@@ -3,6 +3,8 @@
 // derrubar o módulo quando o WASM não conseguir ser resolvido pelo bundler.
 import logoAsset from "@/assets/logo-planner.png.asset.json";
 import avatarAsset from "@/assets/avatar-francisco.jpg.asset.json";
+import logoAluno1 from "@/assets/logo-aluno-1.png.asset.json";
+import logoAluno2 from "@/assets/logo-aluno-2.png.asset.json";
 
 const DEFAULT_ORIGIN = "https://insta-planner-ai.lovable.app";
 const cache = new Map<string, Uint8Array>();
