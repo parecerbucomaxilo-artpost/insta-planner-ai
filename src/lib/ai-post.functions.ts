@@ -350,7 +350,8 @@ Responda APENAS com a frase do tema, nada mais.`,
       return { publicUrl, signedUrl: signed?.signedUrl ?? publicUrl };
     };
 
-    const { ensureJpegB64 } = await import("@/lib/logo-overlay.server");
+    const { ensureJpegB64, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
+    const isEstudantes = data.audiencia === "estudantes-graduacao";
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
       try {
         return await generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem });
@@ -365,6 +366,7 @@ Responda APENAS com a frase do tema, nada mais.`,
     const genAndUpload = (prompt: string) =>
       generateImageWithRetry(prompt)
         .then((b64) => ensureJpegB64(b64))
+        .then((b64) => (isEstudantes ? overlayAlunoLogos(b64) : b64))
         .then(uploadOne);
 
     let urlImagem: string;
