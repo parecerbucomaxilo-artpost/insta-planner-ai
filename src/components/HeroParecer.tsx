@@ -55,10 +55,10 @@ export function HeroParecer() {
           </h1>
 
           <p className="mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-white/75">
-            A consulta presencial de R$ 700,00 não é uma avaliação comercial.
-            É o parecer técnico em que mapeamos sua anatomia, montamos o
-            planejamento virtual da cirurgia e construímos a ponte com o
-            convênio e o centro cirúrgico hospitalar.
+            A consulta presencial não é uma avaliação comercial. É o parecer
+            técnico em que mapeamos sua anatomia, montamos o planejamento
+            virtual da cirurgia e construímos a ponte com o convênio e o
+            centro cirúrgico hospitalar.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -77,7 +77,7 @@ export function HeroParecer() {
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
             <span className="text-xs text-white/55 tracking-wide">
-              Consulta no consultório próprio · R$ 700,00
+              Consulta no consultório próprio
             </span>
           </div>
 
