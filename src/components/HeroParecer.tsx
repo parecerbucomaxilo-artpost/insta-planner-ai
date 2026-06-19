@@ -151,6 +151,7 @@ export function HeroParecer() {
                 Complexos · Reconstruções
               </div>
             </div>
+            </div>
           </div>
         </div>
       </div>
