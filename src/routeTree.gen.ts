@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
+import { Route as ParecerRouteImport } from './routes/parecer'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
@@ -25,6 +26,11 @@ import { Route as ApiPublicMetaOauthCallbackRouteImport } from './routes/api/pub
 const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
   id: '/politica-de-privacidade',
   path: '/politica-de-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParecerRoute = ParecerRouteImport.update({
+  id: '/parecer',
+  path: '/parecer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -87,6 +93,7 @@ const ApiPublicMetaOauthCallbackRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/parecer': typeof ParecerRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/parecer': typeof ParecerRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/parecer': typeof ParecerRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/parecer'
     | '/politica-de-privacidade'
     | '/settings'
     | '/api/public/backfill-images'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/parecer'
     | '/politica-de-privacidade'
     | '/settings'
     | '/'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/parecer'
     | '/politica-de-privacidade'
     | '/_authenticated/settings'
     | '/_authenticated/'
@@ -171,6 +183,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ParecerRoute: typeof ParecerRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   ApiPublicBackfillImagesRoute: typeof ApiPublicBackfillImagesRoute
   ApiPublicDispatchGbpRoute: typeof ApiPublicDispatchGbpRoute
@@ -188,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/politica-de-privacidade'
       fullPath: '/politica-de-privacidade'
       preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parecer': {
+      id: '/parecer'
+      path: '/parecer'
+      fullPath: '/parecer'
+      preLoaderRoute: typeof ParecerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -286,6 +306,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ParecerRoute: ParecerRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   ApiPublicBackfillImagesRoute: ApiPublicBackfillImagesRoute,
   ApiPublicDispatchGbpRoute: ApiPublicDispatchGbpRoute,
@@ -298,13 +319,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
