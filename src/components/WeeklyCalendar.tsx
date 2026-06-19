@@ -15,6 +15,8 @@ import type { Perfil } from "@/components/ProfileSettings";
 import { DirectReplyCard } from "./DirectReplyCard";
 // import { applyDoctorBadge, applyWatermark } from "@/lib/watermark";
 import brandLogo from "@/assets/logo-clinica.png";
+import { useServerFn } from "@tanstack/react-start";
+import { generateSinglePost } from "@/lib/ai-post.functions";
 // import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
 
 type PostPlano = {
@@ -146,10 +148,8 @@ function fmtDate(d: Date) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
-export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { perfil: Perfil | null; onCreated: () => void; autoGenerate?: boolean }) {
-  const genPlan = async () => ({ posts: [] });
-  const genImage = async () => ({ dataUrl: "" });
-  const genIdea = async () => ({ tema: "" });
+export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = false }: { perfil: Perfil | null; onCreated: () => void; autoGenerate?: boolean }) {
+  const gerarPostFn = useServerFn(generateSinglePost);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels" | "Carrossel">("Feed");
   const [loading, setLoading] = useState(false);
@@ -209,7 +209,50 @@ export function WeeklyCalendar({ perfil, onCreated, autoGenerate = false }: { pe
   }, [weekStart]);
 
   const handleGerar = async () => {
-    toast.info("O gerador de cronograma foi resetado.");
+    if (loading) return;
+    setLoading(true);
+    const especialidade = "CTBMF" as const;
+    // 2 publicações por dia x 7 dias = 14 slots
+    const slots: { quando: Date; tipo: "feed" | "stories" }[] = [];
+    for (let d = 0; d < 7; d++) {
+      const dia = new Date(weekStart);
+      dia.setDate(dia.getDate() + d);
+      const manha = new Date(dia); manha.setHours(9, 0, 0, 0);
+      const tarde = new Date(dia); tarde.setHours(15, 0, 0, 0);
+      slots.push({ quando: manha, tipo: "feed" });
+      slots.push({ quando: tarde, tipo: "feed" });
+    }
+
+    toast.info(`Gerando ${slots.length} publicações para os próximos 7 dias…`);
+    let ok = 0; let fail = 0;
+    // Em paralelo (gateway suporta), mas com pequeno escalonamento para evitar 429
+    await Promise.all(slots.map(async (s, i) => {
+      try {
+        await new Promise((r) => setTimeout(r, i * 400));
+        await gerarPostFn({
+          data: {
+            tema: "",
+            especialidade,
+            rede: "instagram",
+            tipo: s.tipo,
+            quando: s.quando.toISOString(),
+            status: "Agendado",
+            nivel: "auto",
+            audiencia: "geral",
+            ambasRedes: false,
+          },
+        });
+        ok++;
+      } catch (e) {
+        console.error("[WeeklyCalendar] gerar falhou", e);
+        fail++;
+      }
+    }));
+
+    setLoading(false);
+    if (ok > 0) toast.success(`${ok} publicações geradas e agendadas.`);
+    if (fail > 0) toast.error(`${fail} falharam — tente novamente.`);
+    onCreated();
   };
 
   const salvarDia = async (i: number, agendar: boolean) => {
