@@ -20,3 +20,4 @@ CTAs IG/X: "Link na Bio" / "Saiba mais pelo link da bio". CTA LinkedIn: WhatsApp
 - [Ilustrações com realismo anatômico](mem://design/anatomical-illustration-style) — Estilo Netter / Gray's Anatomy / render 3D médico. Proibido cartoon, flat, infantil.
 - [Planner Simplificado — Estudantes](mem://features/planner-simplificado-estudantes) — Aba para alunos de graduação: cirurgia bucal básica, enquetes/curiosidades/técnicas, paleta navy+teal das logos, 2 logos no overlay (sem fundo branco).
 - [Marca Premium Cirurgia](mem://design/marca-premium-cirurgia) — Diretrizes oficiais: paleta 60/30/10 azul petróleo/branco/ciano, estética documental realista, tom cirúrgico anti-objeção "vou pensar".
+- [Sem valores monetários](mem://constraints/no-prices) — Nunca exibir preços/valores em copy pública.
