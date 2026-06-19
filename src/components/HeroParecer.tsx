@@ -1,5 +1,6 @@
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { BRANDING } from "@/lib/branding";
+import logoAsset from "@/assets/logo-planner.png.asset.json";
 
 /**
  * HeroParecer — Landing hero seguindo paleta 60/30/10 da marca premium CTBMF.
@@ -32,8 +33,21 @@ export function HeroParecer() {
         style={{ background: "radial-gradient(circle, #2dd4ff 0%, transparent 70%)" }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-6 sm:px-10 py-24 sm:py-32 grid lg:grid-cols-12 gap-12 items-center">
-        {/* 30% — bloco branco de respiro com o parecer */}
+      <div className="relative max-w-7xl mx-auto px-6 sm:px-10 pt-10 pb-24 sm:pt-12 sm:pb-32">
+        {/* Logo institucional — presente em todos os criativos */}
+        <div className="flex items-center justify-between mb-12">
+          <img
+            src={logoAsset.url}
+            alt="Prof. Francisco Menezes — CTBMF"
+            className="h-12 sm:h-14 w-auto"
+            style={{ filter: "drop-shadow(0 4px 12px rgba(45,212,255,0.25))" }}
+          />
+          <div className="hidden sm:block text-[10px] uppercase tracking-[0.25em] text-white/50">
+            CROSP 53318
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-12 gap-12 items-center">
         <div className="lg:col-span-7 text-white">
           <div
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium tracking-wide"
@@ -136,6 +150,7 @@ export function HeroParecer() {
                 {BRANDING.cro} · Cirurgia Ortognática · ATM · Implantes
                 Complexos · Reconstruções
               </div>
+            </div>
             </div>
           </div>
         </div>
