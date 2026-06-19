@@ -77,7 +77,7 @@ export async function overlayLogo(
 export async function overlayAlunoLogos(
   imageB64: string,
   origin?: string,
-  sizePct = 18,
+  sizePct = 12,
 ): Promise<string> {
   try {
     const photon = await import("@cf-wasm/photon").catch(() => null);
