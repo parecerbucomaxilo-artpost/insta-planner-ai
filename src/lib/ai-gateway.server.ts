@@ -54,25 +54,70 @@ export async function generateImageBase64(opts: {
         output_compression: 80,
         n: 1,
       };
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": opts.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`Image gen ${res.status}: ${txt}`);
+    }
+    const json = (await res.json()) as { data?: Array<{ b64_json?: string; url?: string }> };
+    const item = json.data?.[0];
+    if (item?.b64_json) return item.b64_json;
+    if (item?.url) {
+      const r = await fetch(item.url);
+      const buf = Buffer.from(await r.arrayBuffer());
+      return buf.toString("base64");
+    }
+    throw new Error(`Image gen: resposta sem b64_json nem url (${model}): ${JSON.stringify(json).slice(0, 300)}`);
+  } catch (primaryErr) {
+    // Fallback Cloudflare Workers AI · Flux Schnell — apenas plano de fundo / emergência.
+    // Mantemos o modelo principal (Gemini/GPT) como padrão para preservar a identidade visual hospitalar.
+    const cfAccount = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const cfToken = process.env.CLOUDFLARE_API_TOKEN;
+    if (!cfAccount || !cfToken) throw primaryErr;
+    try {
+      return await generateImageFluxSchnellFallback({
+        accountId: cfAccount,
+        apiToken: cfToken,
+        prompt: opts.prompt,
+      });
+    } catch (fallbackErr) {
+      const primMsg = primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
+      const fbMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+      throw new Error(`Falha modelo principal (${primMsg}) e fallback Flux Schnell (${fbMsg})`);
+    }
+  }
+}
+
+// Fallback: Cloudflare Workers AI · @cf/black-forest-labs/flux-1-schnell
+// Usado SOMENTE como plano de fundo quando o gateway principal falha.
+async function generateImageFluxSchnellFallback(opts: {
+  accountId: string;
+  apiToken: string;
+  prompt: string;
+}): Promise<string> {
+  const url = `https://api.cloudflare.com/client/v4/accounts/${opts.accountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`;
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Lovable-API-Key": opts.apiKey,
+      Authorization: `Bearer ${opts.apiToken}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ prompt: opts.prompt, steps: 4 }),
   });
   if (!res.ok) {
     const txt = await res.text();
-    throw new Error(`Image gen ${res.status}: ${txt}`);
+    throw new Error(`Flux Schnell ${res.status}: ${txt.slice(0, 300)}`);
   }
-  const json = (await res.json()) as { data?: Array<{ b64_json?: string; url?: string }> };
-  const item = json.data?.[0];
-  if (item?.b64_json) return item.b64_json;
-  if (item?.url) {
-    const r = await fetch(item.url);
-    const buf = Buffer.from(await r.arrayBuffer());
-    return buf.toString("base64");
-  }
-  throw new Error(`Image gen: resposta sem b64_json nem url (${model}): ${JSON.stringify(json).slice(0, 300)}`);
+  const json = (await res.json()) as { result?: { image?: string }; success?: boolean; errors?: unknown };
+  const b64 = json.result?.image;
+  if (!b64) throw new Error(`Flux Schnell: resposta sem image (${JSON.stringify(json).slice(0, 300)})`);
+  return b64;
 }
