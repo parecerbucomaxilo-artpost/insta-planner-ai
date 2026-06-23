@@ -161,6 +161,27 @@ NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na image
 
 
 function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }) {
+  // === FORMATO ESTILO X (TWEET REAL) — short-circuit ===
+  // A imagem PRECISA parecer um print autêntico de um post publicado no X (antigo Twitter),
+  // não uma cena médica com headline. Tweet card pixel-perfect, sem cena de fundo.
+  if (rede === "estilo-x") {
+    const slideTweetInfo = slide
+      ? `\n- ESTE É O CARD ${slide.n}/${slide.total} de uma THREAD. Papel: ${slide.papel}. Mantenha a MESMA identidade visual (avatar, handle, paleta) em todos os cards.`
+      : "";
+    return `MOCKUP DE TWEET ULTRA REALISTA — print autêntico de um post publicado no X (antigo Twitter), tema "${tema}".
+- FORMATO horizontal 16:9 (1536x1024). Composição centralizada: card de tweet ocupando ~70% da largura, sobre fundo neutro suave (cinza claro #f7f9fa OU preto #000000 modo escuro do X — escolha 1 e mantenha consistência).
+- ANATOMIA EXATA DE UM TWEET PUBLICADO no X (não inventar layout):
+  1) Cabeçalho: avatar circular à esquerda (foto profissional sóbria de um cirurgião — jaleco branco / luvas, SEM rosto reconhecível de pessoa real); ao lado, em uma linha: nome em bold "Prof. Francisco Menezes" + selo de verificado azul X (checkmark branco em badge azul #1d9bf0) + nova linha com handle cinza "@franciscomenezes_bmf · 2h".
+  2) Corpo do tweet: texto em tipografia Chirp/sans-serif do X, tamanho confortável, PT-BR Brasil impecável com acentuação perfeita. Conteúdo curto e impactante sobre "${tema}" (máx. ~240 caracteres, 2-4 frases curtas, tom de autoridade médica acessível, pode usar 1 emoji médico sóbrio 🦷 ou 🩺). SEM hashtags na imagem.
+  3) Rodapé do tweet: linha cinza fina com os ícones nativos do X em ordem — balão de comentário, retweet (setas), coração (curtida), gráfico de views, compartilhar. Pode mostrar contadores plausíveis (ex.: 142, 89, 1.2K, 23K) em cinza claro.
+- TIPOGRAFIA: idêntica ao X real (Chirp / system sans-serif). Hierarquia: nome bold preto/branco, handle cinza médio #536471, corpo preto/branco, contadores cinza.
+- PALETA: usar EXATAMENTE as cores do X — fundo branco #ffffff + texto #0f1419 + cinza #536471 + accent azul #1d9bf0. (Variante dark: fundo #000000 + texto #e7e9ea + cinza #71767b.) NADA de navy #14366b ou ciano #2dd4ff aqui — essa paleta é só para os outros formatos.
+- PROIBIDO: cena médica de fundo, ilustração anatômica, headline tipo cartaz, faixa de assinatura, logos inventados, "PC"/"FM"/"Planner", marca d'água, watermark de IA, texto em inglês, palavras duplicadas, ortografia errada, layout que não exista no X real.
+- O conteúdo do tweet pode (opcionalmente) terminar com a frase natural "Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana." — sem CTAs comerciais.${slideTweetInfo}
+- Variação (seed ${Math.random().toString(36).slice(2, 10)}): variar avatar, contadores e fundo claro/escuro.`;
+  }
+
+
   const isUltimoSlide = !!slide && slide.n === slide.total;
   const isInstagram = rede === "instagram";
   const isStory = !slide && nivel === "ig-conversao" && isInstagram; // heurística
