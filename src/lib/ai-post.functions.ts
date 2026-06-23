@@ -116,7 +116,8 @@ REGRAS DE FORMATO:
 - Começar SEMPRE pelo TÍTULO em **negrito**, pular linha, depois corpo, Palavras-chave SEO e ALT TEXT.
 - NÃO incluir a assinatura no corpo — entra como overlay na imagem.
 
-${CTAS_PROIBIDOS}`;
+${CTAS_PROIBIDOS}
+${LOCALIZACAO_OBRIGATORIA}`;
   }
 
   const estrutura = isLI
