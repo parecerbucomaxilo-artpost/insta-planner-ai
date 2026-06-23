@@ -264,16 +264,33 @@ PROIBIDO: chamadas comerciais ("agende", "promoção"), WhatsApp do consultório
 
 function studentImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }) {
   const slideInfo = slide ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel didático. Papel: ${slide.papel}.` : "";
-  return `IMAGEM EDUCACIONAL PREMIUM para alunos de graduação em Odontologia (cirurgia bucal básica).
-- ESTILO: ilustração editorial didática limpa OU fotografia clínica realista de cirurgia bucal acadêmica (mão com luva, instrumental simples, dente, mandíbula). Referência: livro-texto de cirurgia bucal (Peterson, Hupp, Miloro) com estética moderna de Instagram acadêmico.
-- FORMATO: vertical 4:5 (Instagram Feed) — mobile-first.
-- CENA LITERAL do tema "${tema}": exodontia → fórceps + dente; anestesia → seringa carpule + nervo alveolar inferior; sutura → porta-agulhas + ponto; frenectomia → freio labial; biópsia → bisturi + tecido; alveoloplastia → lima de osso. Mostrar a TÉCNICA real.
-- PALETA — REGRA ABSOLUTA: as 2 IMAGENS DE REFERÊNCIA anexadas a esta requisição SÃO AS LOGOS oficiais da Liga Acadêmica. AMOSTRE LITERALMENTE (eyedropper) as cores presentes nessas 2 logos e use EXCLUSIVAMENTE essas cores na composição inteira (fundo, formas, ilustrações, tipografia, sombras, gradientes). ESQUEÇA COMPLETAMENTE qualquer paleta de outra conta — proibido usar ciano luminoso #2dd4ff, navy claro, vermelho, roxo, laranja, amarelo, rosa, verde, branco puro ou qualquer hex que NÃO esteja visivelmente presente nas 2 logos. Fundo = cor mais escura/dominante amostrada das logos. Tipografia e destaques = tons médios/claros amostrados das logos. Construa o esquema de cores 100% a partir das logos anexadas — sem inventar nenhuma cor.
-- TEXTO NA IMAGEM: 1 headline curto de 3-7 palavras tipo "ENQUETE", "DICA DE TÉCNICA", "VOCÊ SABIA?", "MITO OU VERDADE?", "CAIU NA PROVA", em tipografia bold sans-serif, usando uma das cores claras amostradas das logos. Se for enquete, listar A/B/C/D em tom claro também amostrado das logos. Português impecável.
-- LOGOS: NÃO desenhe, redesenhe, parafraseie, estilize ou invente logos, marcas, escudos, brasões, monogramas, sigla ou letreiros — NENHUMA logo deve sair do seu pincel. APENAS reserve os 2 CANTOS INFERIORES (esq. e dir.), cerca de 22% da largura cada, TOTALMENTE LIMPOS (sem texto, sem ilustração, sem moldura, sem fundo branco) — as 2 logos REAIS anexadas serão sobrepostas pelo sistema nesses cantos.
-- Iluminação clara e profissional, qualidade 8K, hierarquia editorial limpa, muito espaço negativo na cor mais escura amostrada das logos.
-- PROIBIDO: rostos reconhecíveis, watermark de IA, anatomia errada, mãos com dedos a mais, texto em inglês, CTA comercial, WhatsApp, "agende consulta".${slideInfo}
-- Variação (seed ${Math.random().toString(36).slice(2, 10)}).`;
+  // === CRIATIVIDADE ALTA — varia conceito visual a cada geração ===
+  const conceitosCriativos = [
+    "ILUSTRAÇÃO EDITORIAL CONCEITUAL ousada estilo The New Yorker / Wired Science: metáfora visual inteligente do tema (ex.: dente como cofre, nervo alveolar como cabo de fibra óptica, fórceps como ferramenta de relojoeiro), composição inesperada, humor acadêmico sutil, qualidade de capa de revista científica jovem.",
+    "RENDER 3D ISOMÉTRICO LIMPO estilo Apple keynote / Behance top: instrumental cirúrgico ou anatomia bucomaxilofacial em vista isométrica, materiais PBR limpos, sombras suaves, hierarquia geométrica forte, sensação de 'design system' acadêmico premium.",
+    "ILUSTRAÇÃO ANATÔMICA HIPER-REALISTA estilo Netter / Sobotta: corte sagital ou coronal mostrando a estrutura exata do tema (alvéolo, nervo, dente, mucosa), proporções científicas perfeitas, sombreamento volumétrico de atlas médico, com microanotações tipográficas elegantes (setas finas + label curtíssimo).",
+    "MACROFOTOGRAFIA CIRÚRGICA DRAMÁTICA estilo National Geographic médico: close extremo de instrumental + tecido (porta-agulhas suturando, fórceps no dente, bisturi cortando), profundidade rasa, foco preciso, iluminação cinematográfica de centro cirúrgico.",
+    "INFOGRÁFICO MINIMALISTA EDITORIAL estilo Information is Beautiful: 1 elemento gráfico central forte (dente cortado em camadas, mapa da inervação, fluxo de uma técnica em 3 passos com setas grandes), tipografia bold como protagonista, espaço negativo generoso, estética de livro acadêmico moderno.",
+    "COMPOSIÇÃO TIPOGRÁFICA OUSADA estilo Pentagram / Massimo Vignelli: o próprio texto do tema vira a arte (ex.: a palavra 'ANESTESIA' em escala enorme, recortada por uma seringa carpule sutil), hierarquia tipográfica dominante, ilustração discreta apoiando o texto.",
+  ];
+  const conceito = conceitosCriativos[Math.floor(Math.random() * conceitosCriativos.length)];
+  const formatosPossiveis = [
+    "FORMATO vertical 4:5 (1024x1536) — Instagram Feed clássico, mobile-first.",
+    "FORMATO quadrado 1:1 (1024x1024) — feed clássico, hierarquia central forte.",
+    "FORMATO vertical 4:5 (1024x1536) — composição assimétrica, sujeito deslocado para regra dos terços.",
+  ];
+  const formato = formatosPossiveis[Math.floor(Math.random() * formatosPossiveis.length)];
+  return `IMAGEM EDUCACIONAL PREMIUM + CRIATIVIDADE ALTA para Liga Acadêmica de Odontologia (graduação, cirurgia bucal básica).
+- CONCEITO VISUAL DESTA GERAÇÃO: ${conceito}
+- ${formato}
+- REFERÊNCIA DE QUALIDADE: capa de revista científica jovem (Wired, The New Yorker Science, Behance editorial top, posts virais de @medschoolinsiders). Visual DEVE surpreender — proibido cair em "foto genérica de dente sobre fundo azul". Cada post precisa parecer uma capa de revista diferente da anterior.
+- CENA LITERAL do tema "${tema}": exodontia → fórceps + dente; anestesia → seringa carpule + nervo alveolar inferior; sutura → porta-agulhas + ponto; frenectomia → freio labial; biópsia → bisturi + tecido; alveoloplastia → lima de osso. A técnica/anatomia precisa estar correta DENTRO do conceito criativo escolhido.
+- PALETA — REGRA ABSOLUTA: as 2 IMAGENS DE REFERÊNCIA anexadas a esta requisição SÃO AS LOGOS oficiais da Liga Acadêmica. AMOSTRE LITERALMENTE (eyedropper) as cores presentes nessas 2 logos e use EXCLUSIVAMENTE essas cores na composição inteira (fundo, formas, ilustrações, tipografia, sombras, gradientes). ESQUEÇA QUALQUER outra paleta — proibido ciano luminoso #2dd4ff, navy do consultório, vermelho, roxo, laranja, amarelo, rosa, verde, branco puro ou qualquer hex que NÃO esteja nas 2 logos. Fundo = cor mais escura/dominante das logos. Tipografia e destaques = tons médios/claros das logos. Dentro dessa restrição, EXPLORE composição, contraste e gradientes ousados.
+- TEXTO NA IMAGEM: 1 headline curto e CRIATIVO de 3-7 palavras (ex.: "ENQUETE", "DICA DE OURO", "VOCÊ SABIA?", "MITO OU VERDADE?", "CAIU NA PROVA", "REGRA DE PETERSON", "ATENÇÃO, R1"), tipografia bold sans-serif de personalidade forte (pode variar weight, tracking, alinhamento), usando uma das cores claras das logos. Se for enquete, listar A/B/C/D. PT-BR Brasil impecável, sem inglês, sem palavras duplicadas.
+- LOGOS: NÃO desenhe, redesenhe, parafraseie, estilize ou invente logos, marcas, escudos, brasões, monogramas, siglas ou letreiros. APENAS reserve os 2 CANTOS INFERIORES (esq. e dir., ~22% da largura cada) TOTALMENTE LIMPOS (sem texto, sem ilustração, sem moldura) — as 2 logos REAIS serão sobrepostas pelo sistema.
+- Iluminação editorial premium, qualidade 8K, hierarquia limpa, espaço negativo generoso na cor mais escura amostrada das logos.
+- PROIBIDO: rostos reconhecíveis, watermark de IA, anatomia errada, mãos com dedos a mais, texto em inglês, CTA comercial, WhatsApp, "agende consulta", visual de banco de imagens, clipart, flat design infantil, gradientes arco-íris, paleta fora das logos.${slideInfo}
+- Variação obrigatória (seed ${Math.random().toString(36).slice(2, 10)}): ângulo, enquadramento, composição e metáfora visual INÉDITOS em relação aos posts anteriores.`;
 }
 
 
