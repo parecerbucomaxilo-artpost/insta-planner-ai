@@ -36,6 +36,10 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   const [conta, setConta] = useState<string>("");
   const [contaInput, setContaInput] = useState<string>("");
+  const [destinoUrl, setDestinoUrl] = useState<string>("");
+  const [destinoStatus, setDestinoStatus] = useState<"loading" | "ok" | "missing">("loading");
+  const [savingDestino, setSavingDestino] = useState(false);
+
 
   // Geração IA
   const [tema, setTema] = useState("");
@@ -74,6 +78,56 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     try { window.localStorage.setItem(lsKey, n); } catch { /* ignore */ }
     toast.success(`Conta @${n} selecionada.`);
   };
+
+  // Carrega destino (webhook/token Meta) configurado para esta conta
+  useEffect(() => {
+    if (!conta) { setDestinoStatus("missing"); setDestinoUrl(""); return; }
+    setDestinoStatus("loading");
+    (async () => {
+      const { data } = await supabase
+        .from("perfil_usuario")
+        .select("instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
+        .ilike("arroba_usuario", conta)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const hasMeta = !!(data?.instagram_access_token && data?.instagram_business_account_id);
+      const hook = (data?.instagram_webhook_url || data?.webhook_url || "") as string;
+      setDestinoUrl(hook);
+      setDestinoStatus(hasMeta || hook ? "ok" : "missing");
+    })();
+  }, [conta]);
+
+  const salvarDestino = async () => {
+    if (!conta) return toast.error("Selecione uma conta primeiro.");
+    const url = destinoUrl.trim();
+    if (!/^https?:\/\//i.test(url)) return toast.error("Cole uma URL de webhook válida (https://...).");
+    setSavingDestino(true);
+    try {
+      const uid = await getAuthedUserId();
+      if (!uid) throw new Error("Você precisa estar logado.");
+      const { data: existing } = await supabase
+        .from("perfil_usuario").select("id")
+        .ilike("arroba_usuario", conta).limit(1).maybeSingle();
+      if (existing?.id) {
+        const { error } = await supabase.from("perfil_usuario")
+          .update({ instagram_webhook_url: url, webhook_url: url } as any)
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("perfil_usuario").insert({
+          user_id: uid, arroba_usuario: conta,
+          instagram_webhook_url: url, webhook_url: url,
+        } as any);
+        if (error) throw error;
+      }
+      setDestinoStatus("ok");
+      toast.success(`Destino salvo para @${conta}.`);
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao salvar destino.");
+    } finally { setSavingDestino(false); }
+  };
+
 
   const carregar = useCallback(async () => {
     if (!conta) return;
@@ -261,8 +315,36 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         )}
       </Card>
 
+      {conta && !contaFixa && (
+        <Card className={`p-5 space-y-3 border-2 ${destinoStatus === "ok" ? "border-emerald-200 bg-emerald-50/30" : "border-amber-300 bg-amber-50/40"}`}>
+          <Label className="text-sm font-semibold flex items-center gap-2">
+            Destino de publicação de @{conta}
+            {destinoStatus === "ok" && <Badge className="bg-emerald-600">Configurado</Badge>}
+            {destinoStatus === "missing" && <Badge variant="destructive">Não configurado</Badge>}
+          </Label>
+          {destinoStatus === "missing" && (
+            <p className="text-xs text-amber-900">
+              ⚠️ Sem destino próprio para esta conta, o post acaba sendo enviado para outra conta do Instagram (o cenário padrão do Make publica em @drfranciscomenezes).
+              Crie um novo cenário no Make conectado ao Instagram da @{conta} e cole a URL do webhook abaixo.
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Input
+              value={destinoUrl}
+              onChange={(e) => setDestinoUrl(e.target.value)}
+              placeholder="https://hook.us2.make.com/..."
+              className="flex-1"
+            />
+            <Button onClick={salvarDestino} disabled={savingDestino}>
+              {savingDestino ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar destino"}
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {conta && (
         <>
+
           {/* Bloco Quando — usado por IA e manual */}
           <Card className="p-5 space-y-3">
             <Label className="text-sm font-semibold">Quando publicar</Label>
