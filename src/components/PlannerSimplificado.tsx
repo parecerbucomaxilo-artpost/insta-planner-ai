@@ -36,6 +36,10 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   const [conta, setConta] = useState<string>("");
   const [contaInput, setContaInput] = useState<string>("");
+  const [destinoUrl, setDestinoUrl] = useState<string>("");
+  const [destinoStatus, setDestinoStatus] = useState<"loading" | "ok" | "missing">("loading");
+  const [savingDestino, setSavingDestino] = useState(false);
+
 
   // Geração IA
   const [tema, setTema] = useState("");
