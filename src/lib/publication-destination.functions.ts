@@ -27,21 +27,41 @@ function validateWebhookUrl(webhookUrl: string) {
   return url.toString();
 }
 
+async function findProfileByAccount(supabaseAdmin: any, conta: string, columns: string) {
+  const byArroba = await supabaseAdmin
+    .from("perfil_usuario")
+    .select(columns)
+    .ilike("arroba_usuario", conta)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (byArroba.error) throw new Error(`DB: ${byArroba.error.message}`);
+  if (byArroba.data) return byArroba.data;
+
+  const byInstagram = await supabaseAdmin
+    .from("perfil_usuario")
+    .select(columns)
+    .ilike("instagram_arroba", conta)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (byInstagram.error) throw new Error(`DB: ${byInstagram.error.message}`);
+  return byInstagram.data;
+}
+
 export const getPublicationDestination = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => AccountInput.parse(data))
   .handler(async ({ data }) => {
     const conta = normalizeAccount(data.conta);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: perfil, error } = await supabaseAdmin
-      .from("perfil_usuario")
-      .select("instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
-      .or(`arroba_usuario.ilike.${conta},instagram_arroba.ilike.${conta}`)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) throw new Error(`DB: ${error.message}`);
+    const perfil = await findProfileByAccount(
+      supabaseAdmin,
+      conta,
+      "instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url",
+    );
 
     const hasMeta = Boolean(perfil?.instagram_access_token && perfil?.instagram_business_account_id);
     const webhookUrl = String(perfil?.instagram_webhook_url || perfil?.webhook_url || "");
@@ -59,15 +79,7 @@ export const savePublicationDestination = createServerFn({ method: "POST" })
     const webhookUrl = validateWebhookUrl(data.webhookUrl);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: existing, error: findError } = await supabaseAdmin
-      .from("perfil_usuario")
-      .select("id")
-      .or(`arroba_usuario.ilike.${conta},instagram_arroba.ilike.${conta}`)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (findError) throw new Error(`DB: ${findError.message}`);
+    const existing = await findProfileByAccount(supabaseAdmin, conta, "id");
 
     if (existing?.id) {
       const { error } = await supabaseAdmin
