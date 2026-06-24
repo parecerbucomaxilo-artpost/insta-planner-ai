@@ -315,8 +315,36 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         )}
       </Card>
 
+      {conta && !contaFixa && (
+        <Card className={`p-5 space-y-3 border-2 ${destinoStatus === "ok" ? "border-emerald-200 bg-emerald-50/30" : "border-amber-300 bg-amber-50/40"}`}>
+          <Label className="text-sm font-semibold flex items-center gap-2">
+            Destino de publicação de @{conta}
+            {destinoStatus === "ok" && <Badge className="bg-emerald-600">Configurado</Badge>}
+            {destinoStatus === "missing" && <Badge variant="destructive">Não configurado</Badge>}
+          </Label>
+          {destinoStatus === "missing" && (
+            <p className="text-xs text-amber-900">
+              ⚠️ Sem destino próprio para esta conta, o post acaba sendo enviado para outra conta do Instagram (o cenário padrão do Make publica em @drfranciscomenezes).
+              Crie um novo cenário no Make conectado ao Instagram da @{conta} e cole a URL do webhook abaixo.
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Input
+              value={destinoUrl}
+              onChange={(e) => setDestinoUrl(e.target.value)}
+              placeholder="https://hook.us2.make.com/..."
+              className="flex-1"
+            />
+            <Button onClick={salvarDestino} disabled={savingDestino}>
+              {savingDestino ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar destino"}
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {conta && (
         <>
+
           {/* Bloco Quando — usado por IA e manual */}
           <Card className="p-5 space-y-3">
             <Label className="text-sm font-semibold">Quando publicar</Label>
