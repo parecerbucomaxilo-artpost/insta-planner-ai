@@ -14,6 +14,7 @@ import { getAuthedUserId } from "@/lib/auth-utils";
 import { signPostMediaUrls } from "@/lib/storage-url";
 import { generateSinglePost, generateWeekThemes, approvePost, discardPost } from "@/lib/ai-post.functions";
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
+import { getPublicationDestination, savePublicationDestination } from "@/lib/publication-destination.functions";
 import type { PostRow } from "@/lib/posts-types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -33,6 +34,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const approveFn = useServerFn(approvePost);
   const discardFn = useServerFn(discardPost);
   const publishIg = useServerFn(publishInstagramNow);
+  const fetchDestino = useServerFn(getPublicationDestination);
+  const saveDestino = useServerFn(savePublicationDestination);
 
   const [conta, setConta] = useState<string>("");
   const [contaInput, setContaInput] = useState<string>("");
@@ -84,19 +87,17 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     if (!conta) { setDestinoStatus("missing"); setDestinoUrl(""); return; }
     setDestinoStatus("loading");
     (async () => {
-      const { data } = await supabase
-        .from("perfil_usuario")
-        .select("instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
-        .ilike("arroba_usuario", conta)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      const hasMeta = !!(data?.instagram_access_token && data?.instagram_business_account_id);
-      const hook = (data?.instagram_webhook_url || data?.webhook_url || "") as string;
-      setDestinoUrl(hook);
-      setDestinoStatus(hasMeta || hook ? "ok" : "missing");
+      try {
+        const destino = await fetchDestino({ data: { conta } });
+        setDestinoUrl(destino.webhookUrl);
+        setDestinoStatus(destino.status);
+      } catch (e: any) {
+        setDestinoUrl("");
+        setDestinoStatus("missing");
+        toast.error(e.message || "Erro ao carregar destino.");
+      }
     })();
-  }, [conta]);
+  }, [conta, fetchDestino]);
 
   const salvarDestino = async () => {
     if (!conta) return toast.error("Selecione uma conta primeiro.");
@@ -104,24 +105,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     if (!/^https?:\/\//i.test(url)) return toast.error("Cole uma URL de webhook válida (https://...).");
     setSavingDestino(true);
     try {
-      const uid = await getAuthedUserId();
-      if (!uid) throw new Error("Você precisa estar logado.");
-      const { data: existing } = await supabase
-        .from("perfil_usuario").select("id")
-        .ilike("arroba_usuario", conta).limit(1).maybeSingle();
-      if (existing?.id) {
-        const { error } = await supabase.from("perfil_usuario")
-          .update({ instagram_webhook_url: url, webhook_url: url } as any)
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("perfil_usuario").insert({
-          user_id: uid, arroba_usuario: conta,
-          instagram_webhook_url: url, webhook_url: url,
-        } as any);
-        if (error) throw error;
-      }
-      setDestinoStatus("ok");
+      const destino = await saveDestino({ data: { conta, webhookUrl: url } });
+      setDestinoUrl(destino.webhookUrl);
+      setDestinoStatus(destino.status);
       toast.success(`Destino salvo para @${conta}.`);
     } catch (e: any) {
       toast.error(e.message || "Falha ao salvar destino.");
