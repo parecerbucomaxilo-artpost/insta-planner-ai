@@ -79,6 +79,56 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     toast.success(`Conta @${n} selecionada.`);
   };
 
+  // Carrega destino (webhook/token Meta) configurado para esta conta
+  useEffect(() => {
+    if (!conta) { setDestinoStatus("missing"); setDestinoUrl(""); return; }
+    setDestinoStatus("loading");
+    (async () => {
+      const { data } = await supabase
+        .from("perfil_usuario")
+        .select("instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
+        .ilike("arroba_usuario", conta)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const hasMeta = !!(data?.instagram_access_token && data?.instagram_business_account_id);
+      const hook = (data?.instagram_webhook_url || data?.webhook_url || "") as string;
+      setDestinoUrl(hook);
+      setDestinoStatus(hasMeta || hook ? "ok" : "missing");
+    })();
+  }, [conta]);
+
+  const salvarDestino = async () => {
+    if (!conta) return toast.error("Selecione uma conta primeiro.");
+    const url = destinoUrl.trim();
+    if (!/^https?:\/\//i.test(url)) return toast.error("Cole uma URL de webhook válida (https://...).");
+    setSavingDestino(true);
+    try {
+      const uid = await getAuthedUserId();
+      if (!uid) throw new Error("Você precisa estar logado.");
+      const { data: existing } = await supabase
+        .from("perfil_usuario").select("id")
+        .ilike("arroba_usuario", conta).limit(1).maybeSingle();
+      if (existing?.id) {
+        const { error } = await supabase.from("perfil_usuario")
+          .update({ instagram_webhook_url: url, webhook_url: url } as any)
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("perfil_usuario").insert({
+          user_id: uid, arroba_usuario: conta,
+          instagram_webhook_url: url, webhook_url: url,
+        } as any);
+        if (error) throw error;
+      }
+      setDestinoStatus("ok");
+      toast.success(`Destino salvo para @${conta}.`);
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao salvar destino.");
+    } finally { setSavingDestino(false); }
+  };
+
+
   const carregar = useCallback(async () => {
     if (!conta) return;
     setLoading(true);
