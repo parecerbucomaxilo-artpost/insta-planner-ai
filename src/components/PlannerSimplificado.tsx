@@ -336,29 +336,43 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       {conta && (
         <>
 
-          {/* Bloco Quando — usado por IA e manual */}
+          {/* Módulo de post */}
           <Card className="p-5 space-y-3">
-            <Label className="text-sm font-semibold">Quando publicar</Label>
-            <div className="grid grid-cols-3 gap-2">
-              <QuandoBtn active={quando === "agora"} onClick={() => setQuando("agora")} icon={<Zap className="w-4 h-4" />} label="Agora" />
-              <QuandoBtn active={quando === "data"} onClick={() => setQuando("data")} icon={<CalendarClock className="w-4 h-4" />} label="Calendário" />
-              <QuandoBtn active={quando === "7dias"} onClick={() => setQuando("7dias")} icon={<CalendarDays className="w-4 h-4" />} label="7 dias (IA)" />
+            <Label className="text-sm font-semibold">Módulo</Label>
+            <div className="grid grid-cols-4 gap-2">
+              <QuandoBtn active={modo === "feed"} onClick={() => setModo("feed")} icon={<ImageIcon className="w-4 h-4" />} label="Feed" />
+              <QuandoBtn active={modo === "carrossel"} onClick={() => setModo("carrossel")} icon={<Layers className="w-4 h-4" />} label="Carrossel" />
+              <QuandoBtn active={modo === "stories"} onClick={() => setModo("stories")} icon={<Film className="w-4 h-4" />} label="Stories" />
+              <QuandoBtn active={modo === "semana"} onClick={() => { setModo("semana"); setQuando("7dias"); }} icon={<CalendarDays className="w-4 h-4" />} label="7 dias" />
             </div>
-            {quando === "data" && (
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
-                <Input type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
-              </div>
-            )}
           </Card>
+
+          {/* Bloco Quando — usado por IA e manual (oculto no modo semana) */}
+          {modo !== "semana" && (
+            <Card className="p-5 space-y-3">
+              <Label className="text-sm font-semibold">Quando publicar</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <QuandoBtn active={quando === "agora"} onClick={() => setQuando("agora")} icon={<Zap className="w-4 h-4" />} label="Agora" />
+                <QuandoBtn active={quando === "data"} onClick={() => setQuando("data")} icon={<CalendarClock className="w-4 h-4" />} label="Calendário" />
+              </div>
+              {quando === "data" && (
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
+                  <Input type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
+                </div>
+              )}
+            </Card>
+          )}
 
           {/* IA */}
           <Card className="p-5 space-y-4 border-2 border-dashed border-indigo-200 bg-indigo-50/30">
             <div className="flex items-center gap-2">
               <Wand2 className="w-5 h-5 text-indigo-600" />
-              <h3 className="font-semibold text-indigo-900">Gerar com IA</h3>
+              <h3 className="font-semibold text-indigo-900">
+                Gerar com IA — {modo === "feed" ? "Post de Feed" : modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Stories" : "Programação 7 dias"}
+              </h3>
             </div>
-            {quando !== "7dias" ? (
+            {modo !== "semana" ? (
               <>
                 <div className="space-y-1">
                   <Label className="text-xs">Tema (opcional — deixe vazio para a IA escolher)</Label>
@@ -366,7 +380,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 </div>
                 <Button onClick={handleGerar} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                  IA criar post {quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
+                  IA criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
                 </Button>
               </>
             ) : (
@@ -400,6 +414,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               </>
             )}
           </Card>
+
 
           {/* Preview da IA */}
           {preview && (
