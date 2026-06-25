@@ -442,7 +442,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           )}
 
           {/* Manual */}
-          {quando !== "7dias" && (
+          {modo !== "semana" && (
             <Card className="p-5 space-y-4">
               <h3 className="text-base font-semibold">Ou crie manualmente</h3>
               <div className="space-y-2">
