@@ -116,6 +116,12 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     } finally { setSavingDestino(false); }
   };
 
+  const assertPublishOk = (out: Awaited<ReturnType<typeof publishIg>>) => {
+    if (out && "ok" in out && out.ok === false) {
+      throw new Error(out.error || "Falha ao publicar no Instagram.");
+    }
+  };
+
 
   const carregar = useCallback(async () => {
     if (!conta) return;
@@ -222,7 +228,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     try {
       if (acao === "publicar") {
         await approveFn({ data: { id: preview.id, acao: "arquivar" } });
-        await publishIg({ data: { id: preview.id } });
+        const out = await publishIg({ data: { id: preview.id } });
+        assertPublishOk(out);
       } else {
         await approveFn({ data: { id: preview.id, acao } });
       }
@@ -266,7 +273,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       } as any).select("id").single();
       if (error) throw error;
       if (quando === "agora" && ins?.id) {
-        await publishIg({ data: { id: ins.id } });
+        const out = await publishIg({ data: { id: ins.id } });
+        assertPublishOk(out);
         toast.success("Post enviado para publicação!");
       } else {
         toast.success("Post agendado!");
