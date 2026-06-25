@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X } from "lucide-react";
+import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X, Image as ImageIcon, Layers, Film } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
