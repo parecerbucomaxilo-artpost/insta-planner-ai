@@ -118,7 +118,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   const assertPublishOk = (out: Awaited<ReturnType<typeof publishIg>>) => {
     if (out && "ok" in out && out.ok === false) {
-      throw new Error(out.error || "Falha ao publicar no Instagram.");
+      throw new Error("error" in out ? out.error : "Falha ao publicar no Instagram.");
     }
   };
 

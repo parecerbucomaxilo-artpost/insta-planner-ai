@@ -114,7 +114,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       if (quando === "agora" && networks.includes("instagram") && inserted?.id) {
         const out = await publishIg({ data: { id: inserted.id } });
         if (out && "ok" in out && out.ok === false) {
-          throw new Error(out.error || "Falha ao publicar no Instagram.");
+          throw new Error("error" in out ? out.error : "Falha ao publicar no Instagram.");
         }
       }
 
