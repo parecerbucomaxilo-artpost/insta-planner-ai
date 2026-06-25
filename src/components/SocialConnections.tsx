@@ -32,6 +32,10 @@ export function SocialConnections() {
 
   const [igWebhook, setIgWebhook] = useState("");
   const [liWebhook, setLiWebhook] = useState("");
+  const [igLigaWebhook, setIgLigaWebhook] = useState("");
+  const [igLigaPerfilId, setIgLigaPerfilId] = useState<string | null>(null);
+  const [igLigaSaving, setIgLigaSaving] = useState(false);
+  const [igLigaTesting, setIgLigaTesting] = useState(false);
   const [igLoading, setIgLoading] = useState(true);
   const [igSaving, setIgSaving] = useState(false);
   const [liSaving, setLiSaving] = useState(false);
