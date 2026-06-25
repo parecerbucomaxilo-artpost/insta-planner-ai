@@ -112,7 +112,10 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
       if (dbError) throw dbError;
       if (quando === "agora" && networks.includes("instagram") && inserted?.id) {
-        await publishIg({ data: { id: inserted.id } });
+        const out = await publishIg({ data: { id: inserted.id } });
+        if (out && "ok" in out && out.ok === false) {
+          throw new Error("error" in out ? out.error : "Falha ao publicar no Instagram.");
+        }
       }
 
       toast.success(quando === "agora" ? "Post enviado para publicação!" : "Post agendado!", { id: tId });

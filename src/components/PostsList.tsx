@@ -40,6 +40,9 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
     setPublishingId(p.id);
     try {
       const out = await publishIg({ data: { id: p.id } });
+      if (out && "ok" in out && out.ok === false) {
+        throw new Error("error" in out ? out.error : "Falha ao publicar no Instagram.");
+      }
       toast.success(out.via === "meta" ? "Publicado no Instagram!" : "Enviado para o Make publicar no Instagram!");
       onChange();
     } catch (e: any) {
