@@ -614,7 +614,9 @@ export const approvePost = createServerFn({ method: "POST" })
         await supabaseAdmin.from("posts").update({ status: "Agendado", user_id: publishUserId }).eq("id", data.id);
         results.status = "Agendado";
       } else {
-        await supabaseAdmin.from("posts").update({ status: "Publicado", user_id: publishUserId }).eq("id", data.id);
+        const nextStatus = results.instagram?.status === "EnviadoMake" ? "EnviadoMake" : "Publicado";
+        await supabaseAdmin.from("posts").update({ status: nextStatus, user_id: publishUserId }).eq("id", data.id);
+        results.status = nextStatus;
       }
 
       if (warnings.length) {

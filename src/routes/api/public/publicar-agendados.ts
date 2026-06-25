@@ -34,14 +34,21 @@ export const Route = createFileRoute("/api/public/publicar-agendados")({
           if (error) return json({ ok: false, error: error.message }, 500);
           if (!pending || pending.length === 0) return json({ ok: true, published: 0 });
 
-          const results: Array<{ id: string; ok: boolean; error?: string }> = [];
+          const results: Array<{ id: string; ok: boolean; status?: string; via?: string; error?: string }> = [];
           for (const p of pending as Array<{ id: string; postar_instagram: boolean; postar_linkedin: boolean }>) {
             try {
+              let instagramStatus: string | undefined;
               if (p.postar_instagram) {
-                await publishInstagramPostById({ supabaseAdmin, postId: p.id, userId: TEMP_USER_ID });
+                const result = await publishInstagramPostById({ supabaseAdmin, postId: p.id, userId: TEMP_USER_ID });
+                instagramStatus = result.status;
+                results.push({ id: p.id, ok: true, status: result.status, via: result.via });
               }
               if (p.postar_linkedin) {
                 await publishLinkedInPostById({ supabaseAdmin, postId: p.id });
+                if (instagramStatus === "EnviadoMake") {
+                  await supabaseAdmin.from("posts").update({ status: "EnviadoMake" }).eq("id", p.id);
+                }
+                if (!p.postar_instagram) results.push({ id: p.id, ok: true, status: "Publicado", via: "linkedin" });
               }
               if (!p.postar_instagram && !p.postar_linkedin) {
                 // Sem rede selecionada — marca como erro para não ficar reprocessando.
@@ -49,7 +56,6 @@ export const Route = createFileRoute("/api/public/publicar-agendados")({
                 results.push({ id: p.id, ok: false, error: "Nenhuma rede selecionada" });
                 continue;
               }
-              results.push({ id: p.id, ok: true });
             } catch (e: any) {
               await supabaseAdmin.from("posts").update({ status: "Erro" }).eq("id", p.id);
               results.push({ id: p.id, ok: false, error: e?.message || "Falha ao publicar" });
@@ -58,7 +64,8 @@ export const Route = createFileRoute("/api/public/publicar-agendados")({
 
           return json({
             ok: true,
-            published: results.filter((r) => r.ok).length,
+            published: results.filter((r) => r.ok && r.status === "Publicado").length,
+            sent_to_make: results.filter((r) => r.ok && r.status === "EnviadoMake").length,
             failed: results.filter((r) => !r.ok).length,
             results,
           });

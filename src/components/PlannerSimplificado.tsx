@@ -233,7 +233,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       } else {
         await approveFn({ data: { id: preview.id, acao } });
       }
-      toast.success(acao === "publicar" ? "Publicado!" : "Salvo!", { id: tid });
+      toast.success(acao === "publicar" ? "Enviado ao Make. Confira a execução no cenário antes de considerar publicado." : "Salvo!", { id: tid });
       setPreview(null);
       carregar();
     } catch (e: any) {
@@ -275,7 +275,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       if (quando === "agora" && ins?.id) {
         const out = await publishIg({ data: { id: ins.id } });
         assertPublishOk(out);
-        toast.success("Post enviado para publicação!");
+        toast.success("Enviado ao Make. Confira a execução no cenário antes de considerar publicado.");
       } else {
         toast.success("Post agendado!");
       }

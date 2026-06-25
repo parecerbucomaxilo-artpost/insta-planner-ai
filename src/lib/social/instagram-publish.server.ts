@@ -183,7 +183,12 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
   return published.id;
 }
 
-async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>) {
+async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>): Promise<{
+  queued: true;
+  status: number | "timeout";
+  confirmed?: boolean;
+  externalId?: string;
+}> {
   // Make está configurado com "Webhook response 15" como 1ª rota → responde em <2s.
   // Se o Make responder "Queue is full", a requisição não deve virar erro fatal no app.
   const maxAttempts = 1;
@@ -202,14 +207,23 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
       if (error instanceof DOMException && error.name === "AbortError") {
         // Make recebeu o payload mas demorou a responder — tratamos como enfileirado.
         console.warn("[instagram-webhook] timeout: assumindo enfileirado no Make");
-        return;
+        return { queued: true, status: "timeout" as const };
       }
       throw error;
     } finally {
       clearTimeout(timeout);
     }
-    if (res.ok) return;
     const text = await res.text().catch(() => "");
+    if (res.ok) {
+      let json: any = null;
+      try { json = text ? JSON.parse(text) : null; } catch { /* resposta simples do Make */ }
+      if (json && (json.ok === false || json.success === false || json.error)) {
+        throw new Error(`Make recebeu o post, mas respondeu falha: ${json.error || json.message || text.slice(0, 200)}`);
+      }
+      const confirmed = Boolean(json?.published === true || json?.publicado === true || json?.status === "published" || json?.status === "Publicado");
+      const externalId = String(json?.instagram_id || json?.media_id || json?.id || "") || undefined;
+      return { queued: true, status: res.status, confirmed, externalId };
+    }
     const isQueueFull = /queue\s*is\s*full|queue full|rate/i.test(text);
     console.error(`[instagram-webhook] respondeu`, res.status, "url=", webhookUrl, "body=", text);
     if (isQueueFull) {
@@ -228,6 +242,7 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
         : "";
     throw new Error(`Webhook Instagram respondeu ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}${hint}`);
   }
+  throw new Error("Webhook Instagram não foi disparado.");
 }
 
 export async function publishInstagramPostById({ supabaseAdmin, postId, userId }: PublishPostInput) {
@@ -326,6 +341,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     const postType = isStory ? "story" : isCarousel ? "carrossel" : "feed";
     let via: PublishVia;
     let externalId: string | undefined;
+    let confirmedByWebhook = false;
 
     if (perfil.instagram_access_token && perfil.instagram_business_account_id) {
       via = "meta";
@@ -340,7 +356,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     } else {
       const webhookUrl = perfil.instagram_webhook_url || perfil.webhook_url || DEFAULT_MAKE_WEBHOOK;
       via = "webhook";
-      await publishViaWebhook(webhookUrl, {
+      const webhookResult = await publishViaWebhook(webhookUrl, {
         id: post.id,
         post_id: post.id,
         user_id: userId,
@@ -374,15 +390,18 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         image_urls: imageUrls,
         images: imageUrls,
       });
+      externalId = webhookResult.externalId || `make:${webhookResult.status}`;
+      confirmedByWebhook = Boolean(webhookResult.confirmed);
     }
 
+    const nextStatus = via === "meta" || confirmedByWebhook ? "Publicado" : "EnviadoMake";
     const { error: updateError } = await supabaseAdmin
       .from("posts")
-      .update({ status: "Publicado", data_agendamento: new Date().toISOString(), user_id: userId })
+      .update({ status: nextStatus, data_agendamento: new Date().toISOString(), user_id: userId })
       .eq("id", post.id);
     if (updateError) throw new Error(`DB: ${updateError.message}`);
 
-    return { ok: true, via, externalId, profileId: perfil.id };
+    return { ok: true, via, externalId, profileId: perfil.id, status: nextStatus };
   } catch (error) {
     // Se a fila do Make estiver cheia, NÃO marca como Erro — o post continua agendado
     // para que o usuário (ou o cron) tente novamente quando a fila esvaziar.
