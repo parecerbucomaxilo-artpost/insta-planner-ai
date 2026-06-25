@@ -183,7 +183,12 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
   return published.id;
 }
 
-async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>): Promise<{ queued: true; status: number | "timeout" }> {
+async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>): Promise<{
+  queued: true;
+  status: number | "timeout";
+  confirmed?: boolean;
+  externalId?: string;
+}> {
   // Make está configurado com "Webhook response 15" como 1ª rota → responde em <2s.
   // Se o Make responder "Queue is full", a requisição não deve virar erro fatal no app.
   const maxAttempts = 1;
@@ -208,8 +213,17 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
     } finally {
       clearTimeout(timeout);
     }
-    if (res.ok) return { queued: true, status: res.status };
     const text = await res.text().catch(() => "");
+    if (res.ok) {
+      let json: any = null;
+      try { json = text ? JSON.parse(text) : null; } catch { /* resposta simples do Make */ }
+      if (json && (json.ok === false || json.success === false || json.error)) {
+        throw new Error(`Make recebeu o post, mas respondeu falha: ${json.error || json.message || text.slice(0, 200)}`);
+      }
+      const confirmed = Boolean(json?.published === true || json?.publicado === true || json?.status === "published" || json?.status === "Publicado");
+      const externalId = String(json?.instagram_id || json?.media_id || json?.id || "") || undefined;
+      return { queued: true, status: res.status, confirmed, externalId };
+    }
     const isQueueFull = /queue\s*is\s*full|queue full|rate/i.test(text);
     console.error(`[instagram-webhook] respondeu`, res.status, "url=", webhookUrl, "body=", text);
     if (isQueueFull) {
@@ -375,7 +389,8 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         image_urls: imageUrls,
         images: imageUrls,
       });
-      externalId = `make:${webhookResult.status}`;
+      externalId = webhookResult.externalId || `make:${webhookResult.status}`;
+      if (webhookResult.confirmed) via = "meta";
     }
 
     const nextStatus = via === "meta" ? "Publicado" : "EnviadoMake";
