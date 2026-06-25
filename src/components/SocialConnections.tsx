@@ -417,6 +417,32 @@ export function SocialConnections() {
           <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-100 leading-relaxed">
             <strong>Por que não API nativa?</strong> A Meta exige App próprio aprovado e conta Business vinculada a uma Página do Facebook. O webhook é o caminho mais rápido e estável.
           </div>
+
+          <div className="pt-4 mt-2 border-t space-y-2">
+            <Label htmlFor="ig-liga-webhook" className="flex items-center gap-1.5 text-sm font-semibold">
+              <LinkIcon className="h-3.5 w-3.5" /> Webhook IG (Liga) — @lactbmf.anhanguerasbo
+            </Label>
+            <Input
+              id="ig-liga-webhook"
+              value={igLigaWebhook}
+              onChange={(e) => setIgLigaWebhook(e.target.value)}
+              placeholder="https://hook.us2.make.com/… (cenário da Liga)"
+              className="font-mono text-xs"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Cole aqui a URL do webhook do Make criado para a conta da Liga. Usado apenas pelos posts da aba <strong>Planner Simplificado Liga</strong>.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleSaveIgLigaWebhook} disabled={igLigaSaving} size="sm">
+                {igLigaSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Salvar
+              </Button>
+              <Button onClick={handleTestIgLigaWebhook} disabled={igLigaTesting} variant="outline" size="sm">
+                {igLigaTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Testar disparo
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
