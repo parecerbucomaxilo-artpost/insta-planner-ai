@@ -191,7 +191,11 @@ function Dashboard() {
             />
           </TabsContent>
           <TabsContent value="simplificado" className="mt-6">
-            <PlannerSimplificado />
+            <PlannerSimplificado
+              contaFixa="lactbmf.anhanguerasbo"
+              storageKey="planner_simplificado_liga_v1"
+              audiencia="estudantes-graduacao"
+            />
           </TabsContent>
           <TabsContent value="simplificado-chico" className="mt-6">
             <PlannerSimplificado
