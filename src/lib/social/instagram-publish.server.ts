@@ -341,6 +341,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     const postType = isStory ? "story" : isCarousel ? "carrossel" : "feed";
     let via: PublishVia;
     let externalId: string | undefined;
+    let confirmedByWebhook = false;
 
     if (perfil.instagram_access_token && perfil.instagram_business_account_id) {
       via = "meta";
@@ -390,10 +391,10 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         images: imageUrls,
       });
       externalId = webhookResult.externalId || `make:${webhookResult.status}`;
-      if (webhookResult.confirmed) via = "meta";
+      confirmedByWebhook = Boolean(webhookResult.confirmed);
     }
 
-    const nextStatus = via === "meta" ? "Publicado" : "EnviadoMake";
+    const nextStatus = via === "meta" || confirmedByWebhook ? "Publicado" : "EnviadoMake";
     const { error: updateError } = await supabaseAdmin
       .from("posts")
       .update({ status: nextStatus, data_agendamento: new Date().toISOString(), user_id: userId })
