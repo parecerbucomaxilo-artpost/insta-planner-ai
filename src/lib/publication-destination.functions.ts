@@ -28,27 +28,25 @@ function validateWebhookUrl(webhookUrl: string) {
 }
 
 async function findProfileByAccount(supabaseAdmin: any, conta: string, columns: string) {
-  const byArroba = await supabaseAdmin
-    .from("perfil_usuario")
-    .select(columns)
-    .ilike("arroba_usuario", conta)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const variants = [conta, `@${conta}`];
+  const fields = ["arroba_usuario", "instagram_arroba"];
 
-  if (byArroba.error) throw new Error(`DB: ${byArroba.error.message}`);
-  if (byArroba.data) return byArroba.data;
+  for (const field of fields) {
+    for (const value of variants) {
+      const { data, error } = await supabaseAdmin
+        .from("perfil_usuario")
+        .select(columns)
+        .ilike(field, value)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-  const byInstagram = await supabaseAdmin
-    .from("perfil_usuario")
-    .select(columns)
-    .ilike("instagram_arroba", conta)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+      if (error) throw new Error(`DB: ${error.message}`);
+      if (data) return data;
+    }
+  }
 
-  if (byInstagram.error) throw new Error(`DB: ${byInstagram.error.message}`);
-  return byInstagram.data;
+  return null;
 }
 
 export const getPublicationDestination = createServerFn({ method: "POST" })

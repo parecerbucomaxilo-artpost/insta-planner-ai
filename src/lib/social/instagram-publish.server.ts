@@ -11,6 +11,34 @@ type PublishPostInput = {
   userId: string;
 };
 
+function normalizeInstagramAccount(value: string | null | undefined) {
+  const normalized = String(value || "").trim().replace(/^@+/, "").toLowerCase();
+  return normalized || null;
+}
+
+async function findInstagramProfileByAccount(supabaseAdmin: any, conta: string, columns: string) {
+  const normalized = normalizeInstagramAccount(conta);
+  if (!normalized) return null;
+  const variants = [normalized, `@${normalized}`];
+  const fields = ["arroba_usuario", "instagram_arroba"];
+
+  for (const field of fields) {
+    for (const value of variants) {
+      const { data, error } = await supabaseAdmin
+        .from("perfil_usuario")
+        .select(columns)
+        .ilike(field, value)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(`DB: ${error.message}`);
+      if (data) return data;
+    }
+  }
+
+  return null;
+}
+
 function normalizeCarousel(value: unknown): string[] {
   if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string" && item.length > 0);
   if (typeof value !== "string" || !value.trim()) return [];
@@ -188,6 +216,13 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
       console.warn("[instagram-webhook] fila cheia no Make: mantendo post para nova tentativa automática");
       throw new Error("Webhook Instagram: Queue is full — post mantido para nova tentativa automática.");
     }
+    const makeGone = res.status === 410 || /no scenario listening for this webhook/i.test(text);
+    if (makeGone) {
+      throw new Error(
+        "Webhook Instagram inválido ou inativo no Make (410). " +
+        "Copie a URL do cenário IG Liga LACTBMF ativo e salve no destino da conta antes de publicar.",
+      );
+    }
     const hint = res.status === 400
         ? " — cenário do Make recusou o payload. Verifique se o cenário está ATIVO."
         : "";
@@ -217,24 +252,18 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     const hasMeta = (p: any) => !!p && !!p.instagram_access_token && !!p.instagram_business_account_id;
 
-    const contaAlvo = (post as any).instagram_conta
-      ? String((post as any).instagram_conta).trim().replace(/^@+/, "").toLowerCase()
-      : null;
+    const contaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
 
     let perfil: any = null;
 
     // 0) Se o post tem instagram_conta, ROTEAR estritamente para o perfil dessa conta.
     //    Evita publicar Liga no @drfranciscomenezes (ou vice-versa).
     if (contaAlvo) {
-      const { data: contaPerfil, error: contaErr } = await supabaseAdmin
-        .from("perfil_usuario")
-        .select("id,arroba_usuario,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
-        .ilike("arroba_usuario", contaAlvo)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (contaErr) throw new Error(`DB: ${contaErr.message}`);
-      perfil = contaPerfil;
+      perfil = await findInstagramProfileByAccount(
+        supabaseAdmin,
+        contaAlvo,
+        "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url",
+      );
       if (!hasDestino(perfil)) {
         // SEM perfil configurado para essa conta — NÃO publica em outra conta.
         // O webhook padrão do Make está apontado para @drfranciscomenezes;
@@ -250,7 +279,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     } else {
       const { data: metaPerfil, error: metaErr } = await supabaseAdmin
         .from("perfil_usuario")
-        .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
+        .select("id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
         .not("instagram_access_token", "is", null)
         .not("instagram_business_account_id", "is", null)
         .order("created_at", { ascending: false })
@@ -262,7 +291,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       if (!hasMeta(perfil)) {
         const { data: ownPerfil, error: ownErr } = await supabaseAdmin
           .from("perfil_usuario")
-          .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
+          .select("id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
           .eq("user_id", userId)
           .order("created_at", { ascending: true })
           .limit(1)
@@ -273,7 +302,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         if (!hasDestino(perfil)) {
           const { data: configured } = await supabaseAdmin
             .from("perfil_usuario")
-            .select("id,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
+            .select("id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
             .or("instagram_webhook_url.not.is.null,webhook_url.not.is.null")
             .order("created_at", { ascending: true })
             .limit(1)
@@ -316,8 +345,8 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         post_id: post.id,
         user_id: userId,
         instagram_conta: contaAlvo || perfil.arroba_usuario || undefined,
-        conta: contaAlvo || perfil.arroba_usuario || undefined,
-        arroba: contaAlvo || perfil.arroba_usuario || undefined,
+        conta: contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba || undefined,
+        arroba: contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba || undefined,
         plataforma: "Instagram",
         type: postType,
         tipo: postType,
