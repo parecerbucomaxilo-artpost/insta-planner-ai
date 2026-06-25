@@ -291,7 +291,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           <Instagram className="w-4 h-4" /> Conta do Instagram
         </Label>
         {contaFixa ? (
-          <p className="text-xs text-zinc-500">Conta fixa: <Badge variant="secondary">@{contaFixa}</Badge></p>
+          <div className="text-xs text-zinc-500 flex items-center gap-1.5">Conta fixa: <Badge variant="secondary">@{contaFixa}</Badge></div>
         ) : (
           <>
             <div className="flex gap-2">
@@ -301,12 +301,12 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               </div>
               <Button onClick={salvarConta}>Usar esta conta</Button>
             </div>
-            {conta && <p className="text-xs text-zinc-500">Filtro ativo: <Badge variant="secondary">@{conta}</Badge></p>}
+            {conta && <div className="text-xs text-zinc-500 flex items-center gap-1.5">Filtro ativo: <Badge variant="secondary">@{conta}</Badge></div>}
           </>
         )}
       </Card>
 
-      {conta && !contaFixa && (
+      {conta && (
         <Card className={`p-5 space-y-3 border-2 ${destinoStatus === "ok" ? "border-emerald-200 bg-emerald-50/30" : "border-amber-300 bg-amber-50/40"}`}>
           <Label className="text-sm font-semibold flex items-center gap-2">
             Destino de publicação de @{conta}
@@ -315,7 +315,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           </Label>
           {destinoStatus === "missing" && (
             <p className="text-xs text-amber-900">
-              ⚠️ Sem destino próprio para esta conta, o post acaba sendo enviado para outra conta do Instagram (o cenário padrão do Make publica em @drfranciscomenezes).
+              ⚠️ Sem destino próprio para esta conta, a publicação será bloqueada para evitar envio para outro Instagram.
               Crie um novo cenário no Make conectado ao Instagram da @{conta} e cole a URL do webhook abaixo.
             </p>
           )}

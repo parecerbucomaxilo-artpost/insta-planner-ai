@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { ensurePerfil } from "@/lib/perfil.functions";
+import { getPublicationDestination, savePublicationDestination } from "@/lib/publication-destination.functions";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
 const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
@@ -26,6 +27,8 @@ export function SocialConnections() {
   const fetchStatus = async () => ({ connected: false });
   const sendLinkedIn = async () => ({ ok: false, error: "Reset" });
   const ensurePerfilFn = useServerFn(ensurePerfil);
+  const fetchLigaDestination = useServerFn(getPublicationDestination);
+  const saveLigaDestination = useServerFn(savePublicationDestination);
   const [status, setStatus] = useState<LiStatus>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
@@ -33,7 +36,6 @@ export function SocialConnections() {
   const [igWebhook, setIgWebhook] = useState("");
   const [liWebhook, setLiWebhook] = useState("");
   const [igLigaWebhook, setIgLigaWebhook] = useState("");
-  const [igLigaPerfilId, setIgLigaPerfilId] = useState<string | null>(null);
   const [igLigaSaving, setIgLigaSaving] = useState(false);
   const [igLigaTesting, setIgLigaTesting] = useState(false);
   const [igLoading, setIgLoading] = useState(true);
@@ -82,44 +84,26 @@ export function SocialConnections() {
     })();
     (async () => {
       try {
-        const { data: sess } = await supabase.auth.getSession();
-        const uid = sess?.session?.user?.id;
-        if (!uid) return;
-        const { data } = await supabase
-          .from("perfil_usuario")
-          .select("id, instagram_webhook_url")
-          .eq("user_id", uid)
-          .ilike("arroba_usuario", "lactbmf.anhanguerasbo")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (data) {
-          setIgLigaPerfilId(data.id);
-          setIgLigaWebhook(data.instagram_webhook_url || "");
-        }
+        const destino = await fetchLigaDestination({ data: { conta: "lactbmf.anhanguerasbo" } });
+        setIgLigaWebhook(destino.webhookUrl || "");
       } catch {}
     })();
   }, []);
 
   const handleSaveIgLigaWebhook = async () => {
     const url = igLigaWebhook.trim();
+    if (!url) {
+      toast.error("Cole a URL do webhook da Liga antes de salvar.");
+      return;
+    }
     if (url && !/^https?:\/\//i.test(url)) {
       toast.error("Informe uma URL válida começando com https://");
       return;
     }
     setIgLigaSaving(true);
     try {
-      const uid = await getAuthedUserId();
-      const payload = {
-        user_id: uid,
-        arroba_usuario: "lactbmf.anhanguerasbo",
-        instagram_webhook_url: url,
-      };
-      const res = igLigaPerfilId
-        ? await supabase.from("perfil_usuario").update(payload).eq("id", igLigaPerfilId).select("id").maybeSingle()
-        : await supabase.from("perfil_usuario").insert(payload).select("id").maybeSingle();
-      if (res.error) throw res.error;
-      if (res.data?.id) setIgLigaPerfilId(res.data.id);
+      const destino = await saveLigaDestination({ data: { conta: "lactbmf.anhanguerasbo", webhookUrl: url } });
+      setIgLigaWebhook(destino.webhookUrl);
       toast.success("Webhook IG (Liga) salvo ✅");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao salvar");
