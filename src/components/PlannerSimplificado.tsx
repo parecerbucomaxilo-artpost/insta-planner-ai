@@ -21,6 +21,7 @@ import { ptBR } from "date-fns/locale";
 
 const ACCOUNT_KEY = "planner_simplificado_conta_v1";
 type Quando = "agora" | "data" | "7dias";
+type Modo = "feed" | "carrossel" | "stories" | "semana";
 
 interface PlannerSimplificadoProps {
   contaFixa?: string;        // se setado, trava a conta (sem seletor)
