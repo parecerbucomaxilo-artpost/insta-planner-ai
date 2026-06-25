@@ -46,6 +46,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
 
   // Geração IA
+  const [modo, setModo] = useState<Modo>("feed");
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");
