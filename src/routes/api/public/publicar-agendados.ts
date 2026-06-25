@@ -37,12 +37,17 @@ export const Route = createFileRoute("/api/public/publicar-agendados")({
           const results: Array<{ id: string; ok: boolean; status?: string; via?: string; error?: string }> = [];
           for (const p of pending as Array<{ id: string; postar_instagram: boolean; postar_linkedin: boolean }>) {
             try {
+              let instagramStatus: string | undefined;
               if (p.postar_instagram) {
                 const result = await publishInstagramPostById({ supabaseAdmin, postId: p.id, userId: TEMP_USER_ID });
+                instagramStatus = result.status;
                 results.push({ id: p.id, ok: true, status: result.status, via: result.via });
               }
               if (p.postar_linkedin) {
                 await publishLinkedInPostById({ supabaseAdmin, postId: p.id });
+                if (instagramStatus === "EnviadoMake") {
+                  await supabaseAdmin.from("posts").update({ status: "EnviadoMake" }).eq("id", p.id);
+                }
                 if (!p.postar_instagram) results.push({ id: p.id, ok: true, status: "Publicado", via: "linkedin" });
               }
               if (!p.postar_instagram && !p.postar_linkedin) {
