@@ -153,15 +153,18 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     if (!conta) return toast.error("Selecione uma conta do Instagram.");
     setBusy(true);
     const tid = "ai-simple";
-    toast.loading("IA criando post para alunos...", { id: tid });
+    const labelModo = modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post de feed";
+    toast.loading(`IA criando ${labelModo}...`, { id: tid });
     try {
       const iso = buildAgendamentoIso();
+      const tipo = modo === "stories" ? "stories" : "feed";
+      const formato = modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único";
       const out = await genSingle({ data: {
         tema: tema.trim(),
         especialidade: "CTBMF",
         rede: "instagram",
-        tipo: "feed",
-        formato: "Post Único",
+        tipo,
+        formato,
         quando: iso,
         ambasRedes: false,
         audiencia,
