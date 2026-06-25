@@ -14,8 +14,13 @@ import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 const statusColor: Record<string, string> = {
   Rascunho: "bg-[var(--status-draft)]",
   Agendado: "bg-[var(--status-scheduled)]",
+  EnviadoMake: "bg-[var(--status-sent)]",
   Publicado: "bg-[var(--status-published)]",
   Erro: "bg-[var(--status-error)]",
+};
+
+const statusLabel: Record<string, string> = {
+  EnviadoMake: "Enviado ao Make",
 };
 
 export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () => void }) {
@@ -43,7 +48,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
       if (out && "ok" in out && out.ok === false) {
         throw new Error("error" in out ? out.error : "Falha ao publicar no Instagram.");
       }
-      toast.success(out.via === "meta" ? "Publicado no Instagram!" : "Enviado para o Make publicar no Instagram!");
+      toast.success(out.via === "meta" ? "Publicado no Instagram!" : "Enviado ao Make. Confira a execução no cenário antes de considerar publicado.");
       onChange();
     } catch (e: any) {
       toast.error(e.message || "Falha ao publicar");
@@ -93,7 +98,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground"><ImgIcon className="h-8 w-8" /></div>
               )}
-              <Badge className={`absolute top-2 left-2 text-white ${statusColor[p.status]} shadow-sm`}>{p.status}</Badge>
+              <Badge className={`absolute top-2 left-2 text-white ${statusColor[p.status] ?? "bg-[var(--status-draft)]"} shadow-sm`}>{statusLabel[p.status] ?? p.status}</Badge>
               {isVideo && (
                 <Badge className="absolute top-2 right-2 bg-violet-500 hover:bg-violet-500 text-white shadow-sm">
                   <Film className="h-3 w-3 mr-1" /> Reels

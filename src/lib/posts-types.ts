@@ -14,7 +14,7 @@ export type PostRow = {
   url_da_imagem?: string | null;
   imagens_carrossel: string[];
   data_agendamento: string | null;
-  status: "Rascunho" | "Agendado" | "Publicado" | "Erro";
+  status: "Rascunho" | "Agendado" | "Publicado" | "EnviadoMake" | "Erro" | "PendenteAprovacao" | "Arquivado";
   prompt_ia: string | null;
   created_at: string;
   updated_at: string;

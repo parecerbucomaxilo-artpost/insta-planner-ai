@@ -10,8 +10,13 @@ import type { PostRow } from "@/lib/posts-types";
 const statusColor: Record<string, string> = {
   Rascunho: "bg-[var(--status-draft)]",
   Agendado: "bg-[var(--status-scheduled)]",
+  EnviadoMake: "bg-[var(--status-sent)]",
   Publicado: "bg-[var(--status-published)]",
   Erro: "bg-[var(--status-error)]",
+};
+
+const statusLabel: Record<string, string> = {
+  EnviadoMake: "Enviado ao Make",
 };
 
 export function PostsCalendar({ posts }: { posts: PostRow[] }) {
@@ -70,7 +75,7 @@ export function PostsCalendar({ posts }: { posts: PostRow[] }) {
           {Object.entries(statusColor).map(([k, c]) => (
             <div key={k} className="flex items-center gap-2">
               <span className={`h-2.5 w-2.5 rounded-full ${c}`} />
-              <span className="text-muted-foreground">{k}</span>
+              <span className="text-muted-foreground">{statusLabel[k] ?? k}</span>
             </div>
           ))}
         </div>
@@ -111,7 +116,7 @@ export function PostsCalendar({ posts }: { posts: PostRow[] }) {
                           <Film className="h-3 w-3 mr-0.5" /> Reels
                         </Badge>
                       )}
-                      <Badge className={`text-xs text-white ${statusColor[p.status]}`}>{p.status}</Badge>
+                      <Badge className={`text-xs text-white ${statusColor[p.status] ?? "bg-[var(--status-draft)]"}`}>{statusLabel[p.status] ?? p.status}</Badge>
                     </div>
                     <p className="text-sm line-clamp-2">{p.legenda || <span className="text-muted-foreground">(sem legenda)</span>}</p>
                     <p className="text-xs text-muted-foreground mt-1">

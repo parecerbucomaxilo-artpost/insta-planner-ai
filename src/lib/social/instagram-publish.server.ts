@@ -183,7 +183,7 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
   return published.id;
 }
 
-async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>) {
+async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>): Promise<{ queued: true; status: number | "timeout" }> {
   // Make está configurado com "Webhook response 15" como 1ª rota → responde em <2s.
   // Se o Make responder "Queue is full", a requisição não deve virar erro fatal no app.
   const maxAttempts = 1;
@@ -202,13 +202,13 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
       if (error instanceof DOMException && error.name === "AbortError") {
         // Make recebeu o payload mas demorou a responder — tratamos como enfileirado.
         console.warn("[instagram-webhook] timeout: assumindo enfileirado no Make");
-        return;
+        return { queued: true, status: "timeout" as const };
       }
       throw error;
     } finally {
       clearTimeout(timeout);
     }
-    if (res.ok) return;
+    if (res.ok) return { queued: true, status: res.status };
     const text = await res.text().catch(() => "");
     const isQueueFull = /queue\s*is\s*full|queue full|rate/i.test(text);
     console.error(`[instagram-webhook] respondeu`, res.status, "url=", webhookUrl, "body=", text);
@@ -228,6 +228,7 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
         : "";
     throw new Error(`Webhook Instagram respondeu ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}${hint}`);
   }
+  throw new Error("Webhook Instagram não foi disparado.");
 }
 
 export async function publishInstagramPostById({ supabaseAdmin, postId, userId }: PublishPostInput) {
@@ -340,7 +341,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     } else {
       const webhookUrl = perfil.instagram_webhook_url || perfil.webhook_url || DEFAULT_MAKE_WEBHOOK;
       via = "webhook";
-      await publishViaWebhook(webhookUrl, {
+      const webhookResult = await publishViaWebhook(webhookUrl, {
         id: post.id,
         post_id: post.id,
         user_id: userId,
@@ -374,15 +375,17 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         image_urls: imageUrls,
         images: imageUrls,
       });
+      externalId = `make:${webhookResult.status}`;
     }
 
+    const nextStatus = via === "meta" ? "Publicado" : "EnviadoMake";
     const { error: updateError } = await supabaseAdmin
       .from("posts")
-      .update({ status: "Publicado", data_agendamento: new Date().toISOString(), user_id: userId })
+      .update({ status: nextStatus, data_agendamento: new Date().toISOString(), user_id: userId })
       .eq("id", post.id);
     if (updateError) throw new Error(`DB: ${updateError.message}`);
 
-    return { ok: true, via, externalId, profileId: perfil.id };
+    return { ok: true, via, externalId, profileId: perfil.id, status: nextStatus };
   } catch (error) {
     // Se a fila do Make estiver cheia, NÃO marca como Erro — o post continua agendado
     // para que o usuário (ou o cron) tente novamente quando a fila esvaziar.
