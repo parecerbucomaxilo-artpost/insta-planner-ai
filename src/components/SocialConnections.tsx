@@ -80,7 +80,81 @@ export function SocialConnections() {
         setIgLoading(false);
       }
     })();
+    (async () => {
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const uid = sess?.session?.user?.id;
+        if (!uid) return;
+        const { data } = await supabase
+          .from("perfil_usuario")
+          .select("id, instagram_webhook_url")
+          .eq("user_id", uid)
+          .ilike("arroba_usuario", "lactbmf.anhanguerasbo")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (data) {
+          setIgLigaPerfilId(data.id);
+          setIgLigaWebhook(data.instagram_webhook_url || "");
+        }
+      } catch {}
+    })();
   }, []);
+
+  const handleSaveIgLigaWebhook = async () => {
+    const url = igLigaWebhook.trim();
+    if (url && !/^https?:\/\//i.test(url)) {
+      toast.error("Informe uma URL válida começando com https://");
+      return;
+    }
+    setIgLigaSaving(true);
+    try {
+      const uid = await getAuthedUserId();
+      const payload = {
+        user_id: uid,
+        arroba_usuario: "lactbmf.anhanguerasbo",
+        instagram_webhook_url: url,
+      };
+      const res = igLigaPerfilId
+        ? await supabase.from("perfil_usuario").update(payload).eq("id", igLigaPerfilId).select("id").maybeSingle()
+        : await supabase.from("perfil_usuario").insert(payload).select("id").maybeSingle();
+      if (res.error) throw res.error;
+      if (res.data?.id) setIgLigaPerfilId(res.data.id);
+      toast.success("Webhook IG (Liga) salvo ✅");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao salvar");
+    } finally {
+      setIgLigaSaving(false);
+    }
+  };
+
+  const handleTestIgLigaWebhook = async () => {
+    const url = igLigaWebhook.trim();
+    if (!url) return toast.error("Insira a URL do webhook da Liga primeiro.");
+    setIgLigaTesting(true);
+    const tid = toast.loading("Disparando teste para Liga (Make)…");
+    try {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          texto: "✅ Teste Liga LACTBMF — webhook conectado.",
+          plataforma: "Instagram",
+          conta: "lactbmf.anhanguerasbo",
+          instagram_conta: "lactbmf.anhanguerasbo",
+          imagem_url: "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=1080&h=1080&fit=crop&fm=jpg&q=85",
+          legenda: "✅ Teste Liga LACTBMF — webhook conectado.",
+          tipo: "imagem",
+        }),
+      });
+      if (!r.ok) throw new Error(`Make respondeu ${r.status}`);
+      toast.success("Webhook IG (Liga) OK!", { id: tid });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha no teste", { id: tid });
+    } finally {
+      setIgLigaTesting(false);
+    }
+  };
 
   const handleSaveIgWebhook = async () => {
     const url = igWebhook.trim();
