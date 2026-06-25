@@ -32,6 +32,10 @@ export function SocialConnections() {
 
   const [igWebhook, setIgWebhook] = useState("");
   const [liWebhook, setLiWebhook] = useState("");
+  const [igLigaWebhook, setIgLigaWebhook] = useState("");
+  const [igLigaPerfilId, setIgLigaPerfilId] = useState<string | null>(null);
+  const [igLigaSaving, setIgLigaSaving] = useState(false);
+  const [igLigaTesting, setIgLigaTesting] = useState(false);
   const [igLoading, setIgLoading] = useState(true);
   const [igSaving, setIgSaving] = useState(false);
   const [liSaving, setLiSaving] = useState(false);
@@ -76,7 +80,81 @@ export function SocialConnections() {
         setIgLoading(false);
       }
     })();
+    (async () => {
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const uid = sess?.session?.user?.id;
+        if (!uid) return;
+        const { data } = await supabase
+          .from("perfil_usuario")
+          .select("id, instagram_webhook_url")
+          .eq("user_id", uid)
+          .ilike("arroba_usuario", "lactbmf.anhanguerasbo")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (data) {
+          setIgLigaPerfilId(data.id);
+          setIgLigaWebhook(data.instagram_webhook_url || "");
+        }
+      } catch {}
+    })();
   }, []);
+
+  const handleSaveIgLigaWebhook = async () => {
+    const url = igLigaWebhook.trim();
+    if (url && !/^https?:\/\//i.test(url)) {
+      toast.error("Informe uma URL válida começando com https://");
+      return;
+    }
+    setIgLigaSaving(true);
+    try {
+      const uid = await getAuthedUserId();
+      const payload = {
+        user_id: uid,
+        arroba_usuario: "lactbmf.anhanguerasbo",
+        instagram_webhook_url: url,
+      };
+      const res = igLigaPerfilId
+        ? await supabase.from("perfil_usuario").update(payload).eq("id", igLigaPerfilId).select("id").maybeSingle()
+        : await supabase.from("perfil_usuario").insert(payload).select("id").maybeSingle();
+      if (res.error) throw res.error;
+      if (res.data?.id) setIgLigaPerfilId(res.data.id);
+      toast.success("Webhook IG (Liga) salvo ✅");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao salvar");
+    } finally {
+      setIgLigaSaving(false);
+    }
+  };
+
+  const handleTestIgLigaWebhook = async () => {
+    const url = igLigaWebhook.trim();
+    if (!url) return toast.error("Insira a URL do webhook da Liga primeiro.");
+    setIgLigaTesting(true);
+    const tid = toast.loading("Disparando teste para Liga (Make)…");
+    try {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          texto: "✅ Teste Liga LACTBMF — webhook conectado.",
+          plataforma: "Instagram",
+          conta: "lactbmf.anhanguerasbo",
+          instagram_conta: "lactbmf.anhanguerasbo",
+          imagem_url: "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=1080&h=1080&fit=crop&fm=jpg&q=85",
+          legenda: "✅ Teste Liga LACTBMF — webhook conectado.",
+          tipo: "imagem",
+        }),
+      });
+      if (!r.ok) throw new Error(`Make respondeu ${r.status}`);
+      toast.success("Webhook IG (Liga) OK!", { id: tid });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha no teste", { id: tid });
+    } finally {
+      setIgLigaTesting(false);
+    }
+  };
 
   const handleSaveIgWebhook = async () => {
     const url = igWebhook.trim();
@@ -338,6 +416,32 @@ export function SocialConnections() {
           </div>
           <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-100 leading-relaxed">
             <strong>Por que não API nativa?</strong> A Meta exige App próprio aprovado e conta Business vinculada a uma Página do Facebook. O webhook é o caminho mais rápido e estável.
+          </div>
+
+          <div className="pt-4 mt-2 border-t space-y-2">
+            <Label htmlFor="ig-liga-webhook" className="flex items-center gap-1.5 text-sm font-semibold">
+              <LinkIcon className="h-3.5 w-3.5" /> Webhook IG (Liga) — @lactbmf.anhanguerasbo
+            </Label>
+            <Input
+              id="ig-liga-webhook"
+              value={igLigaWebhook}
+              onChange={(e) => setIgLigaWebhook(e.target.value)}
+              placeholder="https://hook.us2.make.com/… (cenário da Liga)"
+              className="font-mono text-xs"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Cole aqui a URL do webhook do Make criado para a conta da Liga. Usado apenas pelos posts da aba <strong>Planner Simplificado Liga</strong>.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleSaveIgLigaWebhook} disabled={igLigaSaving} size="sm">
+                {igLigaSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Salvar
+              </Button>
+              <Button onClick={handleTestIgLigaWebhook} disabled={igLigaTesting} variant="outline" size="sm">
+                {igLigaTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Testar disparo
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
