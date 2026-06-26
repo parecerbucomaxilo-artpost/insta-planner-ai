@@ -13,7 +13,11 @@ import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { signPostMediaUrls } from "@/lib/storage-url";
-import { generateSinglePost, generateWeekThemes, approvePost, discardPost } from "@/lib/ai-post.functions";
+import { generateSinglePost, generateWeekThemes, approvePost, discardPost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
+import { cn } from "@/lib/utils";
+
+type ModeloIA = (typeof MODELOS_IA)[number]["id"];
+type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 import { getPublicationDestination, savePublicationDestination } from "@/lib/publication-destination.functions";
 import type { PostRow } from "@/lib/posts-types";
@@ -49,6 +53,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   // Geração IA
   const [modo, setModo] = useState<Modo>("feed");
+  const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("google/gemini-3.1-flash-image-preview");
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");
@@ -176,6 +182,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         quando: iso,
         ambasRedes: false,
         audiencia,
+        modelo,
+        modeloImagem,
       } as any });
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
@@ -192,7 +200,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     const tid = "ai-week-simple";
     toast.loading("IA planejando 7 dias...", { id: tid });
     try {
-      const out = await genWeek({ data: { especialidade: "CTBMF" } as any });
+      const out = await genWeek({ data: { especialidade: "CTBMF", modelo } as any });
       // Filtra apenas slots do Instagram para a conta simplificada
       const igOnly = (out.temas as any[]).filter((t) => t.rede === "instagram" || t.rede === "estilo-x");
       setTemas(igOnly);
@@ -212,6 +220,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         tipo: t.tipo as any, formato: t.formato as any, quando: t.quando,
         ambasRedes: false,
         audiencia,
+        modelo,
+        modeloImagem,
       } as any });
       await marcarConta(out.id);
       await approveFn({ data: { id: out.id, acao: "agendar" } });
@@ -397,6 +407,48 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               <h3 className="font-semibold text-indigo-900">
                 Gerar com IA — {modo === "feed" ? "Post de Feed" : modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Stories" : "Programação 7 dias"}
               </h3>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Modelo de IA (texto)</Label>
+              <div className="flex flex-wrap gap-2">
+                {MODELOS_IA.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setModelo(m.id)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
+                      modelo === m.id
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
+                    )}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Modelo de IA (imagem)</Label>
+              <div className="flex flex-wrap gap-2">
+                {MODELOS_IMAGEM.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setModeloImagem(m.id)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
+                      modeloImagem === m.id
+                        ? "bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm"
+                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
+                    )}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
             </div>
             {modo !== "semana" ? (
               <>
