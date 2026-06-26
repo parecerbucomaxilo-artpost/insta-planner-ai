@@ -352,7 +352,13 @@ export function SocialConnections() {
                     }
                   }
                   if (!pid) return toast.error("Não foi possível identificar o perfil");
-                  const oauthUrl = `${META_OAUTH_ORIGIN}/api/public/meta-oauth/start?perfil_id=${encodeURIComponent(pid)}`;
+                  let oauthUrl: string;
+                  try {
+                    const r = await startMetaOAuth({ data: { perfilId: pid } });
+                    oauthUrl = r.url;
+                  } catch (e) {
+                    return toast.error(`Falha ao iniciar OAuth: ${e instanceof Error ? e.message : String(e)}`);
+                  }
                   // Abre em nova aba para evitar bloqueio de iframe do Facebook (X-Frame-Options)
                   const win = window.open(oauthUrl, "_blank", "noopener,noreferrer");
                   if (!win) {
