@@ -106,10 +106,8 @@ async function createFetchableUrl(supabaseAdmin: any, value: string | null | und
     }
     return value;
   }
-  if (ref.bucket === "post-images") {
-    const { data } = supabaseAdmin.storage.from(ref.bucket).getPublicUrl(ref.path);
-    if (data?.publicUrl) return data.publicUrl;
-  }
+  // Bucket post-images é privado — sempre assinar (a URL pública retorna 400 e o Instagram rejeita com erro 9004).
+
   const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
   if (error || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${error?.message || ref.path}`);
   return data.signedUrl;
