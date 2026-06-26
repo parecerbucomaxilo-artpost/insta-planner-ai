@@ -182,6 +182,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         quando: iso,
         ambasRedes: false,
         audiencia,
+        modelo,
+        modeloImagem,
       } as any });
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
