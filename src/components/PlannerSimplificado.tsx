@@ -23,8 +23,11 @@ import { getPublicationDestination, savePublicationDestination } from "@/lib/pub
 import type { PostRow } from "@/lib/posts-types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ensurePublicationDestinationProfile } from "@/lib/publication-destination.functions";
+import { createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 
 const ACCOUNT_KEY = "planner_simplificado_conta_v1";
+const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 type Quando = "agora" | "data" | "7dias";
 type Modo = "feed" | "carrossel" | "stories" | "semana";
 
@@ -42,11 +45,14 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const publishIg = useServerFn(publishInstagramNow);
   const fetchDestino = useServerFn(getPublicationDestination);
   const saveDestino = useServerFn(savePublicationDestination);
+  const ensureDestino = useServerFn(ensurePublicationDestinationProfile);
+  const startMetaOAuth = useServerFn(createMetaOAuthStartUrl);
 
   const [conta, setConta] = useState<string>("");
   const [contaInput, setContaInput] = useState<string>("");
   const [destinoUrl, setDestinoUrl] = useState<string>("");
   const [destinoStatus, setDestinoStatus] = useState<"loading" | "ok" | "missing">("loading");
+  const [destinoModo, setDestinoModo] = useState<"meta" | "webhook" | "missing">("missing");
   const [savingDestino, setSavingDestino] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
 
@@ -94,16 +100,18 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   // Carrega destino (webhook/token Meta) configurado para esta conta
   useEffect(() => {
-    if (!conta) { setDestinoStatus("missing"); setDestinoUrl(""); return; }
+    if (!conta) { setDestinoStatus("missing"); setDestinoModo("missing"); setDestinoUrl(""); return; }
     setDestinoStatus("loading");
     (async () => {
       try {
         const destino = await fetchDestino({ data: { conta } });
         setDestinoUrl(destino.webhookUrl);
         setDestinoStatus(destino.status);
+        setDestinoModo(destino.mode);
       } catch (e: any) {
         setDestinoUrl("");
         setDestinoStatus("missing");
+        setDestinoModo("missing");
         toast.error(e.message || "Erro ao carregar destino.");
       }
     })();
@@ -122,6 +130,27 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     } catch (e: any) {
       toast.error(e.message || "Falha ao salvar destino.");
     } finally { setSavingDestino(false); }
+  };
+
+  const conectarMetaConta = async () => {
+    if (!conta) return toast.error("Selecione uma conta primeiro.");
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session?.user?.id) {
+        toast.error("Faça login antes de conectar a Meta.");
+        window.location.href = `/auth?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+      const destino = await ensureDestino({ data: { conta } });
+      const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: conta } });
+      const win = window.open(r.url, "_blank", "noopener,noreferrer");
+      if (!win) {
+        try { window.top!.location.href = r.url; } catch { window.location.href = r.url; }
+      }
+      toast.info(`Conecte usando o Facebook que administra @${conta}.`);
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao iniciar conexão Meta.");
+    }
   };
 
   const assertPublishOk = (out: Awaited<ReturnType<typeof publishIg>>) => {
