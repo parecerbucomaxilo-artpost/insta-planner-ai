@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Linkedin, Instagram, Loader2, CheckCircle2, AlertCircle, ExternalLink, Send, Save, Link as LinkIcon } from "lucide-react";
+import { Linkedin, Instagram, Loader2, CheckCircle2, AlertCircle, ExternalLink, Send, Save, Link as LinkIcon, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
@@ -48,6 +48,8 @@ export function SocialConnections() {
   const [liTesting, setLiTesting] = useState(false);
   const [perfilId, setPerfilId] = useState<string | null>(null);
   const [ligaMetaConnectPath, setLigaMetaConnectPath] = useState("");
+  const [ligaMetaOauthUrl, setLigaMetaOauthUrl] = useState("");
+  const [ligaMetaCopied, setLigaMetaCopied] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -183,11 +185,32 @@ export function SocialConnections() {
     try {
       const destino = await ensureLigaDestination({ data: { conta: "lactbmf.anhanguerasbo" } });
       const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo", logoutFacebookFirst: true } });
+      setLigaMetaOauthUrl(r.url);
       setLigaMetaConnectPath(`/meta-connect?account=lactbmf.anhanguerasbo&next=${encodeURIComponent(r.url)}`);
       toast.info("Clique em 'Abrir conexão Meta da Liga' para continuar fora do preview.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao conectar Instagram da Liga");
     }
+  };
+
+  const handleCopyLigaMetaUrl = async () => {
+    if (!ligaMetaOauthUrl) return toast.error("Prepare a conexão Meta da Liga primeiro.");
+    try {
+      await navigator.clipboard.writeText(ligaMetaOauthUrl);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = ligaMetaOauthUrl;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setLigaMetaCopied(true);
+    window.setTimeout(() => setLigaMetaCopied(false), 1800);
+    toast.success("Link Meta da Liga copiado. Cole na barra do navegador fora do preview.");
   };
 
   const handleSaveIgWebhook = async () => {
@@ -474,6 +497,12 @@ export function SocialConnections() {
                   <a href={ligaMetaConnectPath} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" /> Abrir conexão Meta da Liga
                   </a>
+                </Button>
+              )}
+              {ligaMetaOauthUrl && (
+                <Button type="button" variant="outline" size="sm" onClick={handleCopyLigaMetaUrl}>
+                  {ligaMetaCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {ligaMetaCopied ? "Link copiado" : "Copiar link Meta"}
                 </Button>
               )}
             </div>
