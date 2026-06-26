@@ -354,7 +354,19 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         isCarousel,
       });
     } else {
-      const webhookUrl = perfil.instagram_webhook_url || perfil.webhook_url || DEFAULT_MAKE_WEBHOOK;
+      // Garantia anti-cross-posting: quando o post tem instagram_conta,
+      // só publicamos via webhook PRÓPRIO desse perfil. NUNCA cai no
+      // DEFAULT_MAKE_WEBHOOK nem em webhook de outro perfil — isso publicaria
+      // conteúdo da Liga na conta @drfranciscomenezes (ou vice-versa).
+      const ownWebhook = perfil.instagram_webhook_url || perfil.webhook_url || null;
+      if (contaAlvo && !ownWebhook) {
+        throw new Error(
+          `Conta @${contaAlvo} sem webhook próprio configurado. ` +
+          `Cadastre o webhook do Make específico dessa conta em "Configurações > Perfil" ` +
+          `antes de publicar — o fallback global publicaria na conta errada.`,
+        );
+      }
+      const webhookUrl = ownWebhook || DEFAULT_MAKE_WEBHOOK;
       via = "webhook";
       const webhookResult = await publishViaWebhook(webhookUrl, {
         id: post.id,
