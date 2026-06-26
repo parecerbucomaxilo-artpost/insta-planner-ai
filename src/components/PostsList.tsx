@@ -211,6 +211,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
           </Card>
         );
       })}
+      <LogoPreviewDialog postId={previewId} open={!!previewId} onOpenChange={(o) => !o && setPreviewId(null)} />
     </div>
   );
 }
