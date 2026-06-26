@@ -15,7 +15,7 @@ import { createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
 const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
-const META_OAUTH_ORIGIN = "https://insta-planner-ai.lovable.app";
+
 
 type LiStatus =
   | { connected: true; name?: string; email?: string; picture?: string; sub?: string }
