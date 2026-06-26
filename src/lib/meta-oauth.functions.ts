@@ -32,8 +32,13 @@ function base64UrlEncode(value: string) {
  */
 export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { perfilId: string; targetAccount?: string; forceReauth?: boolean }) =>
-    z.object({ perfilId: z.string().uuid(), targetAccount: z.string().optional(), forceReauth: z.boolean().optional() }).parse(d),
+  .inputValidator((d: { perfilId: string; targetAccount?: string; forceReauth?: boolean; logoutFacebookFirst?: boolean }) =>
+    z.object({
+      perfilId: z.string().uuid(),
+      targetAccount: z.string().optional(),
+      forceReauth: z.boolean().optional(),
+      logoutFacebookFirst: z.boolean().optional(),
+    }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const appId = process.env.META_APP_ID;
@@ -72,6 +77,15 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
       authUrl.searchParams.set("auth_nonce", crypto.randomUUID());
     }
     authUrl.searchParams.set("display", "popup");
+
+    if (data.logoutFacebookFirst) {
+      // O Facebook não tem um equivalente confiável ao "selecionar conta" do Google.
+      // Para conectar a Liga sem reaproveitar a sessão Francisco, encerramos a sessão
+      // Facebook atual e só então abrimos o OAuth.
+      const logoutUrl = new URL("https://www.facebook.com/logout.php");
+      logoutUrl.searchParams.set("next", authUrl.toString());
+      return { url: logoutUrl.toString() };
+    }
 
     return { url: authUrl.toString() };
   });
