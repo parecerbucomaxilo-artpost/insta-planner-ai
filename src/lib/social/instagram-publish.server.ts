@@ -462,9 +462,23 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         image_url: imageUrls[0],
         media_url: imageUrls[0],
         arquivo_url: imageUrls[0],
+        photo_url: imageUrls[0],
+        photoUrl: imageUrls[0],
+        photo: imageUrls[0],
+        foto_url: imageUrls[0],
+        foto: imageUrls[0],
+        picture: imageUrls[0],
+        picture_url: imageUrls[0],
+        thumbnail_url: imageUrls[0],
+        link_imagem: imageUrls[0],
+        link: imageUrls[0],
+        url: imageUrls[0],
         imagens_carrossel: imageUrls,
         image_urls: imageUrls,
         images: imageUrls,
+        photos: imageUrls,
+        fotos: imageUrls,
+        photo_urls: imageUrls,
       }, contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba || null);
       externalId = webhookResult.externalId || `make:${webhookResult.status}`;
       confirmedByWebhook = Boolean(webhookResult.confirmed);
