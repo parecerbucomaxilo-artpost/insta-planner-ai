@@ -72,42 +72,40 @@ export async function overlayLogo(
   }
 }
 
-// Overlay das DUAS logos de aluno (modo "Planner Simplificado / Estudantes").
-// Aplica logo-aluno-1 no canto inf. esquerdo e logo-aluno-2 no canto inf. direito.
+// Overlay da LOGO ÚNICA da LACTBMF — centralizada na faixa inferior, sem fundo.
+// Usado pelo "Planner Simplificado Liga" (@lactbmf.anhanguerasbo).
 export async function overlayAlunoLogos(
   imageB64: string,
   origin?: string,
-  sizePct = 12,
+  sizePct = 22,
 ): Promise<string> {
   try {
     const photon = await import("@cf-wasm/photon").catch(() => null);
     if (!photon) return imageB64;
     const { PhotonImage, resize, watermark, SamplingFilter } = photon;
+    const logoLiga = (await import("@/assets/logo-liga-ctbmf.png.asset.json")).default;
 
     const baseBytes = Uint8Array.from(atob(imageB64), (c) => c.charCodeAt(0));
     const base = PhotonImage.new_from_byteslice(baseBytes);
     const w = base.get_width();
     const h = base.get_height();
-    const target = Math.max(64, Math.round((w * sizePct) / 100));
-    const margin = Math.round(w * 0.035);
-    const freeList: Array<{ free: () => void }> = [];
+    const targetW = Math.max(96, Math.round((w * sizePct) / 100));
+    const marginY = Math.round(h * 0.035);
 
-    for (const [asset, isRight] of [
-      [logoAluno1, false] as const,
-      [logoAluno2, true] as const,
-    ]) {
-      const bytes = await fetchBytes(asset.url, origin);
-      const full = PhotonImage.new_from_byteslice(bytes);
-      const small = resize(full, target, target, SamplingFilter.Lanczos3);
-      const x = isRight ? Math.max(0, w - target - margin) : margin;
-      const y = Math.max(0, h - target - margin);
-      watermark(base, small, BigInt(x), BigInt(y));
-      freeList.push(full, small);
-    }
+    const bytes = await fetchBytes(logoLiga.url, origin);
+    const full = PhotonImage.new_from_byteslice(bytes);
+    const fw = full.get_width();
+    const fh = full.get_height();
+    const targetH = Math.max(48, Math.round((fh * targetW) / Math.max(1, fw)));
+    const small = resize(full, targetW, targetH, SamplingFilter.Lanczos3);
+    const x = Math.max(0, Math.round((w - targetW) / 2));
+    const y = Math.max(0, h - targetH - marginY);
+    watermark(base, small, BigInt(x), BigInt(y));
 
     const outBytes = base.get_bytes_jpeg(90);
     base.free();
-    for (const f of freeList) f.free();
+    full.free();
+    small.free();
     let bin = "";
     for (let i = 0; i < outBytes.length; i++) bin += String.fromCharCode(outBytes[i]);
     return btoa(bin);
