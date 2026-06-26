@@ -74,7 +74,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
           );
           const longJson = await longRes.json();
           if (!longRes.ok || !longJson.access_token) {
-            return htmlPage("Erro", `<h1>❌ Falha no token longo</h1><p>${JSON.stringify(longJson)}</p>`);
+            return htmlPage("Erro", `<h1>❌ Falha no token longo</h1><p>${escapeHtml(JSON.stringify(longJson))}</p>`);
           }
           const longUserToken = longJson.access_token;
 
