@@ -1,0 +1,1 @@
+UPDATE public.posts SET instagram_conta='lactbmf.anhanguerasbo' WHERE instagram_conta='lactbmanhanguerasbo';
