@@ -120,17 +120,38 @@ export function SocialConnections() {
     setIgLigaTesting(true);
     const tid = toast.loading("Disparando teste para Liga (Make)…");
     try {
+      const testImageUrl = "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=1080&h=1080&fit=crop&fm=jpg&q=85";
       const r = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          id: "teste-liga",
+          post_id: "teste-liga",
           texto: "✅ Teste Liga LACTBMF — webhook conectado.",
+          caption: "✅ Teste Liga LACTBMF — webhook conectado.",
           plataforma: "Instagram",
           conta: "lactbmf.anhanguerasbo",
           instagram_conta: "lactbmf.anhanguerasbo",
-          imagem_url: "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=1080&h=1080&fit=crop&fm=jpg&q=85",
+          url_imagem: testImageUrl,
+          imagem_url: testImageUrl,
+          image_url: testImageUrl,
+          media_url: testImageUrl,
+          photo_url: testImageUrl,
+          photoUrl: testImageUrl,
+          photoURL: testImageUrl,
+          "Photo URL": testImageUrl,
+          url: testImageUrl,
+          link: testImageUrl,
+          images: [testImageUrl],
+          photos: [testImageUrl],
+          photo_urls: [testImageUrl],
           legenda: "✅ Teste Liga LACTBMF — webhook conectado.",
           tipo: "imagem",
+          type: "feed",
+          post_type: "feed",
+          media_type: "feed",
+          rota: "Post único",
+          make_route: "Post único",
         }),
       });
       if (!r.ok) throw new Error(`Make respondeu ${r.status}`);
