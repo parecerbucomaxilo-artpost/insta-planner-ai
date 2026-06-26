@@ -2,6 +2,9 @@ const GRAPH_VERSION = "v21.0";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
+// Conta historicamente associada ao DEFAULT_MAKE_WEBHOOK (cenário Make original).
+// Usada como fallback seguro quando o perfil dessa conta ainda não tem webhook próprio salvo.
+const DEFAULT_WEBHOOK_ACCOUNT = "drfranciscomenezes";
 
 type PublishVia = "meta" | "webhook";
 
