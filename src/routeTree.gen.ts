@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as ParecerRouteImport } from './routes/parecer'
+import { Route as MetaConnectRouteImport } from './routes/meta-connect'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
@@ -32,6 +33,11 @@ const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
 const ParecerRoute = ParecerRouteImport.update({
   id: '/parecer',
   path: '/parecer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetaConnectRoute = MetaConnectRouteImport.update({
+  id: '/meta-connect',
+  path: '/meta-connect',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -100,6 +106,7 @@ const ApiPublicMetaOauthCallbackRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/meta-connect': typeof MetaConnectRoute
   '/parecer': typeof ParecerRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/meta-connect': typeof MetaConnectRoute
   '/parecer': typeof ParecerRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/meta-connect': typeof MetaConnectRoute
   '/parecer': typeof ParecerRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/meta-connect'
     | '/parecer'
     | '/politica-de-privacidade'
     | '/settings'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/meta-connect'
     | '/parecer'
     | '/politica-de-privacidade'
     | '/settings'
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/meta-connect'
     | '/parecer'
     | '/politica-de-privacidade'
     | '/_authenticated/settings'
@@ -196,6 +208,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  MetaConnectRoute: typeof MetaConnectRoute
   ParecerRoute: typeof ParecerRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   ApiPublicBackfillImagesRoute: typeof ApiPublicBackfillImagesRoute
@@ -222,6 +235,13 @@ declare module '@tanstack/react-router' {
       path: '/parecer'
       fullPath: '/parecer'
       preLoaderRoute: typeof ParecerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meta-connect': {
+      id: '/meta-connect'
+      path: '/meta-connect'
+      fullPath: '/meta-connect'
+      preLoaderRoute: typeof MetaConnectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -327,6 +347,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  MetaConnectRoute: MetaConnectRoute,
   ParecerRoute: ParecerRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   ApiPublicBackfillImagesRoute: ApiPublicBackfillImagesRoute,

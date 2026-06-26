@@ -76,13 +76,13 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
       authUrl.searchParams.set("auth_type", "reauthenticate");
       authUrl.searchParams.set("auth_nonce", crypto.randomUUID());
     }
-    authUrl.searchParams.set("display", "popup");
+    authUrl.searchParams.set("display", "page");
 
     if (data.logoutFacebookFirst) {
-      // Facebook bloqueia logout.php em popup/iframe (ERR_blocked_by_response via COOP/XFO).
-      // Forçamos reautenticação no próprio diálogo OAuth — usuário escolhe outra conta lá.
-      authUrl.searchParams.set("auth_type", "reauthenticate");
-      authUrl.searchParams.set("auth_nonce", crypto.randomUUID());
+      // Facebook não oferece seletor de contas confiável como o Google.
+      // Não usamos logout.php nem reauthenticate aqui: ambos causam bloqueios/loop de senha
+      // no preview. A troca de conta deve acontecer em aba normal do navegador.
+      authUrl.searchParams.set("auth_type", "rerequest");
     }
 
     return { url: authUrl.toString() };
