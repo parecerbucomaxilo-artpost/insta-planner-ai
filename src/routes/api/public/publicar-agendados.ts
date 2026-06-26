@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/public/publicar-agendados")({
           const nowIso = new Date().toISOString();
           const { data: pending, error } = await supabaseAdmin
             .from("posts")
-            .select("id, postar_instagram, postar_linkedin")
+            .select("id, user_id, postar_instagram, postar_linkedin")
             .eq("status", "Agendado")
             .not("data_agendamento", "is", null)
             .lte("data_agendamento", nowIso)
@@ -38,11 +38,11 @@ export const Route = createFileRoute("/api/public/publicar-agendados")({
           if (!pending || pending.length === 0) return json({ ok: true, published: 0 });
 
           const results: Array<{ id: string; ok: boolean; status?: string; via?: string; error?: string }> = [];
-          for (const p of pending as Array<{ id: string; postar_instagram: boolean; postar_linkedin: boolean }>) {
+          for (const p of pending as Array<{ id: string; user_id: string | null; postar_instagram: boolean; postar_linkedin: boolean }>) {
             try {
               let instagramStatus: string | undefined;
               if (p.postar_instagram) {
-                const result = await publishInstagramPostById({ supabaseAdmin, postId: p.id, userId: TEMP_USER_ID });
+                const result = await publishInstagramPostById({ supabaseAdmin, postId: p.id, userId: p.user_id || TEMP_USER_ID });
                 instagramStatus = result.status;
                 results.push({ id: p.id, ok: true, status: result.status, via: result.via });
               }
