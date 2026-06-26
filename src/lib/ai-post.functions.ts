@@ -264,33 +264,29 @@ PROIBIDO: chamadas comerciais ("agende", "promoção"), WhatsApp do consultório
 
 function studentImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }) {
   const slideInfo = slide ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel didático. Papel: ${slide.papel}.` : "";
-  // === CRIATIVIDADE ALTA — varia conceito visual a cada geração ===
+  const isStory = /story|stories/i.test(slide?.papel ?? "");
+  const formato = isStory
+    ? "FORMATO vertical 9:16 (1024x1820) — Instagram Stories, mobile fullscreen."
+    : "FORMATO vertical 4:5 (1024x1280) — Instagram Feed/Carrossel padrão.";
   const conceitosCriativos = [
-    "ILUSTRAÇÃO EDITORIAL CONCEITUAL ousada estilo The New Yorker / Wired Science: metáfora visual inteligente do tema (ex.: dente como cofre, nervo alveolar como cabo de fibra óptica, fórceps como ferramenta de relojoeiro), composição inesperada, humor acadêmico sutil, qualidade de capa de revista científica jovem.",
-    "RENDER 3D ISOMÉTRICO LIMPO estilo Apple keynote / Behance top: instrumental cirúrgico ou anatomia bucomaxilofacial em vista isométrica, materiais PBR limpos, sombras suaves, hierarquia geométrica forte, sensação de 'design system' acadêmico premium.",
-    "ILUSTRAÇÃO ANATÔMICA HIPER-REALISTA estilo Netter / Sobotta: corte sagital ou coronal mostrando a estrutura exata do tema (alvéolo, nervo, dente, mucosa), proporções científicas perfeitas, sombreamento volumétrico de atlas médico, com microanotações tipográficas elegantes (setas finas + label curtíssimo).",
-    "MACROFOTOGRAFIA CIRÚRGICA DRAMÁTICA estilo National Geographic médico: close extremo de instrumental + tecido (porta-agulhas suturando, fórceps no dente, bisturi cortando), profundidade rasa, foco preciso, iluminação cinematográfica de centro cirúrgico.",
-    "INFOGRÁFICO MINIMALISTA EDITORIAL estilo Information is Beautiful: 1 elemento gráfico central forte (dente cortado em camadas, mapa da inervação, fluxo de uma técnica em 3 passos com setas grandes), tipografia bold como protagonista, espaço negativo generoso, estética de livro acadêmico moderno.",
-    "COMPOSIÇÃO TIPOGRÁFICA OUSADA estilo Pentagram / Massimo Vignelli: o próprio texto do tema vira a arte (ex.: a palavra 'ANESTESIA' em escala enorme, recortada por uma seringa carpule sutil), hierarquia tipográfica dominante, ilustração discreta apoiando o texto.",
+    "FOTOGRAFIA CLÍNICA HIPER-REALISTA com anatomia bucomaxilofacial cientificamente correta: instrumental cirúrgico real (fórceps, porta-agulhas, seringa carpule, bisturi nº 15, descolador de Molt) em macro, profundidade rasa, foco preciso, iluminação cinematográfica de centro cirúrgico.",
+    "RENDERIZAÇÃO MÉDICA 3D HIPER-REALISTA estilo Netter/Sobotta digital: corte sagital ou coronal mostrando anatomia exata (alvéolo, canal mandibular, nervo alveolar inferior, forame mentual, dente impactado), proporções científicas perfeitas, microanotações tipográficas elegantes.",
+    "IMAGEM RADIOGRÁFICA OU TOMOGRÁFICA REALISTA (panorâmica, periapical ou TC de feixe cônico) de alta resolução, tons de cinza fiéis ao exame, com a estrutura do tema em destaque sutil e anotações clínicas mínimas.",
+    "MACROFOTOGRAFIA CIRÚRGICA estilo National Geographic médico: close extremo de campo operatório real (sutura em mucosa, exodontia, biópsia, frenectomia), tecidos com cor e textura fiéis, iluminação dramática vinda de cima.",
   ];
   const conceito = conceitosCriativos[Math.floor(Math.random() * conceitosCriativos.length)];
-  const formatosPossiveis = [
-    "FORMATO vertical 4:5 (1024x1536) — Instagram Feed clássico, mobile-first.",
-    "FORMATO quadrado 1:1 (1024x1024) — feed clássico, hierarquia central forte.",
-    "FORMATO vertical 4:5 (1024x1536) — composição assimétrica, sujeito deslocado para regra dos terços.",
-  ];
-  const formato = formatosPossiveis[Math.floor(Math.random() * formatosPossiveis.length)];
-  return `IMAGEM EDUCACIONAL PREMIUM + CRIATIVIDADE ALTA para Liga Acadêmica de Odontologia (graduação, cirurgia bucal básica).
-- CONCEITO VISUAL DESTA GERAÇÃO: ${conceito}
+  return `IMAGEM EDUCACIONAL CIENTÍFICA para Liga Acadêmica de CTBMF — @lactbmf.anhanguerasbo (graduação em Odontologia).
+- CONCEITO DESTA GERAÇÃO: ${conceito}
 - ${formato}
-- REFERÊNCIA DE QUALIDADE: capa de revista científica jovem (Wired, The New Yorker Science, Behance editorial top, posts virais de @medschoolinsiders). Visual DEVE surpreender — proibido cair em "foto genérica de dente sobre fundo azul". Cada post precisa parecer uma capa de revista diferente da anterior.
-- CENA LITERAL do tema "${tema}": exodontia → fórceps + dente; anestesia → seringa carpule + nervo alveolar inferior; sutura → porta-agulhas + ponto; frenectomia → freio labial; biópsia → bisturi + tecido; alveoloplastia → lima de osso. A técnica/anatomia precisa estar correta DENTRO do conceito criativo escolhido.
- - PALETA OFICIAL LACTBMF — REGRA ABSOLUTA: use EXCLUSIVAMENTE estes 5 hex codes em toda a composição (fundo, formas, ilustrações, tipografia, sombras, gradientes): #FBFBFB (off-white), #DD8E3C (âmbar/ocre), #000000 (preto), #2D2C32 (grafite), #D6403A (vermelho). Fundo dominante = #2D2C32 grafite OU #000000 preto. Destaque/CTA = #DD8E3C âmbar. Tipografia principal = #FBFBFB off-white. #D6403A vermelho APENAS para alerta/dor/erro. PROIBIDO qualquer outro hex — sem ciano, sem navy, sem azul, sem verde, sem roxo, sem rosa, sem laranja fora do âmbar, sem branco puro #FFFFFF.
- - TEXTO NA IMAGEM: 1 headline curto e CRIATIVO de 3-7 palavras (ex.: "ENQUETE", "DICA DE OURO", "VOCÊ SABIA?", "MITO OU VERDADE?", "CAIU NA PROVA", "REGRA DE PETERSON", "ATENÇÃO, R1"), tipografia bold sans-serif de personalidade forte (pode variar weight, tracking, alinhamento), em #FBFBFB com destaque em #DD8E3C. Se for enquete, listar A/B/C/D. PT-BR Brasil impecável, sem inglês, sem palavras duplicadas.
-- LOGOS: NÃO desenhe, redesenhe, parafraseie, estilize ou invente logos, marcas, escudos, brasões, monogramas, siglas ou letreiros. APENAS reserve os 2 CANTOS INFERIORES (esq. e dir., ~22% da largura cada) TOTALMENTE LIMPOS (sem texto, sem ilustração, sem moldura) — as 2 logos REAIS serão sobrepostas pelo sistema.
-- Iluminação editorial premium, qualidade 8K, hierarquia limpa, espaço negativo generoso na cor mais escura amostrada das logos.
-- PROIBIDO: rostos reconhecíveis, watermark de IA, anatomia errada, mãos com dedos a mais, texto em inglês, CTA comercial, WhatsApp, "agende consulta", visual de banco de imagens, clipart, flat design infantil, gradientes arco-íris, paleta fora das logos.${slideInfo}
-- Variação obrigatória (seed ${Math.random().toString(36).slice(2, 10)}): ângulo, enquadramento, composição e metáfora visual INÉDITOS em relação aos posts anteriores.`;
+- REALISMO ANATÔMICO OBRIGATÓRIO: todas as estruturas (dentes, ossos, nervos, mucosas, instrumentos) devem ser anatomicamente corretas e cientificamente verificáveis. PROIBIDO inventar estruturas, fantasiar anatomia, criar instrumentos inexistentes ou estilizar de forma infantil/cartoon.
+- TEMA LITERAL "${tema}": represente a cena clínica exata — exodontia → fórceps + dente no alvéolo; anestesia → seringa carpule + ponto de punção anatômico; sutura → porta-agulhas + ponto em mucosa; frenectomia → freio labial/lingual + bisturi; biópsia → bisturi + tecido; alveoloplastia → lima/cinzel de osso; fratura mandibular → linha de fratura + fixação com placa de titânio.
+- QUALIDADE TÉCNICA: renderização 8K ultra-detalhada (Octane Render / Unreal Engine 5 / Ray Tracing), texturas nítidas, equivalente a Canon EOS R5 + macro 100mm f/2.8 ISO 100.
+- PALETA RIGOROSA: fundo dominante #2D2C32 grafite OU #000000 preto. Tipografia principal #FBFBFB off-white. Destaque/CTA #DD8E3C âmbar. Acentos ANHANGUERA permitidos apenas em pequenos detalhes (linha de fratura, seta de destaque, contorno do ponto de interesse): vermelho-Anhanguera #CE000C e laranja-Anhanguera #F05A22. Vermelho-alerta #D6403A apenas para alerta/dor. PROIBIDO qualquer outro hex — sem ciano, sem navy, sem azul, sem verde, sem roxo, sem rosa, sem branco puro #FFFFFF.
+- TEXTO NA IMAGEM (PT-BR Brasil impecável, sem inglês, sem palavras duplicadas, sem caracteres estranhos): 1 headline curto e interativo de 3-7 palavras ("ENQUETE", "VOCÊ SABIA?", "MITO OU VERDADE?", "CAIU NA PROVA", "DICA DE TÉCNICA", "ATENÇÃO, ACADÊMICO"). Se for enquete, listar A/B/C/D claras. Tipografia bold sans-serif (Helvetica/Inter/Montserrat), em #FBFBFB com destaque em #DD8E3C.
+- LOGO: NÃO desenhe, redesenhe, parafraseie ou invente logos, marcas, escudos, brasões, monogramas ou siglas. APENAS reserve uma FAIXA INFERIOR CENTRAL LIMPA (largura total, ~14% da altura, sem texto, sem ilustração, sem moldura) — a logo REAL da LACTBMF será sobreposta pelo sistema, sem fundo, centralizada inferiormente.
+- Iluminação editorial premium, hierarquia limpa, espaço negativo generoso na cor de fundo, sem ruído visual.
+- PROIBIDO: rostos reconhecíveis de pessoas reais, watermark de IA, anatomia errada, mãos com dedos a mais, texto em inglês, palavras duplicadas, caracteres tipográficos estranhos, CTA comercial ("agende", "promoção", "desconto"), WhatsApp, visual de banco de imagens, clipart, flat design infantil, gradientes arco-íris, paleta fora do especificado.${slideInfo}
+- Variação obrigatória (seed ${Math.random().toString(36).slice(2, 10)}): ângulo, enquadramento e composição inéditos em relação aos posts anteriores.`;
 }
 
 
