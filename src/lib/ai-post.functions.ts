@@ -356,6 +356,7 @@ function chicoImagePrompt(tema: string, slide?: { n: number; total: number; pape
 - PROIBIDO: imagens de procedimentos invasivos, sangue, bisturi cortando, anatomia interna exposta de forma agressiva, watermark de IA, mãos deformadas, dedos a mais, texto em inglês, palavras duplicadas, hashtags na imagem, números de telefone, URLs, CTAs comerciais ("agende", "promoção", "desconto").
 - Iluminação editorial premium estilo capa de revista de saúde sofisticada (Harvard Health / Mayo Clinic), atmosfera arejada e luminosa, qualidade 8K.
 - Variação única (seed ${Math.random().toString(36).slice(2, 10)}): ângulo e composição inéditos.`;
+}
 
 
 
