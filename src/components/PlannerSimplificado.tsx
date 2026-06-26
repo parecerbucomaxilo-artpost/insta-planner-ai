@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X, Image as ImageIcon, Layers, Film } from "lucide-react";
+import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X, Image as ImageIcon, Layers, Film, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
@@ -292,6 +292,22 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     if (error) toast.error(error.message); else { toast.success("Excluído."); carregar(); }
   };
 
+  const tentarNovamente = async (id: string) => {
+    setBusy(true);
+    const tid = `retry-${id}`;
+    toast.loading("Tentando publicar novamente...", { id: tid });
+    try {
+      const out = await publishIg({ data: { id } });
+      assertPublishOk(out);
+      toast.success("Re-tentativa enviada ao Make. Confira a execução no cenário.", { id: tid });
+      carregar();
+    } catch (e: any) {
+      toast.error(e.message || "Falha na re-tentativa.", { id: tid });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <Card className="p-5 space-y-3">
@@ -491,7 +507,13 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         {p.data_agendamento && <span>{format(new Date(p.data_agendamento), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>}
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => excluir(p.id)}>
+                    {p.status === "Erro" && (
+                      <Button variant="outline" size="sm" onClick={() => tentarNovamente(p.id)} disabled={busy}>
+                        {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1" />}
+                        Re-tentar
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => excluir(p.id)} disabled={busy}>
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </li>
