@@ -78,34 +78,42 @@ export async function overlayLogo(
     let alpha = 1;
 
     if (opts?.smart && opts?.withLogo !== false) {
-      const sample = Math.max(64, Math.round(w * Math.max(sizePct, 12) / 100) + margin * 2);
-      const corners: Array<{ pos: Pos; x1: number; y1: number }> = [
-        { pos: "top-left", x1: 0, y1: 0 },
-        { pos: "top-right", x1: Math.max(0, w - sample), y1: 0 },
-        { pos: "bottom-left", x1: 0, y1: Math.max(0, h - sample) },
-        { pos: "bottom-right", x1: Math.max(0, w - sample), y1: Math.max(0, h - sample) },
-      ];
-      let best = { pos: requested, std: Infinity, mean: 128 };
-      for (const c of corners) {
-        try {
-          const region = crop(base, c.x1, c.y1, Math.min(w, c.x1 + sample), Math.min(h, c.y1 + sample));
-          const { mean, std } = statsRGBA(region.get_raw_pixels());
-          region.free();
-          // Penaliza canto distante do solicitado para ser estável.
-          const penalty = c.pos === requested ? 0 : 6;
-          const score = std + penalty;
-          if (score < best.std) best = { pos: c.pos, std: score, mean };
-        } catch {}
+      try {
+        const sample = Math.max(64, Math.round(w * Math.max(sizePct, 12) / 100) + margin * 2);
+        const corners: Array<{ pos: Pos; x1: number; y1: number }> = [
+          { pos: "top-left", x1: 0, y1: 0 },
+          { pos: "top-right", x1: Math.max(0, w - sample), y1: 0 },
+          { pos: "bottom-left", x1: 0, y1: Math.max(0, h - sample) },
+          { pos: "bottom-right", x1: Math.max(0, w - sample), y1: Math.max(0, h - sample) },
+        ];
+        let best = { pos: requested, std: Infinity, mean: 128 };
+        for (const c of corners) {
+          try {
+            if (typeof crop !== "function") break;
+            const region = crop(base, c.x1, c.y1, Math.min(w, c.x1 + sample), Math.min(h, c.y1 + sample));
+            const px = typeof region.get_raw_pixels === "function" ? region.get_raw_pixels() : null;
+            if (px) {
+              const { mean, std } = statsRGBA(px);
+              const penalty = c.pos === requested ? 0 : 6;
+              const score = std + penalty;
+              if (score < best.std) best = { pos: c.pos, std: score, mean };
+            }
+            region.free();
+          } catch {}
+        }
+        if (Number.isFinite(best.std)) {
+          pos = best.pos;
+          const busy = Math.min(1, best.std / 60);
+          const scale = 1 - busy * 0.25;
+          target = Math.max(56, Math.round(((w * sizePct) / 100) * scale));
+          alpha = best.mean > 180 ? 0.95 : best.mean < 60 ? 0.78 : 0.9;
+          if (busy > 0.5) alpha = Math.min(alpha, 0.8);
+        }
+      } catch (e) {
+        console.warn("[overlayLogo] smart-mode falhou, usando padrão:", e);
       }
-      pos = best.pos;
-      // Ajusta tamanho: fundo agitado (std alto) → logo menor para não competir.
-      const busy = Math.min(1, best.std / 60);
-      const scale = 1 - busy * 0.25; // 1.0 → 0.75
-      target = Math.max(56, Math.round(((w * sizePct) / 100) * scale));
-      // Opacidade: fundo claro/limpo → mais opaca; fundo escuro/agitado → mais discreta.
-      alpha = best.mean > 180 ? 0.95 : best.mean < 60 ? 0.78 : 0.9;
-      if (busy > 0.5) alpha = Math.min(alpha, 0.8);
     }
+
 
     const logoX = pos === "top-left" || pos === "bottom-left" ? margin : Math.max(0, w - target - margin);
     const logoY = pos === "bottom-right" || pos === "bottom-left" ? Math.max(0, h - target - margin) : margin;
