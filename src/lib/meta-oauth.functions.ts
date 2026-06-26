@@ -65,9 +65,12 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
     authUrl.searchParams.set("scope", SCOPES);
     authUrl.searchParams.set("state", state);
     authUrl.searchParams.set("response_type", "code");
-    // Força o Facebook a re-autenticar (evita reaproveitar sessão de outra
-    // conta — ex.: continuar como Francisco quando o alvo é a Liga).
-    authUrl.searchParams.set("auth_type", "reauthenticate");
+    // `auth_type=reauthenticate` faz o Facebook recusar a conexão em alguns
+    // apps. Usamos `rerequest` (re-pede permissões sem exigir reautenticação
+    // forçada) — o usuário pode clicar em "Entrar com outra conta" no
+    // próprio diálogo do Facebook para trocar de perfil.
+    authUrl.searchParams.set("auth_type", "rerequest");
+    authUrl.searchParams.set("display", "popup");
 
     return { url: authUrl.toString() };
   });
