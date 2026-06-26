@@ -145,7 +145,13 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           `3) Volte aqui e clique novamente em "Conectar Meta @${conta}".`,
         );
         if (ok) {
-          window.open("https://www.facebook.com/", "_blank", "noopener,noreferrer");
+          const a = document.createElement("a");
+          a.href = "https://www.facebook.com/";
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
           toast.info("Saia do Facebook na aba aberta e clique em Conectar novamente.");
           return;
         }
