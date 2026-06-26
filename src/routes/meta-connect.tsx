@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, Copy, ExternalLink, Instagram } from "lucide-react";
+import { Check, Copy, ExternalLink, Instagram, LogIn } from "lucide-react";
 import logoAsset from "@/assets/logo-planner.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,27 +15,40 @@ function safeNext(value: unknown) {
   }
 }
 
+function safeFacebookLogin(value: unknown) {
+  if (typeof value !== "string") return "";
+  try {
+    const url = new URL(value);
+    return url.hostname === "www.facebook.com" && url.pathname === "/login.php" ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
 export const Route = createFileRoute("/meta-connect")({
   ssr: false,
   validateSearch: (search) => ({
     next: safeNext(search.next),
+    login: safeFacebookLogin(search.login),
     account: typeof search.account === "string" ? search.account.replace(/^@+/, "") : "",
   }),
   component: MetaConnectPage,
 });
 
 function MetaConnectPage() {
-  const { next, account } = Route.useSearch();
+  const { next, login, account } = Route.useSearch();
   const label = account ? `@${account}` : "Instagram Business";
+  const isLiga = account === "lactbmf.anhanguerasbo";
+  const actionUrl = isLiga ? login || next : next;
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {
-    if (!next) return;
+    if (!actionUrl) return;
     try {
-      await navigator.clipboard.writeText(next);
+      await navigator.clipboard.writeText(actionUrl);
     } catch {
       const textarea = document.createElement("textarea");
-      textarea.value = next;
+      textarea.value = actionUrl;
       textarea.setAttribute("readonly", "");
       textarea.style.position = "fixed";
       textarea.style.left = "-9999px";
@@ -63,19 +76,29 @@ function MetaConnectPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
-          {next ? (
+          {actionUrl ? (
             <>
               <div className="rounded-lg border bg-muted/40 p-3 text-muted-foreground leading-relaxed space-y-2">
-                <p>
-                  O Facebook bloqueia abertura dentro do preview. Use o botão abaixo em uma aba normal; se bloquear novamente, copie o link e cole direto na barra do navegador.
-                </p>
-                <p>
-                  Para trocar da conta Francisco para a Liga, saia do Facebook manualmente em outra aba antes de autorizar {label}.
-                </p>
+                {isLiga ? (
+                  <>
+                    <p>
+                      Para a Liga, este botão abre primeiro a tela de login do Facebook. Entre com o Facebook administrador da Liga antes de autorizar.
+                    </p>
+                    <p>
+                      Não use “Continuar como Francisco”; se aparecer Francisco, clique em sair/trocar conta no Facebook e entre com a conta administradora da Liga.
+                    </p>
+                  </>
+                ) : (
+                  <p>
+                    O Facebook bloqueia abertura dentro do preview. Use o botão abaixo em uma aba normal; se bloquear novamente, copie o link e cole direto na barra do navegador.
+                  </p>
+                )}
               </div>
               <Button asChild className="w-full" size="lg">
-                <a href={next} target="_blank" rel="noopener noreferrer">
-                  <Instagram className="h-4 w-4" /> Continuar no Facebook <ExternalLink className="h-4 w-4" />
+                <a href={actionUrl} target="_blank" rel="noopener noreferrer">
+                  {isLiga ? <LogIn className="h-4 w-4" /> : <Instagram className="h-4 w-4" />}
+                  {isLiga ? "Entrar com o Facebook da Liga" : "Continuar no Facebook"}
+                  <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
               <Button type="button" variant="outline" className="w-full" size="lg" onClick={copyLink}>
