@@ -17,7 +17,10 @@ export const Route = createFileRoute("/api/public/dispatch-gbp")({
   server: {
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: corsHeaders }),
-      POST: async () => {
+      POST: async ({ request }) => {
+        const { requireCronSecret } = await import("@/lib/cron-auth.server");
+        const denied = requireCronSecret(request);
+        if (denied) return denied;
         const webhookUrl = process.env.MAKE_GBP_WEBHOOK_URL;
         if (!webhookUrl) {
           return json({ error: "MAKE_GBP_WEBHOOK_URL não configurado" }, 500);
