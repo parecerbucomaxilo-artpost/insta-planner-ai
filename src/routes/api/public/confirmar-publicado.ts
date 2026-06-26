@@ -59,13 +59,16 @@ export const Route = createFileRoute('/api/public/confirmar-publicado')({
 
         const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
 
-        const update: Record<string, unknown> = {
+        const update: {
+          status: string
+          updated_at: string
+          prompt_ia?: string
+        } = {
           status: novoStatus,
           updated_at: new Date().toISOString(),
         }
-        if (novoStatus === 'Publicado') {
-          const legendaTag = ig_media_id ? `\n\n[ig_media_id:${ig_media_id}]` : ''
-          if (legendaTag) update.prompt_ia = `confirmado_make${legendaTag}`
+        if (novoStatus === 'Publicado' && ig_media_id) {
+          update.prompt_ia = `confirmado_make [ig_media_id:${ig_media_id}]`
         }
         if (erro) update.prompt_ia = `erro_make: ${erro}`
 
