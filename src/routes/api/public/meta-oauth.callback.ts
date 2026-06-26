@@ -64,7 +64,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
           );
           const tokJson = await tokRes.json();
           if (!tokRes.ok || !tokJson.access_token) {
-            return htmlPage("Erro", `<h1>❌ Falha ao trocar código</h1><p>${JSON.stringify(tokJson)}</p>`);
+            return htmlPage("Erro", `<h1>❌ Falha ao trocar código</h1><p>${escapeHtml(JSON.stringify(tokJson))}</p>`);
           }
           const shortUserToken = tokJson.access_token;
 
