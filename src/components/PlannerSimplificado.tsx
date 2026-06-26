@@ -13,7 +13,11 @@ import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { signPostMediaUrls } from "@/lib/storage-url";
-import { generateSinglePost, generateWeekThemes, approvePost, discardPost } from "@/lib/ai-post.functions";
+import { generateSinglePost, generateWeekThemes, approvePost, discardPost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
+import { cn } from "@/lib/utils";
+
+type ModeloIA = (typeof MODELOS_IA)[number]["id"];
+type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 import { getPublicationDestination, savePublicationDestination } from "@/lib/publication-destination.functions";
 import type { PostRow } from "@/lib/posts-types";
