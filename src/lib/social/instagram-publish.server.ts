@@ -362,8 +362,42 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     const carousel = normalizeCarousel(post.imagens_carrossel);
     const sourceUrls = post.tipo_post === "Carrossel" && carousel.length > 0 ? carousel : [post.url_imagem].filter(Boolean);
-    const imageUrls = (await Promise.all(sourceUrls.map((url: string) => createFetchableUrl(supabaseAdmin, url)))).filter(Boolean) as string[];
+    let imageUrls = (await Promise.all(sourceUrls.map((url: string) => createFetchableUrl(supabaseAdmin, url)))).filter(Boolean) as string[];
     if (imageUrls.length === 0) throw new Error("Este post não tem imagem para publicar.");
+
+    // Garantia de marca: re-aplica a logo na hora da publicação para posts antigos
+    // gerados antes do overlay automático (ou sem ele por qualquer motivo).
+    const contaParaLogo = contaAlvo || normalizeInstagramAccount(perfil?.arroba_usuario);
+    if (contaParaLogo === "drfranciscomenezes" || contaParaLogo === "lactbmf.anhanguerasbo") {
+      try {
+        const { overlayLogo, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
+        imageUrls = await Promise.all(imageUrls.map(async (url) => {
+          const res = await fetch(url);
+          if (!res.ok) return url;
+          const buf = new Uint8Array(await res.arrayBuffer());
+          let bin = "";
+          for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+          const b64 = btoa(bin);
+          const stamped = contaParaLogo === "lactbmf.anhanguerasbo"
+            ? await overlayAlunoLogos(b64)
+            : await overlayLogo(b64, undefined, 12, { withLogo: true, position: "bottom-right" });
+          if (stamped === b64) return url; // overlay falhou; mantém original
+          const fileName = `published/stamped-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+          const bytes = Uint8Array.from(atob(stamped), (c) => c.charCodeAt(0));
+          const { error: upErr } = await supabaseAdmin.storage
+            .from("post-images")
+            .upload(fileName, bytes, { contentType: "image/jpeg", cacheControl: "604800", upsert: false });
+          if (upErr) return url;
+          const { data: signed } = await supabaseAdmin.storage
+            .from("post-images")
+            .createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
+          return signed?.signedUrl || url;
+        }));
+      } catch (e) {
+        console.warn("[instagram-publish] overlay na publicação falhou — seguindo com imagem original:", e);
+      }
+    }
+
 
     const caption = post.legenda_instagram || post.legenda || "";
     const isStory = /stor/i.test(post.formato_midia || "");
