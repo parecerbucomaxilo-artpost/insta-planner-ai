@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2, ChevronLeft, ChevronRight, Clock, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +81,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
         const isViral = (p.visualizacoes ?? 0) >= 500;
         const isPublishing = publishingId === p.id;
         const alreadyPublished = p.status === "Publicado";
+        const failedPublish = p.status === "Erro";
         const goPrev = () =>
           setSlideIdx((s) => ({ ...s, [p.id]: (safeIdx - 1 + carrosselUrls.length) % carrosselUrls.length }));
         const goNext = () =>
@@ -174,6 +175,8 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                 >
                   {isPublishing ? (
                     <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Publicando…</>
+                  ) : failedPublish ? (
+                    <><RotateCcw className="h-4 w-4 mr-1.5" /> Tentar novamente</>
                   ) : alreadyPublished ? (
                     <><Send className="h-4 w-4 mr-1.5" /> Republicar Agora</>
                   ) : (
