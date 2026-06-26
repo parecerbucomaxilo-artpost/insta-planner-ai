@@ -288,7 +288,7 @@ function studentImagePrompt(tema: string, slide?: { n: number; total: number; pa
     "MACROFOTOGRAFIA CIRÚRGICA estilo National Geographic médico: close extremo de campo operatório real (sutura em mucosa, exodontia, biópsia, frenectomia), tecidos com cor e textura fiéis, iluminação dramática vinda de cima.",
   ];
   const conceito = conceitosCriativos[Math.floor(Math.random() * conceitosCriativos.length)];
-  return `IMAGEM EDUCACIONAL CIENTÍFICA para Liga Acadêmica de CTBMF — @lactbmf.anhanguerasbo (graduação em Odontologia).
+  return themeLock(tema) + `IMAGEM EDUCACIONAL CIENTÍFICA para Liga Acadêmica de CTBMF — @lactbmf.anhanguerasbo (graduação em Odontologia).
 - CONCEITO DESTA GERAÇÃO: ${conceito}
 - ${formato}
 - REALISMO ANATÔMICO OBRIGATÓRIO: todas as estruturas (dentes, ossos, nervos, mucosas, instrumentos) devem ser anatomicamente corretas e cientificamente verificáveis. PROIBIDO inventar estruturas, fantasiar anatomia, criar instrumentos inexistentes ou estilizar de forma infantil/cartoon.
