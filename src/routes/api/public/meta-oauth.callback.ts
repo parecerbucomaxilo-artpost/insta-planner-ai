@@ -112,14 +112,14 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
             })
             .eq("id", perfilId);
 
-          if (error) return htmlPage("Erro", `<h1>❌ Erro ao salvar</h1><p>${error.message}</p>`);
+          if (error) return htmlPage("Erro", `<h1>❌ Erro ao salvar</h1><p>${escapeHtml(error.message)}</p>`);
 
           return htmlPage(
             "Conectado!",
-            `<h1>✅ Instagram conectado</h1><p><strong>Página:</strong> ${pageWithIg.name}</p><p><strong>IG ID:</strong> ${igBusinessId}</p><p>Tokens salvos com segurança. Esta janela fecha em instantes…</p>`,
+            `<h1>✅ Instagram conectado</h1><p><strong>Página:</strong> ${escapeHtml(pageWithIg.name)}</p><p><strong>IG ID:</strong> ${escapeHtml(igBusinessId)}</p><p>Tokens salvos com segurança. Esta janela fecha em instantes…</p>`,
           );
         } catch (e) {
-          return htmlPage("Erro", `<h1>❌ Erro inesperado</h1><p>${e instanceof Error ? e.message : String(e)}</p>`);
+          return htmlPage("Erro", `<h1>❌ Erro inesperado</h1><p>${escapeHtml(e instanceof Error ? e.message : String(e))}</p>`);
         }
       },
     },
