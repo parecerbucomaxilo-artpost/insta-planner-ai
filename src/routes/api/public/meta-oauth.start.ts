@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 
 const SCOPES = [
   "instagram_basic",
@@ -11,8 +11,25 @@ const SCOPES = [
 
 const META_OAUTH_ORIGIN = "https://insta-planner-ai.lovable.app";
 
-function getRedirectUri(request: Request) {
+function getRedirectUri(_request: Request) {
   return `${META_OAUTH_ORIGIN}/api/public/meta-oauth/callback`;
+}
+
+/**
+ * Verifica o token assinado emitido por `createMetaOAuthStartUrl`
+ * (server fn autenticada). Sem token válido, retorna null.
+ */
+function verifyAuthToken(token: string, appSecret: string): string | null {
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  const [perfilId, expStr, sig] = parts;
+  const exp = Number(expStr);
+  if (!Number.isFinite(exp) || exp < Date.now()) return null;
+  const expected = createHmac("sha256", appSecret).update(`${perfilId}.${expStr}`).digest("hex").slice(0, 32);
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+  return perfilId;
 }
 
 export const Route = createFileRoute("/api/public/meta-oauth/start")({
@@ -20,14 +37,17 @@ export const Route = createFileRoute("/api/public/meta-oauth/start")({
     handlers: {
       GET: async ({ request }) => {
         const url = new URL(request.url);
-        const perfilId = url.searchParams.get("perfil_id");
-        if (!perfilId) return new Response("perfil_id required", { status: 400 });
+        const token = url.searchParams.get("token");
+        if (!token) return new Response("token required", { status: 400 });
 
         const appId = process.env.META_APP_ID;
         const appSecret = process.env.META_APP_SECRET;
         if (!appId || !appSecret) return new Response("Meta App not configured", { status: 500 });
 
-        // Signed state to prevent tampering
+        const perfilId = verifyAuthToken(token, appSecret);
+        if (!perfilId) return new Response("Token inválido ou expirado", { status: 401 });
+
+        // State assinado (já existente) que viaja no fluxo OAuth para o callback.
         const nonce = crypto.randomUUID();
         const payload = `${perfilId}.${nonce}`;
         const sig = createHmac("sha256", appSecret).update(payload).digest("hex").slice(0, 32);

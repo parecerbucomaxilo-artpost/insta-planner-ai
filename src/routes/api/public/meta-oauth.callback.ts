@@ -7,6 +7,15 @@ function getRedirectUri(request: Request) {
   return `${META_OAUTH_ORIGIN}/api/public/meta-oauth/callback`;
 }
 
+function escapeHtml(str: string) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function htmlPage(title: string, body: string) {
   return new Response(
     `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${title}</title>
@@ -28,7 +37,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
         const code = url.searchParams.get("code");
         const state = url.searchParams.get("state");
         const errorMsg = url.searchParams.get("error_description") || url.searchParams.get("error");
-        if (errorMsg) return htmlPage("Erro", `<h1>❌ Autorização cancelada</h1><p>${errorMsg}</p>`);
+        if (errorMsg) return htmlPage("Erro", `<h1>❌ Autorização cancelada</h1><p>${escapeHtml(errorMsg)}</p>`);
         if (!code || !state) return htmlPage("Erro", `<h1>❌ Parâmetros inválidos</h1>`);
 
         const appId = process.env.META_APP_ID!;
@@ -55,7 +64,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
           );
           const tokJson = await tokRes.json();
           if (!tokRes.ok || !tokJson.access_token) {
-            return htmlPage("Erro", `<h1>❌ Falha ao trocar código</h1><p>${JSON.stringify(tokJson)}</p>`);
+            return htmlPage("Erro", `<h1>❌ Falha ao trocar código</h1><p>${escapeHtml(JSON.stringify(tokJson))}</p>`);
           }
           const shortUserToken = tokJson.access_token;
 
@@ -65,7 +74,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
           );
           const longJson = await longRes.json();
           if (!longRes.ok || !longJson.access_token) {
-            return htmlPage("Erro", `<h1>❌ Falha no token longo</h1><p>${JSON.stringify(longJson)}</p>`);
+            return htmlPage("Erro", `<h1>❌ Falha no token longo</h1><p>${escapeHtml(JSON.stringify(longJson))}</p>`);
           }
           const longUserToken = longJson.access_token;
 
@@ -103,14 +112,14 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
             })
             .eq("id", perfilId);
 
-          if (error) return htmlPage("Erro", `<h1>❌ Erro ao salvar</h1><p>${error.message}</p>`);
+          if (error) return htmlPage("Erro", `<h1>❌ Erro ao salvar</h1><p>${escapeHtml(error.message)}</p>`);
 
           return htmlPage(
             "Conectado!",
-            `<h1>✅ Instagram conectado</h1><p><strong>Página:</strong> ${pageWithIg.name}</p><p><strong>IG ID:</strong> ${igBusinessId}</p><p>Tokens salvos com segurança. Esta janela fecha em instantes…</p>`,
+            `<h1>✅ Instagram conectado</h1><p><strong>Página:</strong> ${escapeHtml(pageWithIg.name)}</p><p><strong>IG ID:</strong> ${escapeHtml(igBusinessId)}</p><p>Tokens salvos com segurança. Esta janela fecha em instantes…</p>`,
           );
         } catch (e) {
-          return htmlPage("Erro", `<h1>❌ Erro inesperado</h1><p>${e instanceof Error ? e.message : String(e)}</p>`);
+          return htmlPage("Erro", `<h1>❌ Erro inesperado</h1><p>${escapeHtml(e instanceof Error ? e.message : String(e))}</p>`);
         }
       },
     },

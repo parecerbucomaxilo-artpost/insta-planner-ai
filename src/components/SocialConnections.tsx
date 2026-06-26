@@ -11,10 +11,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { ensurePerfil } from "@/lib/perfil.functions";
 import { getPublicationDestination, savePublicationDestination } from "@/lib/publication-destination.functions";
+import { createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
 const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
-const META_OAUTH_ORIGIN = "https://insta-planner-ai.lovable.app";
+
 
 type LiStatus =
   | { connected: true; name?: string; email?: string; picture?: string; sub?: string }
@@ -29,6 +30,7 @@ export function SocialConnections() {
   const ensurePerfilFn = useServerFn(ensurePerfil);
   const fetchLigaDestination = useServerFn(getPublicationDestination);
   const saveLigaDestination = useServerFn(savePublicationDestination);
+  const startMetaOAuth = useServerFn(createMetaOAuthStartUrl);
   const [status, setStatus] = useState<LiStatus>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
@@ -350,7 +352,13 @@ export function SocialConnections() {
                     }
                   }
                   if (!pid) return toast.error("Não foi possível identificar o perfil");
-                  const oauthUrl = `${META_OAUTH_ORIGIN}/api/public/meta-oauth/start?perfil_id=${encodeURIComponent(pid)}`;
+                  let oauthUrl: string;
+                  try {
+                    const r = await startMetaOAuth({ data: { perfilId: pid } });
+                    oauthUrl = r.url;
+                  } catch (e) {
+                    return toast.error(`Falha ao iniciar OAuth: ${e instanceof Error ? e.message : String(e)}`);
+                  }
                   // Abre em nova aba para evitar bloqueio de iframe do Facebook (X-Frame-Options)
                   const win = window.open(oauthUrl, "_blank", "noopener,noreferrer");
                   if (!win) {
