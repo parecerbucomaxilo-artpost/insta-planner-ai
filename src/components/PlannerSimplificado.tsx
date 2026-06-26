@@ -381,20 +381,32 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {destinoStatus === "missing" && (
             <p className="text-xs text-amber-900">
               ⚠️ Sem destino próprio para esta conta, a publicação será bloqueada para evitar envio para outro Instagram.
-              Crie um novo cenário no Make conectado ao Instagram da @{conta} e cole a URL do webhook abaixo.
+              {conta === LIGA_ACCOUNT
+                ? " Para a Liga, conecte a Meta oficial abaixo; o Make foi desativado para evitar publicação no perfil Chico."
+                : ` Conecte a Meta oficial ou cadastre um webhook próprio de @${conta}.`}
             </p>
           )}
-          <div className="flex gap-2">
-            <Input
-              value={destinoUrl}
-              onChange={(e) => setDestinoUrl(e.target.value)}
-              placeholder="https://hook.us2.make.com/..."
-              className="flex-1"
-            />
-            <Button onClick={salvarDestino} disabled={savingDestino}>
-              {savingDestino ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar destino"}
+          {destinoModo === "meta" && (
+            <p className="text-xs text-emerald-800">Publicação direta Meta ativa para @{conta}. O Make não será usado.</p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={conectarMetaConta} variant={conta === LIGA_ACCOUNT ? "default" : "secondary"}>
+              <Instagram className="w-4 h-4 mr-1" /> Conectar Meta @{conta}
             </Button>
           </div>
+          {conta !== LIGA_ACCOUNT && (
+            <div className="flex gap-2">
+              <Input
+                value={destinoUrl}
+                onChange={(e) => setDestinoUrl(e.target.value)}
+                placeholder="https://hook.us2.make.com/..."
+                className="flex-1"
+              />
+              <Button onClick={salvarDestino} disabled={savingDestino}>
+                {savingDestino ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar destino"}
+              </Button>
+            </div>
+          )}
         </Card>
       )}
 
