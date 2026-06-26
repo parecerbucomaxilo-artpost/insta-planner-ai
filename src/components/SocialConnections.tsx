@@ -181,12 +181,12 @@ export function SocialConnections() {
 
     try {
       const destino = await ensureLigaDestination({ data: { conta: "lactbmf.anhanguerasbo" } });
-      const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo" } });
+      const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo", logoutFacebookFirst: true } });
       const win = window.open(r.url, "_blank", "noopener,noreferrer");
       if (!win) {
         try { window.top!.location.href = r.url; } catch { window.location.href = r.url; }
       }
-      toast.info("Conecte usando o Facebook que administra a página da Liga.");
+      toast.info("Saia do Facebook Francisco e entre com o Facebook que administra a página da Liga.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao conectar Instagram da Liga");
     }
@@ -469,7 +469,7 @@ export function SocialConnections() {
                 Preferencial: conecte a conta oficial da Liga via Meta. O app só aceita a conta <strong>@lactbmf.anhanguerasbo</strong> nesse fluxo.
               </p>
               <Button onClick={handleConnectLigaMeta} variant="secondary" size="sm">
-                <Instagram className="h-4 w-4" /> Conectar Meta da Liga
+                <Instagram className="h-4 w-4" /> Trocar Facebook e conectar Liga
               </Button>
             </div>
             <Input

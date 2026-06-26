@@ -136,12 +136,17 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     try {
       // Auth temporariamente desativada: segue direto com usuário temporário.
       const destino = await ensureDestino({ data: { conta } });
-      const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: conta } });
+      const trocarFacebook = conta === LIGA_ACCOUNT;
+      const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: conta, logoutFacebookFirst: trocarFacebook } });
       const win = window.open(r.url, "_blank", "noopener,noreferrer");
       if (!win) {
         try { window.top!.location.href = r.url; } catch { window.location.href = r.url; }
       }
-      toast.info(`Conecte usando o Facebook que administra @${conta}.`);
+      toast.info(
+        trocarFacebook
+          ? `Saia do Facebook Francisco e entre com o Facebook que administra @${conta}.`
+          : `Conecte usando o Facebook que administra @${conta}.`,
+      );
     } catch (e: any) {
       toast.error(e.message || "Falha ao iniciar conexão Meta.");
     }
@@ -385,7 +390,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           )}
           <div className="flex flex-wrap gap-2">
             <Button onClick={conectarMetaConta} variant={conta === LIGA_ACCOUNT ? "default" : "secondary"}>
-              <Instagram className="w-4 h-4 mr-1" /> Conectar Meta @{conta}
+              <Instagram className="w-4 h-4 mr-1" /> {conta === LIGA_ACCOUNT ? `Trocar Facebook e conectar @${conta}` : `Conectar Meta @${conta}`}
             </Button>
           </div>
           {conta !== LIGA_ACCOUNT && (
