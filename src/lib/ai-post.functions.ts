@@ -518,7 +518,7 @@ Responda APENAS com a frase do tema, nada mais.`,
       return { publicUrl, signedUrl: signed?.signedUrl ?? publicUrl };
     };
 
-    const { ensureJpegB64, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
+    const { ensureJpegB64, overlayAlunoLogos, overlayLogo } = await import("@/lib/logo-overlay.server");
     // Modo Liga: passa as 2 logos como REFERÊNCIA VISUAL para o modelo amostrar
     // literalmente as cores reais delas (em vez de descrever hex).
     const logoRefs: string[] = [];
@@ -539,10 +539,15 @@ Responda APENAS com a frase do tema, nada mais.`,
         return generateImageWithRetry(prompt, attempt + 1);
       }
     };
+    const applyOverlay = async (b64: string) => {
+      if (isEstudantes) return overlayAlunoLogos(b64);
+      if (isChico) return overlayLogo(b64, undefined, 12, { withLogo: true, position: "bottom-right" });
+      return b64;
+    };
     const genAndUpload = (prompt: string) =>
       generateImageWithRetry(prompt)
         .then((b64) => ensureJpegB64(b64))
-        .then((b64) => (isEstudantes ? overlayAlunoLogos(b64) : b64))
+        .then(applyOverlay)
         .then(uploadOne);
 
     let urlImagem: string;
