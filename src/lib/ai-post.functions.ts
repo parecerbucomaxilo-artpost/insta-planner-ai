@@ -341,7 +341,9 @@ REGRAS DE FORMATO:
 - PT-BR Brasil impecável, com acentuação completa e grafia exata "Santa Bárbara d'Oeste".
 
 PROIBIDO ABSOLUTO: "agende sua consulta", "agende sua avaliação", "marque consulta", "promoção", "oferta", "desconto", "últimas vagas", linguagem comercial, urgência artificial, diagnóstico afirmativo ("você tem DTM").
-NÃO inclua a assinatura no corpo — aparece como overlay na imagem.`;
+NÃO inclua a assinatura no corpo — aparece como overlay na imagem.
+
+REGRA DE PORTUGUÊS (revisão dupla obrigatória, não-negociável): texto 100% em Português do Brasil (pt-BR) com acentuação completa (á é í ó ú â ê ô ã õ à), cedilha (ç) e crase corretas. PROIBIDO: palavras em inglês/espanhol/pseudo-latim, palavras inventadas, palavras duplicadas ("dor dor"), letras embaralhadas, abreviações não-padrão, ortografia errada. Termos técnicos sempre exatos: "bucomaxilofacial", "exodontia", "siso", "terceiro molar", "ATM", "DTM", "bruxismo", "ortognática", "mandíbula", "maxila", "anestesia", "sutura", "trauma facial". Releia palavra por palavra duas vezes antes de devolver; em caso de QUALQUER dúvida, troque por sinônimo simples e correto. NÃO MISTURE ASSUNTOS: o post inteiro é sobre UM único tema — proibido citar outras patologias ou procedimentos não relacionados ao tema.`;
 }
 
 function chicoImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }, isStory = false) {
