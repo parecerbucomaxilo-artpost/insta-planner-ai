@@ -220,6 +220,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         tipo: t.tipo as any, formato: t.formato as any, quando: t.quando,
         ambasRedes: false,
         audiencia,
+        modelo,
+        modeloImagem,
       } as any });
       await marcarConta(out.id);
       await approveFn({ data: { id: out.id, acao: "agendar" } });
