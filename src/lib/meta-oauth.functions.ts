@@ -65,6 +65,9 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
     authUrl.searchParams.set("scope", SCOPES);
     authUrl.searchParams.set("state", state);
     authUrl.searchParams.set("response_type", "code");
+    // Força o Facebook a re-autenticar (evita reaproveitar sessão de outra
+    // conta — ex.: continuar como Francisco quando o alvo é a Liga).
+    authUrl.searchParams.set("auth_type", "reauthenticate");
 
     return { url: authUrl.toString() };
   });
