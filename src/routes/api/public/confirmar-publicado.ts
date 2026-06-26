@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { z } from 'zod'
 
 const PayloadSchema = z.object({
@@ -6,7 +7,17 @@ const PayloadSchema = z.object({
   ig_media_id: z.string().optional(),
   status: z.enum(['Publicado', 'Erro']).optional(),
   erro: z.string().optional(),
+  confirm_token: z.string().optional(),
+  token_confirmacao: z.string().optional(),
 })
+
+function isValidConfirmToken(postId: string, token: string | undefined, secret: string | undefined) {
+  if (!postId || !token || !secret) return false
+  const expected = createHmac('sha256', secret).update(postId).digest('hex')
+  const a = Buffer.from(token)
+  const b = Buffer.from(expected)
+  return a.length === b.length && timingSafeEqual(a, b)
+}
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -38,10 +49,6 @@ export const Route = createFileRoute('/api/public/confirmar-publicado')({
           request.headers.get('x-cron-secret') ??
           new URL(request.url).searchParams.get('secret')
 
-        if (!secret || provided !== secret) {
-          return jsonResponse({ error: 'unauthorized' }, 401)
-        }
-
         let raw: unknown
         try {
           raw = await request.json()
@@ -54,7 +61,12 @@ export const Route = createFileRoute('/api/public/confirmar-publicado')({
           return jsonResponse({ error: 'invalid_payload', issues: parsed.error.issues }, 400)
         }
 
-        const { post_id, ig_media_id, status, erro } = parsed.data
+        const { post_id, ig_media_id, status, erro, confirm_token, token_confirmacao } = parsed.data
+        const hasSecret = Boolean(secret && provided === secret)
+        const hasToken = isValidConfirmToken(post_id, confirm_token || token_confirmacao, secret)
+        if (!hasSecret && !hasToken) {
+          return jsonResponse({ error: 'unauthorized' }, 401)
+        }
         const novoStatus = status ?? 'Publicado'
 
         const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
