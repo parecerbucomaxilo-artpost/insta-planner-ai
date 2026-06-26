@@ -59,7 +59,12 @@ export const Route = createFileRoute("/api/public/meta-oauth/start")({
         if (!appId || !appSecret) return new Response("Meta App not configured", { status: 500 });
 
         const verified = verifyAuthToken(token, appSecret);
-        if (!verified) return new Response("Token inválido ou expirado", { status: 401 });
+        if ("error" in verified) {
+          const msg = verified.error === "expired"
+            ? "Sessão de conexão expirou. Volte ao Planner e clique em 'Conectar Meta' novamente."
+            : "Token de conexão inválido. Volte ao Planner e tente novamente.";
+          return new Response(msg, { status: 401 });
+        }
 
         // State assinado (já existente) que viaja no fluxo OAuth para o callback.
         const nonce = crypto.randomUUID();
