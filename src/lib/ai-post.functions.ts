@@ -241,7 +241,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
     ? "Referência visual: capa The Lancet / NEJM / JOMS."
     : "Referência visual: Mayo Clinic, Cleveland Clinic, Harvard Health — fotografia médica premium.";
 
-  return `IMAGEM MÉDICA ULTRA PREMIUM — autoridade hospitalar em CTBMF + Odontologia Hospitalar.
+  return themeLock(tema) + `IMAGEM MÉDICA ULTRA PREMIUM — autoridade hospitalar em CTBMF + Odontologia Hospitalar.
 - ${refEditorial} ZERO cara de anúncio, banco de imagens, estoque, clipart ou "IA óbvia".
 - ${dimensoes}
 - ESTILO OBRIGATÓRIO: ${estiloEscolhido}.
