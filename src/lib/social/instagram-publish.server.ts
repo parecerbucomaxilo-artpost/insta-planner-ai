@@ -403,7 +403,12 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     const isStory = /stor/i.test(post.formato_midia || "");
     const isCarousel = post.tipo_post === "Carrossel" && imageUrls.length > 1;
     const postType = isStory ? "story" : isCarousel ? "carrossel" : "feed";
-    const makeTipo = isCarousel ? "carrossel" : isStory ? "story" : "imagem";
+    // Campo usado pelo Router do Make: deve representar a rota (feed/carrossel/stories),
+    // não o tipo técnico do arquivo (imagem). Antes feed ia como "imagem" e podia cair
+    // fora dos filtros do cenário da Liga.
+    const makeTipo = isCarousel ? "carrossel" : isStory ? "stories" : "feed";
+    const makeTipoSingular = isStory ? "story" : makeTipo;
+    const makeMediaKind = isCarousel ? "carousel" : isStory ? "story" : "photo";
     const makeRota = isCarousel ? "Carrossel" : isStory ? "Story" : "Post único";
     const primaryImageUrl = imageUrls[0];
     let via: PublishVia;
@@ -443,16 +448,21 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         conta: contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba || undefined,
         arroba: contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba || undefined,
         plataforma: "Instagram",
-        type: postType,
+        type: makeTipo,
         tipo: makeTipo,
         tipo_make: makeTipo,
+        tipo_make_singular: makeTipoSingular,
         tipo_publicacao: postType,
-        tipo_midia: makeTipo,
+        tipo_midia: makeMediaKind,
         post_type: postType,
         media_type: postType,
+        media_kind: makeMediaKind,
         formato: makeTipo,
         formato_publicacao: postType,
         content_type: "post",
+        tipo_conteudo: makeMediaKind,
+        tipo_arquivo: makeMediaKind,
+        tipo_imagem: "imagem",
         tipo_post: post.tipo_post,
         rota: makeRota,
         router_route: makeRota,
