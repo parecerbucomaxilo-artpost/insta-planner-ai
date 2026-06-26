@@ -7,6 +7,7 @@ const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2d
 // Conta historicamente associada ao DEFAULT_MAKE_WEBHOOK (cenário Make original).
 // Usada como fallback seguro quando o perfil dessa conta ainda não tem webhook próprio salvo.
 const DEFAULT_WEBHOOK_ACCOUNT = "drfranciscomenezes";
+const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 
 type PublishVia = "meta" | "webhook";
 
@@ -135,6 +136,28 @@ async function graphGet(edge: string, accessToken: string) {
   const json = await res.json().catch(() => ({}));
   if (!res.ok || json.error) throw new Error(json?.error?.message || `Meta respondeu ${res.status}`);
   return json as { status_code?: string; status?: string };
+}
+
+async function graphGetFields<T extends Record<string, unknown>>(edge: string, accessToken: string, fields: string) {
+  const url = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${edge}`);
+  url.searchParams.set("fields", fields);
+  url.searchParams.set("access_token", accessToken);
+  const res = await fetch(url);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || json.error) throw new Error(json?.error?.message || `Meta respondeu ${res.status}`);
+  return json as T;
+}
+
+async function assertMetaAccountMatchesTarget(igBusinessId: string, token: string, targetAccount: string | null) {
+  if (!targetAccount) return;
+  const account = await graphGetFields<{ username?: string }>(igBusinessId, token, "username");
+  const connectedAccount = normalizeInstagramAccount(account.username);
+  if (connectedAccount !== targetAccount) {
+    throw new Error(
+      `Conta Meta conectada não confere: o token é de @${connectedAccount || "desconhecida"}, ` +
+      `mas este post é para @${targetAccount}. Reconecte a Meta da conta correta antes de publicar.`,
+    );
+  }
 }
 
 async function waitForContainerReady(containerId: string, accessToken: string) {
@@ -347,9 +370,11 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
           } as any;
         } else {
           throw new Error(
-            `Conta @${contaAlvo} não tem destino configurado (token Meta ou webhook próprio). ` +
-            `Configure o perfil dessa conta em "Configurações > Perfil" antes de publicar — ` +
-            `senão o post seria publicado na conta errada.`,
+          contaAlvo === LIGA_ACCOUNT
+            ? `A Liga agora publica somente pela conexão oficial Meta. Conecte @${LIGA_ACCOUNT} em "Configurações > Conexões Sociais > Conectar Meta da Liga" antes de publicar.`
+            : `Conta @${contaAlvo} não tem destino configurado (token Meta ou webhook próprio). ` +
+              `Configure o perfil dessa conta em "Configurações > Perfil" antes de publicar — ` +
+              `senão o post seria publicado na conta errada.`,
           );
         }
       }
@@ -451,6 +476,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     if (perfil.instagram_access_token && perfil.instagram_business_account_id) {
       via = "meta";
+      await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
       externalId = await publishViaMeta({
         igBusinessId: perfil.instagram_business_account_id,
         token: perfil.instagram_access_token,
@@ -460,6 +486,12 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         isCarousel,
       });
     } else {
+      if (contaAlvo === LIGA_ACCOUNT) {
+        throw new Error(
+          `Publicação via Make foi desativada para a Liga para evitar postagem no perfil errado. ` +
+          `Conecte a Meta oficial de @${LIGA_ACCOUNT} e tente novamente.`,
+        );
+      }
       // Garantia anti-cross-posting: quando o post tem instagram_conta,
       // só publicamos via webhook PRÓPRIO desse perfil. NUNCA cai no
       // DEFAULT_MAKE_WEBHOOK nem em webhook de outro perfil — isso publicaria
