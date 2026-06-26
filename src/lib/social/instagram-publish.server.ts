@@ -73,6 +73,8 @@ async function uploadDataUrl(supabaseAdmin: any, value: string) {
     .from("post-images")
     .upload(fileName, parsed.buffer, { contentType: parsed.mimeType, cacheControl: "604800", upsert: false });
   if (error) throw new Error(`Upload da imagem para publicação falhou: ${error.message}`);
+  const { data: publicData } = supabaseAdmin.storage.from("post-images").getPublicUrl(fileName);
+  if (publicData?.publicUrl) return publicData.publicUrl;
   const { data, error: signError } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
   if (signError || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${signError?.message || fileName}`);
   return data.signedUrl;
@@ -104,6 +106,10 @@ async function createFetchableUrl(supabaseAdmin: any, value: string | null | und
       throw new Error(`Imagem com URL inválida para publicação: ${value.slice(0, 80)}`);
     }
     return value;
+  }
+  if (ref.bucket === "post-images") {
+    const { data } = supabaseAdmin.storage.from(ref.bucket).getPublicUrl(ref.path);
+    if (data?.publicUrl) return data.publicUrl;
   }
   const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
   if (error || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${error?.message || ref.path}`);
@@ -245,6 +251,14 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
       throw new Error(
         "Webhook Instagram inválido ou inativo no Make (410). " +
         `Copie a URL do cenário ${scenarioLabel} ativo e salve no destino de publicação de ${accountLabel} antes de publicar.`,
+      );
+    }
+    if (res.status >= 500) {
+      const normalizedAccount = normalizeInstagramAccount(account);
+      const accountLabel = normalizedAccount ? `@${normalizedAccount}` : "desta conta";
+      throw new Error(
+        `O cenário do Make recebeu o post de ${accountLabel}, mas falhou internamente (${res.status}). ` +
+        "Verifique no History do Make qual módulo ficou vermelho; o app já enviou imagens em URL pública compatível.",
       );
     }
     const hint = res.status === 400
