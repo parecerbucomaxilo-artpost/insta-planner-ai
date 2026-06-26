@@ -3,13 +3,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2, ChevronLeft, ChevronRight, Clock, RotateCcw } from "lucide-react";
+import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2, ChevronLeft, ChevronRight, Clock, RotateCcw, ScanEye } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { PostRow } from "@/lib/posts-types";
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
+import { LogoPreviewDialog } from "@/components/LogoPreviewDialog";
 
 const statusColor: Record<string, string> = {
   Rascunho: "bg-[var(--status-draft)]",
@@ -28,6 +29,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   const publishIg = useServerFn(publishInstagramNow);
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [slideIdx, setSlideIdx] = useState<Record<string, number>>({});
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     try {
@@ -182,6 +184,16 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                   ) : (
                     <><Send className="h-4 w-4 mr-1.5" /> Postar Agora</>
                   )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setPreviewId(p.id)}
+                  disabled={isPublishing}
+                  aria-label="Pré-visualizar com logo"
+                  title="Pré-visualizar com logo"
+                >
+                  <ScanEye className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
