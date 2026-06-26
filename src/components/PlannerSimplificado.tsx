@@ -54,6 +54,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [destinoModo, setDestinoModo] = useState<"meta" | "webhook" | "missing">("missing");
   const [savingDestino, setSavingDestino] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [metaConnectPath, setMetaConnectPath] = useState<string>("");
 
 
   // Geração IA
@@ -136,33 +137,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     try {
       const destino = await ensureDestino({ data: { conta } });
       const trocarFacebook = conta === LIGA_ACCOUNT;
-
-      if (trocarFacebook) {
-        const ok = window.confirm(
-          `Para conectar @${conta} você precisa sair da conta "Francisco" no Facebook.\n\n` +
-          `1) Clique OK — vou abrir o Facebook em outra aba.\n` +
-          `2) Lá, clique na sua foto (canto sup. direito) → Sair.\n` +
-          `3) Volte aqui e clique novamente em "Conectar Meta @${conta}".`,
-        );
-        if (ok) {
-          const a = document.createElement("a");
-          a.href = "https://www.facebook.com/";
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          toast.info("Saia do Facebook na aba aberta e clique em Conectar novamente.");
-          return;
-        }
-      }
-
       const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: conta, logoutFacebookFirst: trocarFacebook } });
-      const win = window.open(r.url, "_blank", "noopener,noreferrer");
-      if (!win) {
-        try { window.top!.location.href = r.url; } catch { window.location.href = r.url; }
-      }
-      toast.info(`Entre com o Facebook que administra @${conta}.`);
+      setMetaConnectPath(`/meta-connect?account=${encodeURIComponent(conta)}&next=${encodeURIComponent(r.url)}`);
+      toast.info("Clique no botão 'Abrir conexão Meta' que apareceu abaixo.");
     } catch (e: any) {
       toast.error(e.message || "Falha ao iniciar conexão Meta.");
     }
@@ -406,9 +383,21 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           )}
           <div className="flex flex-wrap gap-2">
             <Button onClick={conectarMetaConta} variant={conta === LIGA_ACCOUNT ? "default" : "secondary"}>
-              <Instagram className="w-4 h-4 mr-1" /> {conta === LIGA_ACCOUNT ? `Trocar Facebook e conectar @${conta}` : `Conectar Meta @${conta}`}
+              <Instagram className="w-4 h-4 mr-1" /> {conta === LIGA_ACCOUNT ? `Preparar conexão Meta @${conta}` : `Preparar conexão Meta @${conta}`}
             </Button>
+            {metaConnectPath && (
+              <Button asChild variant="outline">
+                <a href={metaConnectPath} target="_blank" rel="noopener noreferrer">
+                  Abrir conexão Meta
+                </a>
+              </Button>
+            )}
           </div>
+          {metaConnectPath && (
+            <p className="text-xs text-zinc-600">
+              O Facebook será aberto em uma página normal do navegador, não dentro do preview, para evitar “conexão recusada”.
+            </p>
+          )}
           {conta !== LIGA_ACCOUNT && (
             <div className="flex gap-2">
               <Input

@@ -47,6 +47,7 @@ export function SocialConnections() {
   const [igTesting, setIgTesting] = useState(false);
   const [liTesting, setLiTesting] = useState(false);
   const [perfilId, setPerfilId] = useState<string | null>(null);
+  const [ligaMetaConnectPath, setLigaMetaConnectPath] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -182,11 +183,8 @@ export function SocialConnections() {
     try {
       const destino = await ensureLigaDestination({ data: { conta: "lactbmf.anhanguerasbo" } });
       const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo", logoutFacebookFirst: true } });
-      const win = window.open(r.url, "_blank", "noopener,noreferrer");
-      if (!win) {
-        try { window.top!.location.href = r.url; } catch { window.location.href = r.url; }
-      }
-      toast.info("Saia do Facebook Francisco e entre com o Facebook que administra a página da Liga.");
+      setLigaMetaConnectPath(`/meta-connect?account=lactbmf.anhanguerasbo&next=${encodeURIComponent(r.url)}`);
+      toast.info("Clique em 'Abrir conexão Meta da Liga' para continuar fora do preview.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao conectar Instagram da Liga");
     }
@@ -469,8 +467,15 @@ export function SocialConnections() {
                 Preferencial: conecte a conta oficial da Liga via Meta. O app só aceita a conta <strong>@lactbmf.anhanguerasbo</strong> nesse fluxo.
               </p>
               <Button onClick={handleConnectLigaMeta} variant="secondary" size="sm">
-                <Instagram className="h-4 w-4" /> Trocar Facebook e conectar Liga
+                <Instagram className="h-4 w-4" /> Preparar conexão Meta da Liga
               </Button>
+              {ligaMetaConnectPath && (
+                <Button asChild variant="outline" size="sm">
+                  <a href={ligaMetaConnectPath} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" /> Abrir conexão Meta da Liga
+                  </a>
+                </Button>
+              )}
             </div>
             <Input
               id="ig-liga-webhook"
