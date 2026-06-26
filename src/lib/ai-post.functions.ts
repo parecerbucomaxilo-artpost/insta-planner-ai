@@ -290,6 +290,74 @@ function studentImagePrompt(tema: string, slide?: { n: number; total: number; pa
 }
 
 
+// =============================================================================
+// PLANNER CHICO — conta @drfranciscomenezes
+// Identidade visual exclusiva: Azul Marinho #1B2E40 + Branco + Azul Ciano #3BB5E8
+// Tom empático, educativo, próximo. Nunca comercial. CTA "Link na bio para dúvidas
+// e agendamento pelo WhatsApp". Atendimento: SP, Santa Bárbara d'Oeste, Americana.
+// =============================================================================
+const CHICO_NAVY = "#1B2E40";
+const CHICO_CIANO = "#3BB5E8";
+const CHICO_CIDADES = "São Paulo, Santa Bárbara d'Oeste e Americana";
+const CHICO_CTA = `Dúvidas? Link na bio para contato e agendamento pelo WhatsApp.`;
+
+function chicoCaptionSystem(formato: "Carrossel" | "Story" | "Post Único") {
+  return `Você é copywriter médico do consultório do Dr. Francisco Menezes — Cirurgião Bucomaxilofacial. Atendimento em ${CHICO_CIDADES}.
+
+PRINCÍPIO NORTEADOR: cada publicação deve fazer o leitor sentir que finalmente encontrou quem entende o problema dele — e que existe solução. NUNCA vender diretamente; sempre educar, gerar identificação e construir confiança. O link na bio faz o resto.
+
+TOM: empático, educativo, próximo, humano. Linguagem leiga acessível, sem jargão (quando inevitável, traduzir entre parênteses). Comece SEMPRE pela DOR/queixa real ou pela pergunta de identificação ("Você sente...", "Já acordou com...", "Aquela dor que aparece do nada...").
+
+ESTRUTURA OBRIGATÓRIA (Instagram ${formato}):
+1. HEADLINE de identificação na 1ª linha (gancho emocional, pergunta ou frase-síntese).
+2. Corpo educativo em 3-5 frases curtas: o que é o sintoma/condição, por que acontece, por que merece avaliação especializada.
+3. Frase de acolhimento ("Se você se identificou...", "Não ignore o que o seu corpo está dizendo...").
+4. CTA padrão exato: "${CHICO_CTA}"
+5. Frase de localização: "Atendo em ${CHICO_CIDADES}."
+6. 5-7 hashtags ao final, sempre incluindo #drfranciscomenezes #bucomaxilofacial + 3-5 do tema específico (#dentedosiso, #cirurgiaortognática, #ATM, #traumafacial, #patologiaoral, etc.).
+
+REGRAS DE FORMATO:
+- 500-900 caracteres no total (Story: 150-250).
+- Parágrafos de 1-2 linhas com quebras generosas.
+- 1-2 emojis sutis no máximo (ou nenhum). Sem emojis comerciais.
+- PT-BR Brasil impecável, com acentuação completa e grafia exata "Santa Bárbara d'Oeste".
+
+PROIBIDO ABSOLUTO: "agende sua consulta", "agende sua avaliação", "marque consulta", "promoção", "oferta", "desconto", "últimas vagas", linguagem comercial, urgência artificial, diagnóstico afirmativo ("você tem DTM").
+NÃO inclua a assinatura no corpo — aparece como overlay na imagem.`;
+}
+
+function chicoImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }) {
+  const isUltimo = !!slide && slide.n === slide.total;
+  const isStory = !slide && /story/i.test(slide?.papel ?? "");
+  const formato = slide
+    ? `FORMATO vertical 4:5 (1024x1280) — Instagram Feed/Carrossel.`
+    : isStory
+      ? `FORMATO vertical 9:16 (1024x1820) — Instagram Stories.`
+      : `FORMATO vertical 4:5 (1024x1280) — Instagram Feed.`;
+  const slideInfo = slide
+    ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel. Papel: ${slide.papel}.${isUltimo ? " SLIDE DE FECHAMENTO: capricho máximo, hierarquia limpa." : ""}`
+    : "";
+  const ctaForte = (isUltimo || !slide)
+    ? `\n- CTA OBRIGATÓRIO no rodapé: tipografia bold em ${CHICO_CIANO} "LINK NA BIO" + ícone oficial do WHATSAPP (balão verde #25D366 com fone branco, flat oficial) discreto. Sem números de telefone, sem URLs longas.`
+    : "";
+  return `IMAGEM PREMIUM para o Instagram @drfranciscomenezes — Cirurgião Bucomaxilofacial.
+- ${formato}
+- TEMA LITERAL "${tema}": represente a cena/sintoma de forma reconhecível (siso → região posterior; ATM → mão pré-auricular; trauma → cena clínica plausível; patologia → close de mucosa saudável; ortognática → perfil facial elegante).
+- ESTILO: fotografia editorial sóbria OU ilustração anatômica realista limpa (estilo Netter contemporâneo). Sem clipart, sem flat design infantil, sem cartoon, sem banco de imagens.
+- PALETA RIGOROSA — APENAS estas 3 cores (descumprir = rejeitado):
+  • FUNDO DOMINANTE: AZUL MARINHO ESCURO ${CHICO_NAVY} (cobertura ~70-85% da composição, podendo ter leve gradiente sutil).
+  • TEXTO PRINCIPAL: BRANCO #FFFFFF puro.
+  • DESTAQUES, LINHAS, ÍCONES, NÚMERO/HEADLINE-CHAVE: AZUL CIANO ${CHICO_CIANO}.
+  PROIBIDO: qualquer outro hex (sem verde, sem amarelo, sem laranja, sem roxo, sem rosa, sem vermelho — exceto micro-acento de dor se essencial). Sem fundo branco. Sem fundo preto.
+- TIPOGRAFIA: sans-serif moderna bold (Montserrat / Inter). Headline curto de 3-8 palavras em PT-BR impecável ("DOR NO SISO?", "ATM TRAVADA AO ACORDAR", "FERIDA QUE NÃO CICATRIZA"). Headline em branco com 1 palavra-chave em ciano ${CHICO_CIANO}. Sem parágrafos, sem listas longas, sem números fictícios.
+- COMPOSIÇÃO: limpa, hierarquia clara, muito espaço negativo navy, linhas finas em ciano como elementos gráficos (separadores, ícones, silhuetas de perfil facial).
+- ROSTOS: se houver pessoa, expressão de ALÍVIO/CONFIANÇA (nunca dor exposta, nunca cena invasiva, nunca procedimento real). Plano fechado, foco em emoção. Sem rostos reconhecíveis de pessoas reais.
+- LOGO DA CLÍNICA: NÃO desenhe, NÃO redesenhe, NÃO invente nenhum logo, monograma, escudo ou marca. Apenas RESERVE o CANTO INFERIOR DIREITO limpo (área ~12% da largura, sem texto, sem ilustração) — o sistema sobrepõe a logo real depois.${ctaForte}${slideInfo}
+- PROIBIDO: imagens de procedimentos invasivos, sangue, bisturi cortando, anatomia interna exposta de forma agressiva, watermark de IA, mãos deformadas, dedos a mais, texto em inglês, palavras duplicadas, hashtags na imagem, números de telefone, URLs, CTAs comerciais ("agende", "promoção", "desconto").
+- Iluminação editorial premium estilo capa de revista de saúde sofisticada (Harvard Health / Mayo Clinic), atmosfera arejada e luminosa, qualidade 8K.
+- Variação única (seed ${Math.random().toString(36).slice(2, 10)}): ângulo e composição inéditos.`;
+
+
 
 export const generateSinglePost = createServerFn({ method: "POST" })
   .middleware([])
