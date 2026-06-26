@@ -380,7 +380,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
           const b64 = btoa(bin);
           const stamped = contaParaLogo === "lactbmf.anhanguerasbo"
             ? await overlayAlunoLogos(b64)
-            : await overlayLogo(b64, undefined, 12, { withLogo: true, position: "bottom-right" });
+            : await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right" });
           if (stamped === b64) return url; // overlay falhou; mantém original
           const fileName = `published/stamped-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
           const bytes = Uint8Array.from(atob(stamped), (c) => c.charCodeAt(0));

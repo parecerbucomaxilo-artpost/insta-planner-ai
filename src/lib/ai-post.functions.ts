@@ -559,7 +559,7 @@ Responda APENAS com a frase do tema, nada mais.`,
     };
     const applyOverlay = async (b64: string) => {
       if (isEstudantes) return overlayAlunoLogos(b64);
-      if (isChico) return overlayLogo(b64, undefined, 12, { withLogo: true, position: "bottom-right" });
+      if (isChico) return overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right" });
       return b64;
     };
     const genAndUpload = (prompt: string) =>
