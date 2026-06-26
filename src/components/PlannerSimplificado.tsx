@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X, Image as ImageIcon, Layers, Film, RotateCcw } from "lucide-react";
+import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X, Image as ImageIcon, Layers, Film, RotateCcw, ScanEye } from "lucide-react";
+import { LogoPreviewDialog } from "@/components/LogoPreviewDialog";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
@@ -43,6 +44,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [destinoUrl, setDestinoUrl] = useState<string>("");
   const [destinoStatus, setDestinoStatus] = useState<"loading" | "ok" | "missing">("loading");
   const [savingDestino, setSavingDestino] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
 
   // Geração IA
@@ -513,6 +515,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         Re-tentar
                       </Button>
                     )}
+                    <Button variant="outline" size="icon" onClick={() => setPreviewId(p.id)} disabled={busy} aria-label="Pré-visualizar com logo" title="Pré-visualizar com logo">
+                      <ScanEye className="w-4 h-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => excluir(p.id)} disabled={busy}>
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
@@ -521,6 +526,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               </ul>
             )}
           </Card>
+          <LogoPreviewDialog postId={previewId} open={!!previewId} onOpenChange={(o) => !o && setPreviewId(null)} />
         </>
       )}
     </div>
