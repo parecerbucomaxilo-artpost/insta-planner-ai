@@ -7,6 +7,15 @@ function getRedirectUri(request: Request) {
   return `${META_OAUTH_ORIGIN}/api/public/meta-oauth/callback`;
 }
 
+function escapeHtml(str: string) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function htmlPage(title: string, body: string) {
   return new Response(
     `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${title}</title>
