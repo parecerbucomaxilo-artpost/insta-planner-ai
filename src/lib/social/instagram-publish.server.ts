@@ -1,3 +1,5 @@
+import { createHmac } from "crypto";
+
 const GRAPH_VERSION = "v21.0";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
@@ -187,6 +189,34 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
   await waitForContainerReady(created.id, token);
   const published = await graphPost(`${igBusinessId}/media_publish`, { creation_id: created.id, access_token: token });
   return published.id;
+}
+
+function buildMakeFiles(imageUrls: string[]) {
+  return imageUrls.map((url, index) => ({
+    url,
+    file_url: url,
+    fileUrl: url,
+    image_url: url,
+    imageUrl: url,
+    photo_url: url,
+    photoUrl: url,
+    "Photo URL": url,
+    name: `imagem-${index + 1}.jpg`,
+    filename: `imagem-${index + 1}.jpg`,
+  }));
+}
+
+function buildConfirmationFields(postId: string) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return {};
+  const confirmToken = createHmac("sha256", secret).update(postId).digest("hex");
+  return {
+    confirmar_publicado_url: "https://insta-planner-ai.lovable.app/api/public/confirmar-publicado",
+    confirmation_url: "https://insta-planner-ai.lovable.app/api/public/confirmar-publicado",
+    postback_url: "https://insta-planner-ai.lovable.app/api/public/confirmar-publicado",
+    confirm_token: confirmToken,
+    token_confirmacao: confirmToken,
+  };
 }
 
 async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>, account?: string | null): Promise<{
@@ -452,6 +482,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       const webhookResult = await publishViaWebhook(webhookUrl, {
         id: post.id,
         post_id: post.id,
+        ...buildConfirmationFields(post.id),
         user_id: userId,
         instagram_conta: targetAccount || undefined,
         conta: targetAccount || undefined,
@@ -521,6 +552,13 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         photos: imageUrls,
         fotos: imageUrls,
         photo_urls: imageUrls,
+        files: buildMakeFiles(imageUrls),
+        Files: buildMakeFiles(imageUrls),
+        arquivos: buildMakeFiles(imageUrls),
+        carousel_files: buildMakeFiles(imageUrls),
+        carrossel_files: buildMakeFiles(imageUrls),
+        file_urls: imageUrls,
+        FileURLs: imageUrls,
         imagens_carrossel_json: JSON.stringify(imageUrls),
         image_urls_json: JSON.stringify(imageUrls),
         photos_json: JSON.stringify(imageUrls),

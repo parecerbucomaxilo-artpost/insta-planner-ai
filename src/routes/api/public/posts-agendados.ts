@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createHmac } from "crypto";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +31,38 @@ function normalizeCarousel(value: unknown): string[] {
     return [value];
   }
   return [];
+}
+
+function normalizeInstagramAccount(value: string | null | undefined) {
+  return String(value || "").trim().replace(/^@+/, "").toLowerCase() || null;
+}
+
+function buildMakeFiles(imageUrls: string[]) {
+  return imageUrls.map((url, index) => ({
+    url,
+    file_url: url,
+    fileUrl: url,
+    image_url: url,
+    imageUrl: url,
+    photo_url: url,
+    photoUrl: url,
+    "Photo URL": url,
+    name: `imagem-${index + 1}.jpg`,
+    filename: `imagem-${index + 1}.jpg`,
+  }));
+}
+
+function buildConfirmationFields(postId: string) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return {};
+  const confirmToken = createHmac("sha256", secret).update(postId).digest("hex");
+  return {
+    confirmar_publicado_url: "https://insta-planner-ai.lovable.app/api/public/confirmar-publicado",
+    confirmation_url: "https://insta-planner-ai.lovable.app/api/public/confirmar-publicado",
+    postback_url: "https://insta-planner-ai.lovable.app/api/public/confirmar-publicado",
+    confirm_token: confirmToken,
+    token_confirmacao: confirmToken,
+  };
 }
 
 function parseDataUrl(value: string) {
@@ -84,24 +117,27 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
       OPTIONS: async () =>
         new Response(null, { status: 204, headers: corsHeaders }),
 
-      GET: async () => {
+      GET: async ({ request }) => {
         try {
           const { supabaseAdmin } = await import(
             "@/integrations/supabase/client.server"
           );
 
           const nowIso = new Date().toISOString();
+          const url = new URL(request.url);
+          const contaFiltro = normalizeInstagramAccount(url.searchParams.get("conta") || url.searchParams.get("instagram_conta"));
 
-          const { data, error } = await supabaseAdmin
+          let query = supabaseAdmin
             .from("posts")
             .select(
-              "id, tipo_post, formato_midia, url_imagem, url_imagem_cache, url_imagem_cache_expires_at, imagens_carrossel, imagens_carrossel_cache, imagens_carrossel_cache_expires_at, legenda, legenda_instagram, legenda_linkedin, data_agendamento"
+              "id, tipo_post, formato_midia, url_imagem, url_imagem_cache, url_imagem_cache_expires_at, imagens_carrossel, imagens_carrossel_cache, imagens_carrossel_cache_expires_at, legenda, legenda_instagram, legenda_linkedin, data_agendamento, instagram_conta"
             )
             .eq("status", "Agendado")
             .lte("data_agendamento", nowIso)
             .order("data_agendamento", { ascending: true })
-            .limit(1)
-            .maybeSingle();
+            .limit(1);
+          if (contaFiltro) query = query.eq("instagram_conta", contaFiltro);
+          const { data, error } = await query.maybeSingle();
 
           if (error) {
             return new Response(
@@ -154,16 +190,37 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
 
           const isStory = /stor/i.test(data.formato_midia || "");
           const postType = isStory ? "story" : isCarousel ? "carrossel" : "feed";
+          const makeTipo = isStory ? "stories" : postType;
+          const targetAccount = normalizeInstagramAccount(data.instagram_conta);
+          const isLigaTarget = targetAccount === "lactbmf.anhanguerasbo";
+          const isChicoTarget = targetAccount === "drfranciscomenezes";
+          const forbiddenAccount = isLigaTarget ? "drfranciscomenezes" : isChicoTarget ? "lactbmf.anhanguerasbo" : undefined;
+          const files = buildMakeFiles(imageUrls);
 
           return new Response(
             JSON.stringify({
               id: data.id,
               post_id: data.id,
-              type: postType,
-              tipo: postType,
+              ...buildConfirmationFields(data.id),
+              instagram_conta: targetAccount || undefined,
+              conta: targetAccount || undefined,
+              arroba: targetAccount || undefined,
+              conta_destino: targetAccount || undefined,
+              conta_destino_obrigatoria: targetAccount || undefined,
+              target_instagram_account: targetAccount || undefined,
+              target_instagram_username: targetAccount ? `@${targetAccount}` : undefined,
+              make_scenario: isLigaTarget ? "liga_lactbmf" : isChicoTarget ? "chico_drfranciscomenezes" : "instagram",
+              perfil_proibido: forbiddenAccount,
+              forbidden_instagram_account: forbiddenAccount ? `@${forbiddenAccount}` : undefined,
+              bloquear_publicacao_se_conta_diferente: Boolean(targetAccount),
+              type: makeTipo,
+              tipo: makeTipo,
+              tipo_make: makeTipo,
+              tipo_make_singular: isStory ? "story" : makeTipo,
+              tipo_publicacao: postType,
               post_type: postType,
               media_type: postType,
-              formato: postType,
+              formato: makeTipo,
               tipo_post: data.tipo_post,
               is_carousel: isCarousel,
               url_imagem: urlImagem,
@@ -196,6 +253,13 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
               photos: imageUrls,
               fotos: imageUrls,
               photo_urls: imageUrls,
+              files,
+              Files: files,
+              arquivos: files,
+              carousel_files: files,
+              carrossel_files: files,
+              file_urls: imageUrls,
+              FileURLs: imageUrls,
               imagens_carrossel_json: JSON.stringify(imageUrls),
               image_urls_json: JSON.stringify(imageUrls),
               photos_json: JSON.stringify(imageUrls),
