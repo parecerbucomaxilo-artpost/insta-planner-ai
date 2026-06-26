@@ -195,6 +195,10 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
   confirmed?: boolean;
   externalId?: string;
 }> {
+  const requiredPhotoUrl = String(payload.photo_url || payload["Photo URL"] || payload.image_url || payload.url_imagem || "").trim();
+  if (!requiredPhotoUrl) {
+    throw new Error("Photo URL vazio: o post precisa ter uma imagem pública antes de enviar ao Make.");
+  }
   // Make está configurado com "Webhook response 15" como 1ª rota → responde em <2s.
   // Se o Make responder "Queue is full", a requisição não deve virar erro fatal no app.
   const maxAttempts = 1;
@@ -493,10 +497,15 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         media_url: primaryImageUrl,
         arquivo_url: primaryImageUrl,
         photo_url: primaryImageUrl,
+        photo_url_obrigatorio: primaryImageUrl,
         photoUrl: primaryImageUrl,
+        PhotoUrl: primaryImageUrl,
         photoURL: primaryImageUrl,
         "Photo URL": primaryImageUrl,
+        "photo url": primaryImageUrl,
+        "PHOTO URL": primaryImageUrl,
         "Image URL": primaryImageUrl,
+        "image url": primaryImageUrl,
         photo: primaryImageUrl,
         foto_url: primaryImageUrl,
         foto: primaryImageUrl,
