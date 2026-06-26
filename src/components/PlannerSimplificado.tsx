@@ -134,19 +134,27 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const conectarMetaConta = async () => {
     if (!conta) return toast.error("Selecione uma conta primeiro.");
     try {
-      // Auth temporariamente desativada: segue direto com usuário temporário.
       const destino = await ensureDestino({ data: { conta } });
       const trocarFacebook = conta === LIGA_ACCOUNT;
+
+      if (trocarFacebook) {
+        const ok = window.confirm(
+          `Para conectar @${conta}, você precisa sair da conta do Facebook "Francisco" antes.\n\n` +
+          `Ao clicar OK abrirei o Facebook para você sair. Depois, volte aqui e clique novamente em "Conectar Meta @${conta}".`,
+        );
+        if (ok) {
+          window.open("https://www.facebook.com/logout.php", "_blank", "noopener,noreferrer");
+          toast.info("Saia do Facebook na aba aberta e depois clique em Conectar novamente.");
+          return;
+        }
+      }
+
       const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: conta, logoutFacebookFirst: trocarFacebook } });
       const win = window.open(r.url, "_blank", "noopener,noreferrer");
       if (!win) {
         try { window.top!.location.href = r.url; } catch { window.location.href = r.url; }
       }
-      toast.info(
-        trocarFacebook
-          ? `Saia do Facebook Francisco e entre com o Facebook que administra @${conta}.`
-          : `Conecte usando o Facebook que administra @${conta}.`,
-      );
+      toast.info(`Entre com o Facebook que administra @${conta}.`);
     } catch (e: any) {
       toast.error(e.message || "Falha ao iniciar conexão Meta.");
     }
