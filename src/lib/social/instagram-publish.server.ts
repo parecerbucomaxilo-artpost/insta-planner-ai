@@ -73,8 +73,7 @@ async function uploadDataUrl(supabaseAdmin: any, value: string) {
     .from("post-images")
     .upload(fileName, parsed.buffer, { contentType: parsed.mimeType, cacheControl: "604800", upsert: false });
   if (error) throw new Error(`Upload da imagem para publicação falhou: ${error.message}`);
-  const { data: publicData } = supabaseAdmin.storage.from("post-images").getPublicUrl(fileName);
-  if (publicData?.publicUrl) return publicData.publicUrl;
+  // Bucket post-images é privado por política do workspace — usar sempre URL assinada (Instagram aceita).
   const { data, error: signError } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
   if (signError || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${signError?.message || fileName}`);
   return data.signedUrl;
