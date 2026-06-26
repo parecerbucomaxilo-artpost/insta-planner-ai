@@ -65,11 +65,11 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
     authUrl.searchParams.set("scope", SCOPES);
     authUrl.searchParams.set("state", state);
     authUrl.searchParams.set("response_type", "code");
-    // `auth_type=reauthenticate` faz o Facebook recusar a conexão em alguns
-    // apps. Usamos `rerequest` (re-pede permissões sem exigir reautenticação
-    // forçada) — o usuário pode clicar em "Entrar com outra conta" no
-    // próprio diálogo do Facebook para trocar de perfil.
-    authUrl.searchParams.set("auth_type", "rerequest");
+    // Força o Facebook a pedir credenciais de novo (permite trocar de conta).
+    // `reauthenticate` exige `auth_nonce` único — sem ele alguns apps
+    // respondem com "conexão recusada".
+    authUrl.searchParams.set("auth_type", "reauthenticate");
+    authUrl.searchParams.set("auth_nonce", crypto.randomUUID());
     authUrl.searchParams.set("display", "popup");
 
     return { url: authUrl.toString() };
