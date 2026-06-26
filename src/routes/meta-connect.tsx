@@ -31,7 +31,7 @@ function MetaConnectPage() {
     <main className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center space-y-3">
-          <div className="mx-auto h-16 w-16 rounded-2xl bg-white ring-1 ring-primary/20 overflow-hidden flex items-center justify-center">
+          <div className="mx-auto h-16 w-16 rounded-2xl bg-card ring-1 ring-primary/20 overflow-hidden flex items-center justify-center">
             <img src={logoAsset.url} alt="Planner Chico" className="h-full w-full object-contain" />
           </div>
           <div>
