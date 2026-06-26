@@ -22,7 +22,10 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: corsHeaders }),
 
-      POST: async () => {
+      POST: async ({ request }) => {
+        const { requireCronSecret } = await import("@/lib/cron-auth.server");
+        const denied = requireCronSecret(request);
+        if (denied) return denied;
         try {
           const { buildScheduleSlots } = await import("@/lib/schedule-config");
           const { generateSinglePost } = await import("@/lib/ai-post.functions");
