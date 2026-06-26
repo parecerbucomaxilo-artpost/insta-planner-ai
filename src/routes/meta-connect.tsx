@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ExternalLink, Instagram } from "lucide-react";
+import { Check, Copy, ExternalLink, Instagram } from "lucide-react";
 import logoAsset from "@/assets/logo-planner.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,26 @@ export const Route = createFileRoute("/meta-connect")({
 function MetaConnectPage() {
   const { next, account } = Route.useSearch();
   const label = account ? `@${account}` : "Instagram Business";
+  const [copied, setCopied] = useState(false);
+
+  const copyLink = async () => {
+    if (!next) return;
+    try {
+      await navigator.clipboard.writeText(next);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = next;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
+  };
 
   return (
     <main className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
@@ -44,19 +65,22 @@ function MetaConnectPage() {
         <CardContent className="space-y-4 text-sm">
           {next ? (
             <>
-              <ol className="rounded-lg border bg-muted/40 p-3 text-muted-foreground leading-relaxed list-decimal pl-5 space-y-1">
-                <li>Clique em <strong>Sair do Facebook</strong> (abre em nova aba) e saia de qualquer conta logada.</li>
-                <li>Volte aqui e clique em <strong>Continuar no Facebook</strong> para entrar com a conta admin de {label}.</li>
-              </ol>
-              <Button asChild variant="outline" className="w-full" size="lg">
-                <a href="https://www.facebook.com/" target="_blank" rel="noreferrer">
-                  Sair do Facebook <ExternalLink className="h-4 w-4" />
-                </a>
-              </Button>
+              <div className="rounded-lg border bg-muted/40 p-3 text-muted-foreground leading-relaxed space-y-2">
+                <p>
+                  O Facebook bloqueia abertura dentro do preview. Use o botão abaixo em uma aba normal; se bloquear novamente, copie o link e cole direto na barra do navegador.
+                </p>
+                <p>
+                  Para trocar da conta Francisco para a Liga, saia do Facebook manualmente em outra aba antes de autorizar {label}.
+                </p>
+              </div>
               <Button asChild className="w-full" size="lg">
-                <a href={next} target="_top" rel="noreferrer">
+                <a href={next} target="_blank" rel="noopener noreferrer">
                   <Instagram className="h-4 w-4" /> Continuar no Facebook <ExternalLink className="h-4 w-4" />
                 </a>
+              </Button>
+              <Button type="button" variant="outline" className="w-full" size="lg" onClick={copyLink}>
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Link copiado" : "Copiar link para abrir manualmente"}
               </Button>
             </>
           ) : (
