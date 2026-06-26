@@ -371,7 +371,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       // DEFAULT_MAKE_WEBHOOK nem em webhook de outro perfil — isso publicaria
       // conteúdo da Liga na conta @drfranciscomenezes (ou vice-versa).
       const ownWebhook = perfil.instagram_webhook_url || perfil.webhook_url || null;
-      if (contaAlvo && !ownWebhook) {
+      if (contaAlvo && !ownWebhook && contaAlvo !== DEFAULT_WEBHOOK_ACCOUNT) {
         throw new Error(
           `Conta @${contaAlvo} sem webhook próprio configurado. ` +
           `Cadastre o webhook do Make específico dessa conta em "Configurações > Perfil" ` +
