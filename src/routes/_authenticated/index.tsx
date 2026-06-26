@@ -201,7 +201,7 @@ function Dashboard() {
             <PlannerSimplificado
               contaFixa="drfranciscomenezes"
               storageKey="planner_simplificado_chico_v1"
-              audiencia="geral"
+              audiencia="chico-drfm"
             />
           </TabsContent>
           <TabsContent value="semana" className="mt-6">

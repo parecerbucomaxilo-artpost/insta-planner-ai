@@ -25,7 +25,7 @@ export async function overlayLogo(
   imageB64: string,
   origin?: string,
   sizePct = 14,
-  opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean },
+  opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean; position?: "top-right" | "bottom-right" | "bottom-left" | "top-left" },
 ): Promise<string> {
   try {
     const photon = await import("@cf-wasm/photon").catch((e) => {
@@ -38,15 +38,19 @@ export async function overlayLogo(
     const baseBytes = Uint8Array.from(atob(imageB64), (c) => c.charCodeAt(0));
     const base = PhotonImage.new_from_byteslice(baseBytes);
     const w = base.get_width();
+    const h = base.get_height();
     const target = Math.max(48, Math.round((w * sizePct) / 100));
     const margin = Math.round(w * 0.03);
+    const pos = opts?.position ?? "top-right";
+    const logoX = pos === "top-left" || pos === "bottom-left" ? margin : Math.max(0, w - target - margin);
+    const logoY = pos === "bottom-right" || pos === "bottom-left" ? Math.max(0, h - target - margin) : margin;
     const freeList: Array<{ free: () => void }> = [];
 
     if (opts?.withLogo !== false) {
       const logoBytes = await fetchBytes(logoAsset.url, origin);
       const logoFull = PhotonImage.new_from_byteslice(logoBytes);
       const logo = resize(logoFull, target, target, SamplingFilter.Lanczos3);
-      watermark(base, logo, BigInt(Math.max(0, w - target - margin)), BigInt(margin));
+      watermark(base, logo, BigInt(logoX), BigInt(logoY));
       freeList.push(logoFull, logo);
     }
 
