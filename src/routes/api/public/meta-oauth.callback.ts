@@ -125,6 +125,9 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
               `<h1>❌ Nenhuma conta IG Business vinculada</h1><p>Sua Página do Facebook não tem uma conta Instagram Business vinculada. Faça isso no app do Instagram em Configurações → Central de Contas.</p>`,
             );
           }
+          if (!pageWithIg.instagram_business_account?.id) {
+            return htmlPage("Erro", `<h1>❌ Conta Instagram Business inválida</h1>`);
+          }
 
           const pageAccessToken: string = pageWithIg.access_token; // long-lived page token
           const igBusinessId: string = pageWithIg.instagram_business_account.id;
