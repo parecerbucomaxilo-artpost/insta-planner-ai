@@ -32,8 +32,8 @@ function base64UrlEncode(value: string) {
  */
 export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { perfilId: string; targetAccount?: string }) =>
-    z.object({ perfilId: z.string().uuid(), targetAccount: z.string().optional() }).parse(d),
+  .inputValidator((d: { perfilId: string; targetAccount?: string; forceReauth?: boolean }) =>
+    z.object({ perfilId: z.string().uuid(), targetAccount: z.string().optional(), forceReauth: z.boolean().optional() }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const appId = process.env.META_APP_ID;
@@ -65,11 +65,12 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
     authUrl.searchParams.set("scope", SCOPES);
     authUrl.searchParams.set("state", state);
     authUrl.searchParams.set("response_type", "code");
-    // Força o Facebook a pedir credenciais de novo (permite trocar de conta).
-    // `reauthenticate` exige `auth_nonce` único — sem ele alguns apps
-    // respondem com "conexão recusada".
-    authUrl.searchParams.set("auth_type", "reauthenticate");
-    authUrl.searchParams.set("auth_nonce", crypto.randomUUID());
+    // Só força senha/reautenticação quando solicitado. No Planner Chico,
+    // isso fazia o Facebook pedir a senha da conta Francisco desnecessariamente.
+    if (data.forceReauth) {
+      authUrl.searchParams.set("auth_type", "reauthenticate");
+      authUrl.searchParams.set("auth_nonce", crypto.randomUUID());
+    }
     authUrl.searchParams.set("display", "popup");
 
     return { url: authUrl.toString() };
