@@ -67,13 +67,40 @@ export async function generateImageBase64(opts: {
       const txt = await res.text();
       throw new Error(`Image gen ${res.status}: ${txt}`);
     }
-    const json = (await res.json()) as { data?: Array<{ b64_json?: string; url?: string }> };
+    const json = (await res.json()) as { data?: Array<{ b64_json?: string; url?: string }> | null };
     const item = json.data?.[0];
     if (item?.b64_json) return item.b64_json;
     if (item?.url) {
       const r = await fetch(item.url);
       const buf = Buffer.from(await r.arrayBuffer());
       return buf.toString("base64");
+    }
+    // Gemini às vezes devolve `data: null` (moderação silenciosa ou prompt bloqueado).
+    // Tenta automaticamente com o modelo OpenAI antes de cair no fallback Flux.
+    if (isGemini) {
+      const altModel: ModeloImagem = "openai/gpt-image-1-mini";
+      const altRes = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Lovable-API-Key": opts.apiKey },
+        body: JSON.stringify({
+          model: altModel,
+          prompt: opts.prompt,
+          size: opts.size ?? "1024x1024",
+          quality: "medium",
+          output_format: "jpeg",
+          output_compression: 80,
+          n: 1,
+        }),
+      });
+      if (altRes.ok) {
+        const altJson = (await altRes.json()) as { data?: Array<{ b64_json?: string; url?: string }> | null };
+        const altItem = altJson.data?.[0];
+        if (altItem?.b64_json) return altItem.b64_json;
+        if (altItem?.url) {
+          const r = await fetch(altItem.url);
+          return Buffer.from(await r.arrayBuffer()).toString("base64");
+        }
+      }
     }
     throw new Error(`Image gen: resposta sem b64_json nem url (${model}): ${JSON.stringify(json).slice(0, 300)}`);
   } catch (primaryErr) {
