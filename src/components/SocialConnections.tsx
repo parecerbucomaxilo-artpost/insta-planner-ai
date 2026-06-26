@@ -30,6 +30,7 @@ export function SocialConnections() {
   const ensurePerfilFn = useServerFn(ensurePerfil);
   const fetchLigaDestination = useServerFn(getPublicationDestination);
   const saveLigaDestination = useServerFn(savePublicationDestination);
+  const startMetaOAuth = useServerFn(createMetaOAuthStartUrl);
   const [status, setStatus] = useState<LiStatus>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
