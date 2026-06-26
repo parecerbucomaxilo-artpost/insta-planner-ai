@@ -44,9 +44,15 @@ function MetaConnectPage() {
         <CardContent className="space-y-4 text-sm">
           {next ? (
             <>
-              <div className="rounded-lg border bg-muted/40 p-3 text-muted-foreground leading-relaxed">
-                Se aparecer a conta Francisco e você quiser a Liga, saia do Facebook no navegador e entre com o Facebook administrador da Liga antes de autorizar.
-              </div>
+              <ol className="rounded-lg border bg-muted/40 p-3 text-muted-foreground leading-relaxed list-decimal pl-5 space-y-1">
+                <li>Clique em <strong>Sair do Facebook</strong> (abre em nova aba) e saia de qualquer conta logada.</li>
+                <li>Volte aqui e clique em <strong>Continuar no Facebook</strong> para entrar com a conta admin de {label}.</li>
+              </ol>
+              <Button asChild variant="outline" className="w-full" size="lg">
+                <a href="https://www.facebook.com/" target="_blank" rel="noreferrer">
+                  Sair do Facebook <ExternalLink className="h-4 w-4" />
+                </a>
+              </Button>
               <Button asChild className="w-full" size="lg">
                 <a href={next} target="_top" rel="noreferrer">
                   <Instagram className="h-4 w-4" /> Continuar no Facebook <ExternalLink className="h-4 w-4" />
