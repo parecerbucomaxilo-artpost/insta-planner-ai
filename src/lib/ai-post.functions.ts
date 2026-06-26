@@ -180,7 +180,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
     const slideTweetInfo = slide
       ? `\n- ESTE É O CARD ${slide.n}/${slide.total} de uma THREAD. Papel: ${slide.papel}. Mantenha a MESMA identidade visual (avatar, handle, paleta) em todos os cards.`
       : "";
-    return `MOCKUP DE TWEET ULTRA REALISTA — print autêntico de um post publicado no X (antigo Twitter), tema "${tema}".
+    return themeLock(tema) + `MOCKUP DE TWEET ULTRA REALISTA — print autêntico de um post publicado no X (antigo Twitter), tema "${tema}".
 - FORMATO horizontal 16:9 (1536x1024). Composição centralizada: card de tweet ocupando ~70% da largura, sobre fundo neutro suave (cinza claro #f7f9fa OU preto #000000 modo escuro do X — escolha 1 e mantenha consistência).
 - ANATOMIA EXATA DE UM TWEET PUBLICADO no X (não inventar layout):
   1) Cabeçalho: avatar circular à esquerda (foto profissional sóbria de um cirurgião — jaleco branco / luvas, SEM rosto reconhecível de pessoa real); ao lado, em uma linha: nome em bold "Prof. Francisco Menezes" + selo de verificado azul X (checkmark branco em badge azul #1d9bf0) + nova linha com handle cinza "@franciscomenezes_bmf · 2h".
