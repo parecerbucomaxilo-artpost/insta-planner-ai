@@ -47,7 +47,7 @@ const SingleInput = z.object({
   // Nível editorial: define o tom/estrutura do conteúdo.
   nivel: NivelEnum.optional().default("auto"),
   // Audiência: "geral" (padrão) ou "estudantes-graduacao" (Planner Simplificado).
-  audiencia: z.enum(["geral", "estudantes-graduacao"]).optional().default("geral"),
+  audiencia: z.enum(["geral", "estudantes-graduacao", "chico-drfm"]).optional().default("geral"),
 });
 
 
