@@ -26,7 +26,7 @@ type Modo = "feed" | "carrossel" | "stories" | "semana";
 interface PlannerSimplificadoProps {
   contaFixa?: string;        // se setado, trava a conta (sem seletor)
   storageKey?: string;       // chave alternativa do localStorage
-  audiencia?: "estudantes-graduacao" | "geral";
+  audiencia?: "estudantes-graduacao" | "geral" | "chico-drfm";
 }
 
 export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao" }: PlannerSimplificadoProps = {}) {
