@@ -4,7 +4,14 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const META_OAUTH_ORIGIN = "https://insta-planner-ai.lovable.app";
-const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutos (evita expiração em popups/reauth lentos)
+
+const SCOPES = [
+  "instagram_basic",
+  "instagram_content_publish",
+  "pages_show_list",
+  "pages_read_engagement",
+  "business_management",
+].join(",");
 
 function normalizeInstagramAccount(value: string | null | undefined) {
   const normalized = String(value || "").trim().replace(/^@+/, "").toLowerCase();
@@ -18,9 +25,10 @@ function base64UrlEncode(value: string) {
 }
 
 /**
- * Gera URL autenticada do OAuth Meta. Verifica que o perfil pertence ao usuário
- * logado e devolve um token assinado (perfilId.exp.sig) consumido por
- * /api/public/meta-oauth/start, evitando hijack de credenciais Instagram.
+ * Devolve a URL direta do diálogo OAuth do Facebook, com `state` assinado
+ * para o callback verificar. Eliminamos o hop intermediário `/start`
+ * (que gerava "token inválido/expirado" quando o segredo divergia entre
+ * preview e produção, ou quando o popup demorava).
  */
 export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -28,10 +36,11 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
     z.object({ perfilId: z.string().uuid(), targetAccount: z.string().optional() }).parse(d),
   )
   .handler(async ({ data, context }) => {
+    const appId = process.env.META_APP_ID;
     const appSecret = process.env.META_APP_SECRET;
+    if (!appId) throw new Error("META_APP_ID não configurado");
     if (!appSecret) throw new Error("META_APP_SECRET não configurado");
 
-    // Confirma que o perfil pertence ao usuário autenticado.
     const { data: perfil, error } = await context.supabase
       .from("perfil_usuario")
       .select("id,user_id")
@@ -44,11 +53,19 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
 
     const targetAccount = normalizeInstagramAccount(data.targetAccount);
     const targetEncoded = targetAccount ? base64UrlEncode(targetAccount) : "_";
-    const exp = Date.now() + TOKEN_TTL_MS;
-    const payload = `${data.perfilId}.${exp}.${targetEncoded}`;
+    const nonce = crypto.randomUUID();
+    const payload = `${data.perfilId}.${nonce}.${targetEncoded}`;
     const sig = createHmac("sha256", appSecret).update(payload).digest("hex").slice(0, 32);
-    const token = `${payload}.${sig}`;
-    return {
-      url: `${META_OAUTH_ORIGIN}/api/public/meta-oauth/start?token=${encodeURIComponent(token)}`,
-    };
+    const state = `${payload}.${sig}`;
+
+    const redirectUri = `${META_OAUTH_ORIGIN}/api/public/meta-oauth/callback`;
+    const authUrl = new URL("https://www.facebook.com/v21.0/dialog/oauth");
+    authUrl.searchParams.set("client_id", appId);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("scope", SCOPES);
+    authUrl.searchParams.set("state", state);
+    authUrl.searchParams.set("response_type", "code");
+
+    return { url: authUrl.toString() };
   });
+
