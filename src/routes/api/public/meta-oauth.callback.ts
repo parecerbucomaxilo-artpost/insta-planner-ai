@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
         const code = url.searchParams.get("code");
         const state = url.searchParams.get("state");
         const errorMsg = url.searchParams.get("error_description") || url.searchParams.get("error");
-        if (errorMsg) return htmlPage("Erro", `<h1>❌ Autorização cancelada</h1><p>${errorMsg}</p>`);
+        if (errorMsg) return htmlPage("Erro", `<h1>❌ Autorização cancelada</h1><p>${escapeHtml(errorMsg)}</p>`);
         if (!code || !state) return htmlPage("Erro", `<h1>❌ Parâmetros inválidos</h1>`);
 
         const appId = process.env.META_APP_ID!;
