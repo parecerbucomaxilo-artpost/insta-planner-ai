@@ -134,12 +134,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const conectarMetaConta = async () => {
     if (!conta) return toast.error("Selecione uma conta primeiro.");
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      if (!sess.session?.user?.id) {
-        toast.error("Faça login antes de conectar a Meta.");
-        window.location.href = `/auth?redirect=${encodeURIComponent(window.location.pathname)}`;
-        return;
-      }
+      // Auth temporariamente desativada: segue direto com usuário temporário.
       const destino = await ensureDestino({ data: { conta } });
       const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: conta } });
       const win = window.open(r.url, "_blank", "noopener,noreferrer");
