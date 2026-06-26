@@ -2,6 +2,9 @@ const GRAPH_VERSION = "v21.0";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
+// Conta historicamente associada ao DEFAULT_MAKE_WEBHOOK (cenário Make original).
+// Usada como fallback seguro quando o perfil dessa conta ainda não tem webhook próprio salvo.
+const DEFAULT_WEBHOOK_ACCOUNT = "drfranciscomenezes";
 
 type PublishVia = "meta" | "webhook";
 
@@ -280,14 +283,23 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url",
       );
       if (!hasDestino(perfil)) {
-        // SEM perfil configurado para essa conta — NÃO publica em outra conta.
-        // O webhook padrão do Make está apontado para @drfranciscomenezes;
-        // cair nele aqui faria a Liga ser publicada na conta errada.
-        throw new Error(
-          `Conta @${contaAlvo} não tem destino configurado (token Meta ou webhook próprio). ` +
-          `Configure o perfil dessa conta em "Configurações > Perfil" antes de publicar — ` +
-          `senão o post seria publicado na conta errada.`,
-        );
+        // Fallback seguro: a conta @drfranciscomenezes é o destino histórico
+        // do DEFAULT_MAKE_WEBHOOK. Para qualquer outra conta, exigir destino próprio
+        // para evitar cross-posting na conta errada.
+        if (contaAlvo === DEFAULT_WEBHOOK_ACCOUNT) {
+          perfil = {
+            id: "webhook-padrao-chico",
+            arroba_usuario: DEFAULT_WEBHOOK_ACCOUNT,
+            instagram_webhook_url: DEFAULT_MAKE_WEBHOOK,
+            webhook_url: null,
+          } as any;
+        } else {
+          throw new Error(
+            `Conta @${contaAlvo} não tem destino configurado (token Meta ou webhook próprio). ` +
+            `Configure o perfil dessa conta em "Configurações > Perfil" antes de publicar — ` +
+            `senão o post seria publicado na conta errada.`,
+          );
+        }
       }
       // Se o perfil dessa conta NÃO tem token Meta próprio mas tem webhook próprio, usa o webhook próprio.
       // NUNCA reaproveitar o token Meta de outro perfil (publicaria no IG errado).
@@ -359,7 +371,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       // DEFAULT_MAKE_WEBHOOK nem em webhook de outro perfil — isso publicaria
       // conteúdo da Liga na conta @drfranciscomenezes (ou vice-versa).
       const ownWebhook = perfil.instagram_webhook_url || perfil.webhook_url || null;
-      if (contaAlvo && !ownWebhook) {
+      if (contaAlvo && !ownWebhook && contaAlvo !== DEFAULT_WEBHOOK_ACCOUNT) {
         throw new Error(
           `Conta @${contaAlvo} sem webhook próprio configurado. ` +
           `Cadastre o webhook do Make específico dessa conta em "Configurações > Perfil" ` +
