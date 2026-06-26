@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { ensurePerfil } from "@/lib/perfil.functions";
-import { getPublicationDestination, savePublicationDestination } from "@/lib/publication-destination.functions";
+import { ensurePublicationDestinationProfile, getPublicationDestination, savePublicationDestination } from "@/lib/publication-destination.functions";
 import { createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
@@ -30,6 +30,7 @@ export function SocialConnections() {
   const ensurePerfilFn = useServerFn(ensurePerfil);
   const fetchLigaDestination = useServerFn(getPublicationDestination);
   const saveLigaDestination = useServerFn(savePublicationDestination);
+  const ensureLigaDestination = useServerFn(ensurePublicationDestinationProfile);
   const startMetaOAuth = useServerFn(createMetaOAuthStartUrl);
   const [status, setStatus] = useState<LiStatus>(null);
   const [loading, setLoading] = useState(true);
@@ -167,6 +168,27 @@ export function SocialConnections() {
       toast.error(e instanceof Error ? e.message : "Falha no teste", { id: tid });
     } finally {
       setIgLigaTesting(false);
+    }
+  };
+
+  const handleConnectLigaMeta = async () => {
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session?.user?.id) {
+      toast.error("Faça login antes de conectar o Instagram da Liga.");
+      window.location.href = `/auth?redirect=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+
+    try {
+      const destino = await ensureLigaDestination({ data: { conta: "lactbmf.anhanguerasbo" } });
+      const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo" } });
+      const win = window.open(r.url, "_blank", "noopener,noreferrer");
+      if (!win) {
+        try { window.top!.location.href = r.url; } catch { window.location.href = r.url; }
+      }
+      toast.info("Conecte usando o Facebook que administra a página da Liga.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao conectar Instagram da Liga");
     }
   };
 
@@ -442,6 +464,14 @@ export function SocialConnections() {
             <Label htmlFor="ig-liga-webhook" className="flex items-center gap-1.5 text-sm font-semibold">
               <LinkIcon className="h-3.5 w-3.5" /> Webhook IG (Liga) — @lactbmf.anhanguerasbo
             </Label>
+            <div className="p-3 rounded-lg border bg-muted/40 space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Preferencial: conecte a conta oficial da Liga via Meta. O app só aceita a conta <strong>@lactbmf.anhanguerasbo</strong> nesse fluxo.
+              </p>
+              <Button onClick={handleConnectLigaMeta} variant="secondary" size="sm">
+                <Instagram className="h-4 w-4" /> Conectar Meta da Liga
+              </Button>
+            </div>
             <Input
               id="ig-liga-webhook"
               value={igLigaWebhook}

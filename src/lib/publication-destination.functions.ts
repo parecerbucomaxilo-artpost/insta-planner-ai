@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -104,4 +105,44 @@ export const savePublicationDestination = createServerFn({ method: "POST" })
     }
 
     return { webhookUrl, status: "ok" } as const;
+  });
+
+export const ensurePublicationDestinationProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => AccountInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const conta = normalizeAccount(data.conta);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const existing = await findProfileByAccount(supabaseAdmin, conta, "id,user_id");
+
+    if (existing?.id) {
+      const { error } = await supabaseAdmin
+        .from("perfil_usuario")
+        .update({
+          user_id: context.userId,
+          nome_profissional: conta,
+          arroba_usuario: conta,
+          instagram_arroba: conta,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id);
+      if (error) throw new Error(`DB: ${error.message}`);
+      return { id: existing.id as string, conta };
+    }
+
+    const { data: created, error } = await supabaseAdmin
+      .from("perfil_usuario")
+      .insert({
+        user_id: context.userId,
+        nome_profissional: conta,
+        arroba_usuario: conta,
+        instagram_arroba: conta,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (error) throw new Error(`DB: ${error.message}`);
+    if (!created?.id) throw new Error("Falha ao criar destino de publicação.");
+    return { id: created.id as string, conta };
   });

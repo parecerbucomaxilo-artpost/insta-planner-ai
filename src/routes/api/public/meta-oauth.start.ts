@@ -19,17 +19,30 @@ function getRedirectUri(_request: Request) {
  * Verifica o token assinado emitido por `createMetaOAuthStartUrl`
  * (server fn autenticada). Sem token válido, retorna null.
  */
-function verifyAuthToken(token: string, appSecret: string): string | null {
+function base64UrlDecode(value: string) {
+  return Buffer.from(value, "base64url").toString("utf8");
+}
+
+function normalizeInstagramAccount(value: string | null | undefined) {
+  const normalized = String(value || "").trim().replace(/^@+/, "").toLowerCase();
+  return /^[a-z0-9._]{2,80}$/.test(normalized) ? normalized : null;
+}
+
+function verifyAuthToken(token: string, appSecret: string): { perfilId: string; targetAccount: string | null; targetEncoded: string } | null {
   const parts = token.split(".");
-  if (parts.length !== 3) return null;
-  const [perfilId, expStr, sig] = parts;
+  if (parts.length !== 3 && parts.length !== 4) return null;
+  const [perfilId, expStr] = parts;
+  const targetEncoded = parts.length === 4 ? parts[2] : "_";
+  const sig = parts.length === 4 ? parts[3] : parts[2];
   const exp = Number(expStr);
   if (!Number.isFinite(exp) || exp < Date.now()) return null;
-  const expected = createHmac("sha256", appSecret).update(`${perfilId}.${expStr}`).digest("hex").slice(0, 32);
+  const payload = parts.length === 4 ? `${perfilId}.${expStr}.${targetEncoded}` : `${perfilId}.${expStr}`;
+  const expected = createHmac("sha256", appSecret).update(payload).digest("hex").slice(0, 32);
   const a = Buffer.from(sig);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  return perfilId;
+  const targetAccount = targetEncoded === "_" ? null : normalizeInstagramAccount(base64UrlDecode(targetEncoded));
+  return { perfilId, targetAccount, targetEncoded: targetAccount ? targetEncoded : "_" };
 }
 
 export const Route = createFileRoute("/api/public/meta-oauth/start")({
@@ -44,12 +57,12 @@ export const Route = createFileRoute("/api/public/meta-oauth/start")({
         const appSecret = process.env.META_APP_SECRET;
         if (!appId || !appSecret) return new Response("Meta App not configured", { status: 500 });
 
-        const perfilId = verifyAuthToken(token, appSecret);
-        if (!perfilId) return new Response("Token inválido ou expirado", { status: 401 });
+        const verified = verifyAuthToken(token, appSecret);
+        if (!verified) return new Response("Token inválido ou expirado", { status: 401 });
 
         // State assinado (já existente) que viaja no fluxo OAuth para o callback.
         const nonce = crypto.randomUUID();
-        const payload = `${perfilId}.${nonce}`;
+        const payload = `${verified.perfilId}.${nonce}.${verified.targetEncoded}`;
         const sig = createHmac("sha256", appSecret).update(payload).digest("hex").slice(0, 32);
         const state = `${payload}.${sig}`;
 

@@ -16,6 +16,15 @@ function escapeHtml(str: string) {
     .replace(/'/g, "&#39;");
 }
 
+function normalizeInstagramAccount(value: string | null | undefined) {
+  const normalized = String(value || "").trim().replace(/^@+/, "").toLowerCase();
+  return /^[a-z0-9._]{2,80}$/.test(normalized) ? normalized : null;
+}
+
+function base64UrlDecode(value: string) {
+  return Buffer.from(value, "base64url").toString("utf8");
+}
+
 function htmlPage(title: string, body: string) {
   return new Response(
     `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${title}</title>
@@ -46,14 +55,18 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
 
         // Validate state
         const parts = state.split(".");
-        if (parts.length !== 3) return htmlPage("Erro", `<h1>❌ State inválido</h1>`);
-        const [perfilId, nonce, sig] = parts;
-        const expectedSig = createHmac("sha256", appSecret).update(`${perfilId}.${nonce}`).digest("hex").slice(0, 32);
+        if (parts.length !== 3 && parts.length !== 4) return htmlPage("Erro", `<h1>❌ State inválido</h1>`);
+        const [perfilId, nonce] = parts;
+        const targetEncoded = parts.length === 4 ? parts[2] : "_";
+        const sig = parts.length === 4 ? parts[3] : parts[2];
+        const signedPayload = parts.length === 4 ? `${perfilId}.${nonce}.${targetEncoded}` : `${perfilId}.${nonce}`;
+        const expectedSig = createHmac("sha256", appSecret).update(signedPayload).digest("hex").slice(0, 32);
         const sigBuf = Buffer.from(sig);
         const expBuf = Buffer.from(expectedSig);
         if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) {
           return htmlPage("Erro", `<h1>❌ State adulterado</h1>`);
         }
+        const targetAccount = targetEncoded === "_" ? null : normalizeInstagramAccount(base64UrlDecode(targetEncoded));
 
         const redirectUri = getRedirectUri(request);
 
@@ -80,7 +93,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
 
           // 3. List pages
           const pagesRes = await fetch(
-            `https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${longUserToken}`,
+            `https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${longUserToken}`,
           );
           const pagesJson = await pagesRes.json();
           if (!pagesRes.ok || !Array.isArray(pagesJson.data) || pagesJson.data.length === 0) {
@@ -90,17 +103,35 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
             );
           }
 
-          // Find first page with IG business account
-          const pageWithIg = pagesJson.data.find((p: { instagram_business_account?: { id: string } }) => p.instagram_business_account?.id);
+          type MetaPage = { name?: string; access_token: string; instagram_business_account?: { id: string; username?: string } };
+          const pagesWithIg = (pagesJson.data as MetaPage[]).filter((p) => p.instagram_business_account?.id);
+          const pageWithIg = targetAccount
+            ? pagesWithIg.find((p) => normalizeInstagramAccount(p.instagram_business_account?.username) === targetAccount)
+            : pagesWithIg[0];
           if (!pageWithIg) {
+            if (targetAccount) {
+              const found = pagesWithIg
+                .map((p) => p.instagram_business_account?.username)
+                .filter(Boolean)
+                .map((u) => `@${u}`)
+                .join(", ");
+              return htmlPage(
+                "Erro",
+                `<h1>❌ Conta da Liga não encontrada</h1><p>O Facebook conectado não administra @${escapeHtml(targetAccount)}. Contas encontradas: ${escapeHtml(found || "nenhuma")}. Entre com o Facebook correto da Liga.</p>`,
+              );
+            }
             return htmlPage(
               "Erro",
               `<h1>❌ Nenhuma conta IG Business vinculada</h1><p>Sua Página do Facebook não tem uma conta Instagram Business vinculada. Faça isso no app do Instagram em Configurações → Central de Contas.</p>`,
             );
           }
+          if (!pageWithIg.instagram_business_account?.id) {
+            return htmlPage("Erro", `<h1>❌ Conta Instagram Business inválida</h1>`);
+          }
 
           const pageAccessToken: string = pageWithIg.access_token; // long-lived page token
           const igBusinessId: string = pageWithIg.instagram_business_account.id;
+          const igUsername = normalizeInstagramAccount(pageWithIg.instagram_business_account.username) || targetAccount;
 
           // 4. Save to perfil_usuario
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -109,6 +140,8 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
             .update({
               instagram_access_token: pageAccessToken,
               instagram_business_account_id: igBusinessId,
+              ...(igUsername ? { arroba_usuario: igUsername, instagram_arroba: igUsername } : {}),
+              updated_at: new Date().toISOString(),
             })
             .eq("id", perfilId);
 
@@ -116,7 +149,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
 
           return htmlPage(
             "Conectado!",
-            `<h1>✅ Instagram conectado</h1><p><strong>Página:</strong> ${escapeHtml(pageWithIg.name)}</p><p><strong>IG ID:</strong> ${escapeHtml(igBusinessId)}</p><p>Tokens salvos com segurança. Esta janela fecha em instantes…</p>`,
+            `<h1>✅ Instagram conectado</h1><p><strong>Conta:</strong> ${escapeHtml(igUsername ? `@${igUsername}` : "Instagram Business")}</p><p><strong>Página:</strong> ${escapeHtml(pageWithIg.name || "Página vinculada")}</p><p><strong>IG ID:</strong> ${escapeHtml(igBusinessId)}</p><p>Tokens salvos com segurança. Esta janela fecha em instantes…</p>`,
           );
         } catch (e) {
           return htmlPage("Erro", `<h1>❌ Erro inesperado</h1><p>${escapeHtml(e instanceof Error ? e.message : String(e))}</p>`);
