@@ -139,12 +139,14 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
       if (trocarFacebook) {
         const ok = window.confirm(
-          `Para conectar @${conta}, você precisa sair da conta do Facebook "Francisco" antes.\n\n` +
-          `Ao clicar OK abrirei o Facebook para você sair. Depois, volte aqui e clique novamente em "Conectar Meta @${conta}".`,
+          `Para conectar @${conta} você precisa sair da conta "Francisco" no Facebook.\n\n` +
+          `1) Clique OK — vou abrir o Facebook em outra aba.\n` +
+          `2) Lá, clique na sua foto (canto sup. direito) → Sair.\n` +
+          `3) Volte aqui e clique novamente em "Conectar Meta @${conta}".`,
         );
         if (ok) {
-          window.open("https://www.facebook.com/logout.php", "_blank", "noopener,noreferrer");
-          toast.info("Saia do Facebook na aba aberta e depois clique em Conectar novamente.");
+          window.open("https://www.facebook.com/", "_blank", "noopener,noreferrer");
+          toast.info("Saia do Facebook na aba aberta e clique em Conectar novamente.");
           return;
         }
       }
