@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const META_OAUTH_ORIGIN = "https://insta-planner-ai.lovable.app";
-const TOKEN_TTL_MS = 5 * 60 * 1000; // 5 minutos
+const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutos (evita expiração em popups/reauth lentos)
 
 function normalizeInstagramAccount(value: string | null | undefined) {
   const normalized = String(value || "").trim().replace(/^@+/, "").toLowerCase();
