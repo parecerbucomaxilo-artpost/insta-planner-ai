@@ -357,7 +357,7 @@ function chicoImagePrompt(tema: string, slide?: { n: number; total: number; pape
   const ctaForte = (isUltimo || !slide)
     ? `\n- CTA OBRIGATÓRIO no rodapé: tipografia bold em ${CHICO_CIANO} "LINK NA BIO" + ícone oficial do WHATSAPP (balão verde #25D366 com fone branco, flat oficial) discreto. Sem números de telefone, sem URLs longas.`
     : "";
-  return `IMAGEM PREMIUM para o Instagram @drfranciscomenezes — Cirurgião Bucomaxilofacial.
+  return themeLock(tema) + `IMAGEM PREMIUM para o Instagram @drfranciscomenezes — Cirurgião Bucomaxilofacial.
 - ${formato}
 - TEMA LITERAL "${tema}": represente a cena/sintoma de forma reconhecível (siso → região posterior; ATM → mão pré-auricular; trauma → cena clínica plausível; patologia → close de mucosa saudável; ortognática → perfil facial elegante).
 - ESTILO: fotografia editorial sóbria OU ilustração anatômica realista limpa (estilo Netter contemporâneo). Sem clipart, sem flat design infantil, sem cartoon, sem banco de imagens.
