@@ -341,7 +341,9 @@ REGRAS DE FORMATO:
 - PT-BR Brasil impecável, com acentuação completa e grafia exata "Santa Bárbara d'Oeste".
 
 PROIBIDO ABSOLUTO: "agende sua consulta", "agende sua avaliação", "marque consulta", "promoção", "oferta", "desconto", "últimas vagas", linguagem comercial, urgência artificial, diagnóstico afirmativo ("você tem DTM").
-NÃO inclua a assinatura no corpo — aparece como overlay na imagem.`;
+NÃO inclua a assinatura no corpo — aparece como overlay na imagem.
+
+REGRA DE PORTUGUÊS (revisão dupla obrigatória, não-negociável): texto 100% em Português do Brasil (pt-BR) com acentuação completa (á é í ó ú â ê ô ã õ à), cedilha (ç) e crase corretas. PROIBIDO: palavras em inglês/espanhol/pseudo-latim, palavras inventadas, palavras duplicadas ("dor dor"), letras embaralhadas, abreviações não-padrão, ortografia errada. Termos técnicos sempre exatos: "bucomaxilofacial", "exodontia", "siso", "terceiro molar", "ATM", "DTM", "bruxismo", "ortognática", "mandíbula", "maxila", "anestesia", "sutura", "trauma facial". Releia palavra por palavra duas vezes antes de devolver; em caso de QUALQUER dúvida, troque por sinônimo simples e correto. NÃO MISTURE ASSUNTOS: o post inteiro é sobre UM único tema — proibido citar outras patologias ou procedimentos não relacionados ao tema.`;
 }
 
 function chicoImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }, isStory = false) {
@@ -370,7 +372,8 @@ function chicoImagePrompt(tema: string, slide?: { n: number; total: number; pape
 - COMPOSIÇÃO: limpa, hierarquia clara, muito espaço negativo navy, linhas finas em ciano como elementos gráficos (separadores, ícones, silhuetas de perfil facial).
 - ROSTOS: se houver pessoa, expressão de ALÍVIO/CONFIANÇA (nunca dor exposta, nunca cena invasiva, nunca procedimento real). Plano fechado, foco em emoção. Sem rostos reconhecíveis de pessoas reais.
 - LOGO DA CLÍNICA: NÃO desenhe, NÃO redesenhe, NÃO invente nenhum logo, monograma, escudo ou marca. Apenas RESERVE o CANTO INFERIOR DIREITO limpo (área ~12% da largura, sem texto, sem ilustração) — o sistema sobrepõe a logo real depois.${ctaForte}${slideInfo}
-- PROIBIDO: imagens de procedimentos invasivos, sangue, bisturi cortando, anatomia interna exposta de forma agressiva, watermark de IA, mãos deformadas, dedos a mais, texto em inglês, palavras duplicadas, hashtags na imagem, números de telefone, URLs, CTAs comerciais ("agende", "promoção", "desconto").
+- TEXTO NA IMAGEM — REGRA CRÍTICA DE PORTUGUÊS BRASILEIRO (revisão dupla obrigatória): Headline com 3-8 palavras, todas reais do pt-BR, com acentuação e cedilha exatas (ex.: "DOR NO SISO?", "ATM TRAVADA AO ACORDAR", "FERIDA QUE NÃO CICATRIZA", "MANDÍBULA ESTALANDO?"). PROIBIDO ABSOLUTO: inventar palavras, pseudo-latim, abreviações estranhas, letras embaralhadas/duplicadas ("DOORR"), inglês ("PAIN", "TOOTH"), trocar acentos, omitir cedilha, glifos decorativos no meio de palavras. Antes de renderizar, releia CADA palavra duas vezes; em caso de QUALQUER dúvida, remova e mantenha só o essencial.
+- PROIBIDO: imagens de procedimentos invasivos, sangue, bisturi cortando, anatomia interna exposta de forma agressiva, watermark de IA, mãos deformadas, dedos a mais, texto em inglês, palavras inventadas, palavras duplicadas, hashtags na imagem, números de telefone, URLs, CTAs comerciais ("agende", "promoção", "desconto"). NÃO MISTURAR ASSUNTOS: a imagem inteira (e todos os slides do carrossel) tratam APENAS do tema "${tema}" — nunca introduzir outra patologia, instrumento ou cena de outro tema.
 - Iluminação editorial premium estilo capa de revista de saúde sofisticada (Harvard Health / Mayo Clinic), atmosfera arejada e luminosa, qualidade 8K.
 - Variação única (seed ${Math.random().toString(36).slice(2, 10)}): ângulo e composição inéditos.`;
 }
