@@ -77,7 +77,7 @@ export async function overlayLogo(
 export async function overlayAlunoLogos(
   imageB64: string,
   origin?: string,
-  sizePct = 22,
+  sizePct = 14,
 ): Promise<string> {
   try {
     const photon = await import("@cf-wasm/photon").catch(() => null);
@@ -89,8 +89,9 @@ export async function overlayAlunoLogos(
     const base = PhotonImage.new_from_byteslice(baseBytes);
     const w = base.get_width();
     const h = base.get_height();
-    const targetW = Math.max(96, Math.round((w * sizePct) / 100));
-    const marginY = Math.round(h * 0.035);
+    const targetW = Math.max(72, Math.round((w * sizePct) / 100));
+    const marginY = Math.round(h * 0.015);
+
 
     const bytes = await fetchBytes(logoLiga.url, origin);
     const full = PhotonImage.new_from_byteslice(bytes);
