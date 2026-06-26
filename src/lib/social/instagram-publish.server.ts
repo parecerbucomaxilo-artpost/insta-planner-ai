@@ -440,13 +440,26 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       }
       const webhookUrl = ownWebhook || DEFAULT_MAKE_WEBHOOK;
       via = "webhook";
+      const targetAccount = normalizeInstagramAccount(contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba);
+      const isLigaTarget = targetAccount === "lactbmf.anhanguerasbo";
+      const isChicoTarget = targetAccount === "drfranciscomenezes";
+      const forbiddenAccount = isLigaTarget ? "drfranciscomenezes" : isChicoTarget ? "lactbmf.anhanguerasbo" : undefined;
+
       const webhookResult = await publishViaWebhook(webhookUrl, {
         id: post.id,
         post_id: post.id,
         user_id: userId,
-        instagram_conta: contaAlvo || perfil.arroba_usuario || undefined,
-        conta: contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba || undefined,
-        arroba: contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba || undefined,
+        instagram_conta: targetAccount || undefined,
+        conta: targetAccount || undefined,
+        arroba: targetAccount || undefined,
+        conta_destino: targetAccount || undefined,
+        conta_destino_obrigatoria: targetAccount || undefined,
+        target_instagram_account: targetAccount || undefined,
+        target_instagram_username: targetAccount ? `@${targetAccount}` : undefined,
+        make_scenario: isLigaTarget ? "liga_lactbmf" : isChicoTarget ? "chico_drfranciscomenezes" : "instagram",
+        perfil_proibido: forbiddenAccount,
+        forbidden_instagram_account: forbiddenAccount ? `@${forbiddenAccount}` : undefined,
+        bloquear_publicacao_se_conta_diferente: Boolean(targetAccount),
         plataforma: "Instagram",
         type: makeTipo,
         tipo: makeTipo,
