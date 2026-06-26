@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X, Image as ImageIcon, Layers, Film, RotateCcw, ScanEye } from "lucide-react";
+import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X, Image as ImageIcon, Layers, Film, RotateCcw, ScanEye, Copy, ExternalLink } from "lucide-react";
 import { LogoPreviewDialog } from "@/components/LogoPreviewDialog";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
@@ -55,6 +55,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [savingDestino, setSavingDestino] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [metaConnectPath, setMetaConnectPath] = useState<string>("");
+  const [metaOauthUrl, setMetaOauthUrl] = useState<string>("");
+  const [copiedMetaUrl, setCopiedMetaUrl] = useState(false);
 
 
   // Geração IA
@@ -138,11 +140,32 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const destino = await ensureDestino({ data: { conta } });
       const trocarFacebook = conta === LIGA_ACCOUNT;
       const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: conta, logoutFacebookFirst: trocarFacebook } });
+      setMetaOauthUrl(r.url);
       setMetaConnectPath(`/meta-connect?account=${encodeURIComponent(conta)}&next=${encodeURIComponent(r.url)}`);
       toast.info("Clique no botão 'Abrir conexão Meta' que apareceu abaixo.");
     } catch (e: any) {
       toast.error(e.message || "Falha ao iniciar conexão Meta.");
     }
+  };
+
+  const copiarMetaOAuthUrl = async () => {
+    if (!metaOauthUrl) return toast.error("Prepare a conexão Meta primeiro.");
+    try {
+      await navigator.clipboard.writeText(metaOauthUrl);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = metaOauthUrl;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopiedMetaUrl(true);
+    window.setTimeout(() => setCopiedMetaUrl(false), 1800);
+    toast.success("Link Meta copiado. Cole na barra do navegador fora do preview.");
   };
 
   const assertPublishOk = (out: Awaited<ReturnType<typeof publishIg>>) => {
@@ -388,14 +411,20 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             {metaConnectPath && (
               <Button asChild variant="outline">
                 <a href={metaConnectPath} target="_blank" rel="noopener noreferrer">
-                  Abrir conexão Meta
+                  <ExternalLink className="w-4 h-4 mr-1" /> Abrir conexão Meta
                 </a>
+              </Button>
+            )}
+            {metaOauthUrl && (
+              <Button type="button" variant="outline" onClick={copiarMetaOAuthUrl}>
+                {copiedMetaUrl ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
+                {copiedMetaUrl ? "Link copiado" : "Copiar link Meta"}
               </Button>
             )}
           </div>
           {metaConnectPath && (
             <p className="text-xs text-zinc-600">
-              O Facebook será aberto em uma página normal do navegador, não dentro do preview, para evitar “conexão recusada”.
+              Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview.
             </p>
           )}
           {conta !== LIGA_ACCOUNT && (
