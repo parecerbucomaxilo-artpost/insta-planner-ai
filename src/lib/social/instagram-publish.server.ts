@@ -186,7 +186,7 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
   return published.id;
 }
 
-async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>): Promise<{
+async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>, account?: string | null): Promise<{
   queued: true;
   status: number | "timeout";
   confirmed?: boolean;
@@ -235,9 +235,16 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
     }
     const makeGone = res.status === 410 || /no scenario listening for this webhook/i.test(text);
     if (makeGone) {
+      const normalizedAccount = normalizeInstagramAccount(account);
+      const accountLabel = normalizedAccount ? `@${normalizedAccount}` : "desta conta";
+      const scenarioLabel = normalizedAccount === "lactbmf.anhanguerasbo"
+        ? "IG Liga LACTBMF"
+        : normalizedAccount === "drfranciscomenezes"
+          ? "IG Chico / @drfranciscomenezes"
+          : `Instagram de ${accountLabel}`;
       throw new Error(
         "Webhook Instagram inválido ou inativo no Make (410). " +
-        "Copie a URL do cenário IG Liga LACTBMF ativo e salve no destino da conta antes de publicar.",
+        `Copie a URL do cenário ${scenarioLabel} ativo e salve no destino de publicação de ${accountLabel} antes de publicar.`,
       );
     }
     const hint = res.status === 400
@@ -413,7 +420,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         imagens_carrossel: imageUrls,
         image_urls: imageUrls,
         images: imageUrls,
-      });
+      }, contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba || null);
       externalId = webhookResult.externalId || `make:${webhookResult.status}`;
       confirmedByWebhook = Boolean(webhookResult.confirmed);
     }
