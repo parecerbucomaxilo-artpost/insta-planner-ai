@@ -160,7 +160,19 @@ NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na image
 }
 
 
+function themeLock(tema: string) {
+  return `\n\n=== TRAVA DE TEMA (REGRA SUPREMA — VIOLAÇÃO = REJEIÇÃO) ===
+- O ÚNICO assunto permitido nesta imagem é: "${tema}".
+- TODOS os elementos visuais (cena, anatomia, instrumentos, ícones, headline, sublinhas, símbolos, ilustrações de fundo, gráficos) DEVEM representar literal e exclusivamente "${tema}".
+- Em carrossel/thread: TODOS os slides são sobre "${tema}" — cada slide aborda um ÂNGULO DIFERENTE do MESMO tema (dor, mecanismo, solução, ganho, CTA), JAMAIS muda de assunto, JAMAIS introduz outra patologia, JAMAIS mistura temas.
+- PROIBIDO: trocar de tema entre slides, inserir cena genérica de odontologia, mostrar procedimento diferente do tema, citar/ilustrar outra condição clínica, "encher" o slide com anatomia decorativa não relacionada.
+- Se "${tema}" for siso, NÃO mostre ATM/ortognática/trauma. Se for ATM, NÃO mostre exodontia/implante. Se for trauma, NÃO mostre patologia/canal. UM TEMA POR POST.
+- Antes de renderizar, confirme mentalmente: "esta imagem é INEQUIVOCAMENTE sobre ${tema}?" Se não, refaça.
+=== FIM DA TRAVA DE TEMA ===\n`;
+}
+
 function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }) {
+
   // === FORMATO ESTILO X (TWEET REAL) — short-circuit ===
   // A imagem PRECISA parecer um print autêntico de um post publicado no X (antigo Twitter),
   // não uma cena médica com headline. Tweet card pixel-perfect, sem cena de fundo.
@@ -168,7 +180,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
     const slideTweetInfo = slide
       ? `\n- ESTE É O CARD ${slide.n}/${slide.total} de uma THREAD. Papel: ${slide.papel}. Mantenha a MESMA identidade visual (avatar, handle, paleta) em todos os cards.`
       : "";
-    return `MOCKUP DE TWEET ULTRA REALISTA — print autêntico de um post publicado no X (antigo Twitter), tema "${tema}".
+    return themeLock(tema) + `MOCKUP DE TWEET ULTRA REALISTA — print autêntico de um post publicado no X (antigo Twitter), tema "${tema}".
 - FORMATO horizontal 16:9 (1536x1024). Composição centralizada: card de tweet ocupando ~70% da largura, sobre fundo neutro suave (cinza claro #f7f9fa OU preto #000000 modo escuro do X — escolha 1 e mantenha consistência).
 - ANATOMIA EXATA DE UM TWEET PUBLICADO no X (não inventar layout):
   1) Cabeçalho: avatar circular à esquerda (foto profissional sóbria de um cirurgião — jaleco branco / luvas, SEM rosto reconhecível de pessoa real); ao lado, em uma linha: nome em bold "Prof. Francisco Menezes" + selo de verificado azul X (checkmark branco em badge azul #1d9bf0) + nova linha com handle cinza "@franciscomenezes_bmf · 2h".
@@ -229,7 +241,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
     ? "Referência visual: capa The Lancet / NEJM / JOMS."
     : "Referência visual: Mayo Clinic, Cleveland Clinic, Harvard Health — fotografia médica premium.";
 
-  return `IMAGEM MÉDICA ULTRA PREMIUM — autoridade hospitalar em CTBMF + Odontologia Hospitalar.
+  return themeLock(tema) + `IMAGEM MÉDICA ULTRA PREMIUM — autoridade hospitalar em CTBMF + Odontologia Hospitalar.
 - ${refEditorial} ZERO cara de anúncio, banco de imagens, estoque, clipart ou "IA óbvia".
 - ${dimensoes}
 - ESTILO OBRIGATÓRIO: ${estiloEscolhido}.
@@ -276,7 +288,7 @@ function studentImagePrompt(tema: string, slide?: { n: number; total: number; pa
     "MACROFOTOGRAFIA CIRÚRGICA estilo National Geographic médico: close extremo de campo operatório real (sutura em mucosa, exodontia, biópsia, frenectomia), tecidos com cor e textura fiéis, iluminação dramática vinda de cima.",
   ];
   const conceito = conceitosCriativos[Math.floor(Math.random() * conceitosCriativos.length)];
-  return `IMAGEM EDUCACIONAL CIENTÍFICA para Liga Acadêmica de CTBMF — @lactbmf.anhanguerasbo (graduação em Odontologia).
+  return themeLock(tema) + `IMAGEM EDUCACIONAL CIENTÍFICA para Liga Acadêmica de CTBMF — @lactbmf.anhanguerasbo (graduação em Odontologia).
 - CONCEITO DESTA GERAÇÃO: ${conceito}
 - ${formato}
 - REALISMO ANATÔMICO OBRIGATÓRIO: todas as estruturas (dentes, ossos, nervos, mucosas, instrumentos) devem ser anatomicamente corretas e cientificamente verificáveis. PROIBIDO inventar estruturas, fantasiar anatomia, criar instrumentos inexistentes ou estilizar de forma infantil/cartoon.
@@ -345,7 +357,7 @@ function chicoImagePrompt(tema: string, slide?: { n: number; total: number; pape
   const ctaForte = (isUltimo || !slide)
     ? `\n- CTA OBRIGATÓRIO no rodapé: tipografia bold em ${CHICO_CIANO} "LINK NA BIO" + ícone oficial do WHATSAPP (balão verde #25D366 com fone branco, flat oficial) discreto. Sem números de telefone, sem URLs longas.`
     : "";
-  return `IMAGEM PREMIUM para o Instagram @drfranciscomenezes — Cirurgião Bucomaxilofacial.
+  return themeLock(tema) + `IMAGEM PREMIUM para o Instagram @drfranciscomenezes — Cirurgião Bucomaxilofacial.
 - ${formato}
 - TEMA LITERAL "${tema}": represente a cena/sintoma de forma reconhecível (siso → região posterior; ATM → mão pré-auricular; trauma → cena clínica plausível; patologia → close de mucosa saudável; ortognática → perfil facial elegante).
 - ESTILO: fotografia editorial sóbria OU ilustração anatômica realista limpa (estilo Netter contemporâneo). Sem clipart, sem flat design infantil, sem cartoon, sem banco de imagens.
