@@ -326,9 +326,8 @@ PROIBIDO ABSOLUTO: "agende sua consulta", "agende sua avaliação", "marque cons
 NÃO inclua a assinatura no corpo — aparece como overlay na imagem.`;
 }
 
-function chicoImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }) {
+function chicoImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }, isStory = false) {
   const isUltimo = !!slide && slide.n === slide.total;
-  const isStory = false;
   const formato = slide
     ? `FORMATO vertical 4:5 (1024x1280) — Instagram Feed/Carrossel.`
     : isStory
