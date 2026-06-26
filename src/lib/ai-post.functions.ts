@@ -572,7 +572,11 @@ Responda APENAS com a frase do tema, nada mais.`,
       // Gera TODAS as imagens em paralelo (3-5x mais rápido que lotes sequenciais).
       const uploads = await Promise.all(
         slidesSpec.map((s) => genAndUpload(
-          isEstudantes ? studentImagePrompt(tema, s) : imageSystemPrompt(tema, data.rede, nivel, s)
+          isEstudantes
+            ? studentImagePrompt(tema, s)
+            : isChico
+              ? chicoImagePrompt(tema, s)
+              : imageSystemPrompt(tema, data.rede, nivel, s)
         ))
       );
       urlImagem = uploads[0].publicUrl;
@@ -581,7 +585,11 @@ Responda APENAS com a frase do tema, nada mais.`,
       imagensCarrosselCache = uploads.map((u) => u.signedUrl);
     } else {
       const upload = await genAndUpload(
-        isEstudantes ? studentImagePrompt(tema) : imageSystemPrompt(tema, data.rede, nivel)
+        isEstudantes
+          ? studentImagePrompt(tema)
+          : isChico
+            ? chicoImagePrompt(tema, undefined, isStory)
+            : imageSystemPrompt(tema, data.rede, nivel)
       );
       urlImagem = upload.publicUrl;
       urlImagemCache = upload.signedUrl;
