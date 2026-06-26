@@ -15,7 +15,10 @@ export const Route = createFileRoute("/api/public/publicar-agendados")({
   server: {
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: corsHeaders }),
-      POST: async () => {
+      POST: async ({ request }) => {
+        const { requireCronSecret } = await import("@/lib/cron-auth.server");
+        const denied = requireCronSecret(request);
+        if (denied) return denied;
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { publishInstagramPostById } = await import("@/lib/social/instagram-publish.server");
