@@ -79,12 +79,10 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
     authUrl.searchParams.set("display", "popup");
 
     if (data.logoutFacebookFirst) {
-      // O Facebook não tem um equivalente confiável ao "selecionar conta" do Google.
-      // Para conectar a Liga sem reaproveitar a sessão Francisco, encerramos a sessão
-      // Facebook atual e só então abrimos o OAuth.
-      const logoutUrl = new URL("https://www.facebook.com/logout.php");
-      logoutUrl.searchParams.set("next", authUrl.toString());
-      return { url: logoutUrl.toString() };
+      // Facebook bloqueia logout.php em popup/iframe (ERR_blocked_by_response via COOP/XFO).
+      // Forçamos reautenticação no próprio diálogo OAuth — usuário escolhe outra conta lá.
+      authUrl.searchParams.set("auth_type", "reauthenticate");
+      authUrl.searchParams.set("auth_nonce", crypto.randomUUID());
     }
 
     return { url: authUrl.toString() };
