@@ -73,8 +73,7 @@ async function uploadDataUrl(supabaseAdmin: any, value: string) {
     .from("post-images")
     .upload(fileName, parsed.buffer, { contentType: parsed.mimeType, cacheControl: "604800", upsert: false });
   if (error) throw new Error(`Upload da imagem para publicação falhou: ${error.message}`);
-  const { data: publicData } = supabaseAdmin.storage.from("post-images").getPublicUrl(fileName);
-  if (publicData?.publicUrl) return publicData.publicUrl;
+  // Bucket post-images é privado por política do workspace — usar sempre URL assinada (Instagram aceita).
   const { data, error: signError } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
   if (signError || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${signError?.message || fileName}`);
   return data.signedUrl;
@@ -107,10 +106,8 @@ async function createFetchableUrl(supabaseAdmin: any, value: string | null | und
     }
     return value;
   }
-  if (ref.bucket === "post-images") {
-    const { data } = supabaseAdmin.storage.from(ref.bucket).getPublicUrl(ref.path);
-    if (data?.publicUrl) return data.publicUrl;
-  }
+  // Bucket post-images é privado — sempre assinar (a URL pública retorna 400 e o Instagram rejeita com erro 9004).
+
   const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
   if (error || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${error?.message || ref.path}`);
   return data.signedUrl;
