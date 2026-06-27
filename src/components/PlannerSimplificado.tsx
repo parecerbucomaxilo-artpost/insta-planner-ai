@@ -64,10 +64,10 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [savingManualToken, setSavingManualToken] = useState(false);
 
 
-  // Geração IA
+  // Geração local sem IA paga
   const [modo, setModo] = useState<Modo>("feed");
-  const [modelo, setModelo] = useState<ModeloIA>("openai/gpt-5-mini");
-  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("google/gemini-3.1-flash-image");
+  const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");
@@ -568,17 +568,17 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             </Card>
           )}
 
-          {/* IA */}
+          {/* Gerador local */}
           <Card className="p-5 space-y-4 border-2 border-dashed border-indigo-200 bg-indigo-50/30">
             <div className="flex items-center gap-2">
               <Wand2 className="w-5 h-5 text-indigo-600" />
               <h3 className="font-semibold text-indigo-900">
-                Gerar com IA — {modo === "feed" ? "Post de Feed" : modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Stories" : "Programação 7 dias"}
+                Gerar sem IA paga — {modo === "feed" ? "Post de Feed" : modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Stories" : "Programação 7 dias"}
               </h3>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">Modelo de IA (texto)</Label>
+              <Label className="text-xs">Gerador de texto</Label>
               <div className="flex flex-wrap gap-2">
                 {MODELOS_IA.map((m) => (
                   <button
@@ -599,7 +599,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">Modelo de IA (imagem)</Label>
+              <Label className="text-xs">Gerador de imagem</Label>
               <div className="flex flex-wrap gap-2">
                 {MODELOS_IMAGEM.map((m) => (
                   <button
@@ -621,20 +621,20 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             {modo !== "semana" ? (
               <>
                 <div className="space-y-1">
-                  <Label className="text-xs">Tema (opcional — deixe vazio para a IA escolher)</Label>
+                  <Label className="text-xs">Tema (opcional — deixe vazio para o gerador local escolher)</Label>
                   <Input value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Ex.: cirurgia de siso, ATM, bruxismo..." />
                 </div>
                 <Button onClick={handleGerar} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                  IA criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
+                  Gerador local criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
                 </Button>
               </>
             ) : (
               <>
-                <p className="text-xs text-indigo-800">A IA monta um cronograma fixo de 7 dias só para Instagram.</p>
+                <p className="text-xs text-indigo-800">O gerador local monta um cronograma fixo de 7 dias só para Instagram, sem cobrança.</p>
                 <Button onClick={handleSemana} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CalendarDays className="w-4 h-4 mr-2" />}
-                  Gerar 7 dias com IA
+                  Gerar 7 dias sem IA paga
                 </Button>
                 {temas && temas.length > 0 && (
                   <div className="space-y-1.5 max-h-72 overflow-y-auto">
@@ -662,7 +662,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           </Card>
 
 
-          {/* Preview da IA */}
+          {/* Preview do gerador local */}
           {preview && (
             <Card className="p-5 space-y-3 border-2 border-emerald-200 bg-emerald-50/30">
               <h3 className="font-semibold text-emerald-900">Pré-visualização</h3>
