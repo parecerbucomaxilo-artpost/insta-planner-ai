@@ -356,7 +356,7 @@ export function SocialConnections() {
                 🔑 Fallback manual — cole o token da Liga
               </p>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Só funciona se o Facebook usado administrar a página conectada à Liga. Se essa conta não aparecer no Make/Meta, use o modo manual do Planner Simplificado ou gere um token no Graph API Explorer com permissões <code>instagram_basic</code> + <code>instagram_content_publish</code> + <code>pages_show_list</code>.
+                Só funciona se o Facebook usado administrar a página conectada à Liga. Se essa conta não aparecer na Meta, use o modo manual do Planner Simplificado ou gere um token no Graph API Explorer com permissões <code>instagram_basic</code> + <code>instagram_content_publish</code> + <code>pages_show_list</code>.
               </p>
               <Input
                 value={ligaManualToken}
