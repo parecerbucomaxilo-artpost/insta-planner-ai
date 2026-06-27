@@ -283,7 +283,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         formato,
         quando: iso,
         ambasRedes: false,
-        audiencia,
+        audiencia: effectiveAudiencia,
         modelo,
         modeloImagem,
       } as any });
