@@ -253,7 +253,7 @@ export async function generateImageBase64(opts: {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       // 402 (sem créditos) ou 429 (rate-limit) → cai pro local sem quebrar a UI
-      if (!/402|429|payment|credit|rate|insufficient/i.test(msg)) throw err;
+      if (!/402|429|payment|credit|rate|insufficient|sem imagem|sem b64|resposta sem/i.test(msg)) throw err;
       console.warn("[ai-gateway] imagem caiu para gerador local:", msg);
     }
   }
