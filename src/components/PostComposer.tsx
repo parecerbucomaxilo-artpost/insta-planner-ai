@@ -443,7 +443,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       <div className="flex items-center gap-2">
         <Wand2 className="w-5 h-5 text-indigo-600" />
         <h3 className="font-semibold text-indigo-900">Gerar com IA</h3>
-        <span className="text-xs text-indigo-600/70">Gemini + GPT-image-2 · estilo médico premium</span>
+        <span className="text-xs text-indigo-600/70">Groq Llama + Flux · estilo médico premium</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
