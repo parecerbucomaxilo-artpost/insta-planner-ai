@@ -86,11 +86,32 @@ async function generateImageGateway(opts: {
 }): Promise<string> {
   const isOpenAIImage = opts.model.startsWith("openai/gpt-image");
 
+  const fetchUrlAsB64 = async (url: string) => {
+    const r2 = await fetch(url);
+    if (!r2.ok) throw new Error(`Lovable AI imagem: falha ao baixar URL ${r2.status}`);
+    const buf = Buffer.from(await r2.arrayBuffer());
+    return buf.toString("base64");
+  };
+
+  const extractImageB64 = async (json: any): Promise<string> => {
+    const first = json?.data?.[0];
+    const direct = first?.b64_json || first?.image?.b64_json || first?.image?.base64;
+    if (typeof direct === "string" && direct.trim()) {
+      return direct.startsWith("data:") ? direct.split(",")[1] || "" : direct;
+    }
+    const url = first?.url || first?.image_url?.url || first?.image_url;
+    if (typeof url === "string" && url.trim()) {
+      return url.startsWith("data:") ? url.split(",")[1] || "" : fetchUrlAsB64(url);
+    }
+    throw new Error("Lovable AI imagem: resposta sem b64/url");
+  };
+
   if (isOpenAIImage) {
     const res = await fetch(`${GATEWAY_URL}/images/generations`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${opts.apiKey}`,
         "Lovable-API-Key": opts.apiKey,
         "X-Lovable-AIG-SDK": "vercel-ai-sdk",
       },
@@ -107,32 +128,26 @@ async function generateImageGateway(opts: {
       throw new Error(`Lovable AI imagem ${res.status}: ${body.slice(0, 240)}`);
     }
     const json: any = await res.json();
-    const b64 = json?.data?.[0]?.b64_json;
-    if (b64) return b64;
-    const url = json?.data?.[0]?.url;
-    if (url) {
-      const r2 = await fetch(url);
-      const buf = Buffer.from(await r2.arrayBuffer());
-      return buf.toString("base64");
-    }
-    throw new Error("Lovable AI imagem: resposta sem b64/url");
+    return extractImageB64(json);
   }
 
-  // Gemini image via chat/completions
+  // Gemini image via endpoint oficial de imagens do Gateway. O shape é diferente
+  // do OpenAI: usa messages + modalities; o retorno é normalizado em data[0].b64_json.
   const userContent: any[] = [{ type: "text", text: opts.prompt }];
   for (const url of opts.referenceImageUrls ?? []) {
     userContent.push({ type: "image_url", image_url: { url } });
   }
-  const res = await fetch(`${GATEWAY_URL}/chat/completions`, {
+  const res = await fetch(`${GATEWAY_URL}/images/generations`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${opts.apiKey}`,
       "Lovable-API-Key": opts.apiKey,
       "X-Lovable-AIG-SDK": "vercel-ai-sdk",
     },
     body: JSON.stringify({
       model: opts.model,
-      messages: [{ role: "user", content: userContent }],
+      messages: [{ role: "user", content: userContent.length === 1 ? opts.prompt : userContent }],
       modalities: ["image", "text"],
     }),
   });
@@ -141,21 +156,7 @@ async function generateImageGateway(opts: {
     throw new Error(`Lovable AI imagem ${res.status}: ${body.slice(0, 240)}`);
   }
   const json: any = await res.json();
-  const msg = json?.choices?.[0]?.message ?? {};
-  // Vários shapes possíveis: message.images[].image_url.url, ou content[].image_url
-  const candidates: any[] = [];
-  if (Array.isArray(msg.images)) candidates.push(...msg.images);
-  if (Array.isArray(msg.content)) candidates.push(...msg.content);
-  for (const c of candidates) {
-    const url: string | undefined =
-      c?.image_url?.url || (typeof c?.image_url === "string" ? c.image_url : undefined) || c?.url;
-    if (!url) continue;
-    if (url.startsWith("data:")) return url.split(",")[1] || "";
-    const r2 = await fetch(url);
-    const buf = Buffer.from(await r2.arrayBuffer());
-    return buf.toString("base64");
-  }
-  throw new Error("Lovable AI imagem: resposta sem imagem");
+  return extractImageB64(json);
 }
 
 // ---------------- Fallback local (gerador procedural anatômico) ----------------
