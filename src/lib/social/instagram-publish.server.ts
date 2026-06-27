@@ -3,6 +3,7 @@ import { createHmac } from "crypto";
 const GRAPH_VERSION = "v21.0";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
+const PUBLIC_APP_URL = "https://insta-planner-ai.lovable.app";
 const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
 // Conta historicamente associada ao DEFAULT_MAKE_WEBHOOK (cenário Make original).
 // Usada como fallback seguro quando o perfil dessa conta ainda não tem webhook próprio salvo.
@@ -80,10 +81,23 @@ async function uploadDataUrl(supabaseAdmin: any, value: string) {
     .from("post-images")
     .upload(fileName, parsed.buffer, { contentType: parsed.mimeType, cacheControl: "604800", upsert: false });
   if (error) throw new Error(`Upload da imagem para publicação falhou: ${error.message}`);
+  const proxyUrl = createStorageProxyUrl("post-images", fileName);
+  if (proxyUrl) return proxyUrl;
   // Bucket post-images é privado por política do workspace — usar sempre URL assinada (Instagram aceita).
   const { data, error: signError } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
   if (signError || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${signError?.message || fileName}`);
   return data.signedUrl;
+}
+
+function createStorageProxyUrl(bucket: string, path: string) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return null;
+  const token = createHmac("sha256", secret).update(`${bucket}:${path}`).digest("hex");
+  const url = new URL("/api/public/storage-media", PUBLIC_APP_URL);
+  url.searchParams.set("bucket", bucket);
+  url.searchParams.set("path", path);
+  url.searchParams.set("token", token);
+  return url.toString();
 }
 
 function getStorageObjectRef(value: string | null | undefined) {
@@ -114,6 +128,8 @@ async function createFetchableUrl(supabaseAdmin: any, value: string | null | und
     return value;
   }
   // Bucket post-images é privado — sempre assinar (a URL pública retorna 400 e o Instagram rejeita com erro 9004).
+  const proxyUrl = createStorageProxyUrl(ref.bucket, ref.path);
+  if (proxyUrl) return proxyUrl;
 
   const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
   if (error || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${error?.message || ref.path}`);
@@ -313,6 +329,13 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
       }
       const confirmed = Boolean(json?.published === true || json?.publicado === true || json?.status === "published" || json?.status === "Publicado");
       const externalId = String(json?.instagram_id || json?.media_id || json?.id || "") || undefined;
+      console.info("[instagram-webhook] enviado ao Make", {
+        account: normalizeInstagramAccount(account),
+        status: res.status,
+        confirmed,
+        externalId,
+        photo_url: requiredPhotoUrl.slice(0, 120),
+      });
       return { queued: true, status: res.status, confirmed, externalId };
     }
     const isQueueFull = /queue\s*is\s*full|queue full|rate/i.test(text);
@@ -442,6 +465,8 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
             .from("post-images")
             .upload(fileName, bytes, { contentType: "image/jpeg", cacheControl: "604800", upsert: false });
           if (upErr) return url;
+          const proxyUrl = createStorageProxyUrl("post-images", fileName);
+          if (proxyUrl) return proxyUrl;
           const { data: signed } = await supabaseAdmin.storage
             .from("post-images")
             .createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);

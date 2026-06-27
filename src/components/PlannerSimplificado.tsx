@@ -725,6 +725,12 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         Re-tentar
                       </Button>
                     )}
+                    {p.status === "EnviadoMake" && (
+                      <Button variant="outline" size="sm" onClick={() => tentarNovamente(p.id)} disabled={busy} title="Enviar novamente para o webhook Make da Liga">
+                        {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1" />}
+                        Reenviar Make
+                      </Button>
+                    )}
                     {p.url_imagem && (
                       <Button variant="outline" size="icon" onClick={() => baixarMidia(p.url_imagem!, `post-${conta}-${p.id}.png`)} disabled={busy} aria-label="Baixar imagem para publicar manualmente" title="Baixar imagem para publicar manualmente">
                         <Download className="w-4 h-4" />

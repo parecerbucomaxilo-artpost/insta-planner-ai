@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as ApiPublicStorageMediaRouteImport } from './routes/api/public/storage-media'
 import { Route as ApiPublicPublicarAgendadosRouteImport } from './routes/api/public/publicar-agendados'
 import { Route as ApiPublicPostsAgendadosRouteImport } from './routes/api/public/posts-agendados'
 import { Route as ApiPublicGerarProximoRouteImport } from './routes/api/public/gerar-proximo'
@@ -59,6 +60,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiPublicStorageMediaRoute = ApiPublicStorageMediaRouteImport.update({
+  id: '/api/public/storage-media',
+  path: '/api/public/storage-media',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPublicarAgendadosRoute =
   ApiPublicPublicarAgendadosRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
+  '/api/public/storage-media': typeof ApiPublicStorageMediaRoute
   '/api/public/instagram-oauth/callback': typeof ApiPublicInstagramOauthCallbackRoute
   '/api/public/meta-oauth/callback': typeof ApiPublicMetaOauthCallbackRoute
   '/api/public/meta-oauth/start': typeof ApiPublicMetaOauthStartRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
+  '/api/public/storage-media': typeof ApiPublicStorageMediaRoute
   '/api/public/instagram-oauth/callback': typeof ApiPublicInstagramOauthCallbackRoute
   '/api/public/meta-oauth/callback': typeof ApiPublicMetaOauthCallbackRoute
   '/api/public/meta-oauth/start': typeof ApiPublicMetaOauthStartRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
+  '/api/public/storage-media': typeof ApiPublicStorageMediaRoute
   '/api/public/instagram-oauth/callback': typeof ApiPublicInstagramOauthCallbackRoute
   '/api/public/meta-oauth/callback': typeof ApiPublicMetaOauthCallbackRoute
   '/api/public/meta-oauth/start': typeof ApiPublicMetaOauthStartRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
+    | '/api/public/storage-media'
     | '/api/public/instagram-oauth/callback'
     | '/api/public/meta-oauth/callback'
     | '/api/public/meta-oauth/start'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
+    | '/api/public/storage-media'
     | '/api/public/instagram-oauth/callback'
     | '/api/public/meta-oauth/callback'
     | '/api/public/meta-oauth/start'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
+    | '/api/public/storage-media'
     | '/api/public/instagram-oauth/callback'
     | '/api/public/meta-oauth/callback'
     | '/api/public/meta-oauth/start'
@@ -230,6 +242,7 @@ export interface RootRouteChildren {
   ApiPublicGerarProximoRoute: typeof ApiPublicGerarProximoRoute
   ApiPublicPostsAgendadosRoute: typeof ApiPublicPostsAgendadosRoute
   ApiPublicPublicarAgendadosRoute: typeof ApiPublicPublicarAgendadosRoute
+  ApiPublicStorageMediaRoute: typeof ApiPublicStorageMediaRoute
   ApiPublicInstagramOauthCallbackRoute: typeof ApiPublicInstagramOauthCallbackRoute
   ApiPublicMetaOauthCallbackRoute: typeof ApiPublicMetaOauthCallbackRoute
   ApiPublicMetaOauthStartRoute: typeof ApiPublicMetaOauthStartRoute
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/storage-media': {
+      id: '/api/public/storage-media'
+      path: '/api/public/storage-media'
+      fullPath: '/api/public/storage-media'
+      preLoaderRoute: typeof ApiPublicStorageMediaRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/publicar-agendados': {
       id: '/api/public/publicar-agendados'
@@ -377,6 +397,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicGerarProximoRoute: ApiPublicGerarProximoRoute,
   ApiPublicPostsAgendadosRoute: ApiPublicPostsAgendadosRoute,
   ApiPublicPublicarAgendadosRoute: ApiPublicPublicarAgendadosRoute,
+  ApiPublicStorageMediaRoute: ApiPublicStorageMediaRoute,
   ApiPublicInstagramOauthCallbackRoute: ApiPublicInstagramOauthCallbackRoute,
   ApiPublicMetaOauthCallbackRoute: ApiPublicMetaOauthCallbackRoute,
   ApiPublicMetaOauthStartRoute: ApiPublicMetaOauthStartRoute,
