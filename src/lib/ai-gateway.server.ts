@@ -41,6 +41,7 @@ export function createLovableAiGatewayProvider(_ignoredKey: string) {
 }
 
 export const MODELOS_IMAGEM = [
+  { id: "pollinations/flux", label: "Flux (Pollinations, grátis)" },
   { id: "google/gemini-3.1-flash-image-preview", label: "Flux (Pollinations, grátis)" },
   { id: "google/gemini-2.5-flash-image", label: "Flux (Pollinations, grátis)" },
   { id: "openai/gpt-image-1-mini", label: "Flux (Pollinations, grátis)" },
