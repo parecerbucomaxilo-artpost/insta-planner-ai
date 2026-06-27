@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
 type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
-import { ensurePublicationDestinationProfile, getPublicationDestination, savePublicationDestination } from "@/lib/publication-destination.functions";
+import { ensurePublicationDestinationProfile, getPublicationDestination, saveManualInstagramToken, savePublicationDestination } from "@/lib/publication-destination.functions";
 import type { PostRow } from "@/lib/posts-types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -44,6 +44,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const publishIg = useServerFn(publishInstagramNow);
   const fetchDestino = useServerFn(getPublicationDestination);
   const saveDestino = useServerFn(savePublicationDestination);
+  const saveManualToken = useServerFn(saveManualInstagramToken);
   const ensureDestino = useServerFn(ensurePublicationDestinationProfile);
   const startMetaOAuth = useServerFn(createMetaOAuthStartUrl);
   const startInstagramOAuth = useServerFn(createInstagramOAuthStartUrl);
@@ -58,6 +59,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [metaConnectPath, setMetaConnectPath] = useState<string>("");
   const [metaOauthUrl, setMetaOauthUrl] = useState<string>("");
   const [copiedMetaUrl, setCopiedMetaUrl] = useState(false);
+  const [manualToken, setManualToken] = useState("");
+  const [manualIgId, setManualIgId] = useState("");
+  const [savingManualToken, setSavingManualToken] = useState(false);
 
 
   // Geração IA
@@ -170,6 +174,25 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     setCopiedMetaUrl(true);
     window.setTimeout(() => setCopiedMetaUrl(false), 1800);
     toast.success("Link Meta copiado. Cole na barra do navegador fora do preview.");
+  };
+
+  const salvarTokenManual = async () => {
+    if (!conta) return toast.error("Selecione uma conta primeiro.");
+    const token = manualToken.trim();
+    const igBusinessId = manualIgId.trim();
+    if (!token || !igBusinessId) return toast.error("Cole o Access Token e o IG Business Account ID.");
+    setSavingManualToken(true);
+    try {
+      await saveManualToken({ data: { conta, accessToken: token, igBusinessId } });
+      setDestinoStatus("ok");
+      setDestinoModo("meta");
+      setManualToken("");
+      toast.success(`Token manual salvo para @${conta}.`);
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao salvar token manual.");
+    } finally {
+      setSavingManualToken(false);
+    }
   };
 
   const assertPublishOk = (out: Awaited<ReturnType<typeof publishIg>>) => {
@@ -401,12 +424,15 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             <p className="text-xs text-amber-900">
               ⚠️ Sem destino próprio para esta conta, a publicação será bloqueada para evitar envio para outro Instagram.
               {conta === LIGA_ACCOUNT
-                ? " Para a Liga, conecte a Meta oficial abaixo; o Make foi desativado para evitar publicação no perfil Chico."
+                ? " Como o Instagram está bloqueado, salve abaixo um webhook exclusivo da Liga ou use token manual em Configurações."
                 : ` Conecte a Meta oficial ou cadastre um webhook próprio de @${conta}.`}
             </p>
           )}
           {destinoModo === "meta" && (
             <p className="text-xs text-emerald-800">Publicação direta Meta ativa para @{conta}. O Make não será usado.</p>
+          )}
+          {destinoModo === "webhook" && (
+            <p className="text-xs text-emerald-800">Webhook exclusivo ativo para @{conta}. O app enviará sempre com a conta de destino obrigatória.</p>
           )}
           <div className="flex flex-wrap gap-2">
             <Button onClick={conectarMetaConta} variant={conta === LIGA_ACCOUNT ? "default" : "secondary"}>
@@ -429,20 +455,42 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {metaConnectPath && (
             <p className="text-xs text-zinc-600">
               {conta === LIGA_ACCOUNT
-                ? "Agora a Liga usa login direto do Instagram para não cair em “Continuar como Francisco”. Se abrir outra conta, use janela anônima."
+                ? "Se o Instagram continuar bloqueado, ignore este login e salve o webhook exclusivo da Liga abaixo."
                 : "Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview."}
             </p>
           )}
-          {conta !== LIGA_ACCOUNT && (
-            <div className="flex gap-2">
+          <div className="flex gap-2">
+            <Input
+              value={destinoUrl}
+              onChange={(e) => setDestinoUrl(e.target.value)}
+              placeholder={conta === LIGA_ACCOUNT ? "Webhook exclusivo da Liga (Make)" : "https://hook.us2.make.com/..."}
+              className="flex-1"
+            />
+            <Button onClick={salvarDestino} disabled={savingDestino}>
+              {savingDestino ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar destino"}
+            </Button>
+          </div>
+          {conta === LIGA_ACCOUNT && (
+            <p className="text-xs text-zinc-600">Este webhook precisa publicar somente no Instagram @lactbmf.anhanguerasbo. O app não usa o webhook padrão do Chico para posts da Liga.</p>
+          )}
+          {conta === LIGA_ACCOUNT && (
+            <div className="rounded-md border border-emerald-200 bg-emerald-50/40 p-3 space-y-2">
+              <Label className="text-xs font-semibold text-emerald-900">Alternativa ao Instagram bloqueado: token manual da Liga</Label>
               <Input
-                value={destinoUrl}
-                onChange={(e) => setDestinoUrl(e.target.value)}
-                placeholder="https://hook.us2.make.com/..."
-                className="flex-1"
+                value={manualToken}
+                onChange={(e) => setManualToken(e.target.value)}
+                placeholder="Access Token da Liga"
+                className="font-mono text-xs"
               />
-              <Button onClick={salvarDestino} disabled={savingDestino}>
-                {savingDestino ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar destino"}
+              <Input
+                value={manualIgId}
+                onChange={(e) => setManualIgId(e.target.value)}
+                placeholder="IG Business Account ID da Liga"
+                className="font-mono text-xs"
+              />
+              <Button onClick={salvarTokenManual} disabled={savingManualToken} size="sm" variant="outline">
+                {savingManualToken ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
+                Salvar token manual da Liga
               </Button>
             </div>
           )}

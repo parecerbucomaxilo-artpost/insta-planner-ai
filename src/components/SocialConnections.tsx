@@ -508,7 +508,7 @@ export function SocialConnections() {
             </Label>
             <div className="p-3 rounded-lg border bg-muted/40 space-y-2">
               <p className="text-xs text-muted-foreground">
-                Nova tentativa: conectar a Liga pelo login direto do Instagram, sem reutilizar a sessão Facebook do Francisco.
+                Se o Instagram bloquear o login, use o webhook exclusivo ou o token manual abaixo; nada da Liga cai na conta Chico.
               </p>
               <Button onClick={handleConnectLigaMeta} variant="secondary" size="sm">
                 <Instagram className="h-4 w-4" /> Preparar conexão Instagram da Liga

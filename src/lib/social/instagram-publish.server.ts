@@ -362,8 +362,6 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         p.webhook_url
       );
 
-    const hasMeta = (p: any) => !!p && !!p.instagram_access_token && !!p.instagram_business_account_id;
-
     const contaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
 
     let perfil: any = null;
@@ -389,11 +387,11 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
           } as any;
         } else {
           throw new Error(
-          contaAlvo === LIGA_ACCOUNT
-            ? `A Liga agora publica somente pela conexão oficial Meta. Conecte @${LIGA_ACCOUNT} em "Configurações > Conexões Sociais > Conectar Meta da Liga" antes de publicar.`
-            : `Conta @${contaAlvo} não tem destino configurado (token Meta ou webhook próprio). ` +
-              `Configure o perfil dessa conta em "Configurações > Perfil" antes de publicar — ` +
-              `senão o post seria publicado na conta errada.`,
+            contaAlvo === LIGA_ACCOUNT
+              ? `Destino da Liga não configurado. Como o login Instagram está bloqueado, salve um webhook próprio da Liga ou um token manual de @${LIGA_ACCOUNT}; o sistema não usará a conta @${DEFAULT_WEBHOOK_ACCOUNT}.`
+              : `Conta @${contaAlvo} não tem destino configurado (token Meta ou webhook próprio). ` +
+                `Configure o perfil dessa conta em "Configurações > Perfil" antes de publicar — ` +
+                `senão o post seria publicado na conta errada.`,
           );
         }
       }
@@ -484,18 +482,12 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         isCarousel,
       });
     } else {
-      if (contaAlvo === LIGA_ACCOUNT) {
-        throw new Error(
-          `Publicação via Make foi desativada para a Liga para evitar postagem no perfil errado. ` +
-          `Conecte a Meta oficial de @${LIGA_ACCOUNT} e tente novamente.`,
-        );
-      }
       // Garantia anti-cross-posting: quando o post tem instagram_conta,
       // só publicamos via webhook PRÓPRIO desse perfil. NUNCA cai no
       // DEFAULT_MAKE_WEBHOOK nem em webhook de outro perfil — isso publicaria
       // conteúdo da Liga na conta @drfranciscomenezes (ou vice-versa).
       const ownWebhook = perfil.instagram_webhook_url || perfil.webhook_url || null;
-      if (contaAlvo && !ownWebhook && contaAlvo !== DEFAULT_WEBHOOK_ACCOUNT) {
+      if (contaAlvo && contaAlvo !== DEFAULT_WEBHOOK_ACCOUNT && !ownWebhook) {
         throw new Error(
           `Conta @${contaAlvo} sem webhook próprio configurado. ` +
           `Cadastre o webhook do Make específico dessa conta em "Configurações > Perfil" ` +
