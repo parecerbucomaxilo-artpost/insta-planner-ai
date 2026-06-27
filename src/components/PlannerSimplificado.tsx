@@ -34,9 +34,10 @@ interface PlannerSimplificadoProps {
   contaFixa?: string;        // se setado, trava a conta (sem seletor)
   storageKey?: string;       // chave alternativa do localStorage
   audiencia?: "estudantes-graduacao" | "geral" | "chico-drfm";
+  permiteTipoLiga?: boolean; // habilita seletor "tipo Chico / tipo Liga"
 }
 
-export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao" }: PlannerSimplificadoProps = {}) {
+export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao", permiteTipoLiga = false }: PlannerSimplificadoProps = {}) {
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
   const approveFn = useServerFn(approvePost);
