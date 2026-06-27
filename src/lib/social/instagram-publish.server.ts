@@ -406,12 +406,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       );
     }
 
-    if (contaAlvo === DEFAULT_WEBHOOK_ACCOUNT) {
-      throw new Error(
-        `Publicação no @${DEFAULT_WEBHOOK_ACCOUNT} está SUSPENSA por decisão do usuário. ` +
-        `Reatribua o post a outra conta (ex: @${LIGA_ACCOUNT}) ou reative no código (instagram-publish.server.ts).`,
-      );
-    }
+    // Publicação no @drfranciscomenezes reativada.
 
     let perfil: any = null;
 
