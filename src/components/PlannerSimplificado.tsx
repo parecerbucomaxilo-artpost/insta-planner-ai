@@ -320,9 +320,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modeloImagem,
       } as any });
       await marcarConta(out.id);
-      await approveFn({ data: { id: out.id, acao: "agendar" } });
+      await approveFn({ data: { id: out.id, acao: isLiga ? "arquivar" : "agendar" } });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
-      toast.success("Agendado!", { id: tid });
+      toast.success(isLiga ? "Liga salva como rascunho manual." : "Agendado!", { id: tid });
       carregar();
     } catch (e: any) {
       toast.error(e.message || "Falha", { id: tid });
@@ -348,8 +348,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         assertPublishOk(out);
         toast.success(publishSuccessMessage(out), { id: tid });
       } else {
-        await approveFn({ data: { id: preview.id, acao } });
-        toast.success("Salvo!", { id: tid });
+        await approveFn({ data: { id: preview.id, acao: isLiga ? "arquivar" : acao } });
+        toast.success(isLiga ? "Liga salva como rascunho manual." : "Salvo!", { id: tid });
       }
       setPreview(null);
       carregar();
@@ -381,7 +381,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const url = await uploadPostImage(file, uid);
       const iso = buildAgendamentoIso();
       const shouldAutoPublish = quando === "agora" && canPublishAutomatically;
-      const status = shouldAutoPublish ? "Agendado" : quando === "agora" ? "Rascunho" : "Agendado";
+      const status = isLiga ? "Rascunho" : shouldAutoPublish ? "Agendado" : quando === "agora" ? "Rascunho" : "Agendado";
       const { data: ins, error } = await supabase.from("posts").insert({
         user_id: uid, tipo_post: "Post Único",
         legenda, url_imagem: url,
@@ -398,7 +398,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         await copiarTexto(legenda, "Legenda copiada para publicar manualmente.");
         toast.success(isLiga ? "Liga em modo manual: post salvo, imagem pronta para baixar e legenda copiada." : "Post salvo para publicação manual.");
       } else {
-        toast.success("Post agendado!");
+        toast.success(isLiga ? "Liga salva como rascunho manual." : "Post agendado!");
       }
       setLegenda(""); setFile(null); setPreviewImg(null);
       carregar();
