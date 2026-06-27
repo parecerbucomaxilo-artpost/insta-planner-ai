@@ -51,6 +51,26 @@ export function SocialConnections() {
   const [ligaMetaConnectPath, setLigaMetaConnectPath] = useState("");
   const [ligaMetaOauthUrl, setLigaMetaOauthUrl] = useState("");
   const [ligaMetaCopied, setLigaMetaCopied] = useState(false);
+  const [ligaManualToken, setLigaManualToken] = useState("");
+  const [ligaManualIgId, setLigaManualIgId] = useState("");
+  const [ligaManualSaving, setLigaManualSaving] = useState(false);
+  const saveLigaManualToken = useServerFn(saveManualInstagramToken);
+
+  const handleSaveLigaManualToken = async () => {
+    const token = ligaManualToken.trim();
+    const igId = ligaManualIgId.trim();
+    if (!token || !igId) return toast.error("Cole o Access Token e o IG Business ID da Liga.");
+    setLigaManualSaving(true);
+    try {
+      await saveLigaManualToken({ data: { conta: "lactbmf.anhanguerasbo", accessToken: token, igBusinessId: igId } });
+      toast.success("Token Instagram da Liga salvo ✅ A Liga já pode publicar direto.");
+      setLigaManualToken("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao salvar token manual.");
+    } finally {
+      setLigaManualSaving(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
