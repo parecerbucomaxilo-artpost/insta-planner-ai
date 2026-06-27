@@ -149,3 +149,39 @@ export const ensurePublicationDestinationProfile = createServerFn({ method: "POS
     if (!created?.id) throw new Error("Falha ao criar destino de publicação.");
     return { id: created.id as string, conta };
   });
+
+const ManualTokenInput = AccountInput.extend({
+  accessToken: z.string().min(20),
+  igBusinessId: z.string().regex(/^\d{5,25}$/, "ID Instagram inválido (apenas dígitos)"),
+});
+
+export const saveManualInstagramToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => ManualTokenInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const conta = normalizeAccount(data.conta);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const existing = await findProfileByAccount(supabaseAdmin, conta, "id");
+    const payload = {
+      user_id: context.userId,
+      nome_profissional: conta,
+      arroba_usuario: conta,
+      instagram_arroba: conta,
+      instagram_access_token: data.accessToken.trim(),
+      instagram_business_account_id: data.igBusinessId.trim(),
+      updated_at: new Date().toISOString(),
+    };
+    if (existing?.id) {
+      const { error } = await supabaseAdmin.from("perfil_usuario").update(payload).eq("id", existing.id);
+      if (error) throw new Error(`DB: ${error.message}`);
+      return { id: existing.id as string, conta, status: "ok" as const };
+    }
+    const { data: created, error } = await supabaseAdmin
+      .from("perfil_usuario")
+      .insert(payload)
+      .select("id")
+      .maybeSingle();
+    if (error) throw new Error(`DB: ${error.message}`);
+    if (!created?.id) throw new Error("Falha ao salvar token Instagram manual.");
+    return { id: created.id as string, conta, status: "ok" as const };
+  });
