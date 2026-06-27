@@ -50,17 +50,14 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   };
 
   const handlePostNow = async (p: PostRow) => {
-    if (normalizeInstagramAccount(p.instagram_conta) === LIGA_ACCOUNT) {
-      await copiarTexto(p.legenda || "", "Legenda da Liga copiada para postagem manual.");
-      return;
-    }
     setPublishingId(p.id);
     try {
       const out = await publishIg({ data: { id: p.id } });
       if (out && "ok" in out && out.ok === false) {
         throw new Error("error" in out ? out.error : "Falha ao publicar no Instagram.");
       }
-      toast.success("Publicado no Instagram pela Meta!");
+      const isLiga = normalizeInstagramAccount(p.instagram_conta) === LIGA_ACCOUNT;
+      toast.success(isLiga ? "Publicado via @drfranciscomenezes com convite à Liga!" : "Publicado no Instagram pela Meta!");
       onChange();
     } catch (e: any) {
       toast.error(e.message || "Falha ao publicar");
@@ -224,28 +221,16 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                 >
                   {isPublishing ? (
                     <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Publicando…</>
-                  ) : isLigaPost ? (
-                    <><Copy className="h-4 w-4 mr-1.5" /> Copiar legenda</>
                   ) : failedPublish ? (
                     <><RotateCcw className="h-4 w-4 mr-1.5" /> Tentar novamente</>
                   ) : alreadyPublished ? (
                     <><Send className="h-4 w-4 mr-1.5" /> Republicar Agora</>
+                  ) : isLigaPost ? (
+                    <><Send className="h-4 w-4 mr-1.5" /> Publicar + Convidar Liga</>
                   ) : (
                     <><Send className="h-4 w-4 mr-1.5" /> Postar Agora</>
                   )}
                 </Button>
-                {isLigaPost && thumb && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => baixarMidia(thumb, `liga-${p.id}-${safeIdx + 1}.png`)}
-                    disabled={isPublishing}
-                    aria-label="Baixar imagem da Liga"
-                    title="Baixar imagem da Liga"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                )}
                 <Button
                   variant="outline"
                   size="icon"
