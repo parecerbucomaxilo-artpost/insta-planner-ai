@@ -11,7 +11,7 @@ const ModeloEnum = z.enum([
   "groq/llama-3.1-8b-instant",
   "groq/llama-3.3-70b-versatile",
   // legados aceitos para compat com posts antigos no DB
-  "google/gemini-3-flash-preview",
+  "groq/llama-3.1-8b-instant",
   "google/gemini-2.5-pro",
   "openai/gpt-5",
   "openai/gpt-5-mini",
@@ -21,7 +21,7 @@ const ModeloEnum = z.enum([
 const ModeloImagemEnum = z.enum([
   "pollinations/flux",
   // legados aceitos para compat
-  "google/gemini-3.1-flash-image-preview",
+  "pollinations/flux",
   "google/gemini-2.5-flash-image",
   "openai/gpt-image-1-mini",
   "openai/gpt-image-2",
@@ -40,8 +40,8 @@ const SingleInput = z.object({
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
-  modelo: ModeloEnum.optional().default("google/gemini-3-flash-preview"),
-  modeloImagem: ModeloImagemEnum.optional().default("google/gemini-3.1-flash-image-preview"),
+  modelo: ModeloEnum.optional().default("groq/llama-3.1-8b-instant"),
+  modeloImagem: ModeloImagemEnum.optional().default("pollinations/flux"),
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
   ambasRedes: z.boolean().optional().default(false),
   // Status inicial do post (PendenteAprovacao = revisão manual; Agendado = vai pro cron de publicação).
@@ -55,7 +55,7 @@ const SingleInput = z.object({
 
 const WeekInput = z.object({
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("Ambas"),
-  modelo: ModeloEnum.optional().default("google/gemini-3-flash-preview"),
+  modelo: ModeloEnum.optional().default("groq/llama-3.1-8b-instant"),
 });
 
 const WHATSAPP = "https://wa.me/5511947684004";
