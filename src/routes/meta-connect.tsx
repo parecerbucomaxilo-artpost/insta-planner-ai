@@ -42,8 +42,8 @@ function MetaConnectPage() {
   const { next, login, privateNext, account } = Route.useSearch();
   const label = account ? `@${account}` : "Instagram Business";
   const isLiga = account === "lactbmf.anhanguerasbo";
-  const isInstagramDirect = next.includes("instagram.com/oauth/authorize");
   const actionUrl = isLiga ? privateNext || login || next : next;
+  const isInstagramDirect = actionUrl.includes("instagram.com/oauth/authorize");
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {
@@ -85,9 +85,7 @@ function MetaConnectPage() {
               <div className="rounded-lg border bg-muted/40 p-3 text-muted-foreground leading-relaxed space-y-2">
                 {isLiga ? (
                   <>
-                    <p>
-                      Nova tentativa: este botão usa login direto do Instagram, não a sessão Facebook do Francisco.
-                    </p>
+                    <p>Nova tentativa: este botão usa um caminho isolado para conectar a Liga, sem reaproveitar o destino do Chico.</p>
                     <p>
                       Entre com o Instagram profissional da Liga. Se aparecer outra conta, saia do Instagram no navegador ou abra em janela anônima.
                     </p>
