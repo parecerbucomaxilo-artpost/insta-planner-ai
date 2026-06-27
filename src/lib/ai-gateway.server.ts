@@ -98,10 +98,7 @@ function sizeToWH(size?: string): { width: number; height: number } {
   return { width: 1024, height: 1024 };
 }
 
-// Imagens via Hugging Face Inference API (FLUX.1-dev). Requer HF_TOKEN.
-// HF Router exige sufixo de provider (fal-ai/replicate/together/nebius/...)
-const HF_IMAGE_MODEL = "black-forest-labs/FLUX.1-dev:fal-ai";
-
+// Imagens via Lovable AI Gateway (Gemini 3.1 Flash Image). Requer LOVABLE_API_KEY.
 export async function generateImageBase64(opts: {
   apiKey?: string;
   prompt: string;
@@ -109,16 +106,36 @@ export async function generateImageBase64(opts: {
   model?: ModeloImagem;
   referenceImageUrls?: string[];
 }): Promise<string> {
-  const hfToken = process.env.HF_TOKEN;
-  if (!hfToken) throw new Error("Missing HF_TOKEN");
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
 
   const cleaned = sanitizeVisualPrompt(opts.prompt) + REALISM_SUFFIX;
-  const { width, height } = sizeToWH(opts.size);
-  const seed = Math.floor(Math.random() * 1_000_000_000);
+  const aspect = sizeToAspect(opts.size);
 
-  // Endpoint OpenAI-compatível do HF Router: roteia automaticamente para um
-  // provider que ainda serve o modelo (fal-ai / replicate / together / nebius).
-  const url = "https://router.huggingface.co/v1/images/generations";
+  // Modelo padrão definido na memória do projeto.
+  const requested = (opts.model || "google/gemini-3.1-flash-image-preview").toLowerCase();
+  const isOpenAI = requested.startsWith("openai/");
+  const model = isOpenAI
+    ? "openai/gpt-image-2"
+    : requested.includes("gemini-3-pro")
+      ? "google/gemini-3-pro-image"
+      : requested.includes("2.5")
+        ? "google/gemini-2.5-flash-image"
+        : "google/gemini-3.1-flash-image";
+
+  const body: Record<string, unknown> = isOpenAI
+    ? {
+        model,
+        prompt: cleaned,
+        size: opts.size || "1024x1024",
+        quality: "low",
+        n: 1,
+      }
+    : {
+        model,
+        messages: [{ role: "user", content: `${cleaned} [aspect ratio ${aspect}]` }],
+        modalities: ["image", "text"],
+      };
 
   let res: Response | undefined;
   let lastErr: unknown;
@@ -126,25 +143,19 @@ export async function generateImageBase64(opts: {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 120_000);
     try {
-      res = await fetch(url, {
+      res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${hfToken}`,
+          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model: HF_IMAGE_MODEL,
-          prompt: cleaned,
-          response_format: "b64_json",
-          size: `${width}x${height}`,
-          n: 1,
-        }),
+        body: JSON.stringify(body),
         signal: ctrl.signal,
       });
       clearTimeout(timer);
       if (res.ok) break;
-      if (res.status < 500 && res.status !== 429 && res.status !== 503) break;
-      lastErr = new Error(`HF ${res.status}`);
+      if (res.status < 500 && res.status !== 429) break;
+      lastErr = new Error(`Gateway ${res.status}`);
     } catch (e) {
       clearTimeout(timer);
       lastErr = e;
@@ -152,30 +163,17 @@ export async function generateImageBase64(opts: {
     await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
   }
 
-  if (!res) throw new Error(`HuggingFace fetch falhou: ${String((lastErr as any)?.message || lastErr)}`);
+  if (!res) throw new Error(`Lovable AI fetch falhou: ${String((lastErr as any)?.message || lastErr)}`);
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`HuggingFace ${res.status}: ${txt.slice(0, 400)}`);
+    throw new Error(`Lovable AI ${res.status}: ${txt.slice(0, 400)}`);
   }
 
   const json: any = await res.json();
-  const item = json?.data?.[0];
-  if (item?.b64_json) return item.b64_json as string;
+  const b64 = json?.data?.[0]?.b64_json;
+  if (b64) return b64 as string;
 
-  if (item?.url) {
-    const imgRes = await fetch(item.url);
-    if (!imgRes.ok) throw new Error(`HF image url ${imgRes.status}`);
-    const buf = await imgRes.arrayBuffer();
-    const bytes = new Uint8Array(buf);
-    let binary = "";
-    const chunk = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunk) {
-      binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
-    }
-    return btoa(binary);
-  }
-
-  throw new Error(`HuggingFace resposta sem imagem: ${JSON.stringify(json).slice(0, 400)}`);
+  throw new Error(`Lovable AI resposta sem imagem: ${JSON.stringify(json).slice(0, 400)}`);
 }
 
 
