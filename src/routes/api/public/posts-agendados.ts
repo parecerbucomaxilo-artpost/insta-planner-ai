@@ -8,6 +8,7 @@ const corsHeaders = {
 } as const;
 
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
+const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 const CACHE_REFRESH_MARGIN_MS = 60 * 60 * 1000;
@@ -320,9 +321,10 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
           const nowIso = new Date().toISOString();
           const { data: due, error: dueError } = await supabaseAdmin
             .from("posts")
-            .select("id,user_id")
+            .select("id,user_id,instagram_conta")
             .eq("status", "Agendado")
             .eq("postar_instagram", true)
+            .or(`instagram_conta.is.null,instagram_conta.neq.${LIGA_ACCOUNT}`)
             .lte("data_agendamento", nowIso)
             .order("data_agendamento", { ascending: true })
             .limit(1)
