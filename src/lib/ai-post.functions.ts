@@ -619,6 +619,12 @@ Responda APENAS com a frase do tema, nada mais.`,
 
     const tipoPost = formato === "Carrossel" ? "Carrossel" : "Post Único";
 
+    // Roteamento de conta Instagram — sem isto o publicador cai no default
+    // (@drfranciscomenezes) e Liga/Chico saem na conta errada.
+    const instagramConta = isEstudantes
+      ? "lactbmf.anhanguerasbo"
+      : "drfranciscomenezes";
+
     const { data: inserted, error: insErr } = await supabaseAdmin
       .from("posts")
       .insert({
@@ -639,7 +645,9 @@ Responda APENAS com a frase do tema, nada mais.`,
         status: data.status,
         data_agendamento: data.quando ?? null,
         prompt_ia: tema,
+        instagram_conta: instagramConta,
       } as any)
+
       .select()
       .single();
     if (insErr) throw new Error(`DB: ${insErr.message}`);
