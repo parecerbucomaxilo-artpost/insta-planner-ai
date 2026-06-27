@@ -35,7 +35,7 @@ export function createLovableAiGatewayProvider(_ignoredKey: string) {
         name: "groq",
         baseURL: "https://api.groq.com/openai/v1",
         apiKey: groqKey,
-        supportsStructuredOutputs: true,
+        supportsStructuredOutputs: false,
       })
     : null;
 
