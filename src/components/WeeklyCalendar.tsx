@@ -225,7 +225,7 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
 
     toast.info(`Gerando ${slots.length} publicações para os próximos 7 dias…`);
     let ok = 0; let fail = 0;
-    // Em paralelo (gateway suporta), mas com pequeno escalonamento para evitar 429
+    // Em paralelo, com pequeno escalonamento para manter a interface responsiva.
     await Promise.all(slots.map(async (s, i) => {
       try {
         await new Promise((r) => setTimeout(r, i * 400));
@@ -350,7 +350,7 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
               onChange={(e) => setGenerateImages(e.target.checked)}
               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
-            <Label htmlFor="gen-images" className="text-xs font-medium cursor-pointer">Gerar imagens com IA</Label>
+            <Label htmlFor="gen-images" className="text-xs font-medium cursor-pointer">Gerar imagens locais</Label>
           </div>
 
           <Button variant="outline" size="icon" onClick={() => navWeek(-1)}>
