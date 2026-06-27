@@ -144,6 +144,28 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
           const url = new URL(request.url);
           const contaFiltro = normalizeInstagramAccount(url.searchParams.get("conta") || url.searchParams.get("instagram_conta"));
 
+          if (contaFiltro === LIGA_ACCOUNT) {
+            const { data: ligaPost } = await supabaseAdmin
+              .from("posts")
+              .select("id")
+              .eq("status", "Agendado")
+              .eq("instagram_conta", LIGA_ACCOUNT)
+              .lte("data_agendamento", nowIso)
+              .order("data_agendamento", { ascending: true })
+              .limit(1)
+              .maybeSingle();
+            if (ligaPost?.id) {
+              await supabaseAdmin
+                .from("posts")
+                .update({ status: "Rascunho", liga_dispatched_at: new Date().toISOString() })
+                .eq("id", ligaPost.id);
+            }
+            return new Response(
+              JSON.stringify({ post: null, message: "Liga em fluxo manual: post pronto salvo como rascunho para baixar/copiar no app." }),
+              { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
+            );
+          }
+
           let query = supabaseAdmin
             .from("posts")
             .select(
@@ -156,9 +178,9 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
           if (contaFiltro) {
             query = query.eq("instagram_conta", contaFiltro);
           } else {
-            // Segurança: publicação no perfil pessoal está suspensa. Quando o
-            // Make chama sem filtro, não entregar posts de @drfranciscomenezes.
-            query = query.neq("instagram_conta", "drfranciscomenezes");
+            // Segurança: quando algum integrador legado chama sem filtro, não
+            // entregar posts da Liga nem do perfil pessoal suspenso.
+            query = query.not("instagram_conta", "in", `(${LIGA_ACCOUNT},drfranciscomenezes)`);
           }
           const { data, error } = await query.maybeSingle();
 
