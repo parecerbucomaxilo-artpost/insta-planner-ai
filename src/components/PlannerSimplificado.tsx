@@ -595,7 +595,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 </div>
                 <Button onClick={handleGerar} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                  Gerador local criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
+                  Gerador local criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {isLiga ? "(salvar rascunho manual)" : quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
                 </Button>
               </>
             ) : (
@@ -646,7 +646,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                   </Button>
                 ) : (
                   <Button onClick={() => decidirPreview("agendar")} className="bg-emerald-600 hover:bg-emerald-700 col-span-2">
-                    <CalendarClock className="w-4 h-4 mr-1" /> Agendar
+                    <CalendarClock className="w-4 h-4 mr-1" /> {isLiga ? "Salvar rascunho manual" : "Agendar"}
                   </Button>
                 )}
                 <Button variant="outline" onClick={descartarPreview}>
@@ -686,7 +686,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               </div>
               <Button onClick={salvarManual} disabled={savingManual} className="w-full" variant="outline">
                 {savingManual ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : quando === "agora" ? <Zap className="w-4 h-4 mr-2" /> : <CalendarClock className="w-4 h-4 mr-2" />}
-                {quando === "agora" && !canPublishAutomatically ? "Salvar para postar manual" : quando === "agora" ? "Publicar agora" : "Agendar"}
+                {isLiga ? "Salvar rascunho manual" : quando === "agora" && !canPublishAutomatically ? "Salvar para postar manual" : quando === "agora" ? "Publicar agora" : "Agendar"}
               </Button>
             </Card>
           )}
