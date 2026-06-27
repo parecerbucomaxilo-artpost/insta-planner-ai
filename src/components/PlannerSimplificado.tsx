@@ -34,9 +34,10 @@ interface PlannerSimplificadoProps {
   contaFixa?: string;        // se setado, trava a conta (sem seletor)
   storageKey?: string;       // chave alternativa do localStorage
   audiencia?: "estudantes-graduacao" | "geral" | "chico-drfm";
+  permiteTipoLiga?: boolean; // habilita seletor "tipo Chico / tipo Liga"
 }
 
-export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao" }: PlannerSimplificadoProps = {}) {
+export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao", permiteTipoLiga = false }: PlannerSimplificadoProps = {}) {
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
   const approveFn = useServerFn(approvePost);
@@ -83,7 +84,11 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [loading, setLoading] = useState(false);
 
   const lsKey = storageKey ?? ACCOUNT_KEY;
+  const [tipoPostagem, setTipoPostagem] = useState<"chico" | "liga">("chico");
   const isLiga = conta === LIGA_ACCOUNT;
+  const usarTipoLiga = permiteTipoLiga && tipoPostagem === "liga";
+  const effectiveAudiencia: typeof audiencia = usarTipoLiga ? "estudantes-graduacao" : audiencia;
+  const effectiveConta = usarTipoLiga ? LIGA_ACCOUNT : conta;
   // Liga agora publica via @drfranciscomenezes (que está conectado) convidando @lactbmf como colaboradora.
   const canPublishAutomatically = isLiga ? true : destinoStatus === "ok";
 
@@ -257,7 +262,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   };
 
   const marcarConta = async (postId: string) => {
-    await supabase.from("posts").update({ instagram_conta: conta } as any).eq("id", postId);
+    await supabase.from("posts").update({ instagram_conta: effectiveConta } as any).eq("id", postId);
   };
 
   const handleGerar = async () => {
@@ -278,7 +283,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         formato,
         quando: iso,
         ambasRedes: false,
-        audiencia,
+        audiencia: effectiveAudiencia,
         modelo,
         modeloImagem,
       } as any });
@@ -317,7 +322,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         rede: (t.rede === "estilo-x" ? "estilo-x" : "instagram") as any,
         tipo: t.tipo as any, formato: t.formato as any, quando: t.quando,
         ambasRedes: false,
-        audiencia,
+        audiencia: effectiveAudiencia,
         modelo,
         modeloImagem,
       } as any });
@@ -389,7 +394,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         legenda, url_imagem: url,
         postar_instagram: true, postar_linkedin: false,
         status, data_agendamento: iso ?? null,
-        estilo_layout: "Padrão", instagram_conta: conta,
+        estilo_layout: "Padrão", instagram_conta: effectiveConta,
       } as any).select("id").single();
       if (error) throw error;
       if (shouldAutoPublish && ins?.id) {
@@ -452,6 +457,42 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           </>
         )}
       </Card>
+
+      {permiteTipoLiga && (
+        <Card className="p-5 space-y-3 border-2 border-indigo-200 bg-indigo-50/30">
+          <Label className="text-sm font-semibold">Tipo de postagem</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setTipoPostagem("chico")}
+              className={cn(
+                "px-3 py-3 rounded-md text-sm font-semibold border-2 transition-all text-left",
+                tipoPostagem === "chico" ? "border-indigo-500 bg-white text-indigo-900 shadow" : "border-zinc-200 bg-white/60 text-zinc-600 hover:border-indigo-300"
+              )}
+            >
+              👨‍⚕️ Tipo Chico
+              <div className="text-[11px] font-normal text-zinc-500 mt-0.5">Conteúdo científico do Prof. Francisco — paleta azul navy + ciano, assinatura CROSP.</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTipoPostagem("liga")}
+              className={cn(
+                "px-3 py-3 rounded-md text-sm font-semibold border-2 transition-all text-left",
+                tipoPostagem === "liga" ? "border-emerald-500 bg-white text-emerald-900 shadow" : "border-zinc-200 bg-white/60 text-zinc-600 hover:border-emerald-300"
+              )}
+            >
+              🎓 Tipo Liga
+              <div className="text-[11px] font-normal text-zinc-500 mt-0.5">Didático para graduação — paleta navy + teal, 2 logos da faculdade. Publica via @drfranciscomenezes convidando @lactbmf como colaboradora.</div>
+            </button>
+          </div>
+          {usarTipoLiga && (
+            <p className="text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1.5">
+              ✅ Criativo Liga ativo. O post sai pelo perfil do Prof. Francisco com convite de coautoria para a Liga.
+            </p>
+          )}
+        </Card>
+      )}
+
 
       {conta && !isLiga && (
           <Card className={`p-5 space-y-3 border-2 ${destinoStatus === "ok" ? "border-emerald-200 bg-emerald-50/30" : "border-amber-300 bg-amber-50/40"}`}>
