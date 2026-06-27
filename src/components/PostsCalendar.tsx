@@ -16,7 +16,7 @@ const statusColor: Record<string, string> = {
 };
 
 const statusLabel: Record<string, string> = {
-  EnviadoMake: "Enviado ao Make",
+  EnviadoMake: "Pendente Meta",
 };
 
 export function PostsCalendar({ posts }: { posts: PostRow[] }) {
