@@ -380,7 +380,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const url = await uploadPostImage(file, uid);
       const iso = buildAgendamentoIso();
       const shouldAutoPublish = quando === "agora" && canPublishAutomatically;
-      const status = shouldAutoPublish ? "Agendado" : quando === "agora" ? "Arquivado" : "Agendado";
+      const status = shouldAutoPublish ? "Agendado" : quando === "agora" ? "Rascunho" : "Agendado";
       const { data: ins, error } = await supabase.from("posts").insert({
         user_id: uid, tipo_post: "Post Único",
         legenda, url_imagem: url,
