@@ -185,8 +185,8 @@ export function SocialConnections() {
     try {
       const destino = await ensureLigaDestination({ data: { conta: "lactbmf.anhanguerasbo" } });
       const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo", logoutFacebookFirst: true } });
-      setLigaMetaOauthUrl(r.url);
-      setLigaMetaConnectPath(`/meta-connect?account=lactbmf.anhanguerasbo&next=${encodeURIComponent(r.url)}`);
+      setLigaMetaOauthUrl(r.loginUrl || r.url);
+      setLigaMetaConnectPath(`/meta-connect?account=lactbmf.anhanguerasbo&next=${encodeURIComponent(r.url)}${r.loginUrl ? `&login=${encodeURIComponent(r.loginUrl)}` : ""}`);
       toast.info("Clique em 'Abrir conexão Meta da Liga' para continuar fora do preview.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao conectar Instagram da Liga");
