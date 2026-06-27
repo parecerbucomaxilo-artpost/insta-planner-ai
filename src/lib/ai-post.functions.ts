@@ -4,10 +4,12 @@ const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
 export const MODELOS_IA = [
-  { id: "openai/gpt-5-mini", label: "GPT-5 Mini (padrão)" },
+  { id: "openai/gpt-5-mini", label: "GPT-5 Mini (grátis)" },
+  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (grátis)" },
 ] as const;
 const ModeloEnum = z.enum([
   "openai/gpt-5-mini",
+  "google/gemini-3-flash-preview",
   // legados aceitos para compat com posts antigos no DB
   "groq/llama-3.3-70b-versatile",
   "groq/llama-3.1-8b-instant",
