@@ -83,22 +83,45 @@ export async function generateImageBase64(opts: {
   const { width, height } = sizeToWH(opts.size);
   const seed = Math.floor(Math.random() * 1_000_000_000);
 
-  const res = await fetch(
+  const endpoints = [
+    `https://router.huggingface.co/hf-inference/models/${HF_IMAGE_MODEL}`,
     `https://api-inference.huggingface.co/models/${HF_IMAGE_MODEL}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${hfToken}`,
-        "Content-Type": "application/json",
-        Accept: "image/png",
-        "x-wait-for-model": "true",
-      },
-      body: JSON.stringify({
-        inputs: cleaned,
-        parameters: { width, height, num_inference_steps: 4, seed },
-      }),
-    },
-  );
+  ];
+
+  let res: Response | undefined;
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const url = endpoints[attempt % endpoints.length];
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 90_000);
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${hfToken}`,
+          "Content-Type": "application/json",
+          Accept: "image/png",
+          "x-wait-for-model": "true",
+        },
+        body: JSON.stringify({
+          inputs: cleaned,
+          parameters: { width, height, num_inference_steps: 4, seed },
+        }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (res.ok) break;
+      if (res.status < 500 && res.status !== 429 && res.status !== 503) break;
+      lastErr = new Error(`HF ${res.status}`);
+    } catch (e) {
+      clearTimeout(timer);
+      lastErr = e;
+    }
+    await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+  }
+
+  if (!res) throw new Error(`HuggingFace fetch falhou: ${String((lastErr as any)?.message || lastErr)}`);
+
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
