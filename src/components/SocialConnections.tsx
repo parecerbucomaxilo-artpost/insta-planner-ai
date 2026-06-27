@@ -5,13 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Linkedin, Instagram, Loader2, CheckCircle2, AlertCircle, ExternalLink, Send, Save, Link as LinkIcon, Copy, Check } from "lucide-react";
+import { Linkedin, Instagram, Loader2, Send, Save, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { ensurePerfil } from "@/lib/perfil.functions";
-import { ensurePublicationDestinationProfile, saveManualInstagramToken } from "@/lib/publication-destination.functions";
-import { createInstagramOAuthStartUrl, createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
+import { createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
 type LiStatus =
@@ -25,9 +24,7 @@ export function SocialConnections() {
   const fetchStatus = async () => ({ connected: false });
   const sendLinkedIn = async () => ({ ok: false, error: "Reset" });
   const ensurePerfilFn = useServerFn(ensurePerfil);
-  const ensureLigaDestination = useServerFn(ensurePublicationDestinationProfile);
   const startMetaOAuth = useServerFn(createMetaOAuthStartUrl);
-  const startInstagramOAuth = useServerFn(createInstagramOAuthStartUrl);
   const [status, setStatus] = useState<LiStatus>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
@@ -37,31 +34,6 @@ export function SocialConnections() {
   const [liSaving, setLiSaving] = useState(false);
   const [liTesting, setLiTesting] = useState(false);
   const [perfilId, setPerfilId] = useState<string | null>(null);
-  const [ligaMetaConnectPath, setLigaMetaConnectPath] = useState("");
-  const [ligaMetaOauthUrl, setLigaMetaOauthUrl] = useState("");
-  const [ligaMetaLoginUrl, setLigaMetaLoginUrl] = useState("");
-  const [ligaMetaCopied, setLigaMetaCopied] = useState(false);
-  const [ligaManualToken, setLigaManualToken] = useState("");
-  const [ligaManualIgId, setLigaManualIgId] = useState("");
-  const [ligaManualSaving, setLigaManualSaving] = useState(false);
-  const saveLigaManualToken = useServerFn(saveManualInstagramToken);
-
-  const handleSaveLigaManualToken = async () => {
-    const token = ligaManualToken.trim();
-    const igId = ligaManualIgId.trim();
-    if (!token || !igId) return toast.error("Cole o Access Token e o IG Business ID da Liga.");
-    setLigaManualSaving(true);
-    try {
-      await saveLigaManualToken({ data: { conta: "lactbmf.anhanguerasbo", accessToken: token, igBusinessId: igId } });
-      toast.success("Token Instagram da Liga salvo ✅ A Liga já pode publicar direto.");
-      setLigaManualToken("");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao salvar token manual.");
-    } finally {
-      setLigaManualSaving(false);
-    }
-  };
-
   useEffect(() => {
     (async () => {
       try {
@@ -96,58 +68,6 @@ export function SocialConnections() {
       }
     })();
   }, []);
-
-  const handleConnectLigaMeta = async () => {
-    const { data: sess } = await supabase.auth.getSession();
-    if (!sess.session?.user?.id) {
-      toast.error("Faça login antes de conectar o Instagram da Liga.");
-      window.location.href = `/auth?redirect=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
-
-    try {
-      const destino = await ensureLigaDestination({ data: { conta: "lactbmf.anhanguerasbo" } });
-      const [igResult, fbResult] = await Promise.allSettled([
-        startInstagramOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo" } }),
-        startMetaOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo" } }),
-      ]);
-      const igUrl = igResult.status === "fulfilled" ? igResult.value.url : "";
-      const fbLoginUrl = fbResult.status === "fulfilled" ? (fbResult.value.loginUrl || fbResult.value.privateAuthUrl || fbResult.value.url) : "";
-      if (!igUrl && !fbLoginUrl) throw new Error("Não foi possível gerar link Meta/Instagram da Liga.");
-
-      setLigaMetaOauthUrl(igUrl || fbLoginUrl);
-      setLigaMetaLoginUrl(fbLoginUrl);
-      setLigaMetaConnectPath(
-        `/meta-connect?account=lactbmf.anhanguerasbo` +
-          (igUrl ? `&next=${encodeURIComponent(igUrl)}` : "") +
-          (fbLoginUrl ? `&login=${encodeURIComponent(fbLoginUrl)}` : ""),
-      );
-      toast.info("Preparei 2 caminhos: Instagram direto e Facebook/Meta em nova sessão. Abra pelo botão abaixo.");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao conectar Instagram da Liga");
-    }
-  };
-
-  const handleCopyLigaMetaUrl = async () => {
-    const urlToCopy = ligaMetaLoginUrl || ligaMetaOauthUrl;
-    if (!urlToCopy) return toast.error("Prepare a conexão Meta da Liga primeiro.");
-    try {
-      await navigator.clipboard.writeText(urlToCopy);
-    } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = urlToCopy;
-      textarea.setAttribute("readonly", "");
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-    }
-    setLigaMetaCopied(true);
-    window.setTimeout(() => setLigaMetaCopied(false), 1800);
-    toast.success("Link Meta da Liga copiado. Cole na barra do navegador fora do preview.");
-  };
 
   const handleSaveLiWebhook = async () => {
     const url = liWebhook.trim();
