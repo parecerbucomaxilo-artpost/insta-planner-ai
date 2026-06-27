@@ -262,7 +262,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   };
 
   const marcarConta = async (postId: string) => {
-    await supabase.from("posts").update({ instagram_conta: conta } as any).eq("id", postId);
+    await supabase.from("posts").update({ instagram_conta: effectiveConta } as any).eq("id", postId);
   };
 
   const handleGerar = async () => {
