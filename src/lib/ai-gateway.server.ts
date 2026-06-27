@@ -162,7 +162,7 @@ export async function generateImageBase64(opts: {
   const accentX = width * (0.12 + (seed % 30) / 100);
   strokeEllipse(px, width, height, accentX, height * 0.28, width * 0.08, width * 0.08, cyan, 0.55, Math.max(3, width * 0.003));
 
-  const img = PhotonImage.new(px, width, height);
+  const img = new PhotonImage(px, width, height);
   const out = img.get_bytes_jpeg(92);
   img.free();
   return Buffer.from(out).toString("base64");
