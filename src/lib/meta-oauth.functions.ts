@@ -13,6 +13,11 @@ const SCOPES = [
   "business_management",
 ].join(",");
 
+const INSTAGRAM_SCOPES = [
+  "instagram_business_basic",
+  "instagram_business_content_publish",
+].join(",");
+
 function normalizeInstagramAccount(value: string | null | undefined) {
   const normalized = String(value || "").trim().replace(/^@+/, "").toLowerCase();
   if (!normalized) return null;
@@ -98,5 +103,48 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
     privateAuthUrl.searchParams.set("auth_nonce", crypto.randomUUID());
 
     return { url: authUrl.toString(), loginUrl: loginUrl.toString(), privateAuthUrl: privateAuthUrl.toString() };
+  });
+
+export const createInstagramOAuthStartUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { perfilId: string; targetAccount?: string }) =>
+    z.object({
+      perfilId: z.string().uuid(),
+      targetAccount: z.string().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const appId = process.env.META_INSTAGRAM_APP_ID || process.env.META_APP_ID;
+    const appSecret = process.env.META_INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET;
+    if (!appId) throw new Error("META_INSTAGRAM_APP_ID não configurado");
+    if (!appSecret) throw new Error("META_INSTAGRAM_APP_SECRET não configurado");
+
+    const { data: perfil, error } = await context.supabase
+      .from("perfil_usuario")
+      .select("id,user_id")
+      .eq("id", data.perfilId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!perfil || perfil.user_id !== context.userId) {
+      throw new Error("Perfil não pertence ao usuário autenticado");
+    }
+
+    const targetAccount = normalizeInstagramAccount(data.targetAccount);
+    const targetEncoded = targetAccount ? base64UrlEncode(targetAccount) : "_";
+    const nonce = crypto.randomUUID();
+    const payload = `${data.perfilId}.${nonce}.${targetEncoded}.ig`;
+    const sig = createHmac("sha256", appSecret).update(payload).digest("hex").slice(0, 32);
+    const state = `${payload}.${sig}`;
+
+    const authUrl = new URL("https://www.instagram.com/oauth/authorize");
+    authUrl.searchParams.set("client_id", appId);
+    authUrl.searchParams.set("redirect_uri", `${META_OAUTH_ORIGIN}/api/public/instagram-oauth/callback`);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("scope", INSTAGRAM_SCOPES);
+    authUrl.searchParams.set("state", state);
+    authUrl.searchParams.set("force_reauth", "true");
+    authUrl.searchParams.set("enable_fb_login", "false");
+
+    return { url: authUrl.toString() };
   });
 
