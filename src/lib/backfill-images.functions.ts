@@ -18,8 +18,7 @@ function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; tota
 
 export const backfillMissingImages = createServerFn({ method: "POST" })
   .handler(async () => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const key = process.env.GROQ_API_KEY ?? "";
 
     const { generateImageBase64 } = await import("@/lib/ai-gateway.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
