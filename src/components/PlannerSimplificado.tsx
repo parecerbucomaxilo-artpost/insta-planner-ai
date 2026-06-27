@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
 type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
-import { ensurePublicationDestinationProfile, getPublicationDestination, saveManualInstagramToken, savePublicationDestination } from "@/lib/publication-destination.functions";
+import { ensurePublicationDestinationProfile, getPublicationDestination, saveManualInstagramToken } from "@/lib/publication-destination.functions";
 import type { PostRow } from "@/lib/posts-types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -43,7 +43,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const discardFn = useServerFn(discardPost);
   const publishIg = useServerFn(publishInstagramNow);
   const fetchDestino = useServerFn(getPublicationDestination);
-  const saveDestino = useServerFn(savePublicationDestination);
   const saveManualToken = useServerFn(saveManualInstagramToken);
   const ensureDestino = useServerFn(ensurePublicationDestinationProfile);
   const startMetaOAuth = useServerFn(createMetaOAuthStartUrl);
@@ -51,10 +50,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   const [conta, setConta] = useState<string>("");
   const [contaInput, setContaInput] = useState<string>("");
-  const [destinoUrl, setDestinoUrl] = useState<string>("");
   const [destinoStatus, setDestinoStatus] = useState<"loading" | "ok" | "missing">("loading");
-  const [destinoModo, setDestinoModo] = useState<"meta" | "webhook" | "missing">("missing");
-  const [savingDestino, setSavingDestino] = useState(false);
+  const [destinoModo, setDestinoModo] = useState<"meta" | "missing">("missing");
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [metaConnectPath, setMetaConnectPath] = useState<string>("");
   const [metaOauthUrl, setMetaOauthUrl] = useState<string>("");
@@ -87,7 +84,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   const lsKey = storageKey ?? ACCOUNT_KEY;
   const isLiga = conta === LIGA_ACCOUNT;
-  const canPublishAutomatically = destinoStatus === "ok" && !isLiga;
+  const canPublishAutomatically = destinoStatus === "ok";
 
   useEffect(() => {
     if (contaFixa) { setConta(contaFixa); setContaInput(contaFixa); return; }
@@ -107,39 +104,22 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     toast.success(`Conta @${n} selecionada.`);
   };
 
-  // Carrega destino (webhook/token Meta) configurado para esta conta
+  // Carrega destino Meta/token configurado para esta conta
   useEffect(() => {
-    if (!conta) { setDestinoStatus("missing"); setDestinoModo("missing"); setDestinoUrl(""); return; }
+    if (!conta) { setDestinoStatus("missing"); setDestinoModo("missing"); return; }
     setDestinoStatus("loading");
     (async () => {
       try {
         const destino = await fetchDestino({ data: { conta } });
-        setDestinoUrl(destino.webhookUrl);
         setDestinoStatus(destino.status);
         setDestinoModo(destino.mode);
       } catch (e: any) {
-        setDestinoUrl("");
         setDestinoStatus("missing");
         setDestinoModo("missing");
         toast.error(e.message || "Erro ao carregar destino.");
       }
     })();
   }, [conta, fetchDestino]);
-
-  const salvarDestino = async () => {
-    if (!conta) return toast.error("Selecione uma conta primeiro.");
-    const url = destinoUrl.trim();
-    if (!/^https?:\/\//i.test(url)) return toast.error("Cole uma URL de webhook válida (https://...).");
-    setSavingDestino(true);
-    try {
-      const destino = await saveDestino({ data: { conta, webhookUrl: url } });
-      setDestinoUrl(destino.webhookUrl);
-      setDestinoStatus(destino.status);
-      toast.success(`Destino salvo para @${conta}.`);
-    } catch (e: any) {
-      toast.error(e.message || "Falha ao salvar destino.");
-    } finally { setSavingDestino(false); }
-  };
 
   const conectarMetaConta = async () => {
     if (!conta) return toast.error("Selecione uma conta primeiro.");
@@ -205,7 +185,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   const publishSuccessMessage = (out: Awaited<ReturnType<typeof publishIg>>) => {
     if (out && "via" in out && out.via === "meta") return "Publicado diretamente no Instagram.";
-    return "Enviado ao webhook próprio da conta. Confira a execução antes de considerar publicado.";
+    return "Publicado diretamente no Instagram.";
   };
 
   const baixarMidia = async (url: string, nome: string) => {
@@ -469,12 +449,11 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       </Card>
 
       {conta && (
-        <Card className={`p-5 space-y-3 border-2 ${!isLiga && destinoStatus === "ok" ? "border-emerald-200 bg-emerald-50/30" : "border-amber-300 bg-amber-50/40"}`}>
+          <Card className={`p-5 space-y-3 border-2 ${destinoStatus === "ok" ? "border-emerald-200 bg-emerald-50/30" : "border-amber-300 bg-amber-50/40"}`}>
           <Label className="text-sm font-semibold flex items-center gap-2">
             Destino de publicação de @{conta}
-            {isLiga && <Badge className="bg-amber-600">Manual seguro</Badge>}
-            {!isLiga && destinoStatus === "ok" && <Badge className="bg-emerald-600">Configurado</Badge>}
-            {!isLiga && destinoStatus === "missing" && <Badge variant="destructive">Não configurado</Badge>}
+            {destinoStatus === "ok" && <Badge className="bg-emerald-600">Meta conectada</Badge>}
+            {destinoStatus === "missing" && <Badge variant="destructive">Não conectado</Badge>}
           </Label>
           {destinoStatus === "missing" && (
             <div className="rounded-md border border-amber-200 bg-white/70 p-3 text-xs text-amber-950 space-y-1">
@@ -484,9 +463,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           )}
           {destinoModo === "meta" && (
             <p className="text-xs text-emerald-800">✅ Publicação direta Meta ativa para @{conta}.</p>
-          )}
-          {destinoModo === "webhook" && (
-            <p className="text-xs text-emerald-800">Webhook exclusivo ativo para @{conta}.</p>
           )}
           <div className="flex flex-wrap gap-2">
             <Button onClick={conectarMetaConta} variant="secondary">
@@ -511,17 +487,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview.
             </p>
           )}
-          {!isLiga && <div className="flex gap-2">
-            <Input
-              value={destinoUrl}
-              onChange={(e) => setDestinoUrl(e.target.value)}
-              placeholder="https://hook.us2.make.com/..."
-              className="flex-1"
-            />
-            <Button onClick={salvarDestino} disabled={savingDestino}>
-              {savingDestino ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar destino"}
-            </Button>
-          </div>}
         </Card>
       )}
 
@@ -728,7 +693,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                     <div className="flex-1 min-w-0">
                       <p className="text-sm line-clamp-2">{p.legenda || "(sem legenda)"}</p>
                       <div className="flex items-center gap-2 mt-1 text-xs text-zinc-500">
-                        <Badge variant="outline">{p.status}</Badge>
+                        <Badge variant="outline">{p.status === "EnviadoMake" ? "Pendente Meta" : p.status}</Badge>
                         {p.data_agendamento && <span>{format(new Date(p.data_agendamento), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>}
                       </div>
                     </div>
@@ -738,10 +703,10 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         Re-tentar
                       </Button>
                     )}
-                    {p.status === "EnviadoMake" && !isLiga && (
-                      <Button variant="outline" size="sm" onClick={() => tentarNovamente(p.id)} disabled={busy} title="Enviar novamente para o webhook Make da Liga">
+                    {p.status === "EnviadoMake" && (
+                      <Button variant="outline" size="sm" onClick={() => tentarNovamente(p.id)} disabled={busy} title="Tentar publicar pela Meta">
                         {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1" />}
-                        Reenviar Make
+                        Publicar Meta
                       </Button>
                     )}
                     {p.url_imagem && (

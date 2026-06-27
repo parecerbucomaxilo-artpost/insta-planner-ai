@@ -758,7 +758,7 @@ export const approvePost = createServerFn({ method: "POST" })
           results.instagram = r;
         } catch (err: any) {
           const msg = String(err?.message || "");
-          if (/webhook do Make|Instagram oficial|Configure seu perfil/i.test(msg)) {
+          if (/Instagram oficial|Configure seu perfil|token Meta|Meta/i.test(msg)) {
             warnings.push(`Instagram não configurado: ${msg}`);
           } else {
             warnings.push(`Instagram: ${msg}`);
@@ -771,7 +771,7 @@ export const approvePost = createServerFn({ method: "POST" })
         await supabaseAdmin.from("posts").update({ status: "Erro", user_id: publishUserId }).eq("id", data.id);
         results.status = "Erro";
       } else {
-        const nextStatus = results.instagram?.status === "EnviadoMake" ? "EnviadoMake" : "Publicado";
+        const nextStatus = "Publicado";
         await supabaseAdmin.from("posts").update({ status: nextStatus, user_id: publishUserId }).eq("id", data.id);
         results.status = nextStatus;
       }

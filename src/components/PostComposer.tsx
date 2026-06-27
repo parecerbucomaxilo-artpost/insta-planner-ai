@@ -118,7 +118,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         }
       }
 
-      toast.success(quando === "agora" ? "Post enviado. Se for via Make, confira a execução no cenário antes de considerar publicado." : "Post agendado!", { id: tId });
+      toast.success(quando === "agora" ? "Post publicado pela Meta." : "Post agendado!", { id: tId });
       setLegenda(""); setImagem(null); setFileToUpload(null); setFileName(null);
       setDataAgendada(undefined);
       onCreated();
@@ -798,7 +798,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                     if ((out as any)?.warning) toast.warning((out as any).warning);
                     else toast.success(
                       acao === "publicar"
-                        ? ((out as any)?.instagram?.via === "webhook" ? "Enviado ao Make. Confira a execução no cenário antes de considerar publicado." : "Publicado!")
+                        ? "Publicado!"
                         : acao === "agendar" ? "Agendado!" : "Arquivado em Rascunho.",
                     );
                     setPreview(null);

@@ -6,13 +6,9 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 // Usar o domínio estável de preview (sempre serve a build mais recente, inclui a rota /api/public/storage-media
 // mesmo antes do publish). O domínio "insta-planner-ai.lovable.app" só recebe a rota após Republicar.
 const PUBLIC_APP_URL = "https://project--221123ce-bfcc-41c2-ad79-e7560d18268d-dev.lovable.app";
-const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
-// Conta historicamente associada ao DEFAULT_MAKE_WEBHOOK (cenário Make original).
-// Usada como fallback seguro quando o perfil dessa conta ainda não tem webhook próprio salvo.
-const DEFAULT_WEBHOOK_ACCOUNT = "drfranciscomenezes";
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 
-type PublishVia = "meta" | "webhook";
+type PublishVia = "meta";
 
 type PublishPostInput = {
   supabaseAdmin: any;
@@ -27,12 +23,6 @@ function normalizeInstagramAccount(value: string | null | undefined) {
 
 function isInvalidMetaTokenMessage(message: string) {
   return /access token|OAuthException|Cannot parse|token.*inválid|token.*expirad|Session has expired|Error validating access token/i.test(message);
-}
-
-function getDedicatedMakeWebhook(account: string | null | undefined) {
-  const normalized = normalizeInstagramAccount(account);
-  if (normalized === LIGA_ACCOUNT) return process.env.MAKE_LIGA_WEBHOOK_URL?.trim() || null;
-  return null;
 }
 
 async function findInstagramProfileByAccount(supabaseAdmin: any, conta: string, columns: string) {
@@ -266,125 +256,6 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
   }
 }
 
-function buildMakeFiles(imageUrls: string[]) {
-  return imageUrls.map((url, index) => ({
-    url,
-    file_url: url,
-    fileUrl: url,
-    image_url: url,
-    imageUrl: url,
-    photo_url: url,
-    photoUrl: url,
-    "Photo URL": url,
-    name: `imagem-${index + 1}.jpg`,
-    filename: `imagem-${index + 1}.jpg`,
-  }));
-}
-
-function buildConfirmationFields(postId: string) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return {};
-  const confirmToken = createHmac("sha256", secret).update(postId).digest("hex");
-  return {
-    confirmar_publicado_url: "https://insta-planner-ai.lovable.app/api/public/confirmar-publicado",
-    confirmation_url: "https://insta-planner-ai.lovable.app/api/public/confirmar-publicado",
-    postback_url: "https://insta-planner-ai.lovable.app/api/public/confirmar-publicado",
-    confirm_token: confirmToken,
-    token_confirmacao: confirmToken,
-  };
-}
-
-async function publishViaWebhook(webhookUrl: string, payload: Record<string, unknown>, account?: string | null): Promise<{
-  queued: true;
-  status: number | "timeout";
-  confirmed?: boolean;
-  externalId?: string;
-}> {
-  const requiredPhotoUrl = String(payload.photo_url || payload["Photo URL"] || payload.image_url || payload.url_imagem || "").trim();
-  if (!requiredPhotoUrl) {
-    throw new Error("Photo URL vazio: o post precisa ter uma imagem pública antes de enviar ao Make.");
-  }
-  // Make está configurado com "Webhook response 15" como 1ª rota → responde em <2s.
-  // Se o Make responder "Queue is full", a requisição não deve virar erro fatal no app.
-  const maxAttempts = 1;
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
-    let res: Response;
-    try {
-      res = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        // Make recebeu o payload mas demorou a responder — tratamos como enfileirado.
-        console.warn("[instagram-webhook] timeout: assumindo enfileirado no Make");
-        return { queued: true, status: "timeout" as const };
-      }
-      throw error;
-    } finally {
-      clearTimeout(timeout);
-    }
-    const text = await res.text().catch(() => "");
-    if (res.ok) {
-      let json: any = null;
-      try { json = text ? JSON.parse(text) : null; } catch { /* resposta simples do Make */ }
-      if (json && (json.ok === false || json.success === false || json.error)) {
-        throw new Error(`Make recebeu o post, mas respondeu falha: ${json.error || json.message || text.slice(0, 200)}`);
-      }
-      const confirmed = Boolean(json?.published === true || json?.publicado === true || json?.status === "published" || json?.status === "Publicado");
-      const externalId = String(json?.instagram_id || json?.media_id || json?.id || "") || undefined;
-      console.info("[instagram-webhook] enviado ao Make", {
-        account: normalizeInstagramAccount(account),
-        status: res.status,
-        confirmed,
-        externalId,
-        photo_url: requiredPhotoUrl.slice(0, 120),
-      });
-      return { queued: true, status: res.status, confirmed, externalId };
-    }
-    const isQueueFull = /queue\s*is\s*full|queue full|rate/i.test(text);
-    console.error(`[instagram-webhook] respondeu`, res.status, "url=", webhookUrl, "body=", text);
-    if (isQueueFull) {
-      console.warn("[instagram-webhook] fila cheia no Make: mantendo post para nova tentativa automática");
-      throw new Error("Webhook Instagram: Queue is full — post mantido para nova tentativa automática.");
-    }
-    const makeGone = res.status === 410 || /no scenario listening for this webhook/i.test(text);
-    if (makeGone) {
-      const normalizedAccount = normalizeInstagramAccount(account);
-      const accountLabel = normalizedAccount ? `@${normalizedAccount}` : "desta conta";
-      const scenarioLabel = normalizedAccount === "lactbmf.anhanguerasbo"
-        ? "IG Liga LACTBMF"
-        : normalizedAccount === "drfranciscomenezes"
-          ? "IG Chico / @drfranciscomenezes"
-          : `Instagram de ${accountLabel}`;
-      const repairAction = normalizedAccount === "lactbmf.anhanguerasbo"
-        ? "Atualize o secret MAKE_LIGA_WEBHOOK_URL com a URL ativa do cenário IG Liga LACTBMF, ou salve uma nova URL no destino da Liga."
-        : `Copie a URL do cenário ${scenarioLabel} ativo e salve no destino de publicação de ${accountLabel} antes de publicar.`;
-      throw new Error(
-        "Webhook Instagram inválido ou inativo no Make (410). " +
-        repairAction,
-      );
-    }
-    if (res.status >= 500) {
-      const normalizedAccount = normalizeInstagramAccount(account);
-      const accountLabel = normalizedAccount ? `@${normalizedAccount}` : "desta conta";
-      throw new Error(
-        `O cenário do Make recebeu o post de ${accountLabel}, mas falhou internamente (${res.status}). ` +
-        "Verifique no History do Make qual módulo ficou vermelho; o app já enviou imagens em URL pública compatível.",
-      );
-    }
-    const hint = res.status === 400
-        ? " — cenário do Make recusou o payload. Verifique se o cenário está ATIVO."
-        : "";
-    throw new Error(`Webhook Instagram respondeu ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}${hint}`);
-  }
-  throw new Error("Webhook Instagram não foi disparado.");
-}
-
 export async function publishInstagramPostById({ supabaseAdmin, postId, userId }: PublishPostInput) {
   const { data: post, error: postError } = await supabaseAdmin
     .from("posts")
@@ -398,12 +269,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
   if (post.postar_instagram === false) throw new Error("Este post não está marcado para Instagram.");
 
   try {
-    const hasDestino = (p: any) =>
-      !!p && (
-        (p.instagram_access_token && p.instagram_business_account_id) ||
-        p.instagram_webhook_url ||
-        p.webhook_url
-      );
+    const hasDestino = (p: any) => !!p && p.instagram_access_token && p.instagram_business_account_id;
 
     const contaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
 
@@ -413,7 +279,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     if (!contaAlvo) {
       throw new Error(
         `Publicação bloqueada: este post não tem instagram_conta definida. ` +
-        `Para Liga, defina instagram_conta=@${LIGA_ACCOUNT}; o sistema não usa mais @${DEFAULT_WEBHOOK_ACCOUNT} como fallback.`,
+        `Para Liga, defina instagram_conta=@${LIGA_ACCOUNT}; o sistema só publica diretamente pela Meta.`,
       );
     }
 
@@ -427,19 +293,16 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       perfil = await findInstagramProfileByAccount(
         supabaseAdmin,
         contaAlvo,
-        "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url",
+        "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id",
       );
       if (!hasDestino(perfil)) {
         throw new Error(
           contaAlvo === LIGA_ACCOUNT
-            ? `Destino da Liga não configurado. Salve um webhook próprio da Liga ou um token manual de @${LIGA_ACCOUNT}; o sistema não usará a conta @${DEFAULT_WEBHOOK_ACCOUNT}.`
-            : `Conta @${contaAlvo} não tem destino configurado (token Meta ou webhook próprio). ` +
-              `Configure o perfil dessa conta em "Configurações > Perfil" antes de publicar — ` +
-              `senão o post seria publicado na conta errada.`,
+            ? `Destino da Liga não configurado. Conecte o Instagram @${LIGA_ACCOUNT} pela Meta antes de publicar.`
+            : `Conta @${contaAlvo} não tem token Meta configurado. ` +
+              `Conecte essa conta antes de publicar para evitar publicação na conta errada.`,
         );
       }
-      // Se o perfil dessa conta NÃO tem token Meta próprio mas tem webhook próprio, usa o webhook próprio.
-      // NUNCA reaproveitar o token Meta de outro perfil (publicaria no IG errado).
     }
 
 
@@ -487,138 +350,11 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     const caption = post.legenda_instagram || post.legenda || "";
     const isStory = /stor/i.test(post.formato_midia || "");
     const isCarousel = post.tipo_post === "Carrossel" && imageUrls.length > 1;
-    const postType = isStory ? "story" : isCarousel ? "carrossel" : "feed";
-    // Campo usado pelo Router do Make: deve representar a rota (feed/carrossel/stories),
-    // não o tipo técnico do arquivo (imagem). Antes feed ia como "imagem" e podia cair
-    // fora dos filtros do cenário da Liga.
-    const makeTipo = isCarousel ? "carrossel" : isStory ? "stories" : "feed";
-    const makeTipoSingular = isStory ? "story" : makeTipo;
-    const makeMediaKind = isCarousel ? "carousel" : isStory ? "story" : "photo";
-    const makeRota = isCarousel ? "Carrossel" : isStory ? "Story" : "Post único";
-    const primaryImageUrl = imageUrls[0];
-    let via: PublishVia = "webhook";
+    let via: PublishVia = "meta";
     let externalId: string | undefined;
-    let confirmedByWebhook = false;
 
-    const ownWebhook = perfil.instagram_webhook_url || perfil.webhook_url || null;
     const targetAccount = normalizeInstagramAccount(contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba);
     const isLigaTarget = targetAccount === "lactbmf.anhanguerasbo";
-    const isChicoTarget = targetAccount === "drfranciscomenezes";
-    const forbiddenAccount = isLigaTarget ? "drfranciscomenezes" : isChicoTarget ? "lactbmf.anhanguerasbo" : undefined;
-
-    // Bloqueio de suspensão removido — @drfranciscomenezes reativado pelo usuário.
-
-    const publishWebhookForProfile = async (reason?: string) => {
-      // Garantia anti-cross-posting: quando o post tem instagram_conta,
-      // só publicamos via webhook PRÓPRIO desse perfil. NUNCA cai no
-      // DEFAULT_MAKE_WEBHOOK nem em webhook de outro perfil — isso publicaria
-      // conteúdo da Liga na conta @drfranciscomenezes (ou vice-versa).
-      const dedicatedWebhook = getDedicatedMakeWebhook(contaAlvo || targetAccount);
-      if (contaAlvo && contaAlvo !== DEFAULT_WEBHOOK_ACCOUNT && !ownWebhook && !dedicatedWebhook) {
-        throw new Error(
-          reason
-            ? `${reason} Além disso, @${contaAlvo} não tem webhook próprio configurado. Salve um webhook próprio dessa conta para publicar sem depender do token Meta.`
-            : `Conta @${contaAlvo} sem webhook próprio configurado. ` +
-              `Cadastre o webhook do Make específico dessa conta em "Configurações > Perfil" ` +
-              `antes de publicar — o fallback global publicaria na conta errada.`,
-        );
-      }
-      // Para a Liga, o webhook dedicado salvo como secret tem prioridade sobre qualquer URL antiga no banco.
-      // Isso evita o erro 410 quando o cenário Make foi recriado e a URL visível antiga ficou desatualizada.
-      const webhookUrl = dedicatedWebhook || ownWebhook || DEFAULT_MAKE_WEBHOOK;
-      via = "webhook";
-      const webhookResult = await publishViaWebhook(webhookUrl, {
-        id: post.id,
-        post_id: post.id,
-        ...buildConfirmationFields(post.id),
-        user_id: userId,
-        instagram_conta: targetAccount || undefined,
-        conta: targetAccount || undefined,
-        arroba: targetAccount || undefined,
-        nome_perfil: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
-        profile_name: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
-        author_name: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
-        display_name: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
-        conta_destino: targetAccount || undefined,
-        conta_destino_obrigatoria: targetAccount || undefined,
-        target_instagram_account: targetAccount || undefined,
-        target_instagram_username: targetAccount ? `@${targetAccount}` : undefined,
-        make_scenario: isLigaTarget ? "liga_lactbmf" : isChicoTarget ? "chico_drfranciscomenezes" : "instagram",
-        perfil_proibido: forbiddenAccount,
-        forbidden_instagram_account: forbiddenAccount ? `@${forbiddenAccount}` : undefined,
-        bloquear_publicacao_se_conta_diferente: Boolean(targetAccount),
-        plataforma: "Instagram",
-        type: makeTipo,
-        tipo: makeTipo,
-        tipo_make: makeTipo,
-        tipo_make_singular: makeTipoSingular,
-        tipo_publicacao: postType,
-        tipo_midia: makeMediaKind,
-        post_type: postType,
-        media_type: postType,
-        media_kind: makeMediaKind,
-        formato: makeTipo,
-        formato_publicacao: postType,
-        content_type: "post",
-        tipo_conteudo: makeMediaKind,
-        tipo_arquivo: makeMediaKind,
-        tipo_imagem: "imagem",
-        tipo_post: post.tipo_post,
-        rota: makeRota,
-        router_route: makeRota,
-        make_route: makeRota,
-        eh_carrossel: isCarousel,
-        carrossel: isCarousel,
-        is_carousel: isCarousel,
-        legenda: caption,
-        caption,
-        caption_instagram: caption,
-        texto: caption,
-        url_imagem: primaryImageUrl,
-        imagem_url: primaryImageUrl,
-        image_url: primaryImageUrl,
-        media_url: primaryImageUrl,
-        arquivo_url: primaryImageUrl,
-        photo_url: primaryImageUrl,
-        photo_url_obrigatorio: primaryImageUrl,
-        photoUrl: primaryImageUrl,
-        PhotoUrl: primaryImageUrl,
-        photoURL: primaryImageUrl,
-        "Photo URL": primaryImageUrl,
-        "photo url": primaryImageUrl,
-        "PHOTO URL": primaryImageUrl,
-        "Image URL": primaryImageUrl,
-        "image url": primaryImageUrl,
-        photo: primaryImageUrl,
-        foto_url: primaryImageUrl,
-        foto: primaryImageUrl,
-        picture: primaryImageUrl,
-        picture_url: primaryImageUrl,
-        thumbnail_url: primaryImageUrl,
-        link_imagem: primaryImageUrl,
-        link: primaryImageUrl,
-        url: primaryImageUrl,
-        imagens_carrossel: imageUrls,
-        image_urls: imageUrls,
-        images: imageUrls,
-        photos: imageUrls,
-        fotos: imageUrls,
-        photo_urls: imageUrls,
-        files: buildMakeFiles(imageUrls),
-        Files: buildMakeFiles(imageUrls),
-        arquivos: buildMakeFiles(imageUrls),
-        carousel_files: buildMakeFiles(imageUrls),
-        carrossel_files: buildMakeFiles(imageUrls),
-        file_urls: imageUrls,
-        FileURLs: imageUrls,
-        imagens_carrossel_json: JSON.stringify(imageUrls),
-        image_urls_json: JSON.stringify(imageUrls),
-        photos_json: JSON.stringify(imageUrls),
-        photo_urls_csv: imageUrls.join(","),
-      }, contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba || null);
-      externalId = webhookResult.externalId || `make:${webhookResult.status}`;
-      confirmedByWebhook = Boolean(webhookResult.confirmed);
-    };
 
     // Fallback Liga: usa token da Liga salvo como secret (META_LIGA_ACCESS_TOKEN)
     // quando o perfil ainda não tem token Meta próprio. Resolve o IG Business ID via /me/accounts.
@@ -722,13 +458,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     return { ok: true, via, externalId, profileId: perfil.id, status: nextStatus };
   } catch (error) {
-    // Se a fila do Make estiver cheia, NÃO marca como Erro — o post continua agendado
-    // para que o usuário (ou o cron) tente novamente quando a fila esvaziar.
-    const msg = error instanceof Error ? error.message : String(error);
-    const isQueueFull = /queue\s*is\s*full|fila.*chei/i.test(msg);
-    if (!isQueueFull) {
-      await supabaseAdmin.from("posts").update({ status: "Erro", user_id: post.user_id === TEMP_USER_ID ? userId : post.user_id }).eq("id", post.id);
-    }
+    await supabaseAdmin.from("posts").update({ status: "Erro", user_id: post.user_id === TEMP_USER_ID ? userId : post.user_id }).eq("id", post.id);
     throw error;
   }
 }
