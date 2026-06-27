@@ -21,7 +21,7 @@ const statusColor: Record<string, string> = {
 };
 
 const statusLabel: Record<string, string> = {
-  EnviadoMake: "Enviado ao Make",
+  EnviadoMake: "Pendente Meta",
 };
 
 export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () => void }) {
@@ -50,7 +50,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
       if (out && "ok" in out && out.ok === false) {
         throw new Error("error" in out ? out.error : "Falha ao publicar no Instagram.");
       }
-      toast.success(out.via === "meta" ? "Publicado no Instagram!" : "Enviado ao Make. Confira a execução no cenário antes de considerar publicado.");
+      toast.success("Publicado no Instagram pela Meta!");
       onChange();
     } catch (e: any) {
       toast.error(e.message || "Falha ao publicar");
