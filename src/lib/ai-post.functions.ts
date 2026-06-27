@@ -571,32 +571,49 @@ Responda APENAS com a frase do tema, nada mais.`,
         .then(applyOverlay)
         .then(uploadOne);
 
-    // 2.1 — Aguarda a legenda primeiro e deriva dela um PROMPT VISUAL em INGLÊS
-    // (fotografia hiper-realista, detalhado, sem emojis nem quebras de linha)
-    // para alimentar o Pollinations/Flux com contexto fiel ao texto publicado.
+    // 2.1 — Após a legenda, faz uma SEGUNDA chamada LIMPA e ISOLADA à Groq
+    // para gerar um prompt visual em inglês para o Flux (Pollinations).
     const legendaResolvida = await legendaPromise;
+
+    // Sanitização rigorosa: remove emojis, símbolos, quebras de linha, aspas,
+    // pontuação estranha — qualquer coisa que possa corromper a URL final.
     const sanitizeVisual = (s: string) =>
       s
-        .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, " ") // emojis/símbolos
-        .replace(/[#@*_`~|<>\[\]{}"]/g, " ")
-        .replace(/\r?\n+/g, " ")
+        // emojis e símbolos pictográficos
+        .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}]/gu, " ")
+        // caracteres especiais / markdown / aspas / colchetes
+        .replace(/[#@*_`~|<>\[\]{}"'\\^$=+;]/g, " ")
+        // qualquer quebra de linha / tab
+        .replace(/[\r\n\t]+/g, " ")
+        // remove caracteres não-ASCII residuais
+        .replace(/[^\x20-\x7E]/g, " ")
         .replace(/\s+/g, " ")
         .trim()
-        .slice(0, 600);
+        .slice(0, 700);
+
+    const REALISM_MODIFIERS =
+      ", professional editorial commercial photography, highly detailed, photorealistic, 8k resolution, natural lighting, shot on 35mm lens, no text, no text overlays, realistic anatomy";
+
     let visualPromptEn = "";
     try {
+      // Chamada isolada — apenas o engenheiro de prompt do Flux.
       const r = await generateText({
-        model,
+        model: gateway("groq/llama-3.3-70b-versatile"),
         system:
-          "You convert a Portuguese social media caption into ONE single-line English visual prompt for a photorealistic medical/dental editorial photograph. Output ONLY the prompt: no quotes, no preface, no emojis, no line breaks, no hashtags. 60-90 words. Cinematic, hyper-realistic, anatomically accurate, soft natural light, shallow depth of field, editorial color grading. Never include any text/letters/numbers inside the image.",
-        prompt: `Caption (pt-BR) about "${tema}":\n${legendaResolvida}\n\nReturn the single-line English visual prompt now.`,
+          "Você é um engenheiro de prompt para o gerador de imagens Flux. Baseado no texto fornecido, responda APENAS com um prompt descritivo em inglês focado em fotografia realista. Não use introduções, não use aspas, não use markdown, não coloque explicações. Escreva apenas a descrição da cena física.",
+        prompt: `${tema}\n\n${legendaResolvida}`,
       });
       visualPromptEn = sanitizeVisual(r.text);
     } catch {
       visualPromptEn = "";
     }
+
+    // O prompt final do Pollinations é: prompt em inglês + modificadores
+    // estritos de realismo. O basePrompt (instruções longas em pt-BR) é
+    // descartado quando temos o prompt visual em inglês — evita poluição
+    // que vinha gerando aberrações.
     const withVisual = (basePrompt: string) =>
-      visualPromptEn ? `${visualPromptEn}. ${basePrompt}` : basePrompt;
+      visualPromptEn ? `${visualPromptEn}${REALISM_MODIFIERS}` : basePrompt;
 
 
     let urlImagem: string;
