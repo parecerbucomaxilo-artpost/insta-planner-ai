@@ -4,6 +4,7 @@ const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
 export const MODELOS_IA = [
+  { id: "local/sem-custo", label: "Local sem custo (texto)" },
   { id: "openai/gpt-5-mini", label: "GPT-5 mini (texto)" },
   { id: "openai/gpt-5-nano", label: "GPT-5 nano (texto)" },
   { id: "openai/gpt-5", label: "GPT-5 (texto)" },
@@ -20,9 +21,10 @@ export const MODELOS_IA = [
 const ModeloLocalInput = z
   .string()
   .optional()
-  .transform((v) => (v && v !== "local/sem-custo" ? v : "openai/gpt-5-mini"));
+  .transform((v) => v || "local/sem-custo");
 
 export const MODELOS_IMAGEM = [
+  { id: "local/sem-custo", label: "Local sem custo (imagem)" },
   { id: "google/gemini-3.1-flash-image", label: "Gemini Nano Banana 2 (imagem)" },
   { id: "google/gemini-3-pro-image", label: "Gemini 3 Pro Image (imagem)" },
   { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana (imagem)" },
@@ -32,7 +34,7 @@ export const MODELOS_IMAGEM = [
 const ModeloImagemLocalInput = z
   .string()
   .optional()
-  .transform((v) => (v && v !== "local/sem-custo" ? v : "google/gemini-3.1-flash-image"));
+  .transform((v) => v || "local/sem-custo");
 
 const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico", "google-business"]);
 export type NivelConteudo = z.infer<typeof NivelEnum>;
