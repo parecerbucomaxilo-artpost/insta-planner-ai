@@ -495,12 +495,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     const isChicoTarget = targetAccount === "drfranciscomenezes";
     const forbiddenAccount = isLigaTarget ? "drfranciscomenezes" : isChicoTarget ? "lactbmf.anhanguerasbo" : undefined;
 
-    if (isChicoTarget) {
-      throw new Error(
-        `Publicação bloqueada: @${DEFAULT_WEBHOOK_ACCOUNT} está suspenso. ` +
-        `Posts da Liga devem usar exclusivamente @${LIGA_ACCOUNT} e o webhook/token próprio da Liga.`,
-      );
-    }
+    // Bloqueio de suspensão removido — @drfranciscomenezes reativado pelo usuário.
 
     const publishWebhookForProfile = async (reason?: string) => {
       // Garantia anti-cross-posting: quando o post tem instagram_conta,
