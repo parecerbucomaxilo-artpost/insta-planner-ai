@@ -361,9 +361,12 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
         : normalizedAccount === "drfranciscomenezes"
           ? "IG Chico / @drfranciscomenezes"
           : `Instagram de ${accountLabel}`;
+      const repairAction = normalizedAccount === "lactbmf.anhanguerasbo"
+        ? "Atualize o secret MAKE_LIGA_WEBHOOK_URL com a URL ativa do cenário IG Liga LACTBMF, ou salve uma nova URL no destino da Liga."
+        : `Copie a URL do cenário ${scenarioLabel} ativo e salve no destino de publicação de ${accountLabel} antes de publicar.`;
       throw new Error(
         "Webhook Instagram inválido ou inativo no Make (410). " +
-        `Copie a URL do cenário ${scenarioLabel} ativo e salve no destino de publicação de ${accountLabel} antes de publicar.`,
+        repairAction,
       );
     }
     if (res.status >= 500) {
