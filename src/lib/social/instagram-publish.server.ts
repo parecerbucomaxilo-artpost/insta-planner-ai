@@ -400,43 +400,22 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       // Se o perfil dessa conta NÃO tem token Meta próprio mas tem webhook próprio, usa o webhook próprio.
       // NUNCA reaproveitar o token Meta de outro perfil (publicaria no IG errado).
     } else {
-      const { data: metaPerfil, error: metaErr } = await supabaseAdmin
-        .from("perfil_usuario")
-        .select("id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
-        .not("instagram_access_token", "is", null)
-        .not("instagram_business_account_id", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (metaErr) throw new Error(`DB: ${metaErr.message}`);
-      perfil = metaPerfil;
-
-      if (!hasMeta(perfil)) {
-        const { data: ownPerfil, error: ownErr } = await supabaseAdmin
-          .from("perfil_usuario")
-          .select("id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        if (ownErr) throw new Error(`DB: ${ownErr.message}`);
-        perfil = ownPerfil;
-
-        if (!hasDestino(perfil)) {
-          const { data: configured } = await supabaseAdmin
-            .from("perfil_usuario")
-            .select("id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url")
-            .or("instagram_webhook_url.not.is.null,webhook_url.not.is.null")
-            .order("created_at", { ascending: true })
-            .limit(1)
-            .maybeSingle();
-          if (configured) perfil = configured;
-        }
-        if (!perfil) {
-          perfil = { id: "webhook-padrao", instagram_webhook_url: DEFAULT_MAKE_WEBHOOK, webhook_url: null } as any;
-        }
+      // Sem instagram_conta no post: só publicamos pelo perfil oficial do Chico
+      // (@drfranciscomenezes). NUNCA usar "primeiro perfil com token" como
+      // fallback — isso já causou Liga publicada em @drfranciscomenezes.
+      perfil = await findInstagramProfileByAccount(
+        supabaseAdmin,
+        DEFAULT_WEBHOOK_ACCOUNT,
+        "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url",
+      );
+      if (!hasDestino(perfil)) {
+        throw new Error(
+          `Post sem "instagram_conta" definido e o perfil @${DEFAULT_WEBHOOK_ACCOUNT} não tem destino configurado. ` +
+          `Defina a conta de destino no post ou conecte a Meta de @${DEFAULT_WEBHOOK_ACCOUNT}.`,
+        );
       }
     }
+
 
     const carousel = normalizeCarousel(post.imagens_carrossel);
     const sourceUrls = post.tipo_post === "Carrossel" && carousel.length > 0 ? carousel : [post.url_imagem].filter(Boolean);
