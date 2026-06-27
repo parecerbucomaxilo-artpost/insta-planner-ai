@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { ensurePerfil } from "@/lib/perfil.functions";
-import { ensurePublicationDestinationProfile, getPublicationDestination, savePublicationDestination } from "@/lib/publication-destination.functions";
+import { ensurePublicationDestinationProfile, getPublicationDestination, savePublicationDestination, saveManualInstagramToken } from "@/lib/publication-destination.functions";
 import { createInstagramOAuthStartUrl, createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
@@ -51,6 +51,26 @@ export function SocialConnections() {
   const [ligaMetaConnectPath, setLigaMetaConnectPath] = useState("");
   const [ligaMetaOauthUrl, setLigaMetaOauthUrl] = useState("");
   const [ligaMetaCopied, setLigaMetaCopied] = useState(false);
+  const [ligaManualToken, setLigaManualToken] = useState("");
+  const [ligaManualIgId, setLigaManualIgId] = useState("");
+  const [ligaManualSaving, setLigaManualSaving] = useState(false);
+  const saveLigaManualToken = useServerFn(saveManualInstagramToken);
+
+  const handleSaveLigaManualToken = async () => {
+    const token = ligaManualToken.trim();
+    const igId = ligaManualIgId.trim();
+    if (!token || !igId) return toast.error("Cole o Access Token e o IG Business ID da Liga.");
+    setLigaManualSaving(true);
+    try {
+      await saveLigaManualToken({ data: { conta: "lactbmf.anhanguerasbo", accessToken: token, igBusinessId: igId } });
+      toast.success("Token Instagram da Liga salvo ✅ A Liga já pode publicar direto.");
+      setLigaManualToken("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao salvar token manual.");
+    } finally {
+      setLigaManualSaving(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -507,6 +527,32 @@ export function SocialConnections() {
                 </Button>
               )}
             </div>
+
+            <div className="p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 space-y-2 mt-2">
+              <p className="text-xs font-semibold text-emerald-900 dark:text-emerald-100">
+                🔑 Fallback manual — cole o token da Liga
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Se o login do Instagram continuar bloqueado, gere o token no Graph API Explorer (logado na conta da Liga, App Planner Chico, permissões <code>instagram_basic</code> + <code>instagram_content_publish</code> + <code>pages_show_list</code>) e cole abaixo junto com o IG Business Account ID. Isso ignora todo o fluxo OAuth.
+              </p>
+              <Input
+                value={ligaManualToken}
+                onChange={(e) => setLigaManualToken(e.target.value)}
+                placeholder="EAAG… (Access Token longo da Liga)"
+                className="font-mono text-xs"
+              />
+              <Input
+                value={ligaManualIgId}
+                onChange={(e) => setLigaManualIgId(e.target.value)}
+                placeholder="17841… (Instagram Business Account ID)"
+                className="font-mono text-xs"
+              />
+              <Button onClick={handleSaveLigaManualToken} disabled={ligaManualSaving} size="sm">
+                {ligaManualSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Salvar token manual da Liga
+              </Button>
+            </div>
+
             <Input
               id="ig-liga-webhook"
               value={igLigaWebhook}
