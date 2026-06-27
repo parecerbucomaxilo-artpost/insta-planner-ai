@@ -620,6 +620,36 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       confirmedByWebhook = Boolean(webhookResult.confirmed);
     };
 
+    // Fallback Liga: usa token da Liga salvo como secret (META_LIGA_ACCESS_TOKEN)
+    // quando o perfil ainda não tem token Meta próprio. Resolve o IG Business ID via /me/accounts.
+    if (isLigaTarget && (!perfil.instagram_access_token || !perfil.instagram_business_account_id)) {
+      const envToken = process.env.META_LIGA_ACCESS_TOKEN?.trim();
+      if (envToken) {
+        try {
+          const accounts = await graphGetFields<{ data?: Array<{ access_token?: string; instagram_business_account?: { id?: string; username?: string } }> }>(
+            "me/accounts",
+            envToken,
+            "access_token,instagram_business_account{id,username}",
+          );
+          const match = (accounts.data || []).find((p) =>
+            normalizeInstagramAccount(p.instagram_business_account?.username) === LIGA_ACCOUNT,
+          );
+          const pageToken = match?.access_token || envToken;
+          const igId = match?.instagram_business_account?.id;
+          if (igId) {
+            perfil.instagram_access_token = pageToken;
+            perfil.instagram_business_account_id = igId;
+            await supabaseAdmin
+              .from("perfil_usuario")
+              .update({ instagram_access_token: pageToken, instagram_business_account_id: igId, updated_at: new Date().toISOString() })
+              .eq("id", perfil.id);
+          }
+        } catch (e) {
+          console.warn("[instagram-publish] falha ao resolver IG Business ID da Liga via META_LIGA_ACCESS_TOKEN:", e);
+        }
+      }
+    }
+
     if (perfil.instagram_access_token && perfil.instagram_business_account_id) {
       via = "meta";
       try {
