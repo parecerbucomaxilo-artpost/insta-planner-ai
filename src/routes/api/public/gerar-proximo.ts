@@ -130,7 +130,7 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
               tipo: proximo.tipo,
               formato,
               quando: proximo.quando.toISOString(),
-              modelo: "groq/llama-3.1-8b-instant",
+              modelo: "groq/llama-3.3-70b-specdec",
               modeloImagem: "pollinations/flux",
               ambasRedes: false,
               // Aguarda aprovação manual no preview — nunca publica direto.
