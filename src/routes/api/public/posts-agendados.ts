@@ -136,7 +136,13 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
             .lte("data_agendamento", nowIso)
             .order("data_agendamento", { ascending: true })
             .limit(1);
-          if (contaFiltro) query = query.eq("instagram_conta", contaFiltro);
+          if (contaFiltro) {
+            query = query.eq("instagram_conta", contaFiltro);
+          } else {
+            // Segurança: publicação no perfil pessoal está suspensa. Quando o
+            // Make chama sem filtro, não entregar posts de @drfranciscomenezes.
+            query = query.neq("instagram_conta", "drfranciscomenezes");
+          }
           const { data, error } = await query.maybeSingle();
 
           if (error) {
@@ -205,6 +211,10 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
               instagram_conta: targetAccount || undefined,
               conta: targetAccount || undefined,
               arroba: targetAccount || undefined,
+              nome_perfil: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
+              profile_name: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
+              author_name: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
+              display_name: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
               conta_destino: targetAccount || undefined,
               conta_destino_obrigatoria: targetAccount || undefined,
               target_instagram_account: targetAccount || undefined,
