@@ -401,25 +401,13 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url",
       );
       if (!hasDestino(perfil)) {
-        // Fallback seguro: a conta @drfranciscomenezes é o destino histórico
-        // do DEFAULT_MAKE_WEBHOOK. Para qualquer outra conta, exigir destino próprio
-        // para evitar cross-posting na conta errada.
-        if (contaAlvo === DEFAULT_WEBHOOK_ACCOUNT) {
-          perfil = {
-            id: "webhook-padrao-chico",
-            arroba_usuario: DEFAULT_WEBHOOK_ACCOUNT,
-            instagram_webhook_url: DEFAULT_MAKE_WEBHOOK,
-            webhook_url: null,
-          } as any;
-        } else {
-          throw new Error(
-            contaAlvo === LIGA_ACCOUNT
-              ? `Destino da Liga não configurado. Como o login Instagram está bloqueado, salve um webhook próprio da Liga ou um token manual de @${LIGA_ACCOUNT}; o sistema não usará a conta @${DEFAULT_WEBHOOK_ACCOUNT}.`
-              : `Conta @${contaAlvo} não tem destino configurado (token Meta ou webhook próprio). ` +
-                `Configure o perfil dessa conta em "Configurações > Perfil" antes de publicar — ` +
-                `senão o post seria publicado na conta errada.`,
-          );
-        }
+        throw new Error(
+          contaAlvo === LIGA_ACCOUNT
+            ? `Destino da Liga não configurado. Salve um webhook próprio da Liga ou um token manual de @${LIGA_ACCOUNT}; o sistema não usará a conta @${DEFAULT_WEBHOOK_ACCOUNT}.`
+            : `Conta @${contaAlvo} não tem destino configurado (token Meta ou webhook próprio). ` +
+              `Configure o perfil dessa conta em "Configurações > Perfil" antes de publicar — ` +
+              `senão o post seria publicado na conta errada.`,
+        );
       }
       // Se o perfil dessa conta NÃO tem token Meta próprio mas tem webhook próprio, usa o webhook próprio.
       // NUNCA reaproveitar o token Meta de outro perfil (publicaria no IG errado).
