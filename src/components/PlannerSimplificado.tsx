@@ -86,6 +86,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [loading, setLoading] = useState(false);
 
   const lsKey = storageKey ?? ACCOUNT_KEY;
+  const isLiga = conta === LIGA_ACCOUNT;
+  const canPublishAutomatically = destinoStatus === "ok" && !isLiga;
 
   useEffect(() => {
     if (contaFixa) { setConta(contaFixa); setContaInput(contaFixa); return; }
@@ -350,10 +352,10 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     toast.loading(acao === "publicar" ? "Publicando..." : "Salvando...", { id: tid });
     try {
       if (acao === "publicar") {
-        if (destinoStatus !== "ok") {
+        if (!canPublishAutomatically) {
           await approveFn({ data: { id: preview.id, acao: "arquivar" } });
           await copiarTexto(preview.legenda, "Legenda copiada para publicar manualmente.");
-          toast.success("Sem conexão ativa: salvei o post e deixei pronto para publicação manual.", { id: tid });
+          toast.success(isLiga ? "Liga em modo manual: salvei o post e copiei a legenda." : "Sem conexão ativa: salvei o post e deixei pronto para publicação manual.", { id: tid });
           setPreview(null);
           carregar();
           return;
@@ -395,7 +397,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       if (!uid) throw new Error("Você precisa estar logado.");
       const url = await uploadPostImage(file, uid);
       const iso = buildAgendamentoIso();
-      const status = quando === "agora" ? "Agendado" : "Agendado";
+      const shouldAutoPublish = quando === "agora" && canPublishAutomatically;
+      const status = shouldAutoPublish ? "Agendado" : quando === "agora" ? "Arquivado" : "Agendado";
       const { data: ins, error } = await supabase.from("posts").insert({
         user_id: uid, tipo_post: "Post Único",
         legenda, url_imagem: url,
@@ -404,10 +407,13 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         estilo_layout: "Padrão", instagram_conta: conta,
       } as any).select("id").single();
       if (error) throw error;
-      if (quando === "agora" && ins?.id) {
+      if (shouldAutoPublish && ins?.id) {
         const out = await publishIg({ data: { id: ins.id } });
         assertPublishOk(out);
         toast.success(publishSuccessMessage(out));
+      } else if (quando === "agora") {
+        await copiarTexto(legenda, "Legenda copiada para publicar manualmente.");
+        toast.success(isLiga ? "Liga em modo manual: post salvo, imagem pronta para baixar e legenda copiada." : "Post salvo para publicação manual.");
       } else {
         toast.success("Post agendado!");
       }
@@ -466,18 +472,23 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         <Card className={`p-5 space-y-3 border-2 ${destinoStatus === "ok" ? "border-emerald-200 bg-emerald-50/30" : "border-amber-300 bg-amber-50/40"}`}>
           <Label className="text-sm font-semibold flex items-center gap-2">
             Destino de publicação de @{conta}
-            {destinoStatus === "ok" && <Badge className="bg-emerald-600">Configurado</Badge>}
-            {destinoStatus === "missing" && <Badge variant="destructive">Não configurado</Badge>}
+            {isLiga && <Badge className="bg-amber-600">Manual seguro</Badge>}
+            {!isLiga && destinoStatus === "ok" && <Badge className="bg-emerald-600">Configurado</Badge>}
+            {!isLiga && destinoStatus === "missing" && <Badge variant="destructive">Não configurado</Badge>}
           </Label>
-          {destinoStatus === "missing" && (
+          {isLiga ? (
+            <div className="rounded-md border border-amber-200 bg-white/80 p-3 text-xs text-amber-950 space-y-1">
+              <p className="font-semibold">Modo manual obrigatório para a Liga:</p>
+              <p>como a conexão Facebook/Make não está funcionando, o app não tentará publicar automaticamente. Ele salva o criativo, copia a legenda e libera o download da imagem para postar diretamente no Instagram @lactbmf.anhanguerasbo.</p>
+              <p className="font-semibold">Isso evita qualquer envio para @drfranciscomenezes.</p>
+            </div>
+          ) : destinoStatus === "missing" && (
             <p className="text-xs text-amber-900">
               ⚠️ Sem destino próprio para esta conta, a publicação será bloqueada para evitar envio para outro Instagram.
-              {conta === LIGA_ACCOUNT
-                ? " Como o Instagram está bloqueado, salve abaixo um webhook exclusivo da Liga ou use token manual em Configurações."
-                : ` Conecte a Meta oficial ou cadastre um webhook próprio de @${conta}.`}
+              {` Conecte a Meta oficial ou cadastre um webhook próprio de @${conta}.`}
             </p>
           )}
-          {destinoStatus === "missing" && (
+          {!isLiga && destinoStatus === "missing" && (
             <div className="rounded-md border border-amber-200 bg-white/70 p-3 text-xs text-amber-950 space-y-1">
               <p className="font-semibold">Modo seguro sem conexão:</p>
               <p>ao aprovar, o app salva o post, copia a legenda e libera o download da imagem para publicar manualmente no Instagram correto.</p>
@@ -489,14 +500,14 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {destinoModo === "webhook" && (
             <p className="text-xs text-emerald-800">Webhook exclusivo ativo para @{conta}. O app enviará sempre com a conta de destino obrigatória.</p>
           )}
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={conectarMetaConta} variant={conta === LIGA_ACCOUNT ? "default" : "secondary"}>
-              <Instagram className="w-4 h-4 mr-1" /> {conta === LIGA_ACCOUNT ? `Preparar conexão Meta @${conta}` : `Preparar conexão Meta @${conta}`}
+          {!isLiga && <div className="flex flex-wrap gap-2">
+            <Button onClick={conectarMetaConta} variant="secondary">
+              <Instagram className="w-4 h-4 mr-1" /> {`Preparar conexão Meta @${conta}`}
             </Button>
             {metaConnectPath && (
               <Button asChild variant="outline">
                 <a href={metaConnectPath} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-1" /> {conta === LIGA_ACCOUNT ? "Abrir conexão Instagram" : "Abrir conexão Meta"}
+                  <ExternalLink className="w-4 h-4 mr-1" /> Abrir conexão Meta
                 </a>
               </Button>
             )}
@@ -506,29 +517,24 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 {copiedMetaUrl ? "Link copiado" : "Copiar link Meta"}
               </Button>
             )}
-          </div>
+          </div>}
           {metaConnectPath && (
             <p className="text-xs text-zinc-600">
-              {conta === LIGA_ACCOUNT
-                ? "Se Instagram/Meta/Make não conectarem, use o modo manual abaixo: o app não publicará no Chico e você baixa a imagem com a legenda pronta para postar na Liga."
-                : "Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview."}
+              Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview.
             </p>
           )}
-          <div className="flex gap-2">
+          {!isLiga && <div className="flex gap-2">
             <Input
               value={destinoUrl}
               onChange={(e) => setDestinoUrl(e.target.value)}
-              placeholder={conta === LIGA_ACCOUNT ? "Webhook exclusivo da Liga (Make)" : "https://hook.us2.make.com/..."}
+              placeholder="https://hook.us2.make.com/..."
               className="flex-1"
             />
             <Button onClick={salvarDestino} disabled={savingDestino}>
               {savingDestino ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar destino"}
             </Button>
-          </div>
-          {conta === LIGA_ACCOUNT && (
-            <p className="text-xs text-zinc-600">Este webhook precisa publicar somente no Instagram @lactbmf.anhanguerasbo. O app não usa o webhook padrão do Chico para posts da Liga.</p>
-          )}
-          {conta === LIGA_ACCOUNT && (
+          </div>}
+          {!isLiga && conta === LIGA_ACCOUNT && (
             <div className="rounded-md border border-emerald-200 bg-emerald-50/40 p-3 space-y-2">
               <Label className="text-xs font-semibold text-emerald-900">Alternativa ao Instagram bloqueado: token manual da Liga</Label>
               <Input
@@ -688,7 +694,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               <div className="grid grid-cols-3 gap-2">
                 {quando === "agora" ? (
                   <Button onClick={() => decidirPreview("publicar")} className="bg-emerald-600 hover:bg-emerald-700 col-span-2">
-                    <Zap className="w-4 h-4 mr-1" /> {destinoStatus === "ok" ? "Publicar agora" : "Salvar para postar manual"}
+                    <Zap className="w-4 h-4 mr-1" /> {canPublishAutomatically ? "Publicar agora" : "Salvar para postar manual"}
                   </Button>
                 ) : (
                   <Button onClick={() => decidirPreview("agendar")} className="bg-emerald-600 hover:bg-emerald-700 col-span-2">
@@ -699,9 +705,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                   <X className="w-4 h-4 mr-1" /> Descartar
                 </Button>
               </div>
-              {destinoStatus !== "ok" && (
+              {!canPublishAutomatically && (
                 <div className="rounded-md border border-amber-200 bg-white/80 p-3 space-y-2 text-xs text-amber-950">
-                  <p className="font-semibold">Conexão indisponível: publique manualmente na conta @{conta}.</p>
+                  <p className="font-semibold">{isLiga ? "Liga em modo manual: publique diretamente no Instagram da Liga." : `Conexão indisponível: publique manualmente na conta @${conta}.`}</p>
                   <div className="flex flex-wrap gap-2">
                     {preview.urls[0] && (
                       <Button type="button" size="sm" variant="outline" onClick={() => baixarMidia(preview.urls[0], `post-${conta}-${preview.id}.png`)}>
@@ -732,7 +738,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               </div>
               <Button onClick={salvarManual} disabled={savingManual} className="w-full" variant="outline">
                 {savingManual ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : quando === "agora" ? <Zap className="w-4 h-4 mr-2" /> : <CalendarClock className="w-4 h-4 mr-2" />}
-                {quando === "agora" ? "Publicar agora" : "Agendar"}
+                {quando === "agora" && !canPublishAutomatically ? "Salvar para postar manual" : quando === "agora" ? "Publicar agora" : "Agendar"}
               </Button>
             </Card>
           )}
@@ -765,7 +771,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         Re-tentar
                       </Button>
                     )}
-                    {p.status === "EnviadoMake" && (
+                    {p.status === "EnviadoMake" && !isLiga && (
                       <Button variant="outline" size="sm" onClick={() => tentarNovamente(p.id)} disabled={busy} title="Enviar novamente para o webhook Make da Liga">
                         {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1" />}
                         Reenviar Make
@@ -776,6 +782,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         <Download className="w-4 h-4" />
                       </Button>
                     )}
+                    <Button variant="outline" size="icon" onClick={() => copiarTexto(p.legenda || "", "Legenda copiada.")} disabled={busy || !p.legenda} aria-label="Copiar legenda" title="Copiar legenda">
+                      <Copy className="w-4 h-4" />
+                    </Button>
                     <Button variant="outline" size="icon" onClick={() => setPreviewId(p.id)} disabled={busy} aria-label="Pré-visualizar com logo" title="Pré-visualizar com logo">
                       <ScanEye className="w-4 h-4" />
                     </Button>
