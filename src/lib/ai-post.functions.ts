@@ -784,7 +784,13 @@ export const approvePost = createServerFn({ method: "POST" })
       }
       return results;
     }
-    const status = data.acao === "agendar" ? "Agendado" : "Rascunho";
+    const { data: postMeta } = await supabaseAdmin
+      .from("posts")
+      .select("instagram_conta")
+      .eq("id", data.id)
+      .maybeSingle();
+    const contaMeta = String((postMeta as any)?.instagram_conta || "").trim().replace(/^@+/, "").toLowerCase();
+    const status = data.acao === "agendar" && contaMeta !== "lactbmf.anhanguerasbo" ? "Agendado" : "Rascunho";
     const patch: any = { status };
     const { error } = await supabaseAdmin.from("posts").update(patch).eq("id", data.id);
     if (error) throw new Error(`DB: ${error.message}`);
