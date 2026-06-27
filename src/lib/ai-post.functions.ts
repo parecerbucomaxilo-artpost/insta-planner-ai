@@ -4,13 +4,13 @@ const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
 export const MODELOS_IA = [
-  { id: "google/gemini-3-flash-preview", label: "Gemini Flash (rápido, padrão)" },
-  { id: "google/gemini-2.5-pro", label: "Gemini Pro (mais profundo)" },
-  { id: "openai/gpt-5", label: "GPT-5 (premium)" },
-  { id: "openai/gpt-5-mini", label: "GPT-5 Mini (rápido OpenAI)" },
-  { id: "anthropic/claude-sonnet-4-5", label: "Claude Sonnet 4.5 (Anthropic)" },
+  { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B Instant (Groq, padrão)" },
+  { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq, mais profundo)" },
 ] as const;
 const ModeloEnum = z.enum([
+  "groq/llama-3.1-8b-instant",
+  "groq/llama-3.3-70b-versatile",
+  // legados aceitos para compat com posts antigos no DB
   "google/gemini-3-flash-preview",
   "google/gemini-2.5-pro",
   "openai/gpt-5",
@@ -19,6 +19,8 @@ const ModeloEnum = z.enum([
 ]);
 
 const ModeloImagemEnum = z.enum([
+  "pollinations/flux",
+  // legados aceitos para compat
   "google/gemini-3.1-flash-image-preview",
   "google/gemini-2.5-flash-image",
   "openai/gpt-image-1-mini",
