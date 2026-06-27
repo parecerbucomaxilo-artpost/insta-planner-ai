@@ -131,7 +131,7 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
               formato,
               quando: proximo.quando.toISOString(),
               modelo: "groq/llama-3.3-70b-versatile",
-              modeloImagem: "google/gemini-3.1-flash-image",
+              modeloImagem: "pollinations/flux",
               ambasRedes: false,
               // Aguarda aprovação manual no preview — nunca publica direto.
               status: "PendenteAprovacao",
