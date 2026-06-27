@@ -23,7 +23,7 @@ import { ensurePublicationDestinationProfile, getPublicationDestination, savePub
 import type { PostRow } from "@/lib/posts-types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
+import { createInstagramOAuthStartUrl, createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 
 const ACCOUNT_KEY = "planner_simplificado_conta_v1";
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
@@ -46,6 +46,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const saveDestino = useServerFn(savePublicationDestination);
   const ensureDestino = useServerFn(ensurePublicationDestinationProfile);
   const startMetaOAuth = useServerFn(createMetaOAuthStartUrl);
+  const startInstagramOAuth = useServerFn(createInstagramOAuthStartUrl);
 
   const [conta, setConta] = useState<string>("");
   const [contaInput, setContaInput] = useState<string>("");
@@ -139,11 +140,13 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     try {
       const destino = await ensureDestino({ data: { conta } });
       const trocarFacebook = conta === LIGA_ACCOUNT;
-      const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: conta, logoutFacebookFirst: trocarFacebook } });
-      const manualUrl = trocarFacebook && r.privateAuthUrl ? r.privateAuthUrl : trocarFacebook && r.loginUrl ? r.loginUrl : r.url;
+      const r = trocarFacebook
+        ? await startInstagramOAuth({ data: { perfilId: destino.id, targetAccount: conta } })
+        : await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: conta } });
+      const manualUrl = r.url;
       setMetaOauthUrl(manualUrl);
-      setMetaConnectPath(`/meta-connect?account=${encodeURIComponent(conta)}&next=${encodeURIComponent(r.url)}${r.loginUrl ? `&login=${encodeURIComponent(r.loginUrl)}` : ""}${r.privateAuthUrl ? `&privateNext=${encodeURIComponent(r.privateAuthUrl)}` : ""}`);
-      toast.info("Clique no botão 'Abrir conexão Meta' que apareceu abaixo.");
+      setMetaConnectPath(`/meta-connect?account=${encodeURIComponent(conta)}&next=${encodeURIComponent(r.url)}`);
+      toast.info(trocarFacebook ? "Clique em 'Abrir conexão Instagram' para entrar direto na conta da Liga." : "Clique no botão 'Abrir conexão Meta' que apareceu abaixo.");
     } catch (e: any) {
       toast.error(e.message || "Falha ao iniciar conexão Meta.");
     }
