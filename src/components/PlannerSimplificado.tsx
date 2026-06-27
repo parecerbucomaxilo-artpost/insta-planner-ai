@@ -201,6 +201,11 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     }
   };
 
+  const publishSuccessMessage = (out: Awaited<ReturnType<typeof publishIg>>) => {
+    if (out && "via" in out && out.via === "meta") return "Publicado diretamente no Instagram.";
+    return "Enviado ao webhook próprio da conta. Confira a execução antes de considerar publicado.";
+  };
+
 
   const carregar = useCallback(async () => {
     if (!conta) return;
@@ -313,10 +318,11 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         await approveFn({ data: { id: preview.id, acao: "arquivar" } });
         const out = await publishIg({ data: { id: preview.id } });
         assertPublishOk(out);
+        toast.success(publishSuccessMessage(out), { id: tid });
       } else {
         await approveFn({ data: { id: preview.id, acao } });
+        toast.success("Salvo!", { id: tid });
       }
-      toast.success(acao === "publicar" ? "Enviado ao Make. Confira a execução no cenário antes de considerar publicado." : "Salvo!", { id: tid });
       setPreview(null);
       carregar();
     } catch (e: any) {
@@ -358,7 +364,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       if (quando === "agora" && ins?.id) {
         const out = await publishIg({ data: { id: ins.id } });
         assertPublishOk(out);
-        toast.success("Enviado ao Make. Confira a execução no cenário antes de considerar publicado.");
+        toast.success(publishSuccessMessage(out));
       } else {
         toast.success("Post agendado!");
       }
@@ -382,7 +388,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     try {
       const out = await publishIg({ data: { id } });
       assertPublishOk(out);
-      toast.success("Re-tentativa enviada ao Make. Confira a execução no cenário.", { id: tid });
+      toast.success(publishSuccessMessage(out), { id: tid });
       carregar();
     } catch (e: any) {
       toast.error(e.message || "Falha na re-tentativa.", { id: tid });
