@@ -288,22 +288,29 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     let perfil: any = null;
 
     // 0) Se o post tem instagram_conta, ROTEAR estritamente para o perfil dessa conta.
-    //    Evita publicar Liga no @drfranciscomenezes (ou vice-versa).
     if (contaAlvo) {
       perfil = await findInstagramProfileByAccount(
         supabaseAdmin,
         contaAlvo,
         "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id",
       );
-      if (!hasDestino(perfil)) {
+      // Liga: se não existe perfil ainda, cria placeholder para receber o token via env fallback.
+      if (!perfil && contaAlvo === LIGA_ACCOUNT) {
+        const { data: created, error: createError } = await supabaseAdmin
+          .from("perfil_usuario")
+          .insert({ user_id: TEMP_USER_ID, arroba_usuario: LIGA_ACCOUNT, instagram_arroba: LIGA_ACCOUNT })
+          .select("id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id")
+          .maybeSingle();
+        if (createError) throw new Error(`DB: ${createError.message}`);
+        perfil = created;
+      }
+      if (!perfil) {
         throw new Error(
-          contaAlvo === LIGA_ACCOUNT
-            ? `Destino da Liga não configurado. Conecte o Instagram @${LIGA_ACCOUNT} pela Meta antes de publicar.`
-            : `Conta @${contaAlvo} não tem token Meta configurado. ` +
-              `Conecte essa conta antes de publicar para evitar publicação na conta errada.`,
+          `Conta @${contaAlvo} não tem perfil cadastrado. Conecte essa conta antes de publicar.`,
         );
       }
     }
+
 
 
     const carousel = normalizeCarousel(post.imagens_carrossel);
