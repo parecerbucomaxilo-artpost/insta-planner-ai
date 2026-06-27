@@ -279,9 +279,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const handleGerar = async () => {
     if (!conta) return toast.error("Selecione uma conta do Instagram.");
     setBusy(true);
-    const tid = "ai-simple";
+    const tid = "local-simple";
     const labelModo = modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post de feed";
-    toast.loading(`IA criando ${labelModo}...`, { id: tid });
+    toast.loading(`Gerador local criando ${labelModo}...`, { id: tid });
     try {
       const iso = buildAgendamentoIso();
       const tipo = modo === "stories" ? "stories" : "feed";
@@ -310,8 +310,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const handleSemana = async () => {
     if (!conta) return toast.error("Selecione uma conta do Instagram.");
     setBusy(true);
-    const tid = "ai-week-simple";
-    toast.loading("IA planejando 7 dias...", { id: tid });
+    const tid = "local-week-simple";
+    toast.loading("Gerador local planejando 7 dias...", { id: tid });
     try {
       const out = await genWeek({ data: { especialidade: "CTBMF", modelo } as any });
       // Filtra apenas slots do Instagram para a conta simplificada
@@ -551,7 +551,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             </div>
           </Card>
 
-          {/* Bloco Quando — usado por IA e manual (oculto no modo semana) */}
+          {/* Bloco Quando — usado pelo gerador local e manual (oculto no modo semana) */}
           {modo !== "semana" && (
             <Card className="p-5 space-y-3">
               <Label className="text-sm font-semibold">Quando publicar</Label>
