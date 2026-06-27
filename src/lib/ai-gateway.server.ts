@@ -45,8 +45,7 @@ function sizeToAspect(size?: string): "1:1" | "16:9" | "9:16" {
   return "1:1";
 }
 
-// Imagens via Gemini 2.5 Flash Image (alias "Nano Banana") — funciona com GEMINI_API_KEY do AI Studio.
-// Endpoint: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent
+// Imagens via Google Imagen 3 (predict). Requer GEMINI_API_KEY com Imagen habilitado.
 export async function generateImageBase64(opts: {
   apiKey?: string;
   prompt: string;
@@ -58,13 +57,15 @@ export async function generateImageBase64(opts: {
   const aspectRatio = sizeToAspect(opts.size);
 
   const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
-
-  const fullPrompt = `${opts.prompt.slice(0, 4000)}\n\nAspect ratio: ${aspectRatio}. Photorealistic. No text overlays.`;
+    `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
 
   const body = {
-    contents: [{ parts: [{ text: fullPrompt }] }],
-    generationConfig: { responseModalities: ["IMAGE"] },
+    instances: [{ prompt: opts.prompt.slice(0, 4000) }],
+    parameters: {
+      sampleCount: 1,
+      aspectRatio,
+      personGeneration: "allow_adult",
+    },
   };
 
   const res = await fetch(url, {
@@ -75,29 +76,31 @@ export async function generateImageBase64(opts: {
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`Gemini Image ${res.status}: ${txt.slice(0, 500)}`);
+    throw new Error(`Imagen 3 ${res.status}: ${txt.slice(0, 500)}`);
   }
 
   const data: any = await res.json().catch(() => ({}));
-  const parts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
-  const inline = parts.find((p) => p?.inlineData?.data || p?.inline_data?.data);
-  const raw: string | undefined = inline?.inlineData?.data ?? inline?.inline_data?.data;
+  const raw: string | undefined =
+    data?.predictions?.[0]?.bytesBase64Encoded ??
+    data?.predictions?.[0]?.base64EncodedData ??
+    data?.predictions?.[0]?.image?.bytesBase64Encoded;
 
   if (!raw) {
-    throw new Error(`Gemini Image retornou payload sem imagem: ${JSON.stringify(data).slice(0, 400)}`);
+    throw new Error(`Imagen 3 retornou payload sem imagem: ${JSON.stringify(data).slice(0, 400)}`);
   }
 
   let cleaned = raw.trim();
   if (cleaned.startsWith("data:") && cleaned.includes(",")) cleaned = cleaned.split(",")[1];
   cleaned = cleaned.replace(/\s/g, "");
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(cleaned)) {
-    throw new Error("Gemini Image retornou base64 inválido após limpeza");
+    throw new Error("Imagen 3 retornou base64 inválido após limpeza");
   }
 
   const approxBytes = Math.floor((cleaned.length * 3) / 4);
   if (approxBytes < 1024) {
-    throw new Error(`Gemini Image devolveu imagem muito pequena (${approxBytes} bytes)`);
+    throw new Error(`Imagen 3 devolveu imagem muito pequena (${approxBytes} bytes)`);
   }
   return cleaned;
 }
+
 
