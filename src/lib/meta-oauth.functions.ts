@@ -93,6 +93,10 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
     loginUrl.searchParams.set("cancel_url", `${META_OAUTH_ORIGIN}/meta-connect`);
     loginUrl.searchParams.set("display", "page");
 
-    return { url: authUrl.toString(), loginUrl: loginUrl.toString() };
+    const privateAuthUrl = new URL(authUrl.toString());
+    privateAuthUrl.searchParams.set("auth_type", "reauthenticate");
+    privateAuthUrl.searchParams.set("auth_nonce", crypto.randomUUID());
+
+    return { url: authUrl.toString(), loginUrl: loginUrl.toString(), privateAuthUrl: privateAuthUrl.toString() };
   });
 
