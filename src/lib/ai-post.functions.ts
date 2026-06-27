@@ -5,13 +5,13 @@ import { z } from "zod";
 
 export const MODELOS_IA = [
   { id: "groq/llama-3.3-70b-specdec", label: "Llama 3.3 70B SpecDec (Groq, padrão)" },
-  { id: "groq/llama-3.3-70b-specdec", label: "Llama 3.1 8B Instant (Groq, rápido)" },
+  { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B Instant (Groq, rápido)" },
 ] as const;
 const ModeloEnum = z.enum([
   "groq/llama-3.3-70b-specdec",
-  "groq/llama-3.3-70b-versatile",
+  "groq/llama-3.1-8b-instant",
   // legados aceitos para compat com posts antigos no DB
-  "groq/llama-3.3-70b-specdec",
+  "groq/llama-3.3-70b-versatile",
   "google/gemini-2.5-pro",
   "openai/gpt-5",
   "openai/gpt-5-mini",
