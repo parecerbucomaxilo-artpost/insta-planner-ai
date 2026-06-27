@@ -21,8 +21,10 @@ export const publishInstagramNow = createServerFn({ method: "POST" })
       const message = error instanceof Error ? error.message : String(error);
       const code = /410|scenario listening|webhook.*inativo|webhook.*inválido/i.test(message)
         ? "MAKE_WEBHOOK_INACTIVE"
+        : /access token|OAuthException|Cannot parse|token Meta|token.*inválido|token.*expirado/i.test(message)
+          ? "META_TOKEN_INVALID"
         : "INSTAGRAM_PUBLISH_FAILED";
       console.warn("[publishInstagramNow] publicação bloqueada", { postId: data.id, code, message });
-      return { ok: false, via: "webhook" as const, code, error: message };
+      return { ok: false, via: code === "META_TOKEN_INVALID" ? "meta" as const : "webhook" as const, code, error: message };
     }
   });
