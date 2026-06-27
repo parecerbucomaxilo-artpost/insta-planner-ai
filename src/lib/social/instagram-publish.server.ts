@@ -269,7 +269,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
   if (post.postar_instagram === false) throw new Error("Este post não está marcado para Instagram.");
 
   try {
-    const hasDestino = (p: any) => !!p && p.instagram_access_token && p.instagram_business_account_id;
+    
 
     const contaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
 
