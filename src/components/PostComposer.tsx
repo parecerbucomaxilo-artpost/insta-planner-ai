@@ -376,9 +376,9 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       carrossel: { tipo: "feed" as const, formato: "Carrossel" as const, label: "carrossel com 6 imagens" },
     }[quickFormat];
     setBusy(quickFormat);
-    const tid = `ai-${quickFormat}`;
+    const tid = `local-${quickFormat}`;
     toast.loading(
-      temaTrim ? `IA criando ${config.label}...` : `IA escolhendo tema e criando ${config.label}...`,
+      temaTrim ? `Gerador local criando ${config.label}...` : `Gerador local escolhendo tema e criando ${config.label}...`,
       { id: tid },
     );
     try {
@@ -397,8 +397,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
 
   const handleWeek = async () => {
     setBusy("week");
-    const tid = "ai-week";
-    toast.loading("IA planejando 7 dias (cronograma fixo)...", { id: tid });
+    const tid = "local-week";
+    toast.loading("Gerador local planejando 7 dias (cronograma fixo)...", { id: tid });
     try {
       const out = await genWeek({ data: { especialidade, modelo } });
       setTemas(out.temas as any);
@@ -413,7 +413,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const approveTheme = async (t: { rede: string; tipo?: string; formato?: string; quando?: string; tema: string }) => {
     const r = (t.rede === "linkedin" ? "linkedin" : t.rede === "estilo-x" ? "estilo-x" : t.rede === "google" ? "google" : "instagram") as
       | "instagram" | "linkedin" | "estilo-x" | "google";
-    const tid = `ai-approve-${t.tema}`;
+    const tid = `local-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
       const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes } });
@@ -613,7 +613,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
         >
           {busy === "week" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CalendarDays className="w-4 h-4 mr-2" />}
-          Programar 7 dias com IA
+          Programar 7 dias sem IA paga
         </Button>
       </div>
       <p className="text-[11px] text-indigo-700/80 bg-indigo-50/60 rounded-md p-2 leading-relaxed">
