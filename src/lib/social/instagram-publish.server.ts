@@ -674,36 +674,41 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       }
     }
 
-    if (perfil.instagram_access_token && perfil.instagram_business_account_id) {
-      via = "meta";
-      try {
-        await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
-        externalId = await publishViaMeta({
-          igBusinessId: perfil.instagram_business_account_id,
-          token: perfil.instagram_access_token,
-          caption,
-          imageUrls,
-          isStory,
-          isCarousel,
-        });
-      } catch (metaError) {
-        const metaMessage = metaError instanceof Error ? metaError.message : String(metaError);
-        if (!isInvalidMetaTokenMessage(metaMessage)) throw metaError;
+    if (!perfil.instagram_access_token || !perfil.instagram_business_account_id) {
+      throw new Error(
+        `Conta @${targetAccount || "esta conta"} sem token Meta válido. ` +
+        `Conecte o Instagram em "Configurações > Conectar Instagram" antes de publicar — ` +
+        `não usamos mais Make/webhooks externos.`,
+      );
+    }
 
+    via = "meta";
+    try {
+      await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
+      externalId = await publishViaMeta({
+        igBusinessId: perfil.instagram_business_account_id,
+        token: perfil.instagram_access_token,
+        caption,
+        imageUrls,
+        isStory,
+        isCarousel,
+      });
+    } catch (metaError) {
+      const metaMessage = metaError instanceof Error ? metaError.message : String(metaError);
+      if (isInvalidMetaTokenMessage(metaMessage)) {
         await supabaseAdmin
           .from("perfil_usuario")
           .update({ instagram_access_token: null, instagram_business_account_id: null, updated_at: new Date().toISOString() })
           .eq("id", perfil.id);
-
-        await publishWebhookForProfile(
-          `Token Meta inválido/expirado para @${targetAccount || "esta conta"}: ${metaMessage}.`,
+        throw new Error(
+          `Token Meta inválido/expirado para @${targetAccount || "esta conta"}: ${metaMessage}. ` +
+          `Reconecte o Instagram em "Configurações > Conectar Instagram".`,
         );
       }
-    } else {
-      await publishWebhookForProfile();
+      throw metaError;
     }
 
-    const nextStatus = via === "meta" || confirmedByWebhook ? "Publicado" : "EnviadoMake";
+    const nextStatus = "Publicado";
     const publishedAt = new Date().toISOString();
     const { error: updateError } = await supabaseAdmin
       .from("posts")
@@ -711,7 +716,6 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         status: nextStatus,
         data_agendamento: publishedAt,
         user_id: userId,
-        ...(isLigaTarget && via === "webhook" ? { liga_dispatched_at: publishedAt } : {}),
       })
       .eq("id", post.id);
     if (updateError) throw new Error(`DB: ${updateError.message}`);
