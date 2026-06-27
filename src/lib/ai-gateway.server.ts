@@ -1,84 +1,52 @@
 // Server-only helper.
-// Texto: Groq por padrão; Gemini só quando explicitamente selecionado.
-// Imagens: Pollinations por padrão; Gemini só quando explicitamente selecionado.
-// Auth: GROQ_API_KEY / GEMINI_API_KEY.
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+// Texto: ChatGPT (OpenAI) via Lovable AI Gateway — gratuito com LOVABLE_API_KEY.
+// Imagens: Gemini Nano Banana (google/gemini-3.1-flash-image) via Lovable AI Gateway.
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-function getGeminiKey(): string {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) throw new Error("Missing GEMINI_API_KEY");
+const GATEWAY_BASE = "https://ai.gateway.lovable.dev/v1";
+
+function getLovableKey(): string {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("Missing LOVABLE_API_KEY");
   return key;
 }
 
-function getGroqKey(): string {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) throw new Error("Missing GROQ_API_KEY");
-  return key;
-}
-
-// Mapeia ids do catálogo para modelos reais do Gemini.
-function mapModelToGemini(model: string): string {
+// Mapeia ids legados para modelos suportados no Lovable AI Gateway.
+function mapTextModel(model: string): string {
   const m = (model || "").toLowerCase();
-  if (m.startsWith("google/")) return model.slice("google/".length);
-  if (m.includes("lite") || m.includes("nano") || m.includes("8b") || m.includes("flash-lite")) {
-    return "gemini-2.5-flash-lite";
+  if (m.startsWith("openai/")) return model;
+  if (m.startsWith("google/")) return model;
+  if (m.includes("8b") || m.includes("nano") || m.includes("instant") || m.includes("lite")) {
+    return "openai/gpt-5-nano";
   }
-  // Padrão pedido pelo usuário: gemini-2.5-flash para legendas.
-  return "gemini-2.5-flash";
+  if (m.includes("mini") || m.includes("flash")) {
+    return "openai/gpt-5-mini";
+  }
+  // padrão: ChatGPT
+  return "openai/gpt-5-mini";
 }
 
-export function createLovableAiGatewayProvider(_ignoredKey: string) {
-  const groqKey = process.env.GROQ_API_KEY;
-  const groq = groqKey
-    ? createOpenAICompatible({
-        name: "groq",
-        baseURL: "https://api.groq.com/openai/v1",
-        apiKey: groqKey,
-        supportsStructuredOutputs: false,
-      })
-    : null;
-
-  return (modelId: string) => {
-    const normalized = (modelId || "").toLowerCase();
-
-    if (normalized.startsWith("google/")) {
-      const google = createGoogleGenerativeAI({ apiKey: getGeminiKey() });
-      return google(mapModelToGemini(modelId));
-    }
-
-    if (!groq) {
-      const google = createGoogleGenerativeAI({ apiKey: getGeminiKey() });
-      return google(mapModelToGemini(modelId));
-    }
-
-    if (normalized.includes("8b") || normalized.includes("instant")) {
-      return groq("llama-3.1-8b-instant");
-    }
-
-    return groq("llama-3.3-70b-versatile");
-  };
+export function createLovableAiGatewayProvider(_ignored?: string) {
+  const provider = createOpenAICompatible({
+    name: "lovable",
+    baseURL: GATEWAY_BASE,
+    headers: {
+      "Lovable-API-Key": getLovableKey(),
+      "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+    },
+  });
+  return (modelId: string) => provider(mapTextModel(modelId));
 }
 
 export const MODELOS_IMAGEM = [
-  { id: "pollinations/flux", label: "Flux gratuito (padrão, sem cota Gemini)" },
-  { id: "google/gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image (Google AI Studio)" },
-  { id: "google/gemini-3.1-flash-image-preview", label: "Gemini 3.1 Flash Image" },
-  { id: "google/imagen-3", label: "Imagen 3 (legado)" },
-  { id: "openai/gpt-image-1-mini", label: "GPT Image Mini (legado)" },
-  { id: "openai/gpt-image-2", label: "GPT Image 2 (legado)" },
-  { id: "google/gemini-3-pro-image-preview", label: "Gemini 3 Pro Image (legado)" },
+  { id: "google/gemini-3.1-flash-image", label: "Gemini Nano Banana 2 (padrão)" },
+  { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana" },
+  { id: "google/gemini-3-pro-image", label: "Gemini 3 Pro Image" },
+  { id: "openai/gpt-image-1-mini", label: "GPT Image Mini" },
+  { id: "openai/gpt-image-2", label: "GPT Image 2" },
 ] as const;
 export type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 
-function sizeToAspect(size?: string): "1:1" | "16:9" | "9:16" {
-  if (size === "1536x1024") return "16:9";
-  if (size === "1024x1536") return "9:16";
-  return "1:1";
-}
-
-// Imagens gratuitas via Pollinations (Flux). Sem chave, sem billing.
-// Endpoint: https://image.pollinations.ai/prompt/<prompt>?model=flux&enhance=true&seed=<n>&width=&height=
 const REALISM_SUFFIX =
   ", raw candid photograph, realistic skin texture, visible pores, cinematic natural lighting, shot on 35mm lens, f/1.8, masterwork, 8k resolution, authentic editorial photo, depth of field, sharp focus, no airbrushing, no digital art look, no 3d render look, realistic human anatomy";
 
@@ -98,50 +66,78 @@ function sizeToWH(size?: string): { width: number; height: number } {
   return { width: 1024, height: 1024 };
 }
 
-function isGeminiImageModel(model?: string): boolean {
-  return !!model && model.startsWith("google/") && model.includes("image");
-}
-
-async function responseToBase64(res: Response): Promise<string> {
-  const bytes = new Uint8Array(await res.arrayBuffer());
-  let binary = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+function mapImageModel(model?: string): string {
+  if (!model) return "google/gemini-3.1-flash-image";
+  const m = model.toLowerCase();
+  if (m.includes("pollinations") || m.includes("flux") || m.includes("imagen")) {
+    return "google/gemini-3.1-flash-image";
   }
-  return btoa(binary);
+  if (m.endsWith("-preview")) return model.replace(/-preview$/, "");
+  return model;
 }
 
-async function generatePollinationsImageBase64(prompt: string, size?: "1024x1024" | "1024x1536" | "1536x1024"): Promise<string> {
-  const { width, height } = sizeToWH(size);
-  const cleaned = sanitizeVisualPrompt(prompt) + REALISM_SUFFIX;
-  const seed = Math.floor(Date.now() % 1_000_000_000);
-  const url = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(cleaned)}`);
-  url.searchParams.set("model", "flux");
-  url.searchParams.set("width", String(width));
-  url.searchParams.set("height", String(height));
-  url.searchParams.set("seed", String(seed));
-  url.searchParams.set("enhance", "true");
-  url.searchParams.set("nologo", "true");
+export async function generateImageBase64(opts: {
+  apiKey?: string;
+  prompt: string;
+  size?: "1024x1024" | "1024x1536" | "1536x1024";
+  model?: ModeloImagem | string;
+  referenceImageUrls?: string[];
+}): Promise<string> {
+  const apiKey = getLovableKey();
+  const model = mapImageModel(opts.model);
+  const cleaned = sanitizeVisualPrompt(opts.prompt) + REALISM_SUFFIX;
+  const { width, height } = sizeToWH(opts.size);
+
+  const body = {
+    model,
+    prompt: cleaned,
+    size: `${width}x${height}`,
+    n: 1,
+    response_format: "b64_json",
+  };
 
   let lastErr: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 120_000);
     try {
-      const res = await fetch(url, { signal: ctrl.signal });
+      const res = await fetch(`${GATEWAY_BASE}/images/generations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Lovable-API-Key": apiKey,
+          "X-Lovable-AIG-SDK": "lovable-image",
+        },
+        body: JSON.stringify(body),
+        signal: ctrl.signal,
+      });
       clearTimeout(timer);
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        lastErr = new Error(`Pollinations ${res.status}: ${txt.slice(0, 240)}`);
-      } else {
-        const type = res.headers.get("content-type") || "";
-        if (!type.includes("image")) {
-          const txt = await res.text().catch(() => "");
-          lastErr = new Error(`Pollinations sem imagem: ${txt.slice(0, 240)}`);
-        } else {
-          return responseToBase64(res);
+      if (res.ok) {
+        const json: any = await res.json();
+        const b64 =
+          json?.data?.[0]?.b64_json ||
+          json?.images?.[0]?.b64_json ||
+          json?.data?.[0]?.image ||
+          json?.b64_json;
+        if (b64) return b64;
+        const url = json?.data?.[0]?.url;
+        if (url) {
+          const imgRes = await fetch(url);
+          const bytes = new Uint8Array(await imgRes.arrayBuffer());
+          let binary = "";
+          const chunk = 0x8000;
+          for (let i = 0; i < bytes.length; i += chunk) {
+            binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+          }
+          return btoa(binary);
         }
+        throw new Error(`Lovable AI sem imagem: ${JSON.stringify(json).slice(0, 300)}`);
+      }
+      const txt = await res.text().catch(() => "");
+      lastErr = new Error(`Lovable AI ${res.status}: ${txt.slice(0, 300)}`);
+      // 4xx (exceto 429) não adianta retry
+      if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+        throw lastErr;
       }
     } catch (e) {
       clearTimeout(timer);
@@ -149,86 +145,5 @@ async function generatePollinationsImageBase64(prompt: string, size?: "1024x1024
     }
     await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
   }
-  throw new Error(`Pollinations falhou: ${String((lastErr as any)?.message || lastErr)}`);
+  throw new Error(`Imagem falhou: ${String((lastErr as any)?.message || lastErr)}`);
 }
-
-async function generateGeminiImageBase64(prompt: string, size?: "1024x1024" | "1024x1536" | "1536x1024"): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-
-  const cleaned = sanitizeVisualPrompt(prompt) + REALISM_SUFFIX;
-  const aspect = sizeToAspect(size);
-  const promptWithAspect = `${cleaned}\n\n[Aspect ratio: ${aspect}]`;
-
-  const model = "gemini-2.5-flash-image";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-  const body = {
-    contents: [{ role: "user", parts: [{ text: promptWithAspect }] }],
-    generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
-  };
-
-  let res: Response | undefined;
-  let lastErr: unknown;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 120_000);
-    try {
-      res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        signal: ctrl.signal,
-      });
-      clearTimeout(timer);
-      if (res.ok) break;
-      if (res.status < 500 && res.status !== 429) break;
-      lastErr = new Error(`Gemini ${res.status}`);
-    } catch (e) {
-      clearTimeout(timer);
-      lastErr = e;
-    }
-    await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
-  }
-
-  if (!res) throw new Error(`Gemini fetch falhou: ${String((lastErr as any)?.message || lastErr)}`);
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`Gemini ${res.status}: ${txt.slice(0, 400)}`);
-  }
-
-  const json: any = await res.json();
-  const parts = json?.candidates?.[0]?.content?.parts || [];
-  for (const p of parts) {
-    const data = p?.inlineData?.data || p?.inline_data?.data;
-    if (data) return data as string;
-  }
-  throw new Error(`Gemini resposta sem imagem: ${JSON.stringify(json).slice(0, 400)}`);
-}
-
-// Respeita o modelo escolhido: Pollinations é o padrão sem cota Gemini.
-// Se Gemini for escolhido e estourar quota/429, cai automaticamente para Pollinations.
-export async function generateImageBase64(opts: {
-  apiKey?: string;
-  prompt: string;
-  size?: "1024x1024" | "1024x1536" | "1536x1024";
-  model?: ModeloImagem;
-  referenceImageUrls?: string[];
-}): Promise<string> {
-  if (!isGeminiImageModel(opts.model)) {
-    return generatePollinationsImageBase64(opts.prompt, opts.size);
-  }
-
-  try {
-    return await generateGeminiImageBase64(opts.prompt, opts.size);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const quotaOrProviderFailure = /429|quota|rate|limit|403|404|not found|billing/i.test(message);
-    if (!quotaOrProviderFailure) throw error;
-    console.warn(`[generateImageBase64] Gemini indisponível (${message.slice(0, 180)}). Usando Pollinations.`);
-    return generatePollinationsImageBase64(opts.prompt, opts.size);
-  }
-}
-
-
-
