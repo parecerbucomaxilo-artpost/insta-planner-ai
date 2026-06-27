@@ -14,9 +14,6 @@ import { ensurePublicationDestinationProfile, saveManualInstagramToken } from "@
 import { createInstagramOAuthStartUrl, createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
-const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
-
-
 type LiStatus =
   | { connected: true; name?: string; email?: string; picture?: string; sub?: string }
   | { connected: false; error?: string }
@@ -35,12 +32,9 @@ export function SocialConnections() {
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
 
-  const [igWebhook, setIgWebhook] = useState("");
   const [liWebhook, setLiWebhook] = useState("");
   const [igLoading, setIgLoading] = useState(true);
-  const [igSaving, setIgSaving] = useState(false);
   const [liSaving, setLiSaving] = useState(false);
-  const [igTesting, setIgTesting] = useState(false);
   const [liTesting, setLiTesting] = useState(false);
   const [perfilId, setPerfilId] = useState<string | null>(null);
   const [ligaMetaConnectPath, setLigaMetaConnectPath] = useState("");
@@ -84,22 +78,18 @@ export function SocialConnections() {
         const { data: sess } = await supabase.auth.getSession();
         const uid = sess?.session?.user?.id;
         if (!uid) {
-          setIgWebhook(DEFAULT_MAKE_WEBHOOK);
           return;
         }
         const { data } = await supabase
           .from("perfil_usuario")
-          .select("id, instagram_webhook_url, linkedin_webhook_url, webhook_url")
+          .select("id, linkedin_webhook_url")
           .eq("user_id", uid)
           .order("created_at", { ascending: true })
           .limit(1)
           .maybeSingle();
         if (data) {
           setPerfilId(data.id);
-          setIgWebhook(data.instagram_webhook_url || data.webhook_url || DEFAULT_MAKE_WEBHOOK);
           setLiWebhook(data.linkedin_webhook_url || "https://hook.us2.make.com/4tics3gdoow4y02vo1rh4wcmeshu4psv");
-        } else {
-          setIgWebhook(DEFAULT_MAKE_WEBHOOK);
         }
       } finally {
         setIgLoading(false);
@@ -159,29 +149,6 @@ export function SocialConnections() {
     toast.success("Link Meta da Liga copiado. Cole na barra do navegador fora do preview.");
   };
 
-  const handleSaveIgWebhook = async () => {
-    const url = igWebhook.trim();
-    if (url && !/^https?:\/\//i.test(url)) {
-      toast.error("Informe uma URL válida começando com https://");
-      return;
-    }
-    setIgSaving(true);
-    try {
-      const uid = await getAuthedUserId();
-      const payload = { user_id: uid, instagram_webhook_url: url, webhook_url: url };
-      const res = perfilId
-        ? await supabase.from("perfil_usuario").update(payload).eq("id", perfilId).select("id").maybeSingle()
-        : await supabase.from("perfil_usuario").insert(payload).select("id").maybeSingle();
-      if (res.error) throw res.error;
-      if (res.data?.id) setPerfilId(res.data.id);
-      toast.success("Webhook do Instagram salvo ✅");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao salvar");
-    } finally {
-      setIgSaving(false);
-    }
-  };
-
   const handleSaveLiWebhook = async () => {
     const url = liWebhook.trim();
     if (url && !/^https?:\/\//i.test(url)) {
@@ -202,32 +169,6 @@ export function SocialConnections() {
       toast.error(e instanceof Error ? e.message : "Falha ao salvar");
     } finally {
       setLiSaving(false);
-    }
-  };
-
-  const handleTestIgWebhook = async () => {
-    const url = igWebhook.trim();
-    if (!url) return toast.error("Insira a URL do webhook do Instagram primeiro.");
-    setIgTesting(true);
-    const tid = toast.loading("Disparando teste para Instagram (Make)…");
-    try {
-      const r = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          texto: "✅ Teste Instagram — webhook conectado.",
-          plataforma: "Instagram",
-          imagem_url: "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=1080&h=1080&fit=crop&fm=jpg&q=85",
-          legenda: "✅ Teste Instagram — webhook conectado.",
-          tipo: "imagem"
-        }),
-      });
-      if (!r.ok) throw new Error(`Make respondeu ${r.status}`);
-      toast.success("Webhook Instagram OK!", { id: tid });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha no teste", { id: tid });
-    } finally {
-      setIgTesting(false);
     }
   };
 
@@ -252,11 +193,6 @@ export function SocialConnections() {
     } finally {
       setLiTesting(false);
     }
-  };
-
-
-  const handleTestPost = async () => {
-    handleTestIgWebhook();
   };
 
   return (
