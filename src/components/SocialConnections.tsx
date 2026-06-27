@@ -527,6 +527,32 @@ export function SocialConnections() {
                 </Button>
               )}
             </div>
+
+            <div className="p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 space-y-2 mt-2">
+              <p className="text-xs font-semibold text-emerald-900 dark:text-emerald-100">
+                🔑 Fallback manual — cole o token da Liga
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Se o login do Instagram continuar bloqueado, gere o token no Graph API Explorer (logado na conta da Liga, App Planner Chico, permissões <code>instagram_basic</code> + <code>instagram_content_publish</code> + <code>pages_show_list</code>) e cole abaixo junto com o IG Business Account ID. Isso ignora todo o fluxo OAuth.
+              </p>
+              <Input
+                value={ligaManualToken}
+                onChange={(e) => setLigaManualToken(e.target.value)}
+                placeholder="EAAG… (Access Token longo da Liga)"
+                className="font-mono text-xs"
+              />
+              <Input
+                value={ligaManualIgId}
+                onChange={(e) => setLigaManualIgId(e.target.value)}
+                placeholder="17841… (Instagram Business Account ID)"
+                className="font-mono text-xs"
+              />
+              <Button onClick={handleSaveLigaManualToken} disabled={ligaManualSaving} size="sm">
+                {ligaManualSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Salvar token manual da Liga
+              </Button>
+            </div>
+
             <Input
               id="ig-liga-webhook"
               value={igLigaWebhook}
