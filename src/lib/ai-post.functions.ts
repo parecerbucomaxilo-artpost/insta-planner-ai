@@ -615,7 +615,41 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         .then(uploadOne);
 
     const legendaResolvida = await legendaPromise;
-    const withVisual = (basePrompt: string) => basePrompt;
+
+    // === NEXO LEGENDA ↔ IMAGEM ===
+    // Extrai HEADLINE (1ª linha não-vazia) + ALT TEXT da legenda e, quando possível,
+    // pede ao LLM uma "cena visual" 1-frase fiel ao que a legenda diz. Esse briefing
+    // é injetado em TODO prompt de imagem para que a arte conte a MESMA história.
+    const extractHeadline = (txt: string) => {
+      const linhas = (txt || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      return (linhas[0] || "").replace(/^[#*>\-•\d.\)\s]+/, "").slice(0, 120);
+    };
+    const extractAlt = (txt: string) => {
+      const m = (txt || "").match(/ALT\s*TEXT\s*:\s*([^\n]+)/i);
+      return m ? m[1].trim().slice(0, 240) : "";
+    };
+    const headlineLegenda = extractHeadline(legendaResolvida);
+    const altLegenda = extractAlt(legendaResolvida);
+    let cenaVisualNexo = "";
+    try {
+      if (process.env.LOVABLE_API_KEY && data.modelo !== "local/sem-custo") {
+        const { generateTextAI } = await import("@/lib/ai-gateway.server");
+        const briefSys = `Você é diretor de arte médico. Recebe uma LEGENDA pronta de post sobre "${tema}" e devolve UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente o que a legenda diz — sem metáforas vagas, sem texto na imagem, sem nome de cor, sem nome de pessoa. Apenas a cena (sujeito + ação + contexto anatômico/clínico).`;
+        const briefPrompt = `LEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
+        cenaVisualNexo = (await generateTextAI({ system: briefSys, prompt: briefPrompt, model: data.modelo, maxTokens: 120 }) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
+      }
+    } catch (err) {
+      console.warn("[ai-post] brief visual caiu:", err instanceof Error ? err.message : err);
+    }
+    const briefingNexo = [
+      headlineLegenda ? `HEADLINE DA LEGENDA (use como ESPÍRITO da cena, NÃO escreva na imagem): "${headlineLegenda}"` : "",
+      altLegenda ? `ALT TEXT GUIA (a cena PRECISA bater com isso): "${altLegenda}"` : "",
+      cenaVisualNexo ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cenaVisualNexo}` : "",
+    ].filter(Boolean).join("\n");
+    const withVisual = (basePrompt: string) =>
+      briefingNexo
+        ? `${basePrompt}\n\n=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${briefingNexo}\n=== FIM DO NEXO ===\n`
+        : basePrompt;
 
 
     let urlImagem: string;
