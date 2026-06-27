@@ -278,26 +278,21 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
   try {
     
 
-    const contaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
+    const originalContaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
+    // Estratégia consolidada: posts da Liga publicam no @drfranciscomenezes (conta que já está
+    // conectada e funcionando) com a @lactbmf.anhanguerasbo convidada como colaboradora
+    // via parâmetro `collaborators` da Meta Graph API. Mantém o branding/logos da Liga.
+    const isLigaCollab = originalContaAlvo === LIGA_ACCOUNT;
+    const collaboratorUsername = isLigaCollab ? LIGA_ACCOUNT : null;
+    const contaAlvo = isLigaCollab ? "drfranciscomenezes" : originalContaAlvo;
 
-    if (contaAlvo === LIGA_ACCOUNT) {
-      const { error: updateError } = await supabaseAdmin
-        .from("posts")
-        .update({ status: "Rascunho", user_id: userId, updated_at: new Date().toISOString() })
-        .eq("id", post.id);
-      if (updateError) throw new Error(`DB: ${updateError.message}`);
-      return { ok: true, via: "manual-liga" as const, status: "Rascunho" };
-    }
-
-    // SUSPENSÃO MANUAL: publicação no @drfranciscomenezes está desabilitada
-    // por decisão do usuário. Posts sem conta definida também param aqui,
-    // porque o fallback histórico era justamente o perfil pessoal.
     if (!contaAlvo) {
       throw new Error(
         `Publicação bloqueada: este post não tem instagram_conta definida. ` +
-        `Para Liga, defina instagram_conta=@${LIGA_ACCOUNT}; o sistema salva para publicação manual segura.`,
+        `Defina @drfranciscomenezes ou @${LIGA_ACCOUNT} antes de publicar.`,
       );
     }
+
 
     // Publicação no @drfranciscomenezes reativada.
 
