@@ -288,7 +288,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     if (!contaAlvo) {
       throw new Error(
         `Publicação bloqueada: este post não tem instagram_conta definida. ` +
-        `Para Liga, defina instagram_conta=@${LIGA_ACCOUNT}; o sistema só publica diretamente pela Meta.`,
+        `Para Liga, defina instagram_conta=@${LIGA_ACCOUNT}; o sistema salva para publicação manual segura.`,
       );
     }
 
