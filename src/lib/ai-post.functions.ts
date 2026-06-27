@@ -21,7 +21,8 @@ const ModeloEnum = z.enum([
 const ModeloImagemEnum = z.enum([
   "pollinations/flux",
   // legados aceitos para compat
-  "pollinations/flux",
+  "google/imagen-3",
+  "google/gemini-3.1-flash-image-preview",
   "google/gemini-2.5-flash-image",
   "openai/gpt-image-1-mini",
   "openai/gpt-image-2",
