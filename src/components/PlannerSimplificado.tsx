@@ -505,7 +505,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 {copiedMetaUrl ? "Link copiado" : "Copiar link Meta"}
               </Button>
             )}
-          </div>}
+          </div>
           {metaConnectPath && (
             <p className="text-xs text-zinc-600">
               Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview.
