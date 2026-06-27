@@ -48,7 +48,7 @@ function sizeToAspect(size?: string): "1:1" | "16:9" | "9:16" {
 // Imagens gratuitas via Pollinations (Flux). Sem chave, sem billing.
 // Endpoint: https://image.pollinations.ai/prompt/<prompt>?model=flux&enhance=true&seed=<n>&width=&height=
 const REALISM_SUFFIX =
-  ", professional editorial studio photography, highly detailed, photorealistic, 8k resolution, cinematic lighting, shot on 35mm lens, realistic anatomy, no text, no words";
+  ", raw candid photograph, realistic skin texture, visible pores, cinematic natural lighting, shot on 35mm lens, f/1.8, masterwork, 8k resolution, authentic editorial photo, depth of field, sharp focus, no airbrushing, no digital art look, no 3d render look, realistic human anatomy";
 
 function sanitizeVisualPrompt(p: string): string {
   return p
@@ -66,8 +66,8 @@ function sizeToWH(size?: string): { width: number; height: number } {
   return { width: 1024, height: 1024 };
 }
 
-// Imagens via Hugging Face Inference API (FLUX.1-schnell). Requer HF_TOKEN.
-const HF_IMAGE_MODEL = "black-forest-labs/FLUX.1-schnell";
+// Imagens via Hugging Face Inference API (FLUX.1-dev). Requer HF_TOKEN.
+const HF_IMAGE_MODEL = "black-forest-labs/FLUX.1-dev";
 
 export async function generateImageBase64(opts: {
   apiKey?: string;
