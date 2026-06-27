@@ -625,6 +625,9 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     if (isLigaTarget && (!perfil.instagram_access_token || !perfil.instagram_business_account_id)) {
       const envToken = process.env.META_LIGA_ACCESS_TOKEN?.trim();
       if (envToken) {
+        let pageToken: string | undefined;
+        let igId: string | undefined;
+        // Tentativa 1: token de usuário Facebook → /me/accounts → instagram_business_account
         try {
           const accounts = await graphGetFields<{ data?: Array<{ access_token?: string; instagram_business_account?: { id?: string; username?: string } }> }>(
             "me/accounts",
@@ -634,18 +637,39 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
           const match = (accounts.data || []).find((p) =>
             normalizeInstagramAccount(p.instagram_business_account?.username) === LIGA_ACCOUNT,
           );
-          const pageToken = match?.access_token || envToken;
-          const igId = match?.instagram_business_account?.id;
-          if (igId) {
-            perfil.instagram_access_token = pageToken;
-            perfil.instagram_business_account_id = igId;
-            await supabaseAdmin
-              .from("perfil_usuario")
-              .update({ instagram_access_token: pageToken, instagram_business_account_id: igId, updated_at: new Date().toISOString() })
-              .eq("id", perfil.id);
+          if (match?.instagram_business_account?.id) {
+            pageToken = match.access_token || envToken;
+            igId = match.instagram_business_account.id;
           }
         } catch (e) {
-          console.warn("[instagram-publish] falha ao resolver IG Business ID da Liga via META_LIGA_ACCESS_TOKEN:", e);
+          console.warn("[instagram-publish] me/accounts indisponível, tentando graph.instagram.com:", e instanceof Error ? e.message : e);
+        }
+        // Tentativa 2: token Instagram Direct (graph.instagram.com/me)
+        if (!igId) {
+          try {
+            const me = await graphGetFields<{ user_id?: string; id?: string; username?: string }>(
+              "me",
+              envToken,
+              "user_id,username",
+              "graph.instagram.com",
+            );
+            if (normalizeInstagramAccount(me.username) === LIGA_ACCOUNT) {
+              igId = me.user_id || me.id;
+              pageToken = envToken;
+            }
+          } catch (e) {
+            console.warn("[instagram-publish] graph.instagram.com/me falhou:", e instanceof Error ? e.message : e);
+          }
+        }
+        if (igId && pageToken) {
+          perfil.instagram_access_token = pageToken;
+          perfil.instagram_business_account_id = igId;
+          await supabaseAdmin
+            .from("perfil_usuario")
+            .update({ instagram_access_token: pageToken, instagram_business_account_id: igId, updated_at: new Date().toISOString() })
+            .eq("id", perfil.id);
+        } else {
+          console.warn("[instagram-publish] META_LIGA_ACCESS_TOKEN não resolveu IG Business ID para", LIGA_ACCOUNT);
         }
       }
     }
