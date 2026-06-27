@@ -70,7 +70,7 @@ export const getPublicationDestination = createServerFn({ method: "POST" })
       webhookUrl,
       hasMeta,
       mode: hasMeta ? "meta" : webhookUrl ? "webhook" : "missing",
-      status: hasMeta || (conta !== LIGA_ACCOUNT && webhookUrl) ? "ok" : "missing",
+      status: hasMeta || webhookUrl ? "ok" : "missing",
     } as const;
   });
 

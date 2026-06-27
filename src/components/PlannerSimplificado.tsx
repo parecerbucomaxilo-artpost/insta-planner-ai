@@ -401,12 +401,15 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             <p className="text-xs text-amber-900">
               ⚠️ Sem destino próprio para esta conta, a publicação será bloqueada para evitar envio para outro Instagram.
               {conta === LIGA_ACCOUNT
-                ? " Para a Liga, conecte a Meta oficial abaixo; o Make foi desativado para evitar publicação no perfil Chico."
+                ? " Como o Instagram está bloqueado, salve abaixo um webhook exclusivo da Liga ou use token manual em Configurações."
                 : ` Conecte a Meta oficial ou cadastre um webhook próprio de @${conta}.`}
             </p>
           )}
           {destinoModo === "meta" && (
             <p className="text-xs text-emerald-800">Publicação direta Meta ativa para @{conta}. O Make não será usado.</p>
+          )}
+          {destinoModo === "webhook" && (
+            <p className="text-xs text-emerald-800">Webhook exclusivo ativo para @{conta}. O app enviará sempre com a conta de destino obrigatória.</p>
           )}
           <div className="flex flex-wrap gap-2">
             <Button onClick={conectarMetaConta} variant={conta === LIGA_ACCOUNT ? "default" : "secondary"}>
@@ -429,22 +432,23 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {metaConnectPath && (
             <p className="text-xs text-zinc-600">
               {conta === LIGA_ACCOUNT
-                ? "Agora a Liga usa login direto do Instagram para não cair em “Continuar como Francisco”. Se abrir outra conta, use janela anônima."
+                ? "Se o Instagram continuar bloqueado, ignore este login e salve o webhook exclusivo da Liga abaixo."
                 : "Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview."}
             </p>
           )}
-          {conta !== LIGA_ACCOUNT && (
-            <div className="flex gap-2">
-              <Input
-                value={destinoUrl}
-                onChange={(e) => setDestinoUrl(e.target.value)}
-                placeholder="https://hook.us2.make.com/..."
-                className="flex-1"
-              />
-              <Button onClick={salvarDestino} disabled={savingDestino}>
-                {savingDestino ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar destino"}
-              </Button>
-            </div>
+          <div className="flex gap-2">
+            <Input
+              value={destinoUrl}
+              onChange={(e) => setDestinoUrl(e.target.value)}
+              placeholder={conta === LIGA_ACCOUNT ? "Webhook exclusivo da Liga (Make)" : "https://hook.us2.make.com/..."}
+              className="flex-1"
+            />
+            <Button onClick={salvarDestino} disabled={savingDestino}>
+              {savingDestino ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar destino"}
+            </Button>
+          </div>
+          {conta === LIGA_ACCOUNT && (
+            <p className="text-xs text-zinc-600">Este webhook precisa publicar somente no Instagram @lactbmf.anhanguerasbo. O app não usa o webhook padrão do Chico para posts da Liga.</p>
           )}
         </Card>
       )}
