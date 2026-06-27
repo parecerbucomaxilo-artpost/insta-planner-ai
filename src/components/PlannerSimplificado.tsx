@@ -66,8 +66,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   // Geração local sem IA paga
   const [modo, setModo] = useState<Modo>("feed");
-  const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
-  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
+  const [modelo, setModelo] = useState<ModeloIA>("openai/gpt-5-mini");
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("google/gemini-3.1-flash-image");
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");
