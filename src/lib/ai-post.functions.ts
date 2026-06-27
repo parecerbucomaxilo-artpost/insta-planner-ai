@@ -15,7 +15,9 @@ const ModeloImagemEnum = z.enum([
   "local/sem-custo",
 ]);
 const ModeloImagemLocalInput = z.preprocess(() => "local/sem-custo", ModeloImagemEnum);
-export { MODELOS_IMAGEM } from "@/lib/ai-gateway.server";
+export const MODELOS_IMAGEM = [
+  { id: "local/sem-custo", label: "Imagem local (sem custo)" },
+] as const;
 
 const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico", "google-business"]);
 export type NivelConteudo = z.infer<typeof NivelEnum>;
