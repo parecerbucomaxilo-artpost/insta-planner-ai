@@ -394,7 +394,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         legenda, url_imagem: url,
         postar_instagram: true, postar_linkedin: false,
         status, data_agendamento: iso ?? null,
-        estilo_layout: "Padrão", instagram_conta: conta,
+        estilo_layout: "Padrão", instagram_conta: effectiveConta,
       } as any).select("id").single();
       if (error) throw error;
       if (shouldAutoPublish && ins?.id) {
