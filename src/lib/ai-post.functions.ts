@@ -4,47 +4,33 @@ const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
 export const MODELOS_IA = [
-  { id: "openai/gpt-5-mini", label: "GPT-5 Mini (grátis)" },
-  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (grátis)" },
+  { id: "local/sem-custo", label: "Texto local (sem custo)" },
 ] as const;
 const ModeloEnum = z.enum([
-  "openai/gpt-5-mini",
-  "google/gemini-3-flash-preview",
-  // legados aceitos para compat com posts antigos no DB
-  "groq/llama-3.3-70b-versatile",
-  "groq/llama-3.1-8b-instant",
-  "google/gemini-2.5-pro",
-  "openai/gpt-5",
-  "anthropic/claude-sonnet-4-5",
+  "local/sem-custo",
 ]);
+const ModeloLocalInput = z.preprocess(() => "local/sem-custo", ModeloEnum);
 
 const ModeloImagemEnum = z.enum([
-  "google/gemini-3.1-flash-image",
-  // legados aceitos para compat com posts antigos no DB
-  "pollinations/flux",
-  "google/imagen-3",
-  "google/gemini-3.1-flash-image-preview",
-  "google/gemini-2.5-flash-image",
-  "openai/gpt-image-1-mini",
-  "openai/gpt-image-2",
-  "google/gemini-3-pro-image",
-  "google/gemini-3-pro-image-preview",
+  "local/sem-custo",
 ]);
+const ModeloImagemLocalInput = z.preprocess(() => "local/sem-custo", ModeloImagemEnum);
 export { MODELOS_IMAGEM } from "@/lib/ai-gateway.server";
 
 const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico", "google-business"]);
 export type NivelConteudo = z.infer<typeof NivelEnum>;
 
 const SingleInput = z.object({
-  // Se vazio, a IA escolhe um tema relevante automaticamente.
+  // Se vazio, o gerador local escolhe um tema relevante automaticamente.
   tema: z.string().optional().default(""),
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
   rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
-  modelo: ModeloEnum.optional().default("openai/gpt-5-mini"),
-  modeloImagem: ModeloImagemEnum.optional().default("google/gemini-3.1-flash-image"),
+  // Aceita qualquer valor legado vindo de abas antigas, mas ignora e usa sempre o gerador local.
+  modelo: ModeloLocalInput,
+  modeloImagem: ModeloImagemLocalInput,
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
   ambasRedes: z.boolean().optional().default(false),
   // Status inicial do post (PendenteAprovacao = revisão manual; Agendado = vai pro cron de publicação).
@@ -58,7 +44,7 @@ const SingleInput = z.object({
 
 const WeekInput = z.object({
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("Ambas"),
-  modelo: ModeloEnum.optional().default("groq/llama-3.3-70b-versatile"),
+  modelo: ModeloLocalInput,
 });
 
 const WHATSAPP = "https://wa.me/5511947684004";
@@ -382,21 +368,95 @@ function chicoImagePrompt(tema: string, slide?: { n: number; total: number; pape
 }
 
 
+const TEMAS_GERAIS = [
+  "Por que o siso incluso pode causar dor que irradia para o ouvido",
+  "Como o bruxismo noturno pode sobrecarregar dentes e articulações",
+  "Quando o estalo na ATM merece atenção especializada",
+  "Por que a mandíbula pode travar ao acordar",
+  "Como a cirurgia ortognática pode melhorar função e harmonia facial",
+  "Quando o ronco e a apneia precisam de avaliação bucomaxilofacial",
+  "Por que infecções odontogênicas não devem ser ignoradas",
+  "Como reconhecer sinais de alerta depois da extração do siso",
+  "Quando uma ferida na boca precisa ser investigada",
+  "Por que traumas faciais exigem avaliação rápida e precisa",
+  "Como a dor facial pode estar ligada à articulação temporomandibular",
+  "Quando a mordida interfere na mastigação, respiração e fala",
+  "Por que dentes inclusos exigem planejamento com imagem",
+  "Como a Odontologia Hospitalar protege pacientes internados",
+  "Quando a dor de cabeça pode ter relação com músculos da face",
+  "Por que o planejamento digital mudou a cirurgia bucomaxilofacial",
+  "Como a avaliação do freio lingual pode impactar funções orais",
+  "Quando a perda óssea exige cuidado antes de procedimentos dentários",
+  "Por que a higiene oral na UTI reduz riscos ao paciente internado",
+  "Como identificar sinais de disfunção temporomandibular sem pânico",
+];
+
+const TEMAS_ESTUDANTES = [
+  "Enquete: qual técnica anestésica escolher para exodontia do terceiro molar inferior",
+  "Dica de técnica: sequência básica para sutura simples em mucosa oral",
+  "Você sabia que o nervo alveolar inferior percorre o canal mandibular",
+  "Mito ou verdade: antibiótico é obrigatório antes de toda exodontia",
+  "Caiu na prova: indicações clínicas da alveoloplastia após exodontia",
+  "Dica clínica: como reconhecer alveolite seca no pós-operatório",
+  "Curiosidade anatômica: forame mentual e nervo mentual na clínica",
+  "Enquete: qual instrumento usar para afastamento seguro em cirurgia bucal",
+  "Dica de prova: diferença entre biópsia incisional e excisional",
+  "Mito ou verdade: todo siso incluso precisa ser removido",
+];
+
+function normalizeTema(s: string) {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function chooseLocalTema(audiencia: z.infer<typeof SingleInput>["audiencia"], usados: string[], seedText: string) {
+  const list = audiencia === "estudantes-graduacao" ? TEMAS_ESTUDANTES : TEMAS_GERAIS;
+  const usadosNorm = new Set(usados.map(normalizeTema));
+  const start = Math.abs(seedText.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), Date.now())) % list.length;
+  for (let i = 0; i < list.length; i++) {
+    const tema = list[(start + i) % list.length];
+    if (!usadosNorm.has(normalizeTema(tema))) return tema;
+  }
+  return `${list[start]} — abordagem ${new Date().toLocaleDateString("pt-BR")}`;
+}
+
+function buildLocalCaption(params: {
+  tema: string;
+  rede: "instagram" | "linkedin" | "estilo-x" | "google";
+  formato: "Carrossel" | "Story" | "Post Único";
+  especialidade: string;
+  nivel: Exclude<NivelConteudo, "auto">;
+  audiencia: z.infer<typeof SingleInput>["audiencia"];
+}) {
+  const { tema, rede, formato, especialidade, audiencia } = params;
+  if (audiencia === "estudantes-graduacao") {
+    return `Caiu na clínica: ${tema}\n\nAntes de decorar condutas, entenda a lógica anatômica e cirúrgica por trás do procedimento. Em cirurgia bucal, indicação correta, técnica limpa e respeito aos tecidos fazem diferença desde a graduação.\n\nDica prática: descreva o passo principal em voz alta antes de executar. Isso organiza raciocínio, biossegurança e instrumentação.\n\n#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF`;
+  }
+  if (audiencia === "chico-drfm") {
+    return `Você se identificou com isso?\n\n${tema}. Muitas queixas da face, boca e mandíbula começam discretas, mas podem interferir no sono, na mastigação, na fala e na qualidade de vida.\n\nInformação correta ajuda você a reconhecer sinais importantes sem pânico e buscar uma avaliação especializada quando necessário.\n\nDúvidas? Link na bio para contato e agendamento pelo WhatsApp.\n\nAtendo em ${CHICO_CIDADES}.\n\n#drfranciscomenezes #bucomaxilofacial #CTBMF #ATM #cirurgiabucomaxilofacial`;
+  }
+  if (rede === "linkedin") {
+    return `**${tema}**\n\nNa prática em ${especialidade}, esse tema exige integração entre diagnóstico clínico, avaliação funcional e planejamento baseado em evidências. A conduta deve considerar risco, benefício, timing cirúrgico e impacto na qualidade de vida.\n\nPrincipais pontos para discussão profissional:\n• avaliação individualizada reduz intervenções desnecessárias;\n• imagem e exame físico continuam centrais na decisão;\n• acompanhamento longitudinal melhora previsibilidade;\n• comunicação clara com paciente e equipe reduz falhas de adesão.\n\nReferências:\n1. Journal of Oral and Maxillofacial Surgery. Clinical practice updates in oral and maxillofacial surgery. J Oral Maxillofac Surg.\n2. International Journal of Oral and Maxillofacial Surgery. Evidence-based decision making in maxillofacial care. Int J Oral Maxillofac Surg.\n\nDiscussão aberta aos colegas. WhatsApp: ${WHATSAPP}\n\n#CTBMF #CirurgiaBucoMaxiloFacial #OdontologiaHospitalar #EvidenceBasedPractice`;
+  }
+  if (rede === "google") {
+    return `**${tema}?**\n\nVocê percebe dor, incômodo, estalo, travamento ou dificuldade para mastigar? Esses sinais podem ter diferentes causas e merecem uma avaliação cuidadosa.\n\nO acompanhamento com cirurgião bucomaxilofacial ajuda a entender a origem do problema e definir o melhor caminho com segurança. Atendimento em ${CIDADES_ATENDIMENTO}.\n\nSaiba mais pelo perfil ou envie mensagem pelo WhatsApp ${WHATSAPP}.\n\nPalavras-chave SEO: Cirurgião Bucomaxilofacial São Paulo, CTBMF, ATM, DTM, Siso incluso, Odontologia Hospitalar\nALT TEXT: arte médica em azul navy sobre ${tema}`;
+  }
+  if (formato === "Story") {
+    return `${tema}\n\nVocê já sentiu algo parecido?\n\nVeja o post completo no feed.\n\nLink na Bio`;
+  }
+  return `Isso pode estar tentando te avisar algo.\n\n${tema}. Quando dor, travamento, estalo ou desconforto aparecem na face e na boca, o mais importante é entender a causa antes de procurar soluções rápidas.\n\nInformação de qualidade ajuda você a reconhecer sinais, evitar medo desnecessário e buscar orientação no momento certo.\n\nSaiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.\n\n#bucomaxilofacial #CTBMF #drfranciscomenezes #saudebucal #ATM #cirurgiaoral`;
+}
+
+
+
 
 export const generateSinglePost = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) => SingleInput.parse(d))
   .handler(async ({ data }) => {
     const context = { userId: TEMP_USER_ID };
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
-    const { createLovableAiGatewayProvider, generateImageBase64 } = await import("@/lib/ai-gateway.server");
-    const { generateText } = await import("ai");
+    const { generateImageBase64 } = await import("@/lib/ai-gateway.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const gateway = createLovableAiGatewayProvider(key);
-    const model = gateway(data.modelo);
 
     // Resolve formato final
     const formato: "Carrossel" | "Story" | "Post Único" =
@@ -407,7 +467,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           ? "Story"
           : "Post Único");
 
-    // 0. Se nenhum tema foi fornecido, a IA escolhe um automaticamente
+    // 0. Se nenhum tema foi fornecido, o gerador local escolhe um automaticamente
     //    EVITANDO temas dos últimos 60 dias (máxima abrangência editorial).
     let tema = (data.tema ?? "").trim();
     // Modo Estudantes: lista fixa de temas didáticos de cirurgia bucal básica.
@@ -440,58 +500,10 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         .not("prompt_ia", "is", null)
         .order("created_at", { ascending: false })
         .limit(200);
-      const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
       const temasUsados = Array.from(
         new Set((historico ?? []).map((p: any) => (p.prompt_ia || "").trim()).filter(Boolean))
       ).slice(0, 150);
-      const usadosNorm = new Set(temasUsados.map(norm));
-
-      const escolher = async (tentativa: number) => {
-        const blocoEvitar = temasUsados.length
-          ? `\n\nTEMAS JÁ PUBLICADOS NOS ÚLTIMOS 90 DIAS — É TERMINANTEMENTE PROIBIDO REPETIR, PARAFRASEAR OU TANGENCIAR QUALQUER UM DELES:\n${temasUsados.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
-          : "";
-        const { text } = await generateText({
-          model,
-          system: `Você é estrategista editorial de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar. Sua missão é MAXIMIZAR ABRANGÊNCIA TEMÁTICA — JAMAIS repetir assunto.`,
-          prompt: `Escolha 1 TEMA 100% INÉDITO de post para a rede ${data.rede} (formato ${formato}) dentro da especialidade "${data.especialidade}".${tentativa > 0 ? " TENTATIVA " + (tentativa + 1) + ": o tema anterior foi rejeitado por similaridade — escolha um SUBTÓPICO COMPLETAMENTE DIFERENTE." : ""}
-
-PRIORIZE ASSUNTOS DE ALTO VOLUME DE BUSCA NO GOOGLE BRASIL sobre CTBMF + Odontologia Hospitalar: dor no siso, estalo na ATM, bruxismo, apneia do sono, ronco, mandíbula travada, cirurgia ortognática, trauma facial, infecção odontogênica, dor de ouvido por DTM, implante em fumante, câncer de boca, mucocele, freio lingual em bebê, anestesia geral em odontologia, siso incluso, fratura de mandíbula, pós-operatório de siso, tratamento de DTM, MRONJ por bisfosfonato, higiene bucal na UTI (VAP). Varie o grupo de dor a cada chamada.
-
-REGRAS OBRIGATÓRIAS DE REDAÇÃO (descumprir = rejeitado):
-1. Português do Brasil impecável, gramática e ortografia corretas, com acentuação completa.
-2. UMA frase declarativa COMPLETA, com sujeito + verbo + complemento, fazendo sentido sozinha (NÃO é título de matéria, NÃO é lista de palavras-chave, NÃO é fragmento).
-3. Entre 8 e 16 palavras. Tom claro, humano, específico, sem jargão técnico opaco e sem palavras soltas separadas por vírgula.
-4. PROIBIDO: aspas, prefixos como "Tema:", emojis, hashtags, dois-pontos no início, abreviações estranhas, repetir palavras, misturar dois assuntos, frase truncada.
-5. Exemplos de forma CORRETA: "Por que o siso incluso causa dor que irradia até o ouvido"; "Como o bruxismo noturno desgasta os dentes e estala a ATM"; "Quando a apneia do sono exige avaliação do cirurgião bucomaxilofacial".
-
-Tema deve descrever uma DOR ou SITUAÇÃO REAL do paciente, com potencial de conversão e busca orgânica.${blocoEvitar}
-
-Responda APENAS com a frase do tema, nada mais.`,
-        });
-        return text.trim().replace(/^["'`]+|["'`]+$/g, "").split("\n")[0];
-      };
-
-      for (let i = 0; i < 3; i++) {
-        const candidato = await escolher(i);
-        if (!candidato) continue;
-        const cn = norm(candidato);
-        const palavras = candidato.split(/\s+/).filter(Boolean);
-        const formaInvalida =
-          palavras.length < 8 ||
-          palavras.length > 18 ||
-          /[:;]\s*$/.test(candidato) ||
-          /^(tema|assunto|título|titulo)\s*[:\-]/i.test(candidato) ||
-          (candidato.match(/,/g)?.length ?? 0) >= 3; // lista de keywords
-        const colide = usadosNorm.has(cn) || Array.from(usadosNorm).some((u) => {
-          const a = new Set(cn.split(" ").filter((w) => w.length >= 4));
-          const b = new Set(u.split(" ").filter((w) => w.length >= 4));
-          let inter = 0; a.forEach((w) => { if (b.has(w)) inter++; });
-          return inter >= 3;
-        });
-        tema = candidato;
-        if (!colide && !formaInvalida) break;
-      }
-      if (!tema) throw new Error("IA não conseguiu escolher um tema.");
+      tema = chooseLocalTema(data.audiencia, temasUsados, `${data.rede}-${data.formato}-${data.especialidade}`);
     }
 
 
@@ -502,18 +514,14 @@ Responda APENAS com a frase do tema, nada mais.`,
     // 2. Dispara legenda + imagens EM PARALELO (não dependem entre si).
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const isChico = data.audiencia === "chico-drfm";
-    const captionSys = isEstudantes
-      ? studentCaptionSystem()
-      : isChico
-        ? chicoCaptionSystem(formato)
-        : captionSystem(data.rede, data.especialidade, nivel);
-    const legendaPromise = generateText({
-      model,
-      system: captionSys,
-      prompt: isStory
-        ? `Crie um TEXTO DE STORY (até 220 caracteres, 1-2 emojis, sem hashtags, CTA "Link na Bio") que CHAME ATENÇÃO para o post do FEED de hoje sobre: "${tema}". O story deve provocar curiosidade e mandar o usuário para o feed.`
-        : `Crie a legenda completa para o post sobre: "${tema}".`,
-    }).then((r) => r.text);
+    const legendaPromise = Promise.resolve(buildLocalCaption({
+      tema,
+      rede: data.rede,
+      formato,
+      especialidade: data.especialidade,
+      nivel,
+      audiencia: data.audiencia,
+    }));
 
     // Tamanho ideal por plataforma (gateway suporta 1024x1024, 1024x1536, 1536x1024):
     // - IG Feed/Carrossel: vertical 4:5  → 1024x1536
@@ -554,7 +562,7 @@ Responda APENAS com a frase do tema, nada mais.`,
     }
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
       try {
-        return await generateImageBase64({ apiKey: key, prompt, size, model: data.modeloImagem, referenceImageUrls: logoRefs.length ? logoRefs : undefined });
+        return await generateImageBase64({ prompt, size, model: "local/sem-custo", referenceImageUrls: logoRefs.length ? logoRefs : undefined });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message);
@@ -574,49 +582,8 @@ Responda APENAS com a frase do tema, nada mais.`,
         .then(applyOverlay)
         .then(uploadOne);
 
-    // 2.1 — Após a legenda, faz uma SEGUNDA chamada LIMPA e ISOLADA à Groq
-    // para gerar um prompt visual em inglês para o Flux (Pollinations).
     const legendaResolvida = await legendaPromise;
-
-    // Sanitização rigorosa: remove emojis, símbolos, quebras de linha, aspas,
-    // pontuação estranha — qualquer coisa que possa corromper a URL final.
-    const sanitizeVisual = (s: string) =>
-      s
-        // emojis e símbolos pictográficos
-        .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}]/gu, " ")
-        // caracteres especiais / markdown / aspas / colchetes
-        .replace(/[#@*_`~|<>\[\]{}"'\\^$=+;]/g, " ")
-        // qualquer quebra de linha / tab
-        .replace(/[\r\n\t]+/g, " ")
-        // remove caracteres não-ASCII residuais
-        .replace(/[^\x20-\x7E]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 700);
-
-    const REALISM_MODIFIERS =
-      ", professional editorial commercial photography, highly detailed, photorealistic, 8k resolution, natural lighting, shot on 35mm lens, no text, no text overlays, realistic anatomy";
-
-    let visualPromptEn = "";
-    try {
-      // Chamada isolada — apenas o engenheiro de prompt do Flux.
-      const r = await generateText({
-        model: gateway("groq/llama-3.3-70b-versatile"),
-        system:
-          "Você é um engenheiro de prompt para o gerador de imagens Flux. Baseado no texto fornecido, responda APENAS com um prompt descritivo em inglês focado em fotografia realista. Não use introduções, não use aspas, não use markdown, não coloque explicações. Escreva apenas a descrição da cena física.",
-        prompt: `${tema}\n\n${legendaResolvida}`,
-      });
-      visualPromptEn = sanitizeVisual(r.text);
-    } catch {
-      visualPromptEn = "";
-    }
-
-    // O prompt final do Pollinations é: prompt em inglês + modificadores
-    // estritos de realismo. O basePrompt (instruções longas em pt-BR) é
-    // descartado quando temos o prompt visual em inglês — evita poluição
-    // que vinha gerando aberrações.
-    const withVisual = (basePrompt: string) =>
-      visualPromptEn ? `${visualPromptEn}${REALISM_MODIFIERS}` : basePrompt;
+    const withVisual = (basePrompt: string) => basePrompt;
 
 
     let urlImagem: string;
@@ -710,7 +677,7 @@ Responda APENAS com a frase do tema, nada mais.`,
     return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.length, urls };
   });
 
-// Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado da IA.
+// Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado gerado.
 export const discardPost = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
@@ -796,73 +763,32 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) => WeekInput.parse(d))
   .handler(async ({ data }) => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
-    const { generateText } = await import("ai");
     const { buildScheduleSlots } = await import("@/lib/schedule-config");
-
-    const gateway = createLovableAiGatewayProvider(key);
-    const model = gateway(data.modelo);
 
     // Slots reais dos próximos 7 dias
     const slots = buildScheduleSlots(new Date(), 7);
-    const slotsResumo = slots.map((s, i) => {
-      const dow = ["DOM","SEG","TER","QUA","QUI","SEX","SAB"][s.diaSemana];
-      const hhmm = `${String(s.hora).padStart(2,"0")}:${String(s.minuto).padStart(2,"0")}`;
-      const dominical = s.diaSemana === 0 ? " [MENSAGEM DE DOMINGO — tom leve/inspiracional]" : "";
-      return `${i + 1}. ${dow} ${hhmm} · ${s.rede} ${s.tipo}${dominical}`;
-    }).join("\n");
-
-    const schema = z.object({
-      temas: z.array(z.object({
-        slotIndex: z.number(),
-        tema: z.string(),
-        gancho: z.string(),
-      })).length(slots.length),
-    });
-
-    const { text } = await generateText({
-      model,
-      system: `Você é estrategista de conteúdo de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar.
-Crie 1 tema por slot do cronograma abaixo (${slots.length} slots), sobre: ${data.especialidade}.
-Mistura obrigatória: IG feed (CARROSSEL, linguagem leiga/empática + ganchos de dor), IG stories (teaser/chamada do FEED do MESMO DIA — pode ser repetição/pergunta sobre o tema do feed), LinkedIn (formal/científico, dados/evidência).
-IMPORTANTE: o tema dos STORIES deve coincidir com o tema do POST FEED do mesmo dia (story de manhã ↔ feed de 9h, story de tarde ↔ feed de 15h, story de noite ↔ feed de 19h). Não invente temas novos para stories — eles divulgam o feed.
-Domingos = tom leve, motivacional, agradecimento, reflexão sobre cuidado e bem-estar — SEM gancho agressivo de dor.
-Cada tema deve atacar uma DOR REAL (siso, ATM, trauma facial, infecção odontogênica, apneia, etc.) salvo nos domingos.
-NUNCA CTA "agende consulta" — sempre WhatsApp/Link na Bio.
-
-Slots:
-${slotsResumo}`,
-      prompt: `Gere os temas agora, um por slot, na ordem.
-
-Responda SOMENTE JSON válido, sem markdown, sem explicações, neste formato exato:
-{"temas":[{"slotIndex":1,"tema":"...","gancho":"..."}]}`,
-    });
-
-    const extractJson = (raw: string) => {
-      const cleaned = raw.replace(/```json|```/gi, "").trim();
-      const start = cleaned.indexOf("{");
-      const end = cleaned.lastIndexOf("}");
-      if (start < 0 || end <= start) throw new Error("JSON ausente");
-      return cleaned.slice(start, end + 1);
-    };
-
-    let out: z.infer<typeof schema>;
-    try {
-      out = schema.parse(JSON.parse(extractJson(text)));
-    } catch {
-      throw new Error("A IA não retornou um cronograma válido. Tente gerar novamente.");
-    }
+    const temasBase = data.especialidade === "Odontologia Hospitalar"
+      ? [
+        "Como a higiene oral reduz riscos em pacientes internados",
+        "Quando a odontologia hospitalar entra no cuidado multiprofissional",
+        "Por que infecções bucais podem impactar tratamentos médicos",
+        "Como avaliar a boca antes de cirurgias e terapias sistêmicas",
+        "Quando lesões orais exigem atenção dentro do hospital",
+        "Por que pacientes oncológicos precisam de cuidado oral planejado",
+        "Como o dentista atua na segurança do paciente crítico",
+      ]
+      : TEMAS_GERAIS;
 
     // Anexa metadados + força stories a herdarem o tema do feed do mesmo dia
-    const enriquecidos = out.temas
-      .sort((a, b) => a.slotIndex - b.slotIndex)
-      .map((t) => {
-        const s = slots[t.slotIndex - 1] ?? slots[0];
+    const enriquecidos = slots.map((s, i) => {
+        const temaBase = s.diaSemana === 0
+          ? "Cuidar da saúde da boca também é cuidar do bem-estar"
+          : temasBase[i % temasBase.length];
+        const gancho = s.tipo === "stories"
+          ? `Teaser rápido: ${temaBase}`
+          : `Gancho: ${temaBase}`;
         return {
-          dia: t.slotIndex,
+          dia: i + 1,
           rede: s.rede,
           tipo: s.tipo,
           quando: s.quando.toISOString(),
@@ -873,8 +799,8 @@ Responda SOMENTE JSON válido, sem markdown, sem explicações, neste formato ex
             : s.tipo === "stories"
               ? "Story"
               : "Post Único") as "Carrossel" | "Story" | "Post Único",
-          tema: t.tema,
-          gancho: t.gancho,
+          tema: temaBase,
+          gancho,
         };
       });
 

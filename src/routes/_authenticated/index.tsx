@@ -26,9 +26,9 @@ export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Planner Chico — Agendamento de Posts" },
-      { name: "description", content: "Planner Chico: crie, agende e visualize posts com IA Groq Llama, focado em Odontologia (CTBMF e Hospitalar)." },
+      { name: "description", content: "Planner Chico: crie, agende e visualize posts sem IA paga, focado em Odontologia (CTBMF e Hospitalar)." },
       { property: "og:title", content: "Planner Chico — Agendamento de Posts" },
-      { property: "og:description", content: "Planner Chico: crie, agende e visualize posts com IA Groq Llama, focado em Odontologia (CTBMF e Hospitalar)." },
+      { property: "og:description", content: "Planner Chico: crie, agende e visualize posts sem IA paga, focado em Odontologia (CTBMF e Hospitalar)." },
     ],
   }),
   component: Dashboard,

@@ -18,8 +18,6 @@ function imageSystemPrompt(tema: string, rede: string, slide?: { n: number; tota
 
 export const backfillMissingImages = createServerFn({ method: "POST" })
   .handler(async () => {
-    const key = process.env.LOVABLE_API_KEY ?? "";
-
     const { generateImageBase64 } = await import("@/lib/ai-gateway.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -66,7 +64,7 @@ export const backfillMissingImages = createServerFn({ method: "POST" })
             { n: 6, total: 6, papel: "CTA final Link na Bio/WhatsApp + rodapé textual" },
           ];
           const b64s = await Promise.all(
-            slides.map((s) => generateImageBase64({ apiKey: key, prompt: imageSystemPrompt(tema, rede, s), size })),
+            slides.map((s) => generateImageBase64({ prompt: imageSystemPrompt(tema, rede, s), size })),
           );
           const ups = await Promise.all(b64s.map(uploadOne));
           await supabaseAdmin.from("posts").update({
@@ -79,7 +77,7 @@ export const backfillMissingImages = createServerFn({ method: "POST" })
           } as any).eq("id", p.id);
           results.push({ id: p.id, ok: true, slides: 6 });
         } else {
-          const b64 = await generateImageBase64({ apiKey: key, prompt: imageSystemPrompt(tema, rede), size });
+          const b64 = await generateImageBase64({ prompt: imageSystemPrompt(tema, rede), size });
           const up = await uploadOne(b64);
           await supabaseAdmin.from("posts").update({
             url_imagem: up.publicUrl,

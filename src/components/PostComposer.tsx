@@ -352,8 +352,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x" | "google">("instagram");
-  const [modelo, setModelo] = useState<ModeloIA>("openai/gpt-5-mini");
-  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("google/gemini-3.1-flash-image");
+  const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
   const [ambasRedes, setAmbasRedes] = useState(false);
   const [busy, setBusy] = useState<null | AiQuickFormat | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
@@ -376,9 +376,9 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       carrossel: { tipo: "feed" as const, formato: "Carrossel" as const, label: "carrossel com 6 imagens" },
     }[quickFormat];
     setBusy(quickFormat);
-    const tid = `ai-${quickFormat}`;
+    const tid = `local-${quickFormat}`;
     toast.loading(
-      temaTrim ? `IA criando ${config.label}...` : `IA escolhendo tema e criando ${config.label}...`,
+      temaTrim ? `Gerador local criando ${config.label}...` : `Gerador local escolhendo tema e criando ${config.label}...`,
       { id: tid },
     );
     try {
@@ -397,8 +397,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
 
   const handleWeek = async () => {
     setBusy("week");
-    const tid = "ai-week";
-    toast.loading("IA planejando 7 dias (cronograma fixo)...", { id: tid });
+    const tid = "local-week";
+    toast.loading("Gerador local planejando 7 dias (cronograma fixo)...", { id: tid });
     try {
       const out = await genWeek({ data: { especialidade, modelo } });
       setTemas(out.temas as any);
@@ -413,7 +413,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const approveTheme = async (t: { rede: string; tipo?: string; formato?: string; quando?: string; tema: string }) => {
     const r = (t.rede === "linkedin" ? "linkedin" : t.rede === "estilo-x" ? "estilo-x" : t.rede === "google" ? "google" : "instagram") as
       | "instagram" | "linkedin" | "estilo-x" | "google";
-    const tid = `ai-approve-${t.tema}`;
+    const tid = `local-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
       const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes } });
@@ -442,8 +442,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     <Card className="p-5 space-y-4 border-2 border-dashed border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-cyan-50/30">
       <div className="flex items-center gap-2">
         <Wand2 className="w-5 h-5 text-indigo-600" />
-        <h3 className="font-semibold text-indigo-900">Gerar com IA</h3>
-        <span className="text-xs text-indigo-600/70">Groq Llama + Flux · estilo médico premium</span>
+        <h3 className="font-semibold text-indigo-900">Gerar sem IA paga</h3>
+        <span className="text-xs text-indigo-600/70">Gerador local · sem gateway externo</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -490,7 +490,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs">Modelo de IA (texto)</Label>
+          <Label className="text-xs">Gerador de texto</Label>
         <div className="flex flex-wrap gap-2">
           {MODELOS_IA.map((m) => (
             <button
@@ -509,12 +509,12 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Modelo de texto para legenda/tema. Imagem é configurada abaixo.
+          Texto local para legenda/tema, sem cobrança.
         </p>
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs">Modelo de IA (imagem)</Label>
+        <Label className="text-xs">Gerador de imagem</Label>
         <div className="flex flex-wrap gap-2">
           {MODELOS_IMAGEM.map((m) => (
             <button
@@ -533,7 +533,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Nano Banana é até 5x mais rápido que GPT-image-2. Use GPT-image-2 só para criativos finais premium.
+          Imagem local em azul navy, sem acionar modelos pagos.
         </p>
       </div>
 
@@ -613,7 +613,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
         >
           {busy === "week" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CalendarDays className="w-4 h-4 mr-2" />}
-          Programar 7 dias com IA
+          Programar 7 dias sem IA paga
         </Button>
       </div>
       <p className="text-[11px] text-indigo-700/80 bg-indigo-50/60 rounded-md p-2 leading-relaxed">
