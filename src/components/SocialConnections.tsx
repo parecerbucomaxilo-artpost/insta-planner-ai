@@ -50,6 +50,7 @@ export function SocialConnections() {
   const [perfilId, setPerfilId] = useState<string | null>(null);
   const [ligaMetaConnectPath, setLigaMetaConnectPath] = useState("");
   const [ligaMetaOauthUrl, setLigaMetaOauthUrl] = useState("");
+  const [ligaMetaLoginUrl, setLigaMetaLoginUrl] = useState("");
   const [ligaMetaCopied, setLigaMetaCopied] = useState(false);
   const [ligaManualToken, setLigaManualToken] = useState("");
   const [ligaManualIgId, setLigaManualIgId] = useState("");
@@ -205,22 +206,35 @@ export function SocialConnections() {
 
     try {
       const destino = await ensureLigaDestination({ data: { conta: "lactbmf.anhanguerasbo" } });
-      const r = await startInstagramOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo" } });
-      setLigaMetaOauthUrl(r.url);
-      setLigaMetaConnectPath(`/meta-connect?account=lactbmf.anhanguerasbo&next=${encodeURIComponent(r.url)}`);
-      toast.info("Clique em 'Abrir conexão Instagram da Liga' para entrar direto na conta da Liga.");
+      const [igResult, fbResult] = await Promise.allSettled([
+        startInstagramOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo" } }),
+        startMetaOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo" } }),
+      ]);
+      const igUrl = igResult.status === "fulfilled" ? igResult.value.url : "";
+      const fbLoginUrl = fbResult.status === "fulfilled" ? (fbResult.value.loginUrl || fbResult.value.privateAuthUrl || fbResult.value.url) : "";
+      if (!igUrl && !fbLoginUrl) throw new Error("Não foi possível gerar link Meta/Instagram da Liga.");
+
+      setLigaMetaOauthUrl(igUrl || fbLoginUrl);
+      setLigaMetaLoginUrl(fbLoginUrl);
+      setLigaMetaConnectPath(
+        `/meta-connect?account=lactbmf.anhanguerasbo` +
+          (igUrl ? `&next=${encodeURIComponent(igUrl)}` : "") +
+          (fbLoginUrl ? `&login=${encodeURIComponent(fbLoginUrl)}` : ""),
+      );
+      toast.info("Preparei 2 caminhos: Instagram direto e Facebook/Meta em nova sessão. Abra pelo botão abaixo.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao conectar Instagram da Liga");
     }
   };
 
   const handleCopyLigaMetaUrl = async () => {
-    if (!ligaMetaOauthUrl) return toast.error("Prepare a conexão Meta da Liga primeiro.");
+    const urlToCopy = ligaMetaLoginUrl || ligaMetaOauthUrl;
+    if (!urlToCopy) return toast.error("Prepare a conexão Meta da Liga primeiro.");
     try {
-      await navigator.clipboard.writeText(ligaMetaOauthUrl);
+      await navigator.clipboard.writeText(urlToCopy);
     } catch {
       const textarea = document.createElement("textarea");
-      textarea.value = ligaMetaOauthUrl;
+      textarea.value = urlToCopy;
       textarea.setAttribute("readonly", "");
       textarea.style.position = "fixed";
       textarea.style.left = "-9999px";
