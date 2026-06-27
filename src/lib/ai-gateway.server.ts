@@ -98,7 +98,8 @@ function sizeToWH(size?: string): { width: number; height: number } {
   return { width: 1024, height: 1024 };
 }
 
-// Imagens via Lovable AI Gateway (Gemini 3.1 Flash Image). Requer LOVABLE_API_KEY.
+// Imagens via API oficial do Google AI Studio (Nano Banana). Requer GEMINI_API_KEY.
+// Sem dependência de créditos Lovable AI. Modelo: gemini-2.5-flash-image-preview.
 export async function generateImageBase64(opts: {
   apiKey?: string;
   prompt: string;
@@ -106,36 +107,20 @@ export async function generateImageBase64(opts: {
   model?: ModeloImagem;
   referenceImageUrls?: string[];
 }): Promise<string> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
   const cleaned = sanitizeVisualPrompt(opts.prompt) + REALISM_SUFFIX;
   const aspect = sizeToAspect(opts.size);
+  const promptWithAspect = `${cleaned}\n\n[Aspect ratio: ${aspect}]`;
 
-  // Modelo padrão definido na memória do projeto.
-  const requested = (opts.model || "google/gemini-3.1-flash-image-preview").toLowerCase();
-  const isOpenAI = requested.startsWith("openai/");
-  const model = isOpenAI
-    ? "openai/gpt-image-2"
-    : requested.includes("gemini-3-pro")
-      ? "google/gemini-3-pro-image"
-      : requested.includes("2.5")
-        ? "google/gemini-2.5-flash-image"
-        : "google/gemini-3.1-flash-image";
+  const model = "gemini-2.5-flash-image-preview";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-  const body: Record<string, unknown> = isOpenAI
-    ? {
-        model,
-        prompt: cleaned,
-        size: opts.size || "1024x1024",
-        quality: "low",
-        n: 1,
-      }
-    : {
-        model,
-        messages: [{ role: "user", content: `${cleaned} [aspect ratio ${aspect}]` }],
-        modalities: ["image", "text"],
-      };
+  const body = {
+    contents: [{ role: "user", parts: [{ text: promptWithAspect }] }],
+    generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+  };
 
   let res: Response | undefined;
   let lastErr: unknown;
@@ -143,19 +128,16 @@ export async function generateImageBase64(opts: {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 120_000);
     try {
-      res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+      res = await fetch(url, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
         signal: ctrl.signal,
       });
       clearTimeout(timer);
       if (res.ok) break;
       if (res.status < 500 && res.status !== 429) break;
-      lastErr = new Error(`Gateway ${res.status}`);
+      lastErr = new Error(`Gemini ${res.status}`);
     } catch (e) {
       clearTimeout(timer);
       lastErr = e;
@@ -163,17 +145,19 @@ export async function generateImageBase64(opts: {
     await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
   }
 
-  if (!res) throw new Error(`Lovable AI fetch falhou: ${String((lastErr as any)?.message || lastErr)}`);
+  if (!res) throw new Error(`Gemini fetch falhou: ${String((lastErr as any)?.message || lastErr)}`);
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`Lovable AI ${res.status}: ${txt.slice(0, 400)}`);
+    throw new Error(`Gemini ${res.status}: ${txt.slice(0, 400)}`);
   }
 
   const json: any = await res.json();
-  const b64 = json?.data?.[0]?.b64_json;
-  if (b64) return b64 as string;
-
-  throw new Error(`Lovable AI resposta sem imagem: ${JSON.stringify(json).slice(0, 400)}`);
+  const parts = json?.candidates?.[0]?.content?.parts || [];
+  for (const p of parts) {
+    const data = p?.inlineData?.data || p?.inline_data?.data;
+    if (data) return data as string;
+  }
+  throw new Error(`Gemini resposta sem imagem: ${JSON.stringify(json).slice(0, 400)}`);
 }
 
 
