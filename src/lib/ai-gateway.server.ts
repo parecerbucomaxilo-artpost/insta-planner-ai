@@ -7,7 +7,13 @@ export const MODELOS_IA = [
   { id: "openai/gpt-5-mini", label: "GPT-5 mini (texto)" },
   { id: "openai/gpt-5-nano", label: "GPT-5 nano (texto)" },
   { id: "openai/gpt-5", label: "GPT-5 (texto)" },
+  { id: "openai/gpt-5.4-mini", label: "GPT-5.4 mini (texto)" },
+  { id: "openai/gpt-5.4", label: "GPT-5.4 (texto)" },
+  { id: "openai/gpt-5.5", label: "GPT-5.5 (texto)" },
   { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (texto)" },
+  { id: "google/gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (texto)" },
+  { id: "google/gemini-3.5-flash", label: "Gemini 3.5 Flash (texto)" },
+  { id: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro (texto)" },
   { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (texto)" },
   { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro (texto)" },
 ] as const;
