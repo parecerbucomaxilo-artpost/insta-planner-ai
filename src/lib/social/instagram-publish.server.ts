@@ -22,6 +22,10 @@ function normalizeInstagramAccount(value: string | null | undefined) {
   return normalized || null;
 }
 
+function isInvalidMetaTokenMessage(message: string) {
+  return /access token|OAuthException|Cannot parse|token.*inválid|token.*expirad|Session has expired|Error validating access token/i.test(message);
+}
+
 async function findInstagramProfileByAccount(supabaseAdmin: any, conta: string, columns: string) {
   const normalized = normalizeInstagramAccount(conta);
   if (!normalized) return null;
@@ -475,37 +479,28 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     let externalId: string | undefined;
     let confirmedByWebhook = false;
 
-    if (perfil.instagram_access_token && perfil.instagram_business_account_id) {
-      via = "meta";
-      await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
-      externalId = await publishViaMeta({
-        igBusinessId: perfil.instagram_business_account_id,
-        token: perfil.instagram_access_token,
-        caption,
-        imageUrls,
-        isStory,
-        isCarousel,
-      });
-    } else {
+    const ownWebhook = perfil.instagram_webhook_url || perfil.webhook_url || null;
+    const targetAccount = normalizeInstagramAccount(contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba);
+    const isLigaTarget = targetAccount === "lactbmf.anhanguerasbo";
+    const isChicoTarget = targetAccount === "drfranciscomenezes";
+    const forbiddenAccount = isLigaTarget ? "drfranciscomenezes" : isChicoTarget ? "lactbmf.anhanguerasbo" : undefined;
+
+    const publishWebhookForProfile = async (reason?: string) => {
       // Garantia anti-cross-posting: quando o post tem instagram_conta,
       // só publicamos via webhook PRÓPRIO desse perfil. NUNCA cai no
       // DEFAULT_MAKE_WEBHOOK nem em webhook de outro perfil — isso publicaria
       // conteúdo da Liga na conta @drfranciscomenezes (ou vice-versa).
-      const ownWebhook = perfil.instagram_webhook_url || perfil.webhook_url || null;
       if (contaAlvo && contaAlvo !== DEFAULT_WEBHOOK_ACCOUNT && !ownWebhook) {
         throw new Error(
-          `Conta @${contaAlvo} sem webhook próprio configurado. ` +
-          `Cadastre o webhook do Make específico dessa conta em "Configurações > Perfil" ` +
-          `antes de publicar — o fallback global publicaria na conta errada.`,
+          reason
+            ? `${reason} Além disso, @${contaAlvo} não tem webhook próprio configurado. Salve um webhook próprio dessa conta para publicar sem depender do token Meta.`
+            : `Conta @${contaAlvo} sem webhook próprio configurado. ` +
+              `Cadastre o webhook do Make específico dessa conta em "Configurações > Perfil" ` +
+              `antes de publicar — o fallback global publicaria na conta errada.`,
         );
       }
       const webhookUrl = ownWebhook || DEFAULT_MAKE_WEBHOOK;
       via = "webhook";
-      const targetAccount = normalizeInstagramAccount(contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba);
-      const isLigaTarget = targetAccount === "lactbmf.anhanguerasbo";
-      const isChicoTarget = targetAccount === "drfranciscomenezes";
-      const forbiddenAccount = isLigaTarget ? "drfranciscomenezes" : isChicoTarget ? "lactbmf.anhanguerasbo" : undefined;
-
       const webhookResult = await publishViaWebhook(webhookUrl, {
         id: post.id,
         post_id: post.id,
@@ -593,6 +588,35 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       }, contaAlvo || perfil.arroba_usuario || perfil.instagram_arroba || null);
       externalId = webhookResult.externalId || `make:${webhookResult.status}`;
       confirmedByWebhook = Boolean(webhookResult.confirmed);
+    };
+
+    if (perfil.instagram_access_token && perfil.instagram_business_account_id) {
+      via = "meta";
+      try {
+        await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
+        externalId = await publishViaMeta({
+          igBusinessId: perfil.instagram_business_account_id,
+          token: perfil.instagram_access_token,
+          caption,
+          imageUrls,
+          isStory,
+          isCarousel,
+        });
+      } catch (metaError) {
+        const metaMessage = metaError instanceof Error ? metaError.message : String(metaError);
+        if (!isInvalidMetaTokenMessage(metaMessage)) throw metaError;
+
+        await supabaseAdmin
+          .from("perfil_usuario")
+          .update({ instagram_access_token: null, instagram_business_account_id: null, updated_at: new Date().toISOString() })
+          .eq("id", perfil.id);
+
+        await publishWebhookForProfile(
+          `Token Meta inválido/expirado para @${targetAccount || "esta conta"}: ${metaMessage}.`,
+        );
+      }
+    } else {
+      await publishWebhookForProfile();
     }
 
     const nextStatus = via === "meta" || confirmedByWebhook ? "Publicado" : "EnviadoMake";
