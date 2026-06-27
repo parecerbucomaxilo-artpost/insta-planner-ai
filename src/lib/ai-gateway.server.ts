@@ -1,23 +1,43 @@
 // Server-only helper.
-// Texto: chamadas diretas ao Gemini (OpenAI-compatible) usando GEMINI_API_KEY.
-// Imagens: API gratuita do Pollinations.ai (modelo Flux). Sem Lovable AI Gateway → sem 402.
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+// Texto: Groq (OpenAI-compatible, gratuito) usando GROQ_API_KEY.
+// Imagens: Pollinations.ai (modelo Flux, gratuito).
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-// Mapeia ids do catálogo antigo (Lovable Gateway) para modelos reais do Gemini.
-function mapModelToGemini(model: string): string {
+// Mapeia ids do catálogo antigo para modelos reais da Groq.
+function mapModelToGroq(model: string): string {
   const m = model.toLowerCase();
-  if (m.includes("pro")) return "gemini-2.5-pro";
-  if (m.includes("flash-lite")) return "gemini-2.5-flash-lite";
-  return "gemini-2.5-flash";
+  if (m.includes("pro") || m.includes("gpt-5") || m.includes("opus")) {
+    return "llama-3.3-70b-versatile";
+  }
+  if (m.includes("lite") || m.includes("nano") || m.includes("mini") || m.includes("8b")) {
+    return "llama-3.1-8b-instant";
+  }
+  return "llama-3.3-70b-versatile";
 }
 
 export function createLovableAiGatewayProvider(_ignoredKey: string) {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) throw new Error("Missing GEMINI_API_KEY");
+  const groqKey = process.env.GROQ_API_KEY;
+  if (!groqKey) throw new Error("Missing GROQ_API_KEY");
 
-  const google = createGoogleGenerativeAI({ apiKey: geminiKey });
-  // Retorna função compatível: gateway(modelId) → LanguageModel
-  return (modelId: string) => google(mapModelToGemini(modelId));
+  return createOpenAICompatible({
+    name: "groq",
+    baseURL: "https://api.groq.com/openai/v1",
+    headers: { Authorization: `Bearer ${groqKey}` },
+    fetch: async (input, init) => {
+      if (init?.body && typeof init.body === "string") {
+        try {
+          const parsed = JSON.parse(init.body);
+          if (parsed?.model) {
+            parsed.model = mapModelToGroq(String(parsed.model));
+            init = { ...init, body: JSON.stringify(parsed) };
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      return fetch(input, init);
+    },
+  });
 }
 
 export const MODELOS_IMAGEM = [
@@ -30,8 +50,6 @@ export const MODELOS_IMAGEM = [
 export type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 
 // Imagens via Pollinations.ai (modelo Flux, gratuito, sem auth).
-// Mantém a assinatura antiga (apiKey, prompt, size, model, referenceImageUrls) para
-// compatibilidade — só `prompt` e `size` são usados.
 export async function generateImageBase64(opts: {
   apiKey?: string;
   prompt: string;
