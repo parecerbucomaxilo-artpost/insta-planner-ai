@@ -116,10 +116,10 @@ async function createFetchableUrl(supabaseAdmin: any, value: string | null | und
   return data.signedUrl;
 }
 
-async function graphPost(edge: string, params: Record<string, string | number | boolean>) {
+async function graphPost(edge: string, params: Record<string, string | number | boolean>, host = "graph.facebook.com") {
   const body = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) body.set(key, String(value));
-  const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${edge}`, { method: "POST", body });
+  const res = await fetch(`https://${host}/${GRAPH_VERSION}/${edge}`, { method: "POST", body });
   const json = await res.json().catch(() => ({}));
   if (!res.ok || json.error) {
     const message = json?.error?.message || `Meta respondeu ${res.status}`;
@@ -128,8 +128,8 @@ async function graphPost(edge: string, params: Record<string, string | number | 
   return json as { id?: string };
 }
 
-async function graphGet(edge: string, accessToken: string) {
-  const url = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${edge}`);
+async function graphGet(edge: string, accessToken: string, host = "graph.facebook.com") {
+  const url = new URL(`https://${host}/${GRAPH_VERSION}/${edge}`);
   url.searchParams.set("fields", "status_code,status");
   url.searchParams.set("access_token", accessToken);
   const res = await fetch(url);
@@ -138,8 +138,8 @@ async function graphGet(edge: string, accessToken: string) {
   return json as { status_code?: string; status?: string };
 }
 
-async function graphGetFields<T extends Record<string, unknown>>(edge: string, accessToken: string, fields: string) {
-  const url = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${edge}`);
+async function graphGetFields<T extends Record<string, unknown>>(edge: string, accessToken: string, fields: string, host = "graph.facebook.com") {
+  const url = new URL(`https://${host}/${GRAPH_VERSION}/${edge}`);
   url.searchParams.set("fields", fields);
   url.searchParams.set("access_token", accessToken);
   const res = await fetch(url);
@@ -150,8 +150,15 @@ async function graphGetFields<T extends Record<string, unknown>>(edge: string, a
 
 async function assertMetaAccountMatchesTarget(igBusinessId: string, token: string, targetAccount: string | null) {
   if (!targetAccount) return;
-  const account = await graphGetFields<{ username?: string }>(igBusinessId, token, "username");
-  const connectedAccount = normalizeInstagramAccount(account.username);
+  let connectedAccount: string | null = null;
+  try {
+    const account = await graphGetFields<{ username?: string }>(igBusinessId, token, "username");
+    connectedAccount = normalizeInstagramAccount(account.username);
+  } catch {
+    const account = await graphGetFields<{ username?: string; data?: Array<{ username?: string }> }>("me", token, "user_id,username", "graph.instagram.com");
+    const directAccount = Array.isArray(account.data) ? account.data[0] : account;
+    connectedAccount = normalizeInstagramAccount(directAccount?.username);
+  }
   if (connectedAccount !== targetAccount) {
     throw new Error(
       `Conta Meta conectada não confere: o token é de @${connectedAccount || "desconhecida"}, ` +
@@ -160,9 +167,9 @@ async function assertMetaAccountMatchesTarget(igBusinessId: string, token: strin
   }
 }
 
-async function waitForContainerReady(containerId: string, accessToken: string) {
+async function waitForContainerReady(containerId: string, accessToken: string, host = "graph.facebook.com") {
   for (let i = 0; i < 10; i += 1) {
-    const status = await graphGet(containerId, accessToken);
+    const status = await graphGet(containerId, accessToken, host);
     if (!status.status_code || status.status_code === "FINISHED") return;
     if (status.status_code === "ERROR" || status.status_code === "EXPIRED") {
       throw new Error(`Instagram: mídia não ficou pronta (${status.status || status.status_code}).`);
@@ -179,6 +186,7 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
   isStory: boolean;
   isCarousel: boolean;
 }) {
+  const publishWithHost = async (host: string) => {
   if (isCarousel && imageUrls.length > 1) {
     const children = await Promise.all(
       imageUrls.slice(0, 10).map(async (imageUrl) => {
@@ -186,7 +194,7 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
           image_url: imageUrl,
           is_carousel_item: true,
           access_token: token,
-        });
+        }, host);
         if (!child.id) throw new Error("Instagram: container do carrossel não foi criado.");
         return child.id;
       }),
@@ -196,10 +204,10 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
       children: children.join(","),
       caption,
       access_token: token,
-    });
+    }, host);
     if (!parent.id) throw new Error("Instagram: container principal não foi criado.");
-    await waitForContainerReady(parent.id, token);
-    const published = await graphPost(`${igBusinessId}/media_publish`, { creation_id: parent.id, access_token: token });
+    await waitForContainerReady(parent.id, token, host);
+    const published = await graphPost(`${igBusinessId}/media_publish`, { creation_id: parent.id, access_token: token }, host);
     return published.id;
   }
 
@@ -207,11 +215,22 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
     image_url: imageUrls[0],
     ...(isStory ? { media_type: "STORIES" } : { caption }),
     access_token: token,
-  });
+  }, host);
   if (!created.id) throw new Error("Instagram: container da imagem não foi criado.");
-  await waitForContainerReady(created.id, token);
-  const published = await graphPost(`${igBusinessId}/media_publish`, { creation_id: created.id, access_token: token });
+  await waitForContainerReady(created.id, token, host);
+  const published = await graphPost(`${igBusinessId}/media_publish`, { creation_id: created.id, access_token: token }, host);
   return published.id;
+  };
+
+  try {
+    return await publishWithHost("graph.facebook.com");
+  } catch (facebookError) {
+    try {
+      return await publishWithHost("graph.instagram.com");
+    } catch {
+      throw facebookError;
+    }
+  }
 }
 
 function buildMakeFiles(imageUrls: string[]) {

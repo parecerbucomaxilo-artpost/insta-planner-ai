@@ -24,6 +24,7 @@ import { Route as ApiPublicConfirmarPublicadoRouteImport } from './routes/api/pu
 import { Route as ApiPublicBackfillImagesRouteImport } from './routes/api/public/backfill-images'
 import { Route as ApiPublicMetaOauthStartRouteImport } from './routes/api/public/meta-oauth.start'
 import { Route as ApiPublicMetaOauthCallbackRouteImport } from './routes/api/public/meta-oauth.callback'
+import { Route as ApiPublicInstagramOauthCallbackRouteImport } from './routes/api/public/instagram-oauth.callback'
 
 const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
   id: '/politica-de-privacidade',
@@ -102,6 +103,12 @@ const ApiPublicMetaOauthCallbackRoute =
     path: '/api/public/meta-oauth/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicInstagramOauthCallbackRoute =
+  ApiPublicInstagramOauthCallbackRouteImport.update({
+    id: '/api/public/instagram-oauth/callback',
+    path: '/api/public/instagram-oauth/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
+  '/api/public/instagram-oauth/callback': typeof ApiPublicInstagramOauthCallbackRoute
   '/api/public/meta-oauth/callback': typeof ApiPublicMetaOauthCallbackRoute
   '/api/public/meta-oauth/start': typeof ApiPublicMetaOauthStartRoute
 }
@@ -132,6 +140,7 @@ export interface FileRoutesByTo {
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
+  '/api/public/instagram-oauth/callback': typeof ApiPublicInstagramOauthCallbackRoute
   '/api/public/meta-oauth/callback': typeof ApiPublicMetaOauthCallbackRoute
   '/api/public/meta-oauth/start': typeof ApiPublicMetaOauthStartRoute
 }
@@ -150,6 +159,7 @@ export interface FileRoutesById {
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
+  '/api/public/instagram-oauth/callback': typeof ApiPublicInstagramOauthCallbackRoute
   '/api/public/meta-oauth/callback': typeof ApiPublicMetaOauthCallbackRoute
   '/api/public/meta-oauth/start': typeof ApiPublicMetaOauthStartRoute
 }
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
+    | '/api/public/instagram-oauth/callback'
     | '/api/public/meta-oauth/callback'
     | '/api/public/meta-oauth/start'
   fileRoutesByTo: FileRoutesByTo
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
+    | '/api/public/instagram-oauth/callback'
     | '/api/public/meta-oauth/callback'
     | '/api/public/meta-oauth/start'
   id:
@@ -201,6 +213,7 @@ export interface FileRouteTypes {
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
+    | '/api/public/instagram-oauth/callback'
     | '/api/public/meta-oauth/callback'
     | '/api/public/meta-oauth/start'
   fileRoutesById: FileRoutesById
@@ -217,6 +230,7 @@ export interface RootRouteChildren {
   ApiPublicGerarProximoRoute: typeof ApiPublicGerarProximoRoute
   ApiPublicPostsAgendadosRoute: typeof ApiPublicPostsAgendadosRoute
   ApiPublicPublicarAgendadosRoute: typeof ApiPublicPublicarAgendadosRoute
+  ApiPublicInstagramOauthCallbackRoute: typeof ApiPublicInstagramOauthCallbackRoute
   ApiPublicMetaOauthCallbackRoute: typeof ApiPublicMetaOauthCallbackRoute
   ApiPublicMetaOauthStartRoute: typeof ApiPublicMetaOauthStartRoute
 }
@@ -328,6 +342,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMetaOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/instagram-oauth/callback': {
+      id: '/api/public/instagram-oauth/callback'
+      path: '/api/public/instagram-oauth/callback'
+      fullPath: '/api/public/instagram-oauth/callback'
+      preLoaderRoute: typeof ApiPublicInstagramOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -356,6 +377,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicGerarProximoRoute: ApiPublicGerarProximoRoute,
   ApiPublicPostsAgendadosRoute: ApiPublicPostsAgendadosRoute,
   ApiPublicPublicarAgendadosRoute: ApiPublicPublicarAgendadosRoute,
+  ApiPublicInstagramOauthCallbackRoute: ApiPublicInstagramOauthCallbackRoute,
   ApiPublicMetaOauthCallbackRoute: ApiPublicMetaOauthCallbackRoute,
   ApiPublicMetaOauthStartRoute: ApiPublicMetaOauthStartRoute,
 }

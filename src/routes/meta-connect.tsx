@@ -9,7 +9,9 @@ function safeNext(value: unknown) {
   if (typeof value !== "string") return "";
   try {
     const url = new URL(value);
-    return url.hostname === "www.facebook.com" && url.pathname.includes("/dialog/oauth") ? url.toString() : "";
+    const isFacebookOAuth = url.hostname === "www.facebook.com" && url.pathname.includes("/dialog/oauth");
+    const isInstagramOAuth = url.hostname === "www.instagram.com" && url.pathname === "/oauth/authorize";
+    return isFacebookOAuth || isInstagramOAuth ? url.toString() : "";
   } catch {
     return "";
   }
@@ -40,6 +42,7 @@ function MetaConnectPage() {
   const { next, login, privateNext, account } = Route.useSearch();
   const label = account ? `@${account}` : "Instagram Business";
   const isLiga = account === "lactbmf.anhanguerasbo";
+  const isInstagramDirect = next.includes("instagram.com/oauth/authorize");
   const actionUrl = isLiga ? privateNext || login || next : next;
   const [copied, setCopied] = useState(false);
 
@@ -83,10 +86,10 @@ function MetaConnectPage() {
                 {isLiga ? (
                   <>
                     <p>
-                      Para a Liga, este botão força nova autenticação do Facebook. Abra em janela anônima se o navegador insistir na conta Francisco.
+                      Nova tentativa: este botão usa login direto do Instagram, não a sessão Facebook do Francisco.
                     </p>
                     <p>
-                      Não use “Continuar como Francisco”; se aparecer Francisco, clique em sair/trocar conta no Facebook e entre com a conta administradora da Liga.
+                      Entre com o Instagram profissional da Liga. Se aparecer outra conta, saia do Instagram no navegador ou abra em janela anônima.
                     </p>
                   </>
                 ) : (
@@ -98,7 +101,7 @@ function MetaConnectPage() {
               <Button asChild className="w-full" size="lg">
                 <a href={actionUrl} target="_blank" rel="noopener noreferrer">
                   {isLiga ? <LogIn className="h-4 w-4" /> : <Instagram className="h-4 w-4" />}
-                  {isLiga ? "Entrar com o Facebook da Liga" : "Continuar no Facebook"}
+                  {isLiga && isInstagramDirect ? "Entrar com Instagram da Liga" : isLiga ? "Entrar com o Facebook da Liga" : "Continuar no Facebook"}
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
