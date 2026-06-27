@@ -469,7 +469,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       </Card>
 
       {conta && (
-        <Card className={`p-5 space-y-3 border-2 ${destinoStatus === "ok" ? "border-emerald-200 bg-emerald-50/30" : "border-amber-300 bg-amber-50/40"}`}>
+        <Card className={`p-5 space-y-3 border-2 ${!isLiga && destinoStatus === "ok" ? "border-emerald-200 bg-emerald-50/30" : "border-amber-300 bg-amber-50/40"}`}>
           <Label className="text-sm font-semibold flex items-center gap-2">
             Destino de publicação de @{conta}
             {isLiga && <Badge className="bg-amber-600">Manual seguro</Badge>}
@@ -494,10 +494,10 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               <p>ao aprovar, o app salva o post, copia a legenda e libera o download da imagem para publicar manualmente no Instagram correto.</p>
             </div>
           )}
-          {destinoModo === "meta" && (
+          {!isLiga && destinoModo === "meta" && (
             <p className="text-xs text-emerald-800">Publicação direta Meta ativa para @{conta}. O Make não será usado.</p>
           )}
-          {destinoModo === "webhook" && (
+          {!isLiga && destinoModo === "webhook" && (
             <p className="text-xs text-emerald-800">Webhook exclusivo ativo para @{conta}. O app enviará sempre com a conta de destino obrigatória.</p>
           )}
           {!isLiga && <div className="flex flex-wrap gap-2">
@@ -534,27 +534,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               {savingDestino ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar destino"}
             </Button>
           </div>}
-          {!isLiga && conta === LIGA_ACCOUNT && (
-            <div className="rounded-md border border-emerald-200 bg-emerald-50/40 p-3 space-y-2">
-              <Label className="text-xs font-semibold text-emerald-900">Alternativa ao Instagram bloqueado: token manual da Liga</Label>
-              <Input
-                value={manualToken}
-                onChange={(e) => setManualToken(e.target.value)}
-                placeholder="Access Token da Liga"
-                className="font-mono text-xs"
-              />
-              <Input
-                value={manualIgId}
-                onChange={(e) => setManualIgId(e.target.value)}
-                placeholder="IG Business Account ID da Liga"
-                className="font-mono text-xs"
-              />
-              <Button onClick={salvarTokenManual} disabled={savingManualToken} size="sm" variant="outline">
-                {savingManualToken ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
-                Salvar token manual da Liga
-              </Button>
-            </div>
-          )}
         </Card>
       )}
 
