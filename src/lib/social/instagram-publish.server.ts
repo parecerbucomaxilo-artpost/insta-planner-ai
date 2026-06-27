@@ -29,6 +29,12 @@ function isInvalidMetaTokenMessage(message: string) {
   return /access token|OAuthException|Cannot parse|token.*inválid|token.*expirad|Session has expired|Error validating access token/i.test(message);
 }
 
+function getDedicatedMakeWebhook(account: string | null | undefined) {
+  const normalized = normalizeInstagramAccount(account);
+  if (normalized === LIGA_ACCOUNT) return process.env.MAKE_LIGA_WEBHOOK_URL?.trim() || null;
+  return null;
+}
+
 async function findInstagramProfileByAccount(supabaseAdmin: any, conta: string, columns: string) {
   const normalized = normalizeInstagramAccount(conta);
   if (!normalized) return null;
@@ -355,9 +361,12 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
         : normalizedAccount === "drfranciscomenezes"
           ? "IG Chico / @drfranciscomenezes"
           : `Instagram de ${accountLabel}`;
+      const repairAction = normalizedAccount === "lactbmf.anhanguerasbo"
+        ? "Atualize o secret MAKE_LIGA_WEBHOOK_URL com a URL ativa do cenário IG Liga LACTBMF, ou salve uma nova URL no destino da Liga."
+        : `Copie a URL do cenário ${scenarioLabel} ativo e salve no destino de publicação de ${accountLabel} antes de publicar.`;
       throw new Error(
         "Webhook Instagram inválido ou inativo no Make (410). " +
-        `Copie a URL do cenário ${scenarioLabel} ativo e salve no destino de publicação de ${accountLabel} antes de publicar.`,
+        repairAction,
       );
     }
     if (res.status >= 500) {
@@ -504,7 +513,8 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       // só publicamos via webhook PRÓPRIO desse perfil. NUNCA cai no
       // DEFAULT_MAKE_WEBHOOK nem em webhook de outro perfil — isso publicaria
       // conteúdo da Liga na conta @drfranciscomenezes (ou vice-versa).
-      if (contaAlvo && contaAlvo !== DEFAULT_WEBHOOK_ACCOUNT && !ownWebhook) {
+      const dedicatedWebhook = getDedicatedMakeWebhook(contaAlvo || targetAccount);
+      if (contaAlvo && contaAlvo !== DEFAULT_WEBHOOK_ACCOUNT && !ownWebhook && !dedicatedWebhook) {
         throw new Error(
           reason
             ? `${reason} Além disso, @${contaAlvo} não tem webhook próprio configurado. Salve um webhook próprio dessa conta para publicar sem depender do token Meta.`
@@ -513,7 +523,9 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
               `antes de publicar — o fallback global publicaria na conta errada.`,
         );
       }
-      const webhookUrl = ownWebhook || DEFAULT_MAKE_WEBHOOK;
+      // Para a Liga, o webhook dedicado salvo como secret tem prioridade sobre qualquer URL antiga no banco.
+      // Isso evita o erro 410 quando o cenário Make foi recriado e a URL visível antiga ficou desatualizada.
+      const webhookUrl = dedicatedWebhook || ownWebhook || DEFAULT_MAKE_WEBHOOK;
       via = "webhook";
       const webhookResult = await publishViaWebhook(webhookUrl, {
         id: post.id,
@@ -638,9 +650,15 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     }
 
     const nextStatus = via === "meta" || confirmedByWebhook ? "Publicado" : "EnviadoMake";
+    const publishedAt = new Date().toISOString();
     const { error: updateError } = await supabaseAdmin
       .from("posts")
-      .update({ status: nextStatus, data_agendamento: new Date().toISOString(), user_id: userId })
+      .update({
+        status: nextStatus,
+        data_agendamento: publishedAt,
+        user_id: userId,
+        ...(isLigaTarget && via === "webhook" ? { liga_dispatched_at: publishedAt } : {}),
+      })
       .eq("id", post.id);
     if (updateError) throw new Error(`DB: ${updateError.message}`);
 

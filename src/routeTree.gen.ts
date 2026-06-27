@@ -20,6 +20,7 @@ import { Route as ApiPublicStorageMediaRouteImport } from './routes/api/public/s
 import { Route as ApiPublicPublicarAgendadosRouteImport } from './routes/api/public/publicar-agendados'
 import { Route as ApiPublicPostsAgendadosRouteImport } from './routes/api/public/posts-agendados'
 import { Route as ApiPublicGerarProximoRouteImport } from './routes/api/public/gerar-proximo'
+import { Route as ApiPublicDispatchLigaRouteImport } from './routes/api/public/dispatch-liga'
 import { Route as ApiPublicDispatchGbpRouteImport } from './routes/api/public/dispatch-gbp'
 import { Route as ApiPublicConfirmarPublicadoRouteImport } from './routes/api/public/confirmar-publicado'
 import { Route as ApiPublicBackfillImagesRouteImport } from './routes/api/public/backfill-images'
@@ -82,6 +83,11 @@ const ApiPublicGerarProximoRoute = ApiPublicGerarProximoRouteImport.update({
   path: '/api/public/gerar-proximo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDispatchLigaRoute = ApiPublicDispatchLigaRouteImport.update({
+  id: '/api/public/dispatch-liga',
+  path: '/api/public/dispatch-liga',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicDispatchGbpRoute = ApiPublicDispatchGbpRouteImport.update({
   id: '/api/public/dispatch-gbp',
   path: '/api/public/dispatch-gbp',
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
   '/api/public/confirmar-publicado': typeof ApiPublicConfirmarPublicadoRoute
   '/api/public/dispatch-gbp': typeof ApiPublicDispatchGbpRoute
+  '/api/public/dispatch-liga': typeof ApiPublicDispatchLigaRoute
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
   '/api/public/confirmar-publicado': typeof ApiPublicConfirmarPublicadoRoute
   '/api/public/dispatch-gbp': typeof ApiPublicDispatchGbpRoute
+  '/api/public/dispatch-liga': typeof ApiPublicDispatchLigaRoute
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
   '/api/public/confirmar-publicado': typeof ApiPublicConfirmarPublicadoRoute
   '/api/public/dispatch-gbp': typeof ApiPublicDispatchGbpRoute
+  '/api/public/dispatch-liga': typeof ApiPublicDispatchLigaRoute
   '/api/public/gerar-proximo': typeof ApiPublicGerarProximoRoute
   '/api/public/posts-agendados': typeof ApiPublicPostsAgendadosRoute
   '/api/public/publicar-agendados': typeof ApiPublicPublicarAgendadosRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/api/public/backfill-images'
     | '/api/public/confirmar-publicado'
     | '/api/public/dispatch-gbp'
+    | '/api/public/dispatch-liga'
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/api/public/backfill-images'
     | '/api/public/confirmar-publicado'
     | '/api/public/dispatch-gbp'
+    | '/api/public/dispatch-liga'
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/api/public/backfill-images'
     | '/api/public/confirmar-publicado'
     | '/api/public/dispatch-gbp'
+    | '/api/public/dispatch-liga'
     | '/api/public/gerar-proximo'
     | '/api/public/posts-agendados'
     | '/api/public/publicar-agendados'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   ApiPublicBackfillImagesRoute: typeof ApiPublicBackfillImagesRoute
   ApiPublicConfirmarPublicadoRoute: typeof ApiPublicConfirmarPublicadoRoute
   ApiPublicDispatchGbpRoute: typeof ApiPublicDispatchGbpRoute
+  ApiPublicDispatchLigaRoute: typeof ApiPublicDispatchLigaRoute
   ApiPublicGerarProximoRoute: typeof ApiPublicGerarProximoRoute
   ApiPublicPostsAgendadosRoute: typeof ApiPublicPostsAgendadosRoute
   ApiPublicPublicarAgendadosRoute: typeof ApiPublicPublicarAgendadosRoute
@@ -327,6 +340,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGerarProximoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/dispatch-liga': {
+      id: '/api/public/dispatch-liga'
+      path: '/api/public/dispatch-liga'
+      fullPath: '/api/public/dispatch-liga'
+      preLoaderRoute: typeof ApiPublicDispatchLigaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/dispatch-gbp': {
       id: '/api/public/dispatch-gbp'
       path: '/api/public/dispatch-gbp'
@@ -394,6 +414,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBackfillImagesRoute: ApiPublicBackfillImagesRoute,
   ApiPublicConfirmarPublicadoRoute: ApiPublicConfirmarPublicadoRoute,
   ApiPublicDispatchGbpRoute: ApiPublicDispatchGbpRoute,
+  ApiPublicDispatchLigaRoute: ApiPublicDispatchLigaRoute,
   ApiPublicGerarProximoRoute: ApiPublicGerarProximoRoute,
   ApiPublicPostsAgendadosRoute: ApiPublicPostsAgendadosRoute,
   ApiPublicPublicarAgendadosRoute: ApiPublicPublicarAgendadosRoute,
@@ -405,13 +426,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
