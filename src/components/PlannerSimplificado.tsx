@@ -84,7 +84,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   const lsKey = storageKey ?? ACCOUNT_KEY;
   const isLiga = conta === LIGA_ACCOUNT;
-  const canPublishAutomatically = !isLiga && destinoStatus === "ok";
+  // Liga agora publica via @drfranciscomenezes (que está conectado) convidando @lactbmf como colaboradora.
+  const canPublishAutomatically = isLiga ? true : destinoStatus === "ok";
+
 
   useEffect(() => {
     if (contaFixa) { setConta(contaFixa); setContaInput(contaFixa); return; }
