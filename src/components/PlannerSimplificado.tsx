@@ -415,7 +415,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             {metaConnectPath && (
               <Button asChild variant="outline">
                 <a href={metaConnectPath} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-1" /> Abrir conexão Meta
+                  <ExternalLink className="w-4 h-4 mr-1" /> {conta === LIGA_ACCOUNT ? "Abrir conexão Instagram" : "Abrir conexão Meta"}
                 </a>
               </Button>
             )}
@@ -428,7 +428,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           </div>
           {metaConnectPath && (
             <p className="text-xs text-zinc-600">
-              Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview.
+              {conta === LIGA_ACCOUNT
+                ? "Agora a Liga usa login direto do Instagram para não cair em “Continuar como Francisco”. Se abrir outra conta, use janela anônima."
+                : "Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview."}
             </p>
           )}
           {conta !== LIGA_ACCOUNT && (
