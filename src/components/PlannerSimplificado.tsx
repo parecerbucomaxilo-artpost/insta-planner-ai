@@ -185,6 +185,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   };
 
   const publishSuccessMessage = (out: Awaited<ReturnType<typeof publishIg>>) => {
+    if (out && "via" in out && out.via === "manual-liga") return "Liga salva como rascunho para postagem manual.";
     if (out && "via" in out && out.via === "meta") return "Publicado diretamente no Instagram.";
     return "Publicado diretamente no Instagram.";
   };
