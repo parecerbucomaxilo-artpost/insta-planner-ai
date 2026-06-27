@@ -545,8 +545,12 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") return localCaption();
       try {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
-        const system = `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, sem inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.`;
-        const prompt = `Tema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}\n\nEscreva a legenda final pronta para publicação (sem comentários meta).`;
+        const system = isChico
+          ? chicoCaptionSystem(formato)
+          : isEstudantes
+            ? `Você é monitor sênior de Cirurgia Bucal escrevendo para estudantes de graduação em Odontologia (Liga de CTBMF). PT-BR Brasil impecável, ZERO inglês, sem repetições, sem palavras inventadas. Tom didático, direto, próximo do aluno; linguagem clínica correta com terminologia anatômica oficial (TA2/SBA). PROIBIDO copy comercial, diagnóstico afirmativo, "agende", "promoção". Encerre com 5-7 hashtags acadêmicas (#CTBMF #LigaAcademica #CirurgiaBucal #EstudanteDeOdontologia #Graduacao). Formato: ${formato}.`
+            : `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, ZERO palavras em inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.`;
+        const prompt = `Tema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Escreva a legenda final pronta para publicação, sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
         const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : 700 });
         return txt || localCaption();
       } catch (err) {
