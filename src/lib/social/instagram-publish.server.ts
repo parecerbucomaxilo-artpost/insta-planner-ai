@@ -373,6 +373,15 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     const contaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
 
+    // SUSPENSÃO MANUAL: publicação no @drfranciscomenezes está desabilitada
+    // por decisão do usuário. Posts dessa conta param aqui (vão para "Erro").
+    if (contaAlvo === DEFAULT_WEBHOOK_ACCOUNT) {
+      throw new Error(
+        `Publicação no @${DEFAULT_WEBHOOK_ACCOUNT} está SUSPENSA por decisão do usuário. ` +
+        `Reatribua o post a outra conta (ex: @${LIGA_ACCOUNT}) ou reative no código (instagram-publish.server.ts).`,
+      );
+    }
+
     let perfil: any = null;
 
     // 0) Se o post tem instagram_conta, ROTEAR estritamente para o perfil dessa conta.
