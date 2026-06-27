@@ -18,12 +18,7 @@ export const Route = createFileRoute("/api/public/dispatch-liga")({
         const denied = requireCronSecret(request);
         if (denied) return denied;
 
-        if (!process.env.MAKE_LIGA_WEBHOOK_URL) {
-          return json({ error: "MAKE_LIGA_WEBHOOK_URL não configurado" }, 500);
-        }
-
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { publishInstagramPostById } = await import("@/lib/social/instagram-publish.server");
 
         const { data: posts, error } = await supabaseAdmin
           .from("posts")
@@ -43,12 +38,12 @@ export const Route = createFileRoute("/api/public/dispatch-liga")({
 
         for (const post of posts as Array<{ id: string; user_id: string | null }>) {
           try {
-            const result = await publishInstagramPostById({
-              supabaseAdmin,
-              postId: post.id,
-              userId: post.user_id || TEMP_USER_ID,
-            });
-            results.push({ id: post.id, ok: true, status: result.status, via: result.via });
+            const { error: updateError } = await supabaseAdmin
+              .from("posts")
+              .update({ status: "Rascunho", liga_dispatched_at: new Date().toISOString() })
+              .eq("id", post.id);
+            if (updateError) throw updateError;
+            results.push({ id: post.id, ok: true, status: "Rascunho", via: "manual-liga" });
           } catch (err) {
             results.push({ id: post.id, ok: false, error: err instanceof Error ? err.message : "Erro desconhecido" });
           }
