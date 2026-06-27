@@ -711,13 +711,13 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         {p.data_agendamento && <span>{format(new Date(p.data_agendamento), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>}
                       </div>
                     </div>
-                    {p.status === "Erro" && (
+                    {p.status === "Erro" && !isLiga && (
                       <Button variant="outline" size="sm" onClick={() => tentarNovamente(p.id)} disabled={busy}>
                         {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1" />}
                         Re-tentar
                       </Button>
                     )}
-                    {p.status === "EnviadoMake" && (
+                    {p.status === "EnviadoMake" && !isLiga && (
                       <Button variant="outline" size="sm" onClick={() => tentarNovamente(p.id)} disabled={busy} title="Tentar publicar pela Meta">
                         {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1" />}
                         Publicar Meta
