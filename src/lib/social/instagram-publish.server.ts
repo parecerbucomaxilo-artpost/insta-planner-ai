@@ -8,7 +8,7 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 const PUBLIC_APP_URL = "https://project--221123ce-bfcc-41c2-ad79-e7560d18268d-dev.lovable.app";
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 
-type PublishVia = "meta";
+type PublishVia = "meta" | "manual-liga";
 
 type PublishPostInput = {
   supabaseAdmin: any;
@@ -272,6 +272,15 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     
 
     const contaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
+
+    if (contaAlvo === LIGA_ACCOUNT) {
+      const { error: updateError } = await supabaseAdmin
+        .from("posts")
+        .update({ status: "Rascunho", user_id: userId, updated_at: new Date().toISOString() })
+        .eq("id", post.id);
+      if (updateError) throw new Error(`DB: ${updateError.message}`);
+      return { ok: true, via: "manual-liga" as const, status: "Rascunho" };
+    }
 
     // SUSPENSÃO MANUAL: publicação no @drfranciscomenezes está desabilitada
     // por decisão do usuário. Posts sem conta definida também param aqui,
