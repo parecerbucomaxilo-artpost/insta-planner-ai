@@ -50,17 +50,14 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   };
 
   const handlePostNow = async (p: PostRow) => {
-    if (normalizeInstagramAccount(p.instagram_conta) === LIGA_ACCOUNT) {
-      await copiarTexto(p.legenda || "", "Legenda da Liga copiada para postagem manual.");
-      return;
-    }
     setPublishingId(p.id);
     try {
       const out = await publishIg({ data: { id: p.id } });
       if (out && "ok" in out && out.ok === false) {
         throw new Error("error" in out ? out.error : "Falha ao publicar no Instagram.");
       }
-      toast.success("Publicado no Instagram pela Meta!");
+      const isLiga = normalizeInstagramAccount(p.instagram_conta) === LIGA_ACCOUNT;
+      toast.success(isLiga ? "Publicado via @drfranciscomenezes com convite à Liga!" : "Publicado no Instagram pela Meta!");
       onChange();
     } catch (e: any) {
       toast.error(e.message || "Falha ao publicar");
