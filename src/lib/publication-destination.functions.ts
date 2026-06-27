@@ -3,8 +3,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
-const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
-
 const AccountInput = z.object({
   conta: z.string().min(2).max(80),
 });

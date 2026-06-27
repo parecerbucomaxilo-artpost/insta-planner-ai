@@ -362,8 +362,6 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         p.webhook_url
       );
 
-    const hasMeta = (p: any) => !!p && !!p.instagram_access_token && !!p.instagram_business_account_id;
-
     const contaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
 
     let perfil: any = null;
