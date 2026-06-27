@@ -29,6 +29,20 @@ function base64UrlEncode(value: string) {
   return Buffer.from(value, "utf8").toString("base64url");
 }
 
+async function assertPerfilBelongsToUser(perfilId: string, userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: perfil, error } = await supabaseAdmin
+    .from("perfil_usuario")
+    .select("id,user_id")
+    .eq("id", perfilId)
+    .maybeSingle();
+
+  if (error) throw new Error(`DB: ${error.message}`);
+  if (!perfil || perfil.user_id !== userId) {
+    throw new Error("Perfil não pertence ao usuário autenticado");
+  }
+}
+
 /**
  * Devolve a URL direta do diálogo OAuth do Facebook, com `state` assinado
  * para o callback verificar. Eliminamos o hop intermediário `/start`
@@ -51,15 +65,7 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
     if (!appId) throw new Error("META_APP_ID não configurado");
     if (!appSecret) throw new Error("META_APP_SECRET não configurado");
 
-    const { data: perfil, error } = await context.supabase
-      .from("perfil_usuario")
-      .select("id,user_id")
-      .eq("id", data.perfilId)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!perfil || perfil.user_id !== context.userId) {
-      throw new Error("Perfil não pertence ao usuário autenticado");
-    }
+    await assertPerfilBelongsToUser(data.perfilId, context.userId);
 
     const targetAccount = normalizeInstagramAccount(data.targetAccount);
     const targetEncoded = targetAccount ? base64UrlEncode(targetAccount) : "_";
@@ -119,15 +125,7 @@ export const createInstagramOAuthStartUrl = createServerFn({ method: "POST" })
     if (!appId) throw new Error("META_INSTAGRAM_APP_ID não configurado");
     if (!appSecret) throw new Error("META_INSTAGRAM_APP_SECRET não configurado");
 
-    const { data: perfil, error } = await context.supabase
-      .from("perfil_usuario")
-      .select("id,user_id")
-      .eq("id", data.perfilId)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!perfil || perfil.user_id !== context.userId) {
-      throw new Error("Perfil não pertence ao usuário autenticado");
-    }
+    await assertPerfilBelongsToUser(data.perfilId, context.userId);
 
     const targetAccount = normalizeInstagramAccount(data.targetAccount);
     const targetEncoded = targetAccount ? base64UrlEncode(targetAccount) : "_";
