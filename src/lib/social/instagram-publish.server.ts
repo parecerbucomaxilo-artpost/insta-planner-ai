@@ -210,9 +210,10 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
   isCarousel: boolean;
   collaborators?: string[];
 }) {
-  const collaboratorsParam = collaborators && collaborators.length > 0 && !isStory
+  const collaboratorsParam: Record<string, string> = collaborators && collaborators.length > 0 && !isStory
     ? { collaborators: JSON.stringify(collaborators) }
     : {};
+
   const publishWithHost = async (host: string) => {
   if (isCarousel && imageUrls.length > 1) {
     const children = await Promise.all(
