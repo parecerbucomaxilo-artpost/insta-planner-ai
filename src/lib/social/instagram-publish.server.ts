@@ -201,14 +201,18 @@ async function waitForContainerReady(containerId: string, accessToken: string, h
   }
 }
 
-async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory, isCarousel }: {
+async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory, isCarousel, collaborators }: {
   igBusinessId: string;
   token: string;
   caption: string;
   imageUrls: string[];
   isStory: boolean;
   isCarousel: boolean;
+  collaborators?: string[];
 }) {
+  const collaboratorsParam = collaborators && collaborators.length > 0 && !isStory
+    ? { collaborators: JSON.stringify(collaborators) }
+    : {};
   const publishWithHost = async (host: string) => {
   if (isCarousel && imageUrls.length > 1) {
     const children = await Promise.all(
@@ -226,6 +230,7 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
       media_type: "CAROUSEL",
       children: children.join(","),
       caption,
+      ...collaboratorsParam,
       access_token: token,
     }, host);
     if (!parent.id) throw new Error("Instagram: container principal não foi criado.");
@@ -236,7 +241,7 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
 
   const created = await graphPost(`${igBusinessId}/media`, {
     image_url: imageUrls[0],
-    ...(isStory ? { media_type: "STORIES" } : { caption }),
+    ...(isStory ? { media_type: "STORIES" } : { caption, ...collaboratorsParam }),
     access_token: token,
   }, host);
   if (!created.id) throw new Error("Instagram: container da imagem não foi criado.");
@@ -244,6 +249,7 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
   const published = await graphPost(`${igBusinessId}/media_publish`, { creation_id: created.id, access_token: token }, host);
   return published.id;
   };
+
 
   try {
     return await publishWithHost("graph.facebook.com");
