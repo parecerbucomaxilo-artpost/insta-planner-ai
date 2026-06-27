@@ -20,12 +20,14 @@ const ModeloEnum = z.enum([
 
 const ModeloImagemEnum = z.enum([
   "google/gemini-3.1-flash-image",
-  // legados aceitos para compat
+  // legados aceitos para compat com posts antigos no DB
+  "pollinations/flux",
   "google/imagen-3",
   "google/gemini-3.1-flash-image-preview",
   "google/gemini-2.5-flash-image",
   "openai/gpt-image-1-mini",
   "openai/gpt-image-2",
+  "google/gemini-3-pro-image",
   "google/gemini-3-pro-image-preview",
 ]);
 export { MODELOS_IMAGEM } from "@/lib/ai-gateway.server";
