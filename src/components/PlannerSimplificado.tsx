@@ -84,7 +84,11 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [loading, setLoading] = useState(false);
 
   const lsKey = storageKey ?? ACCOUNT_KEY;
+  const [tipoPostagem, setTipoPostagem] = useState<"chico" | "liga">("chico");
   const isLiga = conta === LIGA_ACCOUNT;
+  const usarTipoLiga = permiteTipoLiga && tipoPostagem === "liga";
+  const effectiveAudiencia: typeof audiencia = usarTipoLiga ? "estudantes-graduacao" : audiencia;
+  const effectiveConta = usarTipoLiga ? LIGA_ACCOUNT : conta;
   // Liga agora publica via @drfranciscomenezes (que está conectado) convidando @lactbmf como colaboradora.
   const canPublishAutomatically = isLiga ? true : destinoStatus === "ok";
 
