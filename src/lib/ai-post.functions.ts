@@ -571,6 +571,34 @@ Responda APENAS com a frase do tema, nada mais.`,
         .then(applyOverlay)
         .then(uploadOne);
 
+    // 2.1 — Aguarda a legenda primeiro e deriva dela um PROMPT VISUAL em INGLÊS
+    // (fotografia hiper-realista, detalhado, sem emojis nem quebras de linha)
+    // para alimentar o Pollinations/Flux com contexto fiel ao texto publicado.
+    const legendaResolvida = await legendaPromise;
+    const sanitizeVisual = (s: string) =>
+      s
+        .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, " ") // emojis/símbolos
+        .replace(/[#@*_`~|<>\[\]{}"]/g, " ")
+        .replace(/\r?\n+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 600);
+    let visualPromptEn = "";
+    try {
+      const r = await generateText({
+        model,
+        system:
+          "You convert a Portuguese social media caption into ONE single-line English visual prompt for a photorealistic medical/dental editorial photograph. Output ONLY the prompt: no quotes, no preface, no emojis, no line breaks, no hashtags. 60-90 words. Cinematic, hyper-realistic, anatomically accurate, soft natural light, shallow depth of field, editorial color grading. Never include any text/letters/numbers inside the image.",
+        prompt: `Caption (pt-BR) about "${tema}":\n${legendaResolvida}\n\nReturn the single-line English visual prompt now.`,
+      });
+      visualPromptEn = sanitizeVisual(r.text);
+    } catch {
+      visualPromptEn = "";
+    }
+    const withVisual = (basePrompt: string) =>
+      visualPromptEn ? `${visualPromptEn}. ${basePrompt}` : basePrompt;
+
+
     let urlImagem: string;
     let imagensCarrossel: string[] = [];
     let urlImagemCache: string | null = null;
