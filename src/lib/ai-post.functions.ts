@@ -19,7 +19,7 @@ const ModeloEnum = z.enum([
 ]);
 
 const ModeloImagemEnum = z.enum([
-  "pollinations/flux",
+  "google/gemini-3.1-flash-image",
   // legados aceitos para compat
   "google/imagen-3",
   "google/gemini-3.1-flash-image-preview",
@@ -42,7 +42,7 @@ const SingleInput = z.object({
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
   modelo: ModeloEnum.optional().default("groq/llama-3.3-70b-versatile"),
-  modeloImagem: ModeloImagemEnum.optional().default("pollinations/flux"),
+  modeloImagem: ModeloImagemEnum.optional().default("google/gemini-3.1-flash-image"),
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
   ambasRedes: z.boolean().optional().default(false),
   // Status inicial do post (PendenteAprovacao = revisão manual; Agendado = vai pro cron de publicação).
