@@ -476,33 +476,21 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             {!isLiga && destinoStatus === "ok" && <Badge className="bg-emerald-600">Configurado</Badge>}
             {!isLiga && destinoStatus === "missing" && <Badge variant="destructive">Não configurado</Badge>}
           </Label>
-          {isLiga ? (
-            <div className="rounded-md border border-amber-200 bg-white/80 p-3 text-xs text-amber-950 space-y-1">
-              <p className="font-semibold">Modo manual obrigatório para a Liga:</p>
-              <p>como a conexão Facebook/Make não está funcionando, o app não tentará publicar automaticamente. Ele salva o criativo, copia a legenda e libera o download da imagem para postar diretamente no Instagram @lactbmf.anhanguerasbo.</p>
-              <p className="font-semibold">Isso evita qualquer envio para @drfranciscomenezes.</p>
-            </div>
-          ) : destinoStatus === "missing" && (
-            <p className="text-xs text-amber-900">
-              ⚠️ Sem destino próprio para esta conta, a publicação será bloqueada para evitar envio para outro Instagram.
-              {` Conecte a Meta oficial ou cadastre um webhook próprio de @${conta}.`}
-            </p>
-          )}
-          {!isLiga && destinoStatus === "missing" && (
+          {destinoStatus === "missing" && (
             <div className="rounded-md border border-amber-200 bg-white/70 p-3 text-xs text-amber-950 space-y-1">
-              <p className="font-semibold">Modo seguro sem conexão:</p>
-              <p>ao aprovar, o app salva o post, copia a legenda e libera o download da imagem para publicar manualmente no Instagram correto.</p>
+              <p className="font-semibold">Conecte o Instagram @{conta} pelo Meta:</p>
+              <p>clique em "Conectar Instagram @{conta}" abaixo, faça login com a conta Facebook que administra essa página e aceite as permissões. O app salva o token e passa a publicar direto, sem Make.</p>
             </div>
           )}
-          {!isLiga && destinoModo === "meta" && (
-            <p className="text-xs text-emerald-800">Publicação direta Meta ativa para @{conta}. O Make não será usado.</p>
+          {destinoModo === "meta" && (
+            <p className="text-xs text-emerald-800">✅ Publicação direta Meta ativa para @{conta}.</p>
           )}
-          {!isLiga && destinoModo === "webhook" && (
-            <p className="text-xs text-emerald-800">Webhook exclusivo ativo para @{conta}. O app enviará sempre com a conta de destino obrigatória.</p>
+          {destinoModo === "webhook" && (
+            <p className="text-xs text-emerald-800">Webhook exclusivo ativo para @{conta}.</p>
           )}
-          {!isLiga && <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button onClick={conectarMetaConta} variant="secondary">
-              <Instagram className="w-4 h-4 mr-1" /> {`Preparar conexão Meta @${conta}`}
+              <Instagram className="w-4 h-4 mr-1" /> {`Conectar Instagram @${conta}`}
             </Button>
             {metaConnectPath && (
               <Button asChild variant="outline">
