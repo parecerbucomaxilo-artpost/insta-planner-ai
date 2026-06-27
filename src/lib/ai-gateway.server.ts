@@ -83,29 +83,28 @@ export async function generateImageBase64(opts: {
   const { width, height } = sizeToWH(opts.size);
   const seed = Math.floor(Math.random() * 1_000_000_000);
 
-  const endpoints = [
-    `https://router.huggingface.co/hf-inference/models/${HF_IMAGE_MODEL}`,
-    `https://api-inference.huggingface.co/models/${HF_IMAGE_MODEL}`,
-  ];
+  // Endpoint OpenAI-compatível do HF Router: roteia automaticamente para um
+  // provider que ainda serve o modelo (fal-ai / replicate / together / nebius).
+  const url = "https://router.huggingface.co/v1/images/generations";
 
   let res: Response | undefined;
   let lastErr: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
-    const url = endpoints[attempt % endpoints.length];
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 90_000);
+    const timer = setTimeout(() => ctrl.abort(), 120_000);
     try {
       res = await fetch(url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${hfToken}`,
           "Content-Type": "application/json",
-          Accept: "image/png",
-          "x-wait-for-model": "true",
         },
         body: JSON.stringify({
-          inputs: cleaned,
-          parameters: { width, height, num_inference_steps: 28, guidance_scale: 3.5, seed },
+          model: HF_IMAGE_MODEL,
+          prompt: cleaned,
+          response_format: "b64_json",
+          size: `${width}x${height}`,
+          n: 1,
         }),
         signal: ctrl.signal,
       });
@@ -121,30 +120,29 @@ export async function generateImageBase64(opts: {
   }
 
   if (!res) throw new Error(`HuggingFace fetch falhou: ${String((lastErr as any)?.message || lastErr)}`);
-
-
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`HuggingFace ${res.status}: ${txt.slice(0, 400)}`);
   }
 
-  const ct = res.headers.get("content-type") || "";
-  if (ct.includes("application/json")) {
-    const txt = await res.text();
-    throw new Error(`HuggingFace JSON error: ${txt.slice(0, 400)}`);
+  const json: any = await res.json();
+  const item = json?.data?.[0];
+  if (item?.b64_json) return item.b64_json as string;
+
+  if (item?.url) {
+    const imgRes = await fetch(item.url);
+    if (!imgRes.ok) throw new Error(`HF image url ${imgRes.status}`);
+    const buf = await imgRes.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+    }
+    return btoa(binary);
   }
 
-  const buf = await res.arrayBuffer();
-  if (buf.byteLength < 1024) {
-    throw new Error(`HuggingFace devolveu imagem muito pequena (${buf.byteLength} bytes)`);
-  }
-  const bytes = new Uint8Array(buf);
-  let binary = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
-  }
-  return btoa(binary);
+  throw new Error(`HuggingFace resposta sem imagem: ${JSON.stringify(json).slice(0, 400)}`);
 }
 
 
