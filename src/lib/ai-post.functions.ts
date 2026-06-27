@@ -386,8 +386,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SingleInput.parse(d))
   .handler(async ({ data }) => {
     const context = { userId: TEMP_USER_ID };
-    const key = process.env.GROQ_API_KEY;
-    if (!key) throw new Error("Missing GROQ_API_KEY");
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
     const { createLovableAiGatewayProvider, generateImageBase64 } = await import("@/lib/ai-gateway.server");
     const { generateText } = await import("ai");
@@ -794,8 +794,8 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) => WeekInput.parse(d))
   .handler(async ({ data }) => {
-    const key = process.env.GROQ_API_KEY;
-    if (!key) throw new Error("Missing GROQ_API_KEY");
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
     const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
     const { generateText } = await import("ai");
