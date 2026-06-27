@@ -224,6 +224,23 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     }
   };
 
+  const copiarTexto = async (texto: string, mensagem = "Texto copiado.") => {
+    try {
+      await navigator.clipboard.writeText(texto);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = texto;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    toast.success(mensagem);
+  };
+
 
   const carregar = useCallback(async () => {
     if (!conta) return;
@@ -333,6 +350,14 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     toast.loading(acao === "publicar" ? "Publicando..." : "Salvando...", { id: tid });
     try {
       if (acao === "publicar") {
+        if (destinoStatus !== "ok") {
+          await approveFn({ data: { id: preview.id, acao: "arquivar" } });
+          await copiarTexto(preview.legenda, "Legenda copiada para publicar manualmente.");
+          toast.success("Sem conexão ativa: salvei o post e deixei pronto para publicação manual.", { id: tid });
+          setPreview(null);
+          carregar();
+          return;
+        }
         await approveFn({ data: { id: preview.id, acao: "arquivar" } });
         const out = await publishIg({ data: { id: preview.id } });
         assertPublishOk(out);
@@ -454,8 +479,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           )}
           {destinoStatus === "missing" && (
             <div className="rounded-md border border-amber-200 bg-white/70 p-3 text-xs text-amber-950 space-y-1">
-              <p className="font-semibold">Alternativa segura enquanto Meta/Instagram estiver bloqueado:</p>
-              <p>aprove o post, baixe a imagem na lista abaixo e publique manualmente no app Instagram da conta correta.</p>
+              <p className="font-semibold">Modo seguro sem conexão:</p>
+              <p>ao aprovar, o app salva o post, copia a legenda e libera o download da imagem para publicar manualmente no Instagram correto.</p>
             </div>
           )}
           {destinoModo === "meta" && (
@@ -485,7 +510,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {metaConnectPath && (
             <p className="text-xs text-zinc-600">
               {conta === LIGA_ACCOUNT
-                ? "Se o Instagram continuar bloqueado, ignore este login e salve o webhook exclusivo da Liga abaixo."
+                ? "Se Instagram/Meta/Make não conectarem, use o modo manual abaixo: o app não publicará no Chico e você baixa a imagem com a legenda pronta para postar na Liga."
                 : "Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview."}
             </p>
           )}
@@ -663,7 +688,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               <div className="grid grid-cols-3 gap-2">
                 {quando === "agora" ? (
                   <Button onClick={() => decidirPreview("publicar")} className="bg-emerald-600 hover:bg-emerald-700 col-span-2">
-                    <Zap className="w-4 h-4 mr-1" /> Publicar agora
+                    <Zap className="w-4 h-4 mr-1" /> {destinoStatus === "ok" ? "Publicar agora" : "Salvar para postar manual"}
                   </Button>
                 ) : (
                   <Button onClick={() => decidirPreview("agendar")} className="bg-emerald-600 hover:bg-emerald-700 col-span-2">
@@ -674,6 +699,21 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                   <X className="w-4 h-4 mr-1" /> Descartar
                 </Button>
               </div>
+              {destinoStatus !== "ok" && (
+                <div className="rounded-md border border-amber-200 bg-white/80 p-3 space-y-2 text-xs text-amber-950">
+                  <p className="font-semibold">Conexão indisponível: publique manualmente na conta @{conta}.</p>
+                  <div className="flex flex-wrap gap-2">
+                    {preview.urls[0] && (
+                      <Button type="button" size="sm" variant="outline" onClick={() => baixarMidia(preview.urls[0], `post-${conta}-${preview.id}.png`)}>
+                        <Download className="w-4 h-4 mr-1" /> Baixar imagem
+                      </Button>
+                    )}
+                    <Button type="button" size="sm" variant="outline" onClick={() => copiarTexto(preview.legenda, "Legenda copiada.")}>
+                      <Copy className="w-4 h-4 mr-1" /> Copiar legenda
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Card>
           )}
 
