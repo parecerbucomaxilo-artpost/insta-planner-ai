@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { ensurePerfil } from "@/lib/perfil.functions";
 import { ensurePublicationDestinationProfile, getPublicationDestination, savePublicationDestination } from "@/lib/publication-destination.functions";
-import { createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
+import { createInstagramOAuthStartUrl, createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
 const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
@@ -32,6 +32,7 @@ export function SocialConnections() {
   const saveLigaDestination = useServerFn(savePublicationDestination);
   const ensureLigaDestination = useServerFn(ensurePublicationDestinationProfile);
   const startMetaOAuth = useServerFn(createMetaOAuthStartUrl);
+  const startInstagramOAuth = useServerFn(createInstagramOAuthStartUrl);
   const [status, setStatus] = useState<LiStatus>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
@@ -184,10 +185,10 @@ export function SocialConnections() {
 
     try {
       const destino = await ensureLigaDestination({ data: { conta: "lactbmf.anhanguerasbo" } });
-      const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo", logoutFacebookFirst: true } });
-      setLigaMetaOauthUrl(r.privateAuthUrl || r.loginUrl || r.url);
-      setLigaMetaConnectPath(`/meta-connect?account=lactbmf.anhanguerasbo&next=${encodeURIComponent(r.url)}${r.loginUrl ? `&login=${encodeURIComponent(r.loginUrl)}` : ""}${r.privateAuthUrl ? `&privateNext=${encodeURIComponent(r.privateAuthUrl)}` : ""}`);
-      toast.info("Clique em 'Abrir conexão Meta da Liga' para continuar fora do preview.");
+      const r = await startInstagramOAuth({ data: { perfilId: destino.id, targetAccount: "lactbmf.anhanguerasbo" } });
+      setLigaMetaOauthUrl(r.url);
+      setLigaMetaConnectPath(`/meta-connect?account=lactbmf.anhanguerasbo&next=${encodeURIComponent(r.url)}`);
+      toast.info("Clique em 'Abrir conexão Instagram da Liga' para entrar direto na conta da Liga.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao conectar Instagram da Liga");
     }
@@ -487,15 +488,15 @@ export function SocialConnections() {
             </Label>
             <div className="p-3 rounded-lg border bg-muted/40 space-y-2">
               <p className="text-xs text-muted-foreground">
-                Preferencial: conecte a conta oficial da Liga via Meta. O app só aceita a conta <strong>@lactbmf.anhanguerasbo</strong> nesse fluxo.
+                Nova tentativa: conectar a Liga pelo login direto do Instagram, sem reutilizar a sessão Facebook do Francisco.
               </p>
               <Button onClick={handleConnectLigaMeta} variant="secondary" size="sm">
-                <Instagram className="h-4 w-4" /> Preparar conexão Meta da Liga
+                <Instagram className="h-4 w-4" /> Preparar conexão Instagram da Liga
               </Button>
               {ligaMetaConnectPath && (
                 <Button asChild variant="outline" size="sm">
                   <a href={ligaMetaConnectPath} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" /> Abrir conexão Meta da Liga
+                    <ExternalLink className="h-4 w-4" /> Abrir conexão Instagram da Liga
                   </a>
                 </Button>
               )}
