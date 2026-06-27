@@ -1,16 +1,152 @@
-// Gerador local sem cobrança: cria imagens JPEG no próprio backend, sem chamar IA externa.
+// Lovable AI Gateway: GPT-5-mini (texto) + Gemini 3.1 Flash Image / Nano Banana (imagem).
+// Mantém um gerador local de fallback caso o gateway retorne 402 (créditos) ou 429 (rate-limit).
+
+const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
+
+export const MODELOS_IA = [
+  { id: "openai/gpt-5-mini", label: "GPT-5 mini (texto)" },
+  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (texto)" },
+] as const;
+export type ModeloTexto = (typeof MODELOS_IA)[number]["id"];
 
 export const MODELOS_IMAGEM = [
-  { id: "local/sem-custo", label: "Imagem local (sem custo)" },
+  { id: "google/gemini-3.1-flash-image", label: "Gemini Nano Banana 2 (imagem)" },
+  { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana (imagem)" },
+  { id: "openai/gpt-image-1-mini", label: "GPT image 1 mini (imagem)" },
 ] as const;
-
 export type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
+
+const DEFAULT_TEXT_MODEL: ModeloTexto = "openai/gpt-5-mini";
+const DEFAULT_IMAGE_MODEL: ModeloImagem = "google/gemini-3.1-flash-image";
 
 function sizeToWH(size?: string): { width: number; height: number } {
   if (size === "1536x1024") return { width: 1536, height: 1024 };
   if (size === "1024x1536") return { width: 1024, height: 1536 };
   return { width: 1024, height: 1024 };
 }
+
+// ---------------- Texto: GPT-5 mini via Lovable Gateway ----------------
+
+export async function generateTextAI(opts: {
+  apiKey?: string;
+  system?: string;
+  prompt: string;
+  model?: ModeloTexto | string;
+  maxTokens?: number;
+}): Promise<string> {
+  const apiKey = opts.apiKey || process.env.LOVABLE_API_KEY;
+  if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
+  const model = (opts.model as string) || DEFAULT_TEXT_MODEL;
+
+  const res = await fetch(`${GATEWAY_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Lovable-API-Key": apiKey,
+      "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        ...(opts.system ? [{ role: "system", content: opts.system }] : []),
+        { role: "user", content: opts.prompt },
+      ],
+      ...(opts.maxTokens ? { max_completion_tokens: opts.maxTokens } : {}),
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Lovable AI texto ${res.status}: ${body.slice(0, 240)}`);
+  }
+  const json: any = await res.json();
+  return json?.choices?.[0]?.message?.content?.toString().trim() || "";
+}
+
+// ---------------- Imagem: Gemini Nano Banana via Lovable Gateway ----------------
+
+async function generateImageGateway(opts: {
+  apiKey: string;
+  prompt: string;
+  model: string;
+  size: "1024x1024" | "1024x1536" | "1536x1024";
+  referenceImageUrls?: string[];
+}): Promise<string> {
+  const isOpenAIImage = opts.model.startsWith("openai/gpt-image");
+
+  if (isOpenAIImage) {
+    const res = await fetch(`${GATEWAY_URL}/images/generations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": opts.apiKey,
+        "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+      },
+      body: JSON.stringify({
+        model: opts.model,
+        prompt: opts.prompt,
+        size: opts.size,
+        n: 1,
+        quality: "low",
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Lovable AI imagem ${res.status}: ${body.slice(0, 240)}`);
+    }
+    const json: any = await res.json();
+    const b64 = json?.data?.[0]?.b64_json;
+    if (b64) return b64;
+    const url = json?.data?.[0]?.url;
+    if (url) {
+      const r2 = await fetch(url);
+      const buf = Buffer.from(await r2.arrayBuffer());
+      return buf.toString("base64");
+    }
+    throw new Error("Lovable AI imagem: resposta sem b64/url");
+  }
+
+  // Gemini image via chat/completions
+  const userContent: any[] = [{ type: "text", text: opts.prompt }];
+  for (const url of opts.referenceImageUrls ?? []) {
+    userContent.push({ type: "image_url", image_url: { url } });
+  }
+  const res = await fetch(`${GATEWAY_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Lovable-API-Key": opts.apiKey,
+      "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+    },
+    body: JSON.stringify({
+      model: opts.model,
+      messages: [{ role: "user", content: userContent }],
+      modalities: ["image", "text"],
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Lovable AI imagem ${res.status}: ${body.slice(0, 240)}`);
+  }
+  const json: any = await res.json();
+  const msg = json?.choices?.[0]?.message ?? {};
+  // Vários shapes possíveis: message.images[].image_url.url, ou content[].image_url
+  const candidates: any[] = [];
+  if (Array.isArray(msg.images)) candidates.push(...msg.images);
+  if (Array.isArray(msg.content)) candidates.push(...msg.content);
+  for (const c of candidates) {
+    const url: string | undefined =
+      c?.image_url?.url || (typeof c?.image_url === "string" ? c.image_url : undefined) || c?.url;
+    if (!url) continue;
+    if (url.startsWith("data:")) return url.split(",")[1] || "";
+    const r2 = await fetch(url);
+    const buf = Buffer.from(await r2.arrayBuffer());
+    return buf.toString("base64");
+  }
+  throw new Error("Lovable AI imagem: resposta sem imagem");
+}
+
+// ---------------- Fallback local (gerador procedural anatômico) ----------------
 
 function hashText(input: string): number {
   let h = 2166136261;
@@ -20,12 +156,10 @@ function hashText(input: string): number {
   }
   return h >>> 0;
 }
-
 function hexToRgb(hex: string): [number, number, number] {
-  const clean = hex.replace("#", "");
-  return [parseInt(clean.slice(0, 2), 16), parseInt(clean.slice(2, 4), 16), parseInt(clean.slice(4, 6), 16)];
+  const c = hex.replace("#", "");
+  return [parseInt(c.slice(0, 2), 16), parseInt(c.slice(2, 4), 16), parseInt(c.slice(4, 6), 16)];
 }
-
 function blend(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
   const u = Math.max(0, Math.min(1, t));
   return [
@@ -34,10 +168,8 @@ function blend(a: [number, number, number], b: [number, number, number], t: numb
     Math.round(a[2] + (b[2] - a[2]) * u),
   ];
 }
-
 function setPixel(px: Uint8Array, w: number, h: number, x: number, y: number, color: [number, number, number], alpha = 1) {
-  const ix = Math.round(x);
-  const iy = Math.round(y);
+  const ix = Math.round(x), iy = Math.round(y);
   if (ix < 0 || iy < 0 || ix >= w || iy >= h) return;
   const p = (iy * w + ix) * 4;
   const a = Math.max(0, Math.min(1, alpha));
@@ -46,76 +178,51 @@ function setPixel(px: Uint8Array, w: number, h: number, x: number, y: number, co
   px[p + 2] = Math.round(px[p + 2] * (1 - a) + color[2] * a);
   px[p + 3] = 255;
 }
-
 function fillEllipse(px: Uint8Array, w: number, h: number, cx: number, cy: number, rx: number, ry: number, color: [number, number, number], alpha = 1) {
-  const x0 = Math.max(0, Math.floor(cx - rx));
-  const x1 = Math.min(w - 1, Math.ceil(cx + rx));
-  const y0 = Math.max(0, Math.floor(cy - ry));
-  const y1 = Math.min(h - 1, Math.ceil(cy + ry));
-  for (let y = y0; y <= y1; y++) {
-    for (let x = x0; x <= x1; x++) {
-      const dx = (x - cx) / rx;
-      const dy = (y - cy) / ry;
-      const d = dx * dx + dy * dy;
-      if (d <= 1) setPixel(px, w, h, x, y, color, alpha * Math.min(1, (1 - d) * 2.5));
-    }
+  const x0 = Math.max(0, Math.floor(cx - rx)), x1 = Math.min(w - 1, Math.ceil(cx + rx));
+  const y0 = Math.max(0, Math.floor(cy - ry)), y1 = Math.min(h - 1, Math.ceil(cy + ry));
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const dx = (x - cx) / rx, dy = (y - cy) / ry;
+    const d = dx * dx + dy * dy;
+    if (d <= 1) setPixel(px, w, h, x, y, color, alpha * Math.min(1, (1 - d) * 2.5));
   }
 }
-
-function strokeEllipse(px: Uint8Array, w: number, h: number, cx: number, cy: number, rx: number, ry: number, color: [number, number, number], alpha = 1, thickness = 3) {
-  const steps = Math.max(180, Math.round((rx + ry) * 0.8));
-  for (let i = 0; i <= steps; i++) {
-    const a = (Math.PI * 2 * i) / steps;
-    const x = cx + Math.cos(a) * rx;
-    const y = cy + Math.sin(a) * ry;
-    fillEllipse(px, w, h, x, y, thickness, thickness, color, alpha);
-  }
-}
-
-function line(px: Uint8Array, w: number, h: number, x0: number, y0: number, x1: number, y1: number, color: [number, number, number], alpha = 1, thickness = 4) {
-  const steps = Math.max(1, Math.round(Math.hypot(x1 - x0, y1 - y0)));
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    fillEllipse(px, w, h, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, thickness, thickness, color, alpha);
-  }
-}
-
 function fillRect(px: Uint8Array, w: number, h: number, x: number, y: number, rw: number, rh: number, color: [number, number, number], alpha = 1) {
-  const x0 = Math.max(0, Math.floor(x));
-  const x1 = Math.min(w, Math.ceil(x + rw));
-  const y0 = Math.max(0, Math.floor(y));
-  const y1 = Math.min(h, Math.ceil(y + rh));
+  const x0 = Math.max(0, Math.floor(x)), x1 = Math.min(w, Math.ceil(x + rw));
+  const y0 = Math.max(0, Math.floor(y)), y1 = Math.min(h, Math.ceil(y + rh));
   for (let yy = y0; yy < y1; yy++) for (let xx = x0; xx < x1; xx++) setPixel(px, w, h, xx, yy, color, alpha);
 }
 
-function drawTooth(px: Uint8Array, w: number, h: number, cx: number, cy: number, scale: number, seed: number) {
-  const white = hexToRgb("#f8fbff");
-  const cyan = hexToRgb("#2dd4ff");
-  const shadow = hexToRgb("#7fb6d6");
-  fillEllipse(px, w, h, cx, cy - scale * 0.4, scale * 0.75, scale * 0.58, white, 0.93);
-  fillEllipse(px, w, h, cx - scale * 0.36, cy + scale * 0.22, scale * 0.22, scale * 0.86, white, 0.88);
-  fillEllipse(px, w, h, cx + scale * 0.36, cy + scale * 0.22, scale * 0.22, scale * 0.86, white, 0.88);
-  strokeEllipse(px, w, h, cx, cy - scale * 0.34, scale * 0.78, scale * 0.62, cyan, 0.38, Math.max(2, scale * 0.018));
-  line(px, w, h, cx - scale * 0.52, cy - scale * 0.2, cx + scale * 0.52, cy - scale * 0.2, shadow, 0.35, Math.max(2, scale * 0.01));
-  const nerveY = cy + scale * (0.72 + ((seed % 5) - 2) * 0.015);
-  line(px, w, h, cx - scale * 0.9, nerveY, cx + scale * 0.9, nerveY - scale * 0.05, cyan, 0.65, Math.max(2, scale * 0.018));
+async function generateImageLocal(opts: { prompt: string; size?: "1024x1024" | "1024x1536" | "1536x1024" }): Promise<string> {
+  const photon: any = await import("@cf-wasm/photon");
+  const { PhotonImage } = photon;
+  const { width, height } = sizeToWH(opts.size);
+  const px = new Uint8Array(width * height * 4);
+  const seed = hashText(`${opts.prompt}|${Date.now()}|${Math.random()}`);
+  const isLiga = /Liga Acadêmica|graduação|lactbmf|anhanguera/i.test(opts.prompt);
+  const navy = hexToRgb(isLiga ? "#2D2C32" : "#0c2340");
+  const navy2 = hexToRgb(isLiga ? "#111114" : "#14366b");
+  const cyan = hexToRgb(isLiga ? "#DD8E3C" : "#2dd4ff");
+  const white = hexToRgb("#ffffff");
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const radial = Math.hypot((x - width * 0.58) / width, (y - height * 0.38) / height);
+    const t = Math.min(1, y / height * 0.7 + radial * 0.8);
+    const c = blend(navy2, navy, t);
+    const p = (y * width + x) * 4;
+    px[p] = c[0]; px[p + 1] = c[1]; px[p + 2] = c[2]; px[p + 3] = 255;
+  }
+  fillEllipse(px, width, height, width * 0.72, height * 0.25, width * 0.28, height * 0.16, cyan, 0.10);
+  fillEllipse(px, width, height, width * 0.18, height * 0.78, width * 0.22, height * 0.13, white, 0.06);
+  const bandH = Math.round(height * 0.16);
+  fillRect(px, width, height, 0, height - bandH, width, bandH, hexToRgb("#06182c"), 0.62);
+  const img = new PhotonImage(px, width, height);
+  const out = img.get_bytes_jpeg(90);
+  img.free();
+  void seed;
+  return Buffer.from(out).toString("base64");
 }
 
-function drawJaw(px: Uint8Array, w: number, h: number, seed: number) {
-  const cyan = hexToRgb("#2dd4ff");
-  const bone = hexToRgb("#eaf7ff");
-  const baseY = h * 0.58;
-  const startX = w * 0.2;
-  const endX = w * 0.8;
-  for (let i = 0; i < 9; i++) {
-    const t = i / 8;
-    const x = startX + (endX - startX) * t;
-    const y = baseY + Math.sin((t + (seed % 7) * 0.02) * Math.PI) * h * 0.07;
-    drawTooth(px, w, h, x, y, Math.min(w, h) * 0.095, seed + i * 17);
-  }
-  line(px, w, h, startX - w * 0.03, baseY + h * 0.12, endX + w * 0.03, baseY + h * 0.12, bone, 0.2, Math.max(8, w * 0.008));
-  line(px, w, h, startX - w * 0.04, baseY + h * 0.16, endX + w * 0.04, baseY + h * 0.16, cyan, 0.28, Math.max(4, w * 0.004));
-}
+// ---------------- API pública: tenta gateway, faz fallback local ----------------
 
 export async function generateImageBase64(opts: {
   apiKey?: string;
@@ -124,46 +231,19 @@ export async function generateImageBase64(opts: {
   model?: ModeloImagem | string;
   referenceImageUrls?: string[];
 }): Promise<string> {
-  const photon: any = await import("@cf-wasm/photon");
-  const { PhotonImage } = photon;
-  const { width, height } = sizeToWH(opts.size);
-  const px = new Uint8Array(width * height * 4);
-  const seed = hashText(`${opts.prompt}|${opts.size}|${Date.now()}|${Math.random()}`);
-  const isLiga = /Liga Acadêmica|graduação|lactbmf|anhanguera/i.test(opts.prompt);
-  const navy = hexToRgb(isLiga ? "#2D2C32" : "#0c2340");
-  const navy2 = hexToRgb(isLiga ? "#111114" : "#14366b");
-  const cyan = hexToRgb(isLiga ? "#DD8E3C" : "#2dd4ff");
-  const white = hexToRgb("#ffffff");
+  const apiKey = opts.apiKey || process.env.LOVABLE_API_KEY;
+  const size = opts.size ?? "1024x1024";
+  const model = (opts.model as string) || DEFAULT_IMAGE_MODEL;
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const radial = Math.hypot((x - width * 0.58) / width, (y - height * 0.38) / height);
-      const t = Math.min(1, y / height * 0.7 + radial * 0.8);
-      const c = blend(navy2, navy, t);
-      const p = (y * width + x) * 4;
-      px[p] = c[0]; px[p + 1] = c[1]; px[p + 2] = c[2]; px[p + 3] = 255;
+  if (apiKey && model !== "local/sem-custo") {
+    try {
+      return await generateImageGateway({ apiKey, prompt: opts.prompt, model, size, referenceImageUrls: opts.referenceImageUrls });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      // 402 (sem créditos) ou 429 (rate-limit) → cai pro local sem quebrar a UI
+      if (!/402|429|payment|credit|rate|insufficient/i.test(msg)) throw err;
+      console.warn("[ai-gateway] imagem caiu para gerador local:", msg);
     }
   }
-
-  for (let i = 0; i < 9; i++) {
-    const x = ((seed >>> (i % 16)) % width) + (i - 4) * width * 0.03;
-    const y = (height * (0.12 + i * 0.085)) % height;
-    line(px, width, height, x - width * 0.18, y, x + width * 0.18, y + height * 0.06, cyan, 0.12, Math.max(2, width * 0.002));
-  }
-
-  fillEllipse(px, width, height, width * 0.72, height * 0.25, width * 0.28, height * 0.16, cyan, 0.08);
-  fillEllipse(px, width, height, width * 0.18, height * 0.78, width * 0.22, height * 0.13, white, 0.06);
-  drawJaw(px, width, height, seed);
-
-  const bandH = Math.round(height * 0.16);
-  fillRect(px, width, height, 0, height - bandH, width, bandH, hexToRgb("#06182c"), 0.62);
-  line(px, width, height, width * 0.08, height - bandH + height * 0.025, width * 0.92, height - bandH + height * 0.025, cyan, 0.75, Math.max(3, width * 0.003));
-
-  const accentX = width * (0.12 + (seed % 30) / 100);
-  strokeEllipse(px, width, height, accentX, height * 0.28, width * 0.08, width * 0.08, cyan, 0.55, Math.max(3, width * 0.003));
-
-  const img = new PhotonImage(px, width, height);
-  const out = img.get_bytes_jpeg(92);
-  img.free();
-  return Buffer.from(out).toString("base64");
+  return generateImageLocal({ prompt: opts.prompt, size });
 }

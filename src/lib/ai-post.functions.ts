@@ -4,20 +4,23 @@ const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
 export const MODELOS_IA = [
-  { id: "local/sem-custo", label: "Texto local (sem custo)" },
+  { id: "openai/gpt-5-mini", label: "GPT-5 mini (texto)" },
+  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (texto)" },
 ] as const;
-const ModeloEnum = z.enum([
-  "local/sem-custo",
-]);
-const ModeloLocalInput = z.preprocess(() => "local/sem-custo", ModeloEnum);
+const ModeloLocalInput = z
+  .string()
+  .optional()
+  .transform((v) => (v && v !== "local/sem-custo" ? v : "openai/gpt-5-mini"));
 
-const ModeloImagemEnum = z.enum([
-  "local/sem-custo",
-]);
-const ModeloImagemLocalInput = z.preprocess(() => "local/sem-custo", ModeloImagemEnum);
 export const MODELOS_IMAGEM = [
-  { id: "local/sem-custo", label: "Imagem local (sem custo)" },
+  { id: "google/gemini-3.1-flash-image", label: "Gemini Nano Banana 2 (imagem)" },
+  { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana (imagem)" },
+  { id: "openai/gpt-image-1-mini", label: "GPT image 1 mini (imagem)" },
 ] as const;
+const ModeloImagemLocalInput = z
+  .string()
+  .optional()
+  .transform((v) => (v && v !== "local/sem-custo" ? v : "google/gemini-3.1-flash-image"));
 
 const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico", "google-business"]);
 export type NivelConteudo = z.infer<typeof NivelEnum>;
@@ -516,14 +519,27 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // 2. Dispara legenda + imagens EM PARALELO (não dependem entre si).
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const isChico = data.audiencia === "chico-drfm";
-    const legendaPromise = Promise.resolve(buildLocalCaption({
+    const localCaption = () => buildLocalCaption({
       tema,
       rede: data.rede,
       formato,
       especialidade: data.especialidade,
       nivel,
       audiencia: data.audiencia,
-    }));
+    });
+    const legendaPromise = (async () => {
+      if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") return localCaption();
+      try {
+        const { generateTextAI } = await import("@/lib/ai-gateway.server");
+        const system = `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, sem inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.`;
+        const prompt = `Tema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}\n\nEscreva a legenda final pronta para publicação (sem comentários meta).`;
+        const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : 700 });
+        return txt || localCaption();
+      } catch (err) {
+        console.warn("[ai-post] legenda caiu para local:", err instanceof Error ? err.message : err);
+        return localCaption();
+      }
+    })();
 
     // Tamanho ideal por plataforma (gateway suporta 1024x1024, 1024x1536, 1536x1024):
     // - IG Feed/Carrossel: vertical 4:5  → 1024x1536
@@ -564,7 +580,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     }
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
       try {
-        return await generateImageBase64({ prompt, size, model: "local/sem-custo", referenceImageUrls: logoRefs.length ? logoRefs : undefined });
+        return await generateImageBase64({ prompt, size, model: data.modeloImagem, referenceImageUrls: logoRefs.length ? logoRefs : undefined });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message);
