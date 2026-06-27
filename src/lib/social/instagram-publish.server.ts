@@ -331,7 +331,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     // Garantia de marca: re-aplica a logo na hora da publicação para posts antigos
     // gerados antes do overlay automático (ou sem ele por qualquer motivo).
-    const contaParaLogo = contaAlvo || normalizeInstagramAccount(perfil?.arroba_usuario);
+    const contaParaLogo = originalContaAlvo || contaAlvo || normalizeInstagramAccount(perfil?.arroba_usuario);
     if (contaParaLogo === "drfranciscomenezes" || contaParaLogo === "lactbmf.anhanguerasbo") {
       try {
         const { overlayLogo, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
