@@ -66,6 +66,9 @@ function sizeToWH(size?: string): { width: number; height: number } {
   return { width: 1024, height: 1024 };
 }
 
+// Imagens via Hugging Face Inference API (FLUX.1-schnell). Requer HF_TOKEN.
+const HF_IMAGE_MODEL = "black-forest-labs/FLUX.1-schnell";
+
 export async function generateImageBase64(opts: {
   apiKey?: string;
   prompt: string;
@@ -73,22 +76,45 @@ export async function generateImageBase64(opts: {
   model?: ModeloImagem;
   referenceImageUrls?: string[];
 }): Promise<string> {
+  const hfToken = process.env.HF_TOKEN;
+  if (!hfToken) throw new Error("Missing HF_TOKEN");
+
   const cleaned = sanitizeVisualPrompt(opts.prompt) + REALISM_SUFFIX;
   const { width, height } = sizeToWH(opts.size);
   const seed = Math.floor(Math.random() * 1_000_000_000);
-  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleaned)}?model=flux&enhance=true&nologo=true&seed=${seed}&width=${width}&height=${height}`;
 
-  const res = await fetch(url, { method: "GET" });
+  const res = await fetch(
+    `https://api-inference.huggingface.co/models/${HF_IMAGE_MODEL}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${hfToken}`,
+        "Content-Type": "application/json",
+        Accept: "image/png",
+        "x-wait-for-model": "true",
+      },
+      body: JSON.stringify({
+        inputs: cleaned,
+        parameters: { width, height, num_inference_steps: 4, seed },
+      }),
+    },
+  );
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`Pollinations ${res.status}: ${txt.slice(0, 400)}`);
+    throw new Error(`HuggingFace ${res.status}: ${txt.slice(0, 400)}`);
+  }
+
+  const ct = res.headers.get("content-type") || "";
+  if (ct.includes("application/json")) {
+    const txt = await res.text();
+    throw new Error(`HuggingFace JSON error: ${txt.slice(0, 400)}`);
   }
 
   const buf = await res.arrayBuffer();
   if (buf.byteLength < 1024) {
-    throw new Error(`Pollinations devolveu imagem muito pequena (${buf.byteLength} bytes)`);
+    throw new Error(`HuggingFace devolveu imagem muito pequena (${buf.byteLength} bytes)`);
   }
-  // ArrayBuffer -> base64
   const bytes = new Uint8Array(buf);
   let binary = "";
   const chunk = 0x8000;
