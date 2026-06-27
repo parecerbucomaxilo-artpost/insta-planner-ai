@@ -4,11 +4,11 @@ const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
 export const MODELOS_IA = [
-  { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B Instant (Groq, padrão)" },
-  { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq, mais profundo)" },
+  { id: "groq/llama-3.3-70b-specdec", label: "Llama 3.3 70B SpecDec (Groq, padrão)" },
+  { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B Instant (Groq, rápido)" },
 ] as const;
 const ModeloEnum = z.enum([
-  "groq/llama-3.1-8b-instant",
+  "groq/llama-3.3-70b-specdec",
   "groq/llama-3.3-70b-versatile",
   // legados aceitos para compat com posts antigos no DB
   "groq/llama-3.1-8b-instant",
