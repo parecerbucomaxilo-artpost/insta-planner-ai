@@ -66,7 +66,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   // Geração IA
   const [modo, setModo] = useState<Modo>("feed");
-  const [modelo, setModelo] = useState<ModeloIA>("groq/llama-3.3-70b-versatile");
+  const [modelo, setModelo] = useState<ModeloIA>("openai/gpt-5-mini");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("google/gemini-3.1-flash-image");
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
