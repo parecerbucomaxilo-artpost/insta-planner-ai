@@ -253,10 +253,23 @@ export async function generateImageBase64(opts: {
       return await generateImageGateway({ apiKey, prompt: opts.prompt, model, size, referenceImageUrls: opts.referenceImageUrls });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      // Bloqueio de segurança da OpenAI → reage com Gemini (política mais permissiva p/ contexto médico).
+      const safetyBlock = /safety system|rejected|moderation|content_policy|image_generation_user_error/i.test(msg);
+      if (safetyBlock && model.startsWith("openai/")) {
+        console.warn("[ai-gateway] OpenAI bloqueou por safety, tentando Gemini:", msg.slice(0, 160));
+        try {
+          return await generateImageGateway({ apiKey, prompt: opts.prompt, model: "google/gemini-3.1-flash-image", size, referenceImageUrls: opts.referenceImageUrls });
+        } catch (err2) {
+          const msg2 = err2 instanceof Error ? err2.message : String(err2);
+          console.warn("[ai-gateway] Gemini também falhou, caindo para local:", msg2.slice(0, 160));
+          return generateImageLocal({ prompt: opts.prompt, size });
+        }
+      }
       // 402 (sem créditos) ou 429 (rate-limit) → cai pro local sem quebrar a UI
       if (!/402|429|payment|credit|rate|insufficient|sem imagem|sem b64|resposta sem/i.test(msg)) throw err;
       console.warn("[ai-gateway] imagem caiu para gerador local:", msg);
     }
   }
+
   return generateImageLocal({ prompt: opts.prompt, size });
 }
