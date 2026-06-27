@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { ensurePerfil } from "@/lib/perfil.functions";
-import { ensurePublicationDestinationProfile, getPublicationDestination, savePublicationDestination, saveManualInstagramToken } from "@/lib/publication-destination.functions";
+import { ensurePublicationDestinationProfile, saveManualInstagramToken } from "@/lib/publication-destination.functions";
 import { createInstagramOAuthStartUrl, createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
@@ -28,8 +28,6 @@ export function SocialConnections() {
   const fetchStatus = async () => ({ connected: false });
   const sendLinkedIn = async () => ({ ok: false, error: "Reset" });
   const ensurePerfilFn = useServerFn(ensurePerfil);
-  const fetchLigaDestination = useServerFn(getPublicationDestination);
-  const saveLigaDestination = useServerFn(savePublicationDestination);
   const ensureLigaDestination = useServerFn(ensurePublicationDestinationProfile);
   const startMetaOAuth = useServerFn(createMetaOAuthStartUrl);
   const startInstagramOAuth = useServerFn(createInstagramOAuthStartUrl);
@@ -39,9 +37,6 @@ export function SocialConnections() {
 
   const [igWebhook, setIgWebhook] = useState("");
   const [liWebhook, setLiWebhook] = useState("");
-  const [igLigaWebhook, setIgLigaWebhook] = useState("");
-  const [igLigaSaving, setIgLigaSaving] = useState(false);
-  const [igLigaTesting, setIgLigaTesting] = useState(false);
   const [igLoading, setIgLoading] = useState(true);
   const [igSaving, setIgSaving] = useState(false);
   const [liSaving, setLiSaving] = useState(false);
@@ -110,91 +105,7 @@ export function SocialConnections() {
         setIgLoading(false);
       }
     })();
-    (async () => {
-      try {
-        const destino = await fetchLigaDestination({ data: { conta: "lactbmf.anhanguerasbo" } });
-        setIgLigaWebhook(destino.webhookUrl || "");
-      } catch {}
-    })();
   }, []);
-
-  const handleSaveIgLigaWebhook = async () => {
-    const url = igLigaWebhook.trim();
-    if (!url) {
-      toast.error("Cole a URL do webhook da Liga antes de salvar.");
-      return;
-    }
-    if (url && !/^https?:\/\//i.test(url)) {
-      toast.error("Informe uma URL válida começando com https://");
-      return;
-    }
-    setIgLigaSaving(true);
-    try {
-      const destino = await saveLigaDestination({ data: { conta: "lactbmf.anhanguerasbo", webhookUrl: url } });
-      setIgLigaWebhook(destino.webhookUrl);
-      toast.success("Webhook IG (Liga) salvo ✅");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao salvar");
-    } finally {
-      setIgLigaSaving(false);
-    }
-  };
-
-  const handleTestIgLigaWebhook = async () => {
-    const url = igLigaWebhook.trim();
-    if (!url) return toast.error("Insira a URL do webhook da Liga primeiro.");
-    setIgLigaTesting(true);
-    const tid = toast.loading("Disparando teste para Liga (Make)…");
-    try {
-      const testImageUrl = "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=1080&h=1080&fit=crop&fm=jpg&q=85";
-      const r = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: "teste-liga",
-          post_id: "teste-liga",
-          texto: "✅ Teste Liga LACTBMF — webhook conectado.",
-          caption: "✅ Teste Liga LACTBMF — webhook conectado.",
-          plataforma: "Instagram",
-          conta: "lactbmf.anhanguerasbo",
-          instagram_conta: "lactbmf.anhanguerasbo",
-          url_imagem: testImageUrl,
-          imagem_url: testImageUrl,
-          image_url: testImageUrl,
-          media_url: testImageUrl,
-          photo_url: testImageUrl,
-          photoUrl: testImageUrl,
-          photoURL: testImageUrl,
-          "Photo URL": testImageUrl,
-          url: testImageUrl,
-          link: testImageUrl,
-          images: [testImageUrl],
-          photos: [testImageUrl],
-          photo_urls: [testImageUrl],
-          legenda: "✅ Teste Liga LACTBMF — webhook conectado.",
-          tipo: "feed",
-          tipo_make: "feed",
-          tipo_make_singular: "feed",
-          tipo_midia: "photo",
-          media_kind: "photo",
-          tipo_conteudo: "photo",
-          tipo_arquivo: "photo",
-          tipo_imagem: "imagem",
-          type: "feed",
-          post_type: "feed",
-          media_type: "feed",
-          rota: "Post único",
-          make_route: "Post único",
-        }),
-      });
-      if (!r.ok) throw new Error(`Make respondeu ${r.status}`);
-      toast.success("Webhook IG (Liga) OK!", { id: tid });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha no teste", { id: tid });
-    } finally {
-      setIgLigaTesting(false);
-    }
-  };
 
   const handleConnectLigaMeta = async () => {
     const { data: sess } = await supabase.auth.getSession();
@@ -413,10 +324,10 @@ export function SocialConnections() {
             <div className="flex-1">
               <CardTitle className="flex items-center gap-2">
                 Instagram Business
-                <Badge variant="secondary" className="gap-1">via automação</Badge>
+                <Badge variant="secondary" className="gap-1">Meta direta</Badge>
               </CardTitle>
               <CardDescription>
-                Publicação por webhook do Make. O Make recebe o texto e publica no seu Instagram Business.
+                Publicação direta pela conexão oficial Meta/Instagram, sem Make.
               </CardDescription>
             </div>
           </div>
@@ -478,51 +389,13 @@ export function SocialConnections() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="ig-webhook" className="flex items-center gap-1.5 text-sm">
-              <LinkIcon className="h-3.5 w-3.5" /> Alternativa: Webhook do Make
-            </Label>
-            {igLoading ? (
-              <div className="h-9 rounded-md bg-muted animate-pulse" />
-            ) : (
-              <Input
-                id="ig-webhook"
-                value={igWebhook}
-                onChange={(e) => setIgWebhook(e.target.value)}
-                placeholder="https://hook.us2.make.com/…"
-                className="font-mono text-xs"
-              />
-            )}
-            <p className="text-[11px] text-muted-foreground">
-              Use só se preferir o Make em vez da conexão oficial acima.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={handleSaveIgWebhook} disabled={igSaving || igLoading} size="sm">
-              {igSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Salvar
-            </Button>
-            <Button onClick={handleTestIgWebhook} disabled={igTesting || igLoading} variant="outline" size="sm">
-              {igTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Testar disparo
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <a href="https://www.make.com/en/help/tools/webhooks" target="_blank" rel="noreferrer">
-                <ExternalLink className="h-4 w-4" /> Docs do Make
-              </a>
-            </Button>
-          </div>
-          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-100 leading-relaxed">
-            <strong>Por que não API nativa?</strong> A Meta exige App próprio aprovado e conta Business vinculada a uma Página do Facebook. O webhook é o caminho mais rápido e estável.
-          </div>
-
           <div className="pt-4 mt-2 border-t space-y-2">
-            <Label htmlFor="ig-liga-webhook" className="flex items-center gap-1.5 text-sm font-semibold">
-              <LinkIcon className="h-3.5 w-3.5" /> Webhook IG (Liga) — @lactbmf.anhanguerasbo
+            <Label className="flex items-center gap-1.5 text-sm font-semibold">
+              <Instagram className="h-3.5 w-3.5" /> Instagram da Liga — @lactbmf.anhanguerasbo
             </Label>
             <div className="p-3 rounded-lg border bg-muted/40 space-y-2">
               <p className="text-xs text-muted-foreground">
-                Se Meta/Instagram não conectar, não insista: use o webhook exclusivo ou publique manualmente pelo Planner Simplificado; nada da Liga cai na conta Chico.
+                A Liga publica somente pela Meta direta ou pelo modo manual do Planner Simplificado; nada da Liga cai na conta Chico.
               </p>
               <Button onClick={handleConnectLigaMeta} variant="secondary" size="sm">
                 <Instagram className="h-4 w-4" /> Preparar conexão Instagram da Liga
@@ -567,26 +440,6 @@ export function SocialConnections() {
               </Button>
             </div>
 
-            <Input
-              id="ig-liga-webhook"
-              value={igLigaWebhook}
-              onChange={(e) => setIgLigaWebhook(e.target.value)}
-              placeholder="https://hook.us2.make.com/… (cenário da Liga)"
-              className="font-mono text-xs"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Cole aqui a URL do webhook do Make criado para a conta da Liga. Usado apenas pelos posts da aba <strong>Planner Simplificado Liga</strong>.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={handleSaveIgLigaWebhook} disabled={igLigaSaving} size="sm">
-                {igLigaSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Salvar
-              </Button>
-              <Button onClick={handleTestIgLigaWebhook} disabled={igLigaTesting} variant="outline" size="sm">
-                {igLigaTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                Testar disparo
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
