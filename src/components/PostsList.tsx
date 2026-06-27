@@ -221,28 +221,16 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                 >
                   {isPublishing ? (
                     <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Publicando…</>
-                  ) : isLigaPost ? (
-                    <><Copy className="h-4 w-4 mr-1.5" /> Copiar legenda</>
                   ) : failedPublish ? (
                     <><RotateCcw className="h-4 w-4 mr-1.5" /> Tentar novamente</>
                   ) : alreadyPublished ? (
                     <><Send className="h-4 w-4 mr-1.5" /> Republicar Agora</>
+                  ) : isLigaPost ? (
+                    <><Send className="h-4 w-4 mr-1.5" /> Publicar + Convidar Liga</>
                   ) : (
                     <><Send className="h-4 w-4 mr-1.5" /> Postar Agora</>
                   )}
                 </Button>
-                {isLigaPost && thumb && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => baixarMidia(thumb, `liga-${p.id}-${safeIdx + 1}.png`)}
-                    disabled={isPublishing}
-                    aria-label="Baixar imagem da Liga"
-                    title="Baixar imagem da Liga"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                )}
                 <Button
                   variant="outline"
                   size="icon"
