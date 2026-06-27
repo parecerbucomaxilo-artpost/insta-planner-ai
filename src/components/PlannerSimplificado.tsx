@@ -84,7 +84,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   const lsKey = storageKey ?? ACCOUNT_KEY;
   const isLiga = conta === LIGA_ACCOUNT;
-  const canPublishAutomatically = destinoStatus === "ok";
+  const canPublishAutomatically = !isLiga && destinoStatus === "ok";
 
   useEffect(() => {
     if (contaFixa) { setConta(contaFixa); setContaInput(contaFixa); return; }
