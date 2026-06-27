@@ -1,49 +1,42 @@
 // Server-only helper.
-// Texto: ChatGPT (OpenAI) via Lovable AI Gateway — gratuito com LOVABLE_API_KEY.
-// Imagens: Gemini Nano Banana (google/gemini-3.1-flash-image) via Lovable AI Gateway.
+// Texto: Groq via OpenAI-compatible API (GROQ_API_KEY).
+// Imagens: Pollinations/Flux gratuito, sem consumir créditos do Lovable AI Gateway.
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-const GATEWAY_BASE = "https://ai.gateway.lovable.dev/v1";
+const GROQ_BASE = "https://api.groq.com/openai/v1";
+const POLLINATIONS_BASE = "https://image.pollinations.ai/prompt";
 
-function getLovableKey(): string {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("Missing LOVABLE_API_KEY");
+function getGroqKey(): string {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) throw new Error("Missing GROQ_API_KEY");
   return key;
 }
 
-// Mapeia ids legados para modelos suportados no Lovable AI Gateway.
+// Mapeia ids legados/pagos para modelos gratuitos já configurados na Groq.
 function mapTextModel(model: string): string {
   const m = (model || "").toLowerCase();
-  if (m.startsWith("openai/")) return model;
-  if (m.startsWith("google/")) return model;
-  if (m.includes("8b") || m.includes("nano") || m.includes("instant") || m.includes("lite")) {
-    return "openai/gpt-5-nano";
+  if (m.includes("8b") || m.includes("instant") || m.includes("nano") || m.includes("lite")) {
+    return "llama-3.1-8b-instant";
   }
-  if (m.includes("mini") || m.includes("flash")) {
-    return "openai/gpt-5-mini";
-  }
-  // padrão: ChatGPT
-  return "openai/gpt-5-mini";
+  return "llama-3.3-70b-versatile";
 }
 
 export function createLovableAiGatewayProvider(_ignored?: string) {
   const provider = createOpenAICompatible({
-    name: "lovable",
-    baseURL: GATEWAY_BASE,
-    headers: {
-      "Lovable-API-Key": getLovableKey(),
-      "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-    },
+    name: "groq",
+    baseURL: GROQ_BASE,
+    apiKey: getGroqKey(),
   });
   return (modelId: string) => provider(mapTextModel(modelId));
 }
 
 export const MODELOS_IMAGEM = [
-  { id: "google/gemini-3.1-flash-image", label: "Gemini Nano Banana 2 (padrão)" },
-  { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana" },
-  { id: "google/gemini-3-pro-image", label: "Gemini 3 Pro Image" },
-  { id: "openai/gpt-image-1-mini", label: "GPT Image Mini" },
-  { id: "openai/gpt-image-2", label: "GPT Image 2" },
+  { id: "pollinations/flux", label: "Flux gratuito (padrão)" },
+  { id: "google/gemini-3.1-flash-image", label: "Gemini Nano Banana 2 (legado)" },
+  { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana (legado)" },
+  { id: "google/gemini-3-pro-image", label: "Gemini 3 Pro Image (legado)" },
+  { id: "openai/gpt-image-1-mini", label: "GPT Image Mini (legado)" },
+  { id: "openai/gpt-image-2", label: "GPT Image 2 (legado)" },
 ] as const;
 export type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 
@@ -66,16 +59,6 @@ function sizeToWH(size?: string): { width: number; height: number } {
   return { width: 1024, height: 1024 };
 }
 
-function mapImageModel(model?: string): string {
-  if (!model) return "google/gemini-3.1-flash-image";
-  const m = model.toLowerCase();
-  if (m.includes("pollinations") || m.includes("flux") || m.includes("imagen")) {
-    return "google/gemini-3.1-flash-image";
-  }
-  if (m.endsWith("-preview")) return model.replace(/-preview$/, "");
-  return model;
-}
-
 export async function generateImageBase64(opts: {
   apiKey?: string;
   prompt: string;
@@ -83,59 +66,41 @@ export async function generateImageBase64(opts: {
   model?: ModeloImagem | string;
   referenceImageUrls?: string[];
 }): Promise<string> {
-  const apiKey = getLovableKey();
-  const model = mapImageModel(opts.model);
   const cleaned = sanitizeVisualPrompt(opts.prompt) + REALISM_SUFFIX;
   const { width, height } = sizeToWH(opts.size);
-
-  const body = {
-    model,
-    prompt: cleaned,
-    size: `${width}x${height}`,
-    n: 1,
-    response_format: "b64_json",
-  };
+  const seed = Math.floor(Math.random() * 1_000_000_000);
+  const url = new URL(`${POLLINATIONS_BASE}/${encodeURIComponent(cleaned)}`);
+  url.searchParams.set("width", String(width));
+  url.searchParams.set("height", String(height));
+  url.searchParams.set("model", "flux");
+  url.searchParams.set("nologo", "true");
+  url.searchParams.set("private", "true");
+  url.searchParams.set("enhance", "true");
+  url.searchParams.set("safe", "false");
+  url.searchParams.set("seed", String(seed));
 
   let lastErr: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 120_000);
     try {
-      const res = await fetch(`${GATEWAY_BASE}/images/generations`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Lovable-API-Key": apiKey,
-          "X-Lovable-AIG-SDK": "lovable-image",
-        },
-        body: JSON.stringify(body),
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "image/*" },
         signal: ctrl.signal,
       });
       clearTimeout(timer);
       if (res.ok) {
-        const json: any = await res.json();
-        const b64 =
-          json?.data?.[0]?.b64_json ||
-          json?.images?.[0]?.b64_json ||
-          json?.data?.[0]?.image ||
-          json?.b64_json;
-        if (b64) return b64;
-        const url = json?.data?.[0]?.url;
-        if (url) {
-          const imgRes = await fetch(url);
-          const bytes = new Uint8Array(await imgRes.arrayBuffer());
-          let binary = "";
-          const chunk = 0x8000;
-          for (let i = 0; i < bytes.length; i += chunk) {
-            binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-          }
-          return btoa(binary);
+        const bytes = new Uint8Array(await res.arrayBuffer());
+        let binary = "";
+        const chunk = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
         }
-        throw new Error(`Lovable AI sem imagem: ${JSON.stringify(json).slice(0, 300)}`);
+        return btoa(binary);
       }
       const txt = await res.text().catch(() => "");
-      lastErr = new Error(`Lovable AI ${res.status}: ${txt.slice(0, 300)}`);
-      // 4xx (exceto 429) não adianta retry
+      lastErr = new Error(`Pollinations ${res.status}: ${txt.slice(0, 300)}`);
       if (res.status >= 400 && res.status < 500 && res.status !== 429) {
         throw lastErr;
       }

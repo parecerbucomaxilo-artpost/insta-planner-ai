@@ -19,9 +19,9 @@ const ModeloEnum = z.enum([
 ]);
 
 const ModeloImagemEnum = z.enum([
+  "pollinations/flux",
   "google/gemini-3.1-flash-image",
   // legados aceitos para compat com posts antigos no DB
-  "pollinations/flux",
   "google/imagen-3",
   "google/gemini-3.1-flash-image-preview",
   "google/gemini-2.5-flash-image",
@@ -44,7 +44,7 @@ const SingleInput = z.object({
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
   modelo: ModeloEnum.optional().default("groq/llama-3.3-70b-versatile"),
-  modeloImagem: ModeloImagemEnum.optional().default("google/gemini-3.1-flash-image"),
+  modeloImagem: ModeloImagemEnum.optional().default("pollinations/flux"),
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
   ambasRedes: z.boolean().optional().default(false),
   // Status inicial do post (PendenteAprovacao = revisão manual; Agendado = vai pro cron de publicação).
@@ -388,8 +388,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SingleInput.parse(d))
   .handler(async ({ data }) => {
     const context = { userId: TEMP_USER_ID };
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const key = process.env.GROQ_API_KEY;
+    if (!key) throw new Error("Missing GROQ_API_KEY");
 
     const { createLovableAiGatewayProvider, generateImageBase64 } = await import("@/lib/ai-gateway.server");
     const { generateText } = await import("ai");
@@ -796,8 +796,8 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) => WeekInput.parse(d))
   .handler(async ({ data }) => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const key = process.env.GROQ_API_KEY;
+    if (!key) throw new Error("Missing GROQ_API_KEY");
 
     const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
     const { generateText } = await import("ai");
