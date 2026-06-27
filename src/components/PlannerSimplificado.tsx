@@ -693,7 +693,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                     <div className="flex-1 min-w-0">
                       <p className="text-sm line-clamp-2">{p.legenda || "(sem legenda)"}</p>
                       <div className="flex items-center gap-2 mt-1 text-xs text-zinc-500">
-                        <Badge variant="outline">{p.status}</Badge>
+                        <Badge variant="outline">{p.status === "EnviadoMake" ? "Pendente Meta" : p.status}</Badge>
                         {p.data_agendamento && <span>{format(new Date(p.data_agendamento), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>}
                       </div>
                     </div>
