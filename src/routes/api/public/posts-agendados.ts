@@ -180,7 +180,7 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
           } else {
             // Segurança: quando algum integrador legado chama sem filtro, não
             // entregar posts da Liga nem do perfil pessoal suspenso.
-            query = query.not("instagram_conta", "in", `(${LIGA_ACCOUNT},drfranciscomenezes)`);
+            query = query.or(`instagram_conta.is.null,and(instagram_conta.neq.${LIGA_ACCOUNT},instagram_conta.neq.drfranciscomenezes)`);
           }
           const { data, error } = await query.maybeSingle();
 
