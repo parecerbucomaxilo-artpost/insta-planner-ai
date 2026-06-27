@@ -4,14 +4,14 @@ const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
 export const MODELOS_IA = [
-  { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B Instant (Groq, padrão)" },
-  { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq, mais profundo)" },
+  { id: "groq/llama-3.3-70b-specdec", label: "Llama 3.3 70B SpecDec (Groq, padrão)" },
+  { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B Instant (Groq, rápido)" },
 ] as const;
 const ModeloEnum = z.enum([
+  "groq/llama-3.3-70b-specdec",
   "groq/llama-3.1-8b-instant",
-  "groq/llama-3.3-70b-versatile",
   // legados aceitos para compat com posts antigos no DB
-  "groq/llama-3.1-8b-instant",
+  "groq/llama-3.3-70b-versatile",
   "google/gemini-2.5-pro",
   "openai/gpt-5",
   "openai/gpt-5-mini",
@@ -40,7 +40,7 @@ const SingleInput = z.object({
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
-  modelo: ModeloEnum.optional().default("groq/llama-3.1-8b-instant"),
+  modelo: ModeloEnum.optional().default("groq/llama-3.3-70b-specdec"),
   modeloImagem: ModeloImagemEnum.optional().default("pollinations/flux"),
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
   ambasRedes: z.boolean().optional().default(false),
@@ -55,7 +55,7 @@ const SingleInput = z.object({
 
 const WeekInput = z.object({
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("Ambas"),
-  modelo: ModeloEnum.optional().default("groq/llama-3.1-8b-instant"),
+  modelo: ModeloEnum.optional().default("groq/llama-3.3-70b-specdec"),
 });
 
 const WHATSAPP = "https://wa.me/5511947684004";
@@ -571,6 +571,34 @@ Responda APENAS com a frase do tema, nada mais.`,
         .then(applyOverlay)
         .then(uploadOne);
 
+    // 2.1 — Aguarda a legenda primeiro e deriva dela um PROMPT VISUAL em INGLÊS
+    // (fotografia hiper-realista, detalhado, sem emojis nem quebras de linha)
+    // para alimentar o Pollinations/Flux com contexto fiel ao texto publicado.
+    const legendaResolvida = await legendaPromise;
+    const sanitizeVisual = (s: string) =>
+      s
+        .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, " ") // emojis/símbolos
+        .replace(/[#@*_`~|<>\[\]{}"]/g, " ")
+        .replace(/\r?\n+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 600);
+    let visualPromptEn = "";
+    try {
+      const r = await generateText({
+        model,
+        system:
+          "You convert a Portuguese social media caption into ONE single-line English visual prompt for a photorealistic medical/dental editorial photograph. Output ONLY the prompt: no quotes, no preface, no emojis, no line breaks, no hashtags. 60-90 words. Cinematic, hyper-realistic, anatomically accurate, soft natural light, shallow depth of field, editorial color grading. Never include any text/letters/numbers inside the image.",
+        prompt: `Caption (pt-BR) about "${tema}":\n${legendaResolvida}\n\nReturn the single-line English visual prompt now.`,
+      });
+      visualPromptEn = sanitizeVisual(r.text);
+    } catch {
+      visualPromptEn = "";
+    }
+    const withVisual = (basePrompt: string) =>
+      visualPromptEn ? `${visualPromptEn}. ${basePrompt}` : basePrompt;
+
+
     let urlImagem: string;
     let imagensCarrossel: string[] = [];
     let urlImagemCache: string | null = null;
@@ -592,31 +620,31 @@ Responda APENAS com a frase do tema, nada mais.`,
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
       // Gera TODAS as imagens em paralelo (3-5x mais rápido que lotes sequenciais).
       const uploads = await Promise.all(
-        slidesSpec.map((s) => genAndUpload(
+        slidesSpec.map((s) => genAndUpload(withVisual(
           isEstudantes
             ? studentImagePrompt(tema, s)
             : isChico
               ? chicoImagePrompt(tema, s)
               : imageSystemPrompt(tema, data.rede, nivel, s)
-        ))
+        )))
       );
       urlImagem = uploads[0].publicUrl;
       urlImagemCache = uploads[0].signedUrl;
       imagensCarrossel = uploads.map((u) => u.publicUrl);
       imagensCarrosselCache = uploads.map((u) => u.signedUrl);
     } else {
-      const upload = await genAndUpload(
+      const upload = await genAndUpload(withVisual(
         isEstudantes
           ? studentImagePrompt(tema)
           : isChico
             ? chicoImagePrompt(tema, undefined, isStory)
             : imageSystemPrompt(tema, data.rede, nivel)
-      );
+      ));
       urlImagem = upload.publicUrl;
       urlImagemCache = upload.signedUrl;
     }
 
-    const legenda = await legendaPromise;
+    const legenda = legendaResolvida;
 
 
     const tipoPost = formato === "Carrossel" ? "Carrossel" : "Post Único";
