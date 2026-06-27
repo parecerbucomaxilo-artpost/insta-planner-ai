@@ -329,6 +329,13 @@ async function publishViaWebhook(webhookUrl: string, payload: Record<string, unk
       }
       const confirmed = Boolean(json?.published === true || json?.publicado === true || json?.status === "published" || json?.status === "Publicado");
       const externalId = String(json?.instagram_id || json?.media_id || json?.id || "") || undefined;
+      console.info("[instagram-webhook] enviado ao Make", {
+        account: normalizeInstagramAccount(account),
+        status: res.status,
+        confirmed,
+        externalId,
+        photo_url: requiredPhotoUrl.slice(0, 120),
+      });
       return { queued: true, status: res.status, confirmed, externalId };
     }
     const isQueueFull = /queue\s*is\s*full|queue full|rate/i.test(text);
