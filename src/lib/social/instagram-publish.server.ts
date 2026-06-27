@@ -438,7 +438,9 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     via = "meta";
     try {
-      await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
+      if (!collaboratorUsername) {
+        await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
+      }
       externalId = await publishViaMeta({
         igBusinessId: perfil.instagram_business_account_id,
         token: perfil.instagram_access_token,
@@ -446,7 +448,9 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         imageUrls,
         isStory,
         isCarousel,
+        collaborators: collaboratorUsername ? [collaboratorUsername] : undefined,
       });
+
     } catch (metaError) {
       const metaMessage = metaError instanceof Error ? metaError.message : String(metaError);
       if (isInvalidMetaTokenMessage(metaMessage)) {
