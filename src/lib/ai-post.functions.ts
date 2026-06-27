@@ -4,11 +4,11 @@ const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
 export const MODELOS_IA = [
-  { id: "groq/llama-3.3-70b-specdec", label: "Llama 3.3 70B SpecDec (Groq, padrão)" },
+  { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B Versatile (Groq, padrão)" },
   { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B Instant (Groq, rápido)" },
 ] as const;
 const ModeloEnum = z.enum([
-  "groq/llama-3.3-70b-specdec",
+  "groq/llama-3.3-70b-versatile",
   "groq/llama-3.1-8b-instant",
   // legados aceitos para compat com posts antigos no DB
   "groq/llama-3.3-70b-versatile",
@@ -40,7 +40,7 @@ const SingleInput = z.object({
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
-  modelo: ModeloEnum.optional().default("groq/llama-3.3-70b-specdec"),
+  modelo: ModeloEnum.optional().default("groq/llama-3.3-70b-versatile"),
   modeloImagem: ModeloImagemEnum.optional().default("pollinations/flux"),
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
   ambasRedes: z.boolean().optional().default(false),
@@ -55,7 +55,7 @@ const SingleInput = z.object({
 
 const WeekInput = z.object({
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("Ambas"),
-  modelo: ModeloEnum.optional().default("groq/llama-3.3-70b-specdec"),
+  modelo: ModeloEnum.optional().default("groq/llama-3.3-70b-versatile"),
 });
 
 const WHATSAPP = "https://wa.me/5511947684004";

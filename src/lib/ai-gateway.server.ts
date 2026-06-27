@@ -11,7 +11,7 @@ function mapModelToGroq(model: string): string {
     return "llama-3.1-8b-instant";
   }
   // Padrão: modelo de alta qualidade com decodificação especulativa.
-  return "llama-3.3-70b-specdec";
+  return "llama-3.3-70b-versatile";
 }
 
 export function createLovableAiGatewayProvider(_ignoredKey: string) {
