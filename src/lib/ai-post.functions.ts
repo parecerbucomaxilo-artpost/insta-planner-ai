@@ -721,8 +721,8 @@ export const approvePost = createServerFn({ method: "POST" })
 
       // Se nada publicou, marca como Agendado para retry.
       if (!results.linkedin && !results.instagram) {
-        await supabaseAdmin.from("posts").update({ status: "Agendado", user_id: publishUserId }).eq("id", data.id);
-        results.status = "Agendado";
+        await supabaseAdmin.from("posts").update({ status: "Erro", user_id: publishUserId }).eq("id", data.id);
+        results.status = "Erro";
       } else {
         const nextStatus = results.instagram?.status === "EnviadoMake" ? "EnviadoMake" : "Publicado";
         await supabaseAdmin.from("posts").update({ status: nextStatus, user_id: publishUserId }).eq("id", data.id);

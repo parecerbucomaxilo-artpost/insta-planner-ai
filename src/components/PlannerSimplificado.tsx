@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X, Image as ImageIcon, Layers, Film, RotateCcw, ScanEye, Copy, ExternalLink } from "lucide-react";
+import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X, Image as ImageIcon, Layers, Film, RotateCcw, ScanEye, Copy, ExternalLink, Download } from "lucide-react";
 import { LogoPreviewDialog } from "@/components/LogoPreviewDialog";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
@@ -201,6 +201,29 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     }
   };
 
+  const publishSuccessMessage = (out: Awaited<ReturnType<typeof publishIg>>) => {
+    if (out && "via" in out && out.via === "meta") return "Publicado diretamente no Instagram.";
+    return "Enviado ao webhook próprio da conta. Confira a execução antes de considerar publicado.";
+  };
+
+  const baixarMidia = async (url: string, nome: string) => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Não foi possível baixar a imagem.");
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = nome;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao baixar.");
+    }
+  };
+
 
   const carregar = useCallback(async () => {
     if (!conta) return;
@@ -313,10 +336,11 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         await approveFn({ data: { id: preview.id, acao: "arquivar" } });
         const out = await publishIg({ data: { id: preview.id } });
         assertPublishOk(out);
+        toast.success(publishSuccessMessage(out), { id: tid });
       } else {
         await approveFn({ data: { id: preview.id, acao } });
+        toast.success("Salvo!", { id: tid });
       }
-      toast.success(acao === "publicar" ? "Enviado ao Make. Confira a execução no cenário antes de considerar publicado." : "Salvo!", { id: tid });
       setPreview(null);
       carregar();
     } catch (e: any) {
@@ -358,7 +382,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       if (quando === "agora" && ins?.id) {
         const out = await publishIg({ data: { id: ins.id } });
         assertPublishOk(out);
-        toast.success("Enviado ao Make. Confira a execução no cenário antes de considerar publicado.");
+        toast.success(publishSuccessMessage(out));
       } else {
         toast.success("Post agendado!");
       }
@@ -382,7 +406,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     try {
       const out = await publishIg({ data: { id } });
       assertPublishOk(out);
-      toast.success("Re-tentativa enviada ao Make. Confira a execução no cenário.", { id: tid });
+      toast.success(publishSuccessMessage(out), { id: tid });
       carregar();
     } catch (e: any) {
       toast.error(e.message || "Falha na re-tentativa.", { id: tid });
@@ -427,6 +451,12 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 ? " Como o Instagram está bloqueado, salve abaixo um webhook exclusivo da Liga ou use token manual em Configurações."
                 : ` Conecte a Meta oficial ou cadastre um webhook próprio de @${conta}.`}
             </p>
+          )}
+          {destinoStatus === "missing" && (
+            <div className="rounded-md border border-amber-200 bg-white/70 p-3 text-xs text-amber-950 space-y-1">
+              <p className="font-semibold">Alternativa segura enquanto Meta/Instagram estiver bloqueado:</p>
+              <p>aprove o post, baixe a imagem na lista abaixo e publique manualmente no app Instagram da conta correta.</p>
+            </div>
           )}
           {destinoModo === "meta" && (
             <p className="text-xs text-emerald-800">Publicação direta Meta ativa para @{conta}. O Make não será usado.</p>
@@ -693,6 +723,11 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                       <Button variant="outline" size="sm" onClick={() => tentarNovamente(p.id)} disabled={busy}>
                         {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1" />}
                         Re-tentar
+                      </Button>
+                    )}
+                    {p.url_imagem && (
+                      <Button variant="outline" size="icon" onClick={() => baixarMidia(p.url_imagem!, `post-${conta}-${p.id}.png`)} disabled={busy} aria-label="Baixar imagem para publicar manualmente" title="Baixar imagem para publicar manualmente">
+                        <Download className="w-4 h-4" />
                       </Button>
                     )}
                     <Button variant="outline" size="icon" onClick={() => setPreviewId(p.id)} disabled={busy} aria-label="Pré-visualizar com logo" title="Pré-visualizar com logo">
