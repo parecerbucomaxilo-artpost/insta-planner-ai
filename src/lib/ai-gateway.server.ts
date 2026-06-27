@@ -3,16 +3,14 @@
 // Imagens: Pollinations.ai (modelo Flux, gratuito).
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-// Mapeia ids do catálogo antigo para modelos reais da Groq.
+// Mapeia ids do catálogo para modelos reais da Groq.
 function mapModelToGroq(model: string): string {
   const m = model.toLowerCase();
-  if (m.includes("pro") || m.includes("gpt-5") || m.includes("opus")) {
+  if (m.startsWith("groq/")) return model.slice("groq/".length);
+  if (m.includes("pro") || m.includes("gpt-5") || m.includes("opus") || m.includes("70b")) {
     return "llama-3.3-70b-versatile";
   }
-  if (m.includes("lite") || m.includes("nano") || m.includes("mini") || m.includes("8b")) {
-    return "llama-3.1-8b-instant";
-  }
-  return "llama-3.3-70b-versatile";
+  return "llama-3.1-8b-instant";
 }
 
 export function createLovableAiGatewayProvider(_ignoredKey: string) {
@@ -41,6 +39,7 @@ export function createLovableAiGatewayProvider(_ignoredKey: string) {
 }
 
 export const MODELOS_IMAGEM = [
+  { id: "pollinations/flux", label: "Flux (Pollinations, grátis)" },
   { id: "google/gemini-3.1-flash-image-preview", label: "Flux (Pollinations, grátis)" },
   { id: "google/gemini-2.5-flash-image", label: "Flux (Pollinations, grátis)" },
   { id: "openai/gpt-image-1-mini", label: "Flux (Pollinations, grátis)" },

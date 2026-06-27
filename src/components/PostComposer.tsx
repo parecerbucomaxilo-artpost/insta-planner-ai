@@ -352,8 +352,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x" | "google">("instagram");
-  const [modelo, setModelo] = useState<ModeloIA>("google/gemini-3-flash-preview");
-  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("google/gemini-3.1-flash-image-preview");
+  const [modelo, setModelo] = useState<ModeloIA>("groq/llama-3.1-8b-instant");
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("pollinations/flux");
   const [ambasRedes, setAmbasRedes] = useState(false);
   const [busy, setBusy] = useState<null | AiQuickFormat | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
@@ -443,7 +443,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       <div className="flex items-center gap-2">
         <Wand2 className="w-5 h-5 text-indigo-600" />
         <h3 className="font-semibold text-indigo-900">Gerar com IA</h3>
-        <span className="text-xs text-indigo-600/70">Gemini + GPT-image-2 · estilo médico premium</span>
+        <span className="text-xs text-indigo-600/70">Groq Llama + Flux · estilo médico premium</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
