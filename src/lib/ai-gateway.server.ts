@@ -114,7 +114,7 @@ export async function generateImageBase64(opts: {
   const aspect = sizeToAspect(opts.size);
   const promptWithAspect = `${cleaned}\n\n[Aspect ratio: ${aspect}]`;
 
-  const model = "gemini-2.5-flash-image-preview";
+  const model = "gemini-2.5-flash-image";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const body = {
