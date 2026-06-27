@@ -105,7 +105,7 @@ export async function generateImageBase64(opts: {
         },
         body: JSON.stringify({
           inputs: cleaned,
-          parameters: { width, height, num_inference_steps: 4, seed },
+          parameters: { width, height, num_inference_steps: 28, guidance_scale: 3.5, seed },
         }),
         signal: ctrl.signal,
       });
