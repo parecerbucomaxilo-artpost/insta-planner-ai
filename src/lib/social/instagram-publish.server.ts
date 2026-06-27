@@ -3,7 +3,9 @@ import { createHmac } from "crypto";
 const GRAPH_VERSION = "v21.0";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
-const PUBLIC_APP_URL = "https://insta-planner-ai.lovable.app";
+// Usar o domínio estável de preview (sempre serve a build mais recente, inclui a rota /api/public/storage-media
+// mesmo antes do publish). O domínio "insta-planner-ai.lovable.app" só recebe a rota após Republicar.
+const PUBLIC_APP_URL = "https://project--221123ce-bfcc-41c2-ad79-e7560d18268d-dev.lovable.app";
 const DEFAULT_MAKE_WEBHOOK = "https://hook.us2.make.com/vxh3w2d4e014i1rkig6xxp2dm6fkxprn";
 // Conta historicamente associada ao DEFAULT_MAKE_WEBHOOK (cenário Make original).
 // Usada como fallback seguro quando o perfil dessa conta ainda não tem webhook próprio salvo.
