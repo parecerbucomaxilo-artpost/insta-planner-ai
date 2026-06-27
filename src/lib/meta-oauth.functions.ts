@@ -85,6 +85,18 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
       authUrl.searchParams.set("auth_type", "rerequest");
     }
 
-    return { url: authUrl.toString() };
+    const loginUrl = new URL("https://www.facebook.com/login.php");
+    loginUrl.searchParams.set("skip_api_login", "1");
+    loginUrl.searchParams.set("api_key", appId);
+    loginUrl.searchParams.set("signed_next", "1");
+    loginUrl.searchParams.set("next", authUrl.toString());
+    loginUrl.searchParams.set("cancel_url", `${META_OAUTH_ORIGIN}/meta-connect`);
+    loginUrl.searchParams.set("display", "page");
+
+    const privateAuthUrl = new URL(authUrl.toString());
+    privateAuthUrl.searchParams.set("auth_type", "reauthenticate");
+    privateAuthUrl.searchParams.set("auth_nonce", crypto.randomUUID());
+
+    return { url: authUrl.toString(), loginUrl: loginUrl.toString(), privateAuthUrl: privateAuthUrl.toString() };
   });
 
