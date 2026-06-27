@@ -1,12 +1,19 @@
 // Server-only helper.
-// Texto: Google Gemini (gemini-2.5-flash) via @ai-sdk/google.
-// Imagens: Google Imagen 3 via fetch direto à API oficial do Google AI Studio.
-// Auth: GEMINI_API_KEY.
+// Texto: Groq por padrão; Gemini só quando explicitamente selecionado.
+// Imagens: Hugging Face Router (FLUX.1-dev).
+// Auth: GROQ_API_KEY / GEMINI_API_KEY / HF_TOKEN.
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 function getGeminiKey(): string {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("Missing GEMINI_API_KEY");
+  return key;
+}
+
+function getGroqKey(): string {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) throw new Error("Missing GROQ_API_KEY");
   return key;
 }
 
@@ -22,10 +29,35 @@ function mapModelToGemini(model: string): string {
 }
 
 export function createLovableAiGatewayProvider(_ignoredKey: string) {
-  const apiKey = getGeminiKey();
-  const google = createGoogleGenerativeAI({ apiKey });
-  // Wrapper que aceita ids do catálogo (groq/*, google/*, llama-*) e roteia para Gemini.
-  return (modelId: string) => google(mapModelToGemini(modelId));
+  const groqKey = process.env.GROQ_API_KEY;
+  const groq = groqKey
+    ? createOpenAICompatible({
+        name: "groq",
+        baseURL: "https://api.groq.com/openai/v1",
+        apiKey: groqKey,
+        supportsStructuredOutputs: true,
+      })
+    : null;
+
+  return (modelId: string) => {
+    const normalized = (modelId || "").toLowerCase();
+
+    if (normalized.startsWith("google/")) {
+      const google = createGoogleGenerativeAI({ apiKey: getGeminiKey() });
+      return google(mapModelToGemini(modelId));
+    }
+
+    if (!groq) {
+      const google = createGoogleGenerativeAI({ apiKey: getGeminiKey() });
+      return google(mapModelToGemini(modelId));
+    }
+
+    if (normalized.includes("8b") || normalized.includes("instant")) {
+      return groq("llama-3.1-8b-instant");
+    }
+
+    return groq("llama-3.3-70b-versatile");
+  };
 }
 
 export const MODELOS_IMAGEM = [
