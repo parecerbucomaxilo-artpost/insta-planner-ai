@@ -5,7 +5,11 @@ import { z } from "zod";
 
 export const MODELOS_IA = [
   { id: "openai/gpt-5-mini", label: "GPT-5 mini (texto)" },
+  { id: "openai/gpt-5-nano", label: "GPT-5 nano (texto)" },
+  { id: "openai/gpt-5", label: "GPT-5 (texto)" },
   { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (texto)" },
+  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (texto)" },
+  { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro (texto)" },
 ] as const;
 const ModeloLocalInput = z
   .string()
@@ -14,7 +18,9 @@ const ModeloLocalInput = z
 
 export const MODELOS_IMAGEM = [
   { id: "google/gemini-3.1-flash-image", label: "Gemini Nano Banana 2 (imagem)" },
+  { id: "google/gemini-3-pro-image", label: "Gemini 3 Pro Image (imagem)" },
   { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana (imagem)" },
+  { id: "openai/gpt-image-2", label: "GPT Image 2 (imagem)" },
   { id: "openai/gpt-image-1-mini", label: "GPT image 1 mini (imagem)" },
 ] as const;
 const ModeloImagemLocalInput = z
