@@ -107,6 +107,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   // Carrega destino Meta/token configurado para esta conta
   useEffect(() => {
     if (!conta) { setDestinoStatus("missing"); setDestinoModo("missing"); return; }
+    if (conta === LIGA_ACCOUNT) { setDestinoStatus("missing"); setDestinoModo("missing"); return; }
     setDestinoStatus("loading");
     (async () => {
       try {
