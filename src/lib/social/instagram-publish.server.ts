@@ -475,7 +475,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     const makeMediaKind = isCarousel ? "carousel" : isStory ? "story" : "photo";
     const makeRota = isCarousel ? "Carrossel" : isStory ? "Story" : "Post único";
     const primaryImageUrl = imageUrls[0];
-    let via: PublishVia;
+    let via: PublishVia = "webhook";
     let externalId: string | undefined;
     let confirmedByWebhook = false;
 
