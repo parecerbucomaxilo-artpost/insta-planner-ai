@@ -708,7 +708,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       throw metaError;
     }
 
-    const nextStatus = via === "meta" || confirmedByWebhook ? "Publicado" : "EnviadoMake";
+    const nextStatus = "Publicado";
     const publishedAt = new Date().toISOString();
     const { error: updateError } = await supabaseAdmin
       .from("posts")
@@ -716,7 +716,6 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         status: nextStatus,
         data_agendamento: publishedAt,
         user_id: userId,
-        ...(isLigaTarget && via === "webhook" ? { liga_dispatched_at: publishedAt } : {}),
       })
       .eq("id", post.id);
     if (updateError) throw new Error(`DB: ${updateError.message}`);
