@@ -201,14 +201,19 @@ async function waitForContainerReady(containerId: string, accessToken: string, h
   }
 }
 
-async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory, isCarousel }: {
+async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory, isCarousel, collaborators }: {
   igBusinessId: string;
   token: string;
   caption: string;
   imageUrls: string[];
   isStory: boolean;
   isCarousel: boolean;
+  collaborators?: string[];
 }) {
+  const collaboratorsParam: Record<string, string> = collaborators && collaborators.length > 0 && !isStory
+    ? { collaborators: JSON.stringify(collaborators) }
+    : {};
+
   const publishWithHost = async (host: string) => {
   if (isCarousel && imageUrls.length > 1) {
     const children = await Promise.all(
@@ -226,6 +231,7 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
       media_type: "CAROUSEL",
       children: children.join(","),
       caption,
+      ...collaboratorsParam,
       access_token: token,
     }, host);
     if (!parent.id) throw new Error("Instagram: container principal não foi criado.");
@@ -236,7 +242,7 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
 
   const created = await graphPost(`${igBusinessId}/media`, {
     image_url: imageUrls[0],
-    ...(isStory ? { media_type: "STORIES" } : { caption }),
+    ...(isStory ? { media_type: "STORIES" } : { caption, ...collaboratorsParam }),
     access_token: token,
   }, host);
   if (!created.id) throw new Error("Instagram: container da imagem não foi criado.");
@@ -244,6 +250,7 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
   const published = await graphPost(`${igBusinessId}/media_publish`, { creation_id: created.id, access_token: token }, host);
   return published.id;
   };
+
 
   try {
     return await publishWithHost("graph.facebook.com");
@@ -271,26 +278,21 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
   try {
     
 
-    const contaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
+    const originalContaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
+    // Estratégia consolidada: posts da Liga publicam no @drfranciscomenezes (conta que já está
+    // conectada e funcionando) com a @lactbmf.anhanguerasbo convidada como colaboradora
+    // via parâmetro `collaborators` da Meta Graph API. Mantém o branding/logos da Liga.
+    const isLigaCollab = originalContaAlvo === LIGA_ACCOUNT;
+    const collaboratorUsername = isLigaCollab ? LIGA_ACCOUNT : null;
+    const contaAlvo = isLigaCollab ? "drfranciscomenezes" : originalContaAlvo;
 
-    if (contaAlvo === LIGA_ACCOUNT) {
-      const { error: updateError } = await supabaseAdmin
-        .from("posts")
-        .update({ status: "Rascunho", user_id: userId, updated_at: new Date().toISOString() })
-        .eq("id", post.id);
-      if (updateError) throw new Error(`DB: ${updateError.message}`);
-      return { ok: true, via: "manual-liga" as const, status: "Rascunho" };
-    }
-
-    // SUSPENSÃO MANUAL: publicação no @drfranciscomenezes está desabilitada
-    // por decisão do usuário. Posts sem conta definida também param aqui,
-    // porque o fallback histórico era justamente o perfil pessoal.
     if (!contaAlvo) {
       throw new Error(
         `Publicação bloqueada: este post não tem instagram_conta definida. ` +
-        `Para Liga, defina instagram_conta=@${LIGA_ACCOUNT}; o sistema salva para publicação manual segura.`,
+        `Defina @drfranciscomenezes ou @${LIGA_ACCOUNT} antes de publicar.`,
       );
     }
+
 
     // Publicação no @drfranciscomenezes reativada.
 
@@ -329,7 +331,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     // Garantia de marca: re-aplica a logo na hora da publicação para posts antigos
     // gerados antes do overlay automático (ou sem ele por qualquer motivo).
-    const contaParaLogo = contaAlvo || normalizeInstagramAccount(perfil?.arroba_usuario);
+    const contaParaLogo = originalContaAlvo || contaAlvo || normalizeInstagramAccount(perfil?.arroba_usuario);
     if (contaParaLogo === "drfranciscomenezes" || contaParaLogo === "lactbmf.anhanguerasbo") {
       try {
         const { overlayLogo, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
@@ -436,7 +438,9 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     via = "meta";
     try {
-      await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
+      if (!collaboratorUsername) {
+        await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
+      }
       externalId = await publishViaMeta({
         igBusinessId: perfil.instagram_business_account_id,
         token: perfil.instagram_access_token,
@@ -444,7 +448,9 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         imageUrls,
         isStory,
         isCarousel,
+        collaborators: collaboratorUsername ? [collaboratorUsername] : undefined,
       });
+
     } catch (metaError) {
       const metaMessage = metaError instanceof Error ? metaError.message : String(metaError);
       if (isInvalidMetaTokenMessage(metaMessage)) {
