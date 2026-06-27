@@ -329,51 +329,11 @@ export function SocialConnections() {
             <Label className="flex items-center gap-1.5 text-sm font-semibold">
               <Instagram className="h-3.5 w-3.5" /> Instagram da Liga — @lactbmf.anhanguerasbo
             </Label>
-            <div className="p-3 rounded-lg border bg-muted/40 space-y-2">
+            <div className="p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 space-y-2">
+              <Badge className="bg-emerald-600">Manual aprovado</Badge>
               <p className="text-xs text-muted-foreground">
-                A Liga publica somente pela Meta direta ou pelo modo manual do Planner Simplificado; nada da Liga cai na conta Chico.
+                Desativei a tentativa de configurar/publicar a Liga por Meta, Make, token ou webhook. No Planner Simplificado, a Liga agora só gera preview aprovado, salva como rascunho e mostra botões para baixar imagem e copiar legenda.
               </p>
-              <Button onClick={handleConnectLigaMeta} variant="secondary" size="sm">
-                <Instagram className="h-4 w-4" /> Preparar conexão Instagram da Liga
-              </Button>
-              {ligaMetaConnectPath && (
-                <Button asChild variant="outline" size="sm">
-                  <a href={ligaMetaConnectPath} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" /> Abrir conexão Instagram da Liga
-                  </a>
-                </Button>
-              )}
-              {ligaMetaOauthUrl && (
-                <Button type="button" variant="outline" size="sm" onClick={handleCopyLigaMetaUrl}>
-                  {ligaMetaCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  {ligaMetaCopied ? "Link copiado" : "Copiar link Meta"}
-                </Button>
-              )}
-            </div>
-
-            <div className="p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 space-y-2 mt-2">
-              <p className="text-xs font-semibold text-emerald-900 dark:text-emerald-100">
-                🔑 Fallback manual — cole o token da Liga
-              </p>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Só funciona se o Facebook usado administrar a página conectada à Liga. Se essa conta não aparecer na Meta, use o modo manual do Planner Simplificado ou gere um token no Graph API Explorer com permissões <code>instagram_basic</code> + <code>instagram_content_publish</code> + <code>pages_show_list</code>.
-              </p>
-              <Input
-                value={ligaManualToken}
-                onChange={(e) => setLigaManualToken(e.target.value)}
-                placeholder="EAAG… (Access Token longo da Liga)"
-                className="font-mono text-xs"
-              />
-              <Input
-                value={ligaManualIgId}
-                onChange={(e) => setLigaManualIgId(e.target.value)}
-                placeholder="17841… (Instagram Business Account ID)"
-                className="font-mono text-xs"
-              />
-              <Button onClick={handleSaveLigaManualToken} disabled={ligaManualSaving} size="sm">
-                {ligaManualSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Salvar token manual da Liga
-              </Button>
             </div>
 
           </div>
