@@ -19,7 +19,7 @@ const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cie
 export type NivelConteudo = z.infer<typeof NivelEnum>;
 
 const SingleInput = z.object({
-  // Se vazio, a IA escolhe um tema relevante automaticamente.
+  // Se vazio, o gerador local escolhe um tema relevante automaticamente.
   tema: z.string().optional().default(""),
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
   rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
@@ -464,7 +464,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           ? "Story"
           : "Post Único");
 
-    // 0. Se nenhum tema foi fornecido, a IA escolhe um automaticamente
+    // 0. Se nenhum tema foi fornecido, o gerador local escolhe um automaticamente
     //    EVITANDO temas dos últimos 60 dias (máxima abrangência editorial).
     let tema = (data.tema ?? "").trim();
     // Modo Estudantes: lista fixa de temas didáticos de cirurgia bucal básica.
@@ -674,7 +674,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.length, urls };
   });
 
-// Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado da IA.
+// Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado gerado.
 export const discardPost = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
