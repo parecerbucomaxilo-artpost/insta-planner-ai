@@ -281,6 +281,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modeloImagem,
       } as any });
       await marcarConta(out.id);
+      if (isLiga) await approveFn({ data: { id: out.id, acao: "arquivar" } });
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
       setTema("");
       toast.success("Pré-visualize abaixo.", { id: tid });
