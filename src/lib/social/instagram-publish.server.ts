@@ -374,7 +374,15 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     const contaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
 
     // SUSPENSÃO MANUAL: publicação no @drfranciscomenezes está desabilitada
-    // por decisão do usuário. Posts dessa conta param aqui (vão para "Erro").
+    // por decisão do usuário. Posts sem conta definida também param aqui,
+    // porque o fallback histórico era justamente o perfil pessoal.
+    if (!contaAlvo) {
+      throw new Error(
+        `Publicação bloqueada: este post não tem instagram_conta definida. ` +
+        `Para Liga, defina instagram_conta=@${LIGA_ACCOUNT}; o sistema não usa mais @${DEFAULT_WEBHOOK_ACCOUNT} como fallback.`,
+      );
+    }
+
     if (contaAlvo === DEFAULT_WEBHOOK_ACCOUNT) {
       throw new Error(
         `Publicação no @${DEFAULT_WEBHOOK_ACCOUNT} está SUSPENSA por decisão do usuário. ` +
@@ -415,21 +423,6 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       }
       // Se o perfil dessa conta NÃO tem token Meta próprio mas tem webhook próprio, usa o webhook próprio.
       // NUNCA reaproveitar o token Meta de outro perfil (publicaria no IG errado).
-    } else {
-      // Sem instagram_conta no post: só publicamos pelo perfil oficial do Chico
-      // (@drfranciscomenezes). NUNCA usar "primeiro perfil com token" como
-      // fallback — isso já causou Liga publicada em @drfranciscomenezes.
-      perfil = await findInstagramProfileByAccount(
-        supabaseAdmin,
-        DEFAULT_WEBHOOK_ACCOUNT,
-        "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url",
-      );
-      if (!hasDestino(perfil)) {
-        throw new Error(
-          `Post sem "instagram_conta" definido e o perfil @${DEFAULT_WEBHOOK_ACCOUNT} não tem destino configurado. ` +
-          `Defina a conta de destino no post ou conecte a Meta de @${DEFAULT_WEBHOOK_ACCOUNT}.`,
-        );
-      }
     }
 
 
@@ -494,6 +487,13 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     const isChicoTarget = targetAccount === "drfranciscomenezes";
     const forbiddenAccount = isLigaTarget ? "drfranciscomenezes" : isChicoTarget ? "lactbmf.anhanguerasbo" : undefined;
 
+    if (isChicoTarget) {
+      throw new Error(
+        `Publicação bloqueada: @${DEFAULT_WEBHOOK_ACCOUNT} está suspenso. ` +
+        `Posts da Liga devem usar exclusivamente @${LIGA_ACCOUNT} e o webhook/token próprio da Liga.`,
+      );
+    }
+
     const publishWebhookForProfile = async (reason?: string) => {
       // Garantia anti-cross-posting: quando o post tem instagram_conta,
       // só publicamos via webhook PRÓPRIO desse perfil. NUNCA cai no
@@ -518,6 +518,10 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         instagram_conta: targetAccount || undefined,
         conta: targetAccount || undefined,
         arroba: targetAccount || undefined,
+        nome_perfil: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
+        profile_name: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
+        author_name: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
+        display_name: isLigaTarget ? "Liga Acadêmica de CTBMF Anhanguera SBO" : targetAccount || undefined,
         conta_destino: targetAccount || undefined,
         conta_destino_obrigatoria: targetAccount || undefined,
         target_instagram_account: targetAccount || undefined,
