@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2, ChevronLeft, ChevronRight, Clock, RotateCcw, ScanEye } from "lucide-react";
+import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2, ChevronLeft, ChevronRight, Clock, RotateCcw, ScanEye, Copy, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,12 @@ const statusColor: Record<string, string> = {
 const statusLabel: Record<string, string> = {
   EnviadoMake: "Pendente Meta",
 };
+
+const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
+
+function normalizeInstagramAccount(value: string | null | undefined) {
+  return String(value || "").trim().replace(/^@+/, "").toLowerCase();
+}
 
 export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () => void }) {
   // const sendAlbato = useServerFn(dispatchAlbato); // Removido para reset logic
@@ -44,6 +50,10 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   };
 
   const handlePostNow = async (p: PostRow) => {
+    if (normalizeInstagramAccount(p.instagram_conta) === LIGA_ACCOUNT) {
+      await copiarTexto(p.legenda || "", "Legenda da Liga copiada para postagem manual.");
+      return;
+    }
     setPublishingId(p.id);
     try {
       const out = await publishIg({ data: { id: p.id } });
@@ -56,6 +66,42 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
       toast.error(e.message || "Falha ao publicar");
     } finally {
       setPublishingId(null);
+    }
+  };
+
+  const copiarTexto = async (texto: string, mensagem = "Texto copiado.") => {
+    if (!texto.trim()) return toast.error("Não há legenda para copiar.");
+    try {
+      await navigator.clipboard.writeText(texto);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = texto;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    toast.success(mensagem);
+  };
+
+  const baixarMidia = async (url: string, nome: string) => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Não foi possível baixar a imagem.");
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = nome;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao baixar.");
     }
   };
 
@@ -84,6 +130,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
         const isPublishing = publishingId === p.id;
         const alreadyPublished = p.status === "Publicado";
         const failedPublish = p.status === "Erro";
+        const isLigaPost = normalizeInstagramAccount(p.instagram_conta) === LIGA_ACCOUNT;
         const goPrev = () =>
           setSlideIdx((s) => ({ ...s, [p.id]: (safeIdx - 1 + carrosselUrls.length) % carrosselUrls.length }));
         const goNext = () =>
@@ -177,6 +224,8 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                 >
                   {isPublishing ? (
                     <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Publicando…</>
+                  ) : isLigaPost ? (
+                    <><Copy className="h-4 w-4 mr-1.5" /> Copiar legenda</>
                   ) : failedPublish ? (
                     <><RotateCcw className="h-4 w-4 mr-1.5" /> Tentar novamente</>
                   ) : alreadyPublished ? (
@@ -185,6 +234,18 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                     <><Send className="h-4 w-4 mr-1.5" /> Postar Agora</>
                   )}
                 </Button>
+                {isLigaPost && thumb && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => baixarMidia(thumb, `liga-${p.id}-${safeIdx + 1}.png`)}
+                    disabled={isPublishing}
+                    aria-label="Baixar imagem da Liga"
+                    title="Baixar imagem da Liga"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="icon"

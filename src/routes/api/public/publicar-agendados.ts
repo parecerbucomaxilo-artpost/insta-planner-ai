@@ -8,6 +8,7 @@ const corsHeaders = {
 
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const BATCH = 3;
+const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 
 // Publica posts com status "Agendado" cuja data_agendamento já passou.
 // Processa até BATCH posts por chamada para evitar timeouts.
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/api/public/publicar-agendados")({
           const nowIso = new Date().toISOString();
           const { data: pending, error } = await supabaseAdmin
             .from("posts")
-            .select("id, user_id, postar_instagram, postar_linkedin")
+            .select("id, user_id, postar_instagram, postar_linkedin, instagram_conta")
             .eq("status", "Agendado")
             .not("data_agendamento", "is", null)
             .lte("data_agendamento", nowIso)
@@ -38,8 +39,13 @@ export const Route = createFileRoute("/api/public/publicar-agendados")({
           if (!pending || pending.length === 0) return json({ ok: true, published: 0 });
 
           const results: Array<{ id: string; ok: boolean; status?: string; via?: string; error?: string }> = [];
-          for (const p of pending as Array<{ id: string; user_id: string | null; postar_instagram: boolean; postar_linkedin: boolean }>) {
+          for (const p of pending as Array<{ id: string; user_id: string | null; postar_instagram: boolean; postar_linkedin: boolean; instagram_conta?: string | null }>) {
             try {
+              if (String(p.instagram_conta || "").replace(/^@+/, "").toLowerCase() === LIGA_ACCOUNT) {
+                await supabaseAdmin.from("posts").update({ status: "Rascunho" }).eq("id", p.id);
+                results.push({ id: p.id, ok: true, status: "Rascunho", via: "manual-liga" });
+                continue;
+              }
               let instagramStatus: string | undefined;
               if (p.postar_instagram) {
                 const result = await publishInstagramPostById({ supabaseAdmin, postId: p.id, userId: p.user_id || TEMP_USER_ID });

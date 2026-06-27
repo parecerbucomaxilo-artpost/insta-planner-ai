@@ -10,9 +10,10 @@ export type PostRow = {
   legenda_linkedin: string | null;
   postar_instagram: boolean;
   postar_linkedin: boolean;
-   url_imagem: string | null;
+  url_imagem: string | null;
   url_da_imagem?: string | null;
   imagens_carrossel: string[];
+  instagram_conta?: string | null;
   data_agendamento: string | null;
   status: "Rascunho" | "Agendado" | "Publicado" | "EnviadoMake" | "Erro" | "PendenteAprovacao" | "Arquivado";
   prompt_ia: string | null;

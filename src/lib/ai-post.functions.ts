@@ -773,7 +773,7 @@ export const approvePost = createServerFn({ method: "POST" })
         await supabaseAdmin.from("posts").update({ status: "Erro", user_id: publishUserId }).eq("id", data.id);
         results.status = "Erro";
       } else {
-        const nextStatus = "Publicado";
+        const nextStatus = results.instagram?.via === "manual-liga" && !results.linkedin ? "Rascunho" : "Publicado";
         await supabaseAdmin.from("posts").update({ status: nextStatus, user_id: publishUserId }).eq("id", data.id);
         results.status = nextStatus;
       }
