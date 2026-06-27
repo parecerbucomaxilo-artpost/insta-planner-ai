@@ -7,24 +7,12 @@ const AccountInput = z.object({
   conta: z.string().min(2).max(80),
 });
 
-const SaveDestinationInput = AccountInput.extend({
-  webhookUrl: z.string().url(),
-});
-
 function normalizeAccount(conta: string) {
   const normalized = conta.trim().replace(/^@+/, "").toLowerCase();
   if (!/^[a-z0-9._]{2,80}$/.test(normalized)) {
     throw new Error("Informe um @ de Instagram válido.");
   }
   return normalized;
-}
-
-function validateWebhookUrl(webhookUrl: string) {
-  const url = new URL(webhookUrl.trim());
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new Error("Cole uma URL de webhook válida (https://...).");
-  }
-  return url.toString();
 }
 
 async function findProfileByAccount(supabaseAdmin: any, conta: string, columns: string) {
@@ -58,7 +46,7 @@ export const getPublicationDestination = createServerFn({ method: "POST" })
     const perfil = await findProfileByAccount(
       supabaseAdmin,
       conta,
-      "instagram_access_token,instagram_business_account_id,instagram_webhook_url,webhook_url",
+      "instagram_access_token,instagram_business_account_id",
     );
 
     const hasMeta = Boolean(perfil?.instagram_access_token && perfil?.instagram_business_account_id);
@@ -69,42 +57,6 @@ export const getPublicationDestination = createServerFn({ method: "POST" })
       mode: hasMeta ? "meta" : "missing",
       status: hasMeta ? "ok" : "missing",
     } as const;
-  });
-
-export const savePublicationDestination = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => SaveDestinationInput.parse(data))
-  .handler(async ({ data }) => {
-    const conta = normalizeAccount(data.conta);
-    const webhookUrl = validateWebhookUrl(data.webhookUrl);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const existing = await findProfileByAccount(supabaseAdmin, conta, "id");
-
-    if (existing?.id) {
-      const { error } = await supabaseAdmin
-        .from("perfil_usuario")
-        .update({
-          arroba_usuario: conta,
-          instagram_arroba: conta,
-          instagram_webhook_url: webhookUrl,
-          webhook_url: webhookUrl,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", existing.id);
-      if (error) throw new Error(`DB: ${error.message}`);
-    } else {
-      const { error } = await supabaseAdmin.from("perfil_usuario").insert({
-        user_id: TEMP_USER_ID,
-        nome_profissional: conta,
-        arroba_usuario: conta,
-        instagram_arroba: conta,
-        instagram_webhook_url: webhookUrl,
-        webhook_url: webhookUrl,
-      });
-      if (error) throw new Error(`DB: ${error.message}`);
-    }
-
-    return { webhookUrl, status: "ok" } as const;
   });
 
 export const ensurePublicationDestinationProfile = createServerFn({ method: "POST" })
@@ -217,7 +169,7 @@ async function validateInstagramTokenForAccount(token: string, igBusinessId: str
 
   throw new Error(
     `Access Token inválido ou sem permissão para publicar nessa conta: ${lastError}. ` +
-    "Gere um novo token com instagram_content_publish/pages_show_list ou use um webhook próprio da conta.",
+    "Gere um novo token com instagram_content_publish/pages_show_list ou reconecte a conta pelo Meta.",
   );
 }
 
