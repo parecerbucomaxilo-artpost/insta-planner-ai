@@ -519,14 +519,27 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // 2. Dispara legenda + imagens EM PARALELO (não dependem entre si).
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const isChico = data.audiencia === "chico-drfm";
-    const legendaPromise = Promise.resolve(buildLocalCaption({
+    const localCaption = () => buildLocalCaption({
       tema,
       rede: data.rede,
       formato,
       especialidade: data.especialidade,
       nivel,
       audiencia: data.audiencia,
-    }));
+    });
+    const legendaPromise = (async () => {
+      if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") return localCaption();
+      try {
+        const { generateTextAI } = await import("@/lib/ai-gateway.server");
+        const system = `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, sem inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.`;
+        const prompt = `Tema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}\n\nEscreva a legenda final pronta para publicação (sem comentários meta).`;
+        const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : 700 });
+        return txt || localCaption();
+      } catch (err) {
+        console.warn("[ai-post] legenda caiu para local:", err instanceof Error ? err.message : err);
+        return localCaption();
+      }
+    })();
 
     // Tamanho ideal por plataforma (gateway suporta 1024x1024, 1024x1536, 1536x1024):
     // - IG Feed/Carrossel: vertical 4:5  → 1024x1536
