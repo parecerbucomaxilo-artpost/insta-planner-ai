@@ -567,7 +567,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     }
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
       try {
-        return await generateImageBase64({ prompt, size, model: "local/sem-custo", referenceImageUrls: logoRefs.length ? logoRefs : undefined });
+        return await generateImageBase64({ prompt, size, model: data.modeloImagem, referenceImageUrls: logoRefs.length ? logoRefs : undefined });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message);
