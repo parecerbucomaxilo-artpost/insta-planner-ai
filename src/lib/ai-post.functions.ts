@@ -4,24 +4,22 @@ const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
 export const MODELOS_IA = [
-  { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B Versatile (Groq, padrão)" },
-  { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B Instant (Groq, rápido)" },
+  { id: "openai/gpt-5-mini", label: "GPT-5 Mini (padrão)" },
 ] as const;
 const ModeloEnum = z.enum([
-  "groq/llama-3.3-70b-versatile",
-  "groq/llama-3.1-8b-instant",
+  "openai/gpt-5-mini",
   // legados aceitos para compat com posts antigos no DB
   "groq/llama-3.3-70b-versatile",
+  "groq/llama-3.1-8b-instant",
   "google/gemini-2.5-pro",
   "openai/gpt-5",
-  "openai/gpt-5-mini",
   "anthropic/claude-sonnet-4-5",
 ]);
 
 const ModeloImagemEnum = z.enum([
-  "pollinations/flux",
   "google/gemini-3.1-flash-image",
   // legados aceitos para compat com posts antigos no DB
+  "pollinations/flux",
   "google/imagen-3",
   "google/gemini-3.1-flash-image-preview",
   "google/gemini-2.5-flash-image",
@@ -43,8 +41,8 @@ const SingleInput = z.object({
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
-  modelo: ModeloEnum.optional().default("groq/llama-3.3-70b-versatile"),
-  modeloImagem: ModeloImagemEnum.optional().default("pollinations/flux"),
+  modelo: ModeloEnum.optional().default("openai/gpt-5-mini"),
+  modeloImagem: ModeloImagemEnum.optional().default("google/gemini-3.1-flash-image"),
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
   ambasRedes: z.boolean().optional().default(false),
   // Status inicial do post (PendenteAprovacao = revisão manual; Agendado = vai pro cron de publicação).
