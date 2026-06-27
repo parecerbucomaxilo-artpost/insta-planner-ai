@@ -9,10 +9,12 @@ export const MODELOS_IA = [
 const ModeloEnum = z.enum([
   "local/sem-custo",
 ]);
+const ModeloLocalInput = z.preprocess(() => "local/sem-custo", ModeloEnum);
 
 const ModeloImagemEnum = z.enum([
   "local/sem-custo",
 ]);
+const ModeloImagemLocalInput = z.preprocess(() => "local/sem-custo", ModeloImagemEnum);
 export { MODELOS_IMAGEM } from "@/lib/ai-gateway.server";
 
 const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico", "google-business"]);
@@ -26,8 +28,9 @@ const SingleInput = z.object({
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
-  modelo: ModeloEnum.optional().default("local/sem-custo"),
-  modeloImagem: ModeloImagemEnum.optional().default("local/sem-custo"),
+  // Aceita qualquer valor legado vindo de abas antigas, mas ignora e usa sempre o gerador local.
+  modelo: ModeloLocalInput,
+  modeloImagem: ModeloImagemLocalInput,
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
   ambasRedes: z.boolean().optional().default(false),
   // Status inicial do post (PendenteAprovacao = revisão manual; Agendado = vai pro cron de publicação).
@@ -41,7 +44,7 @@ const SingleInput = z.object({
 
 const WeekInput = z.object({
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("Ambas"),
-  modelo: ModeloEnum.optional().default("local/sem-custo"),
+  modelo: ModeloLocalInput,
 });
 
 const WHATSAPP = "https://wa.me/5511947684004";
