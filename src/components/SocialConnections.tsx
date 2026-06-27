@@ -508,7 +508,7 @@ export function SocialConnections() {
             </Label>
             <div className="p-3 rounded-lg border bg-muted/40 space-y-2">
               <p className="text-xs text-muted-foreground">
-                Se o Instagram bloquear o login, use o webhook exclusivo ou o token manual abaixo; nada da Liga cai na conta Chico.
+                Se Meta/Instagram não conectar, não insista: use o webhook exclusivo ou publique manualmente pelo Planner Simplificado; nada da Liga cai na conta Chico.
               </p>
               <Button onClick={handleConnectLigaMeta} variant="secondary" size="sm">
                 <Instagram className="h-4 w-4" /> Preparar conexão Instagram da Liga
@@ -533,7 +533,7 @@ export function SocialConnections() {
                 🔑 Fallback manual — cole o token da Liga
               </p>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Se o login do Instagram continuar bloqueado, gere o token no Graph API Explorer (logado na conta da Liga, App Planner Chico, permissões <code>instagram_basic</code> + <code>instagram_content_publish</code> + <code>pages_show_list</code>) e cole abaixo junto com o IG Business Account ID. Isso ignora todo o fluxo OAuth.
+                Só funciona se o Facebook usado administrar a página conectada à Liga. Se essa conta não aparecer no Make/Meta, use o modo manual do Planner Simplificado ou gere um token no Graph API Explorer com permissões <code>instagram_basic</code> + <code>instagram_content_publish</code> + <code>pages_show_list</code>.
               </p>
               <Input
                 value={ligaManualToken}
