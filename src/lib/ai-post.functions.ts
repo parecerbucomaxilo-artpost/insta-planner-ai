@@ -797,7 +797,7 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
     const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
-    const { generateText, Output } = await import("ai");
+    const { generateText } = await import("ai");
     const { buildScheduleSlots } = await import("@/lib/schedule-config");
 
     const gateway = createLovableAiGatewayProvider(key);
@@ -820,9 +820,8 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
       })).length(slots.length),
     });
 
-    const { experimental_output: out } = await generateText({
+    const { text } = await generateText({
       model,
-      experimental_output: Output.object({ schema }),
       system: `Você é estrategista de conteúdo de ${ASSINATURA}, cirurgião bucomaxilofacial e odontologista hospitalar.
 Crie 1 tema por slot do cronograma abaixo (${slots.length} slots), sobre: ${data.especialidade}.
 Mistura obrigatória: IG feed (CARROSSEL, linguagem leiga/empática + ganchos de dor), IG stories (teaser/chamada do FEED do MESMO DIA — pode ser repetição/pergunta sobre o tema do feed), LinkedIn (formal/científico, dados/evidência).
@@ -833,8 +832,26 @@ NUNCA CTA "agende consulta" — sempre WhatsApp/Link na Bio.
 
 Slots:
 ${slotsResumo}`,
-      prompt: "Gere os temas agora, um por slot, na ordem.",
+      prompt: `Gere os temas agora, um por slot, na ordem.
+
+Responda SOMENTE JSON válido, sem markdown, sem explicações, neste formato exato:
+{"temas":[{"slotIndex":1,"tema":"...","gancho":"..."}]}`,
     });
+
+    const extractJson = (raw: string) => {
+      const cleaned = raw.replace(/```json|```/gi, "").trim();
+      const start = cleaned.indexOf("{");
+      const end = cleaned.lastIndexOf("}");
+      if (start < 0 || end <= start) throw new Error("JSON ausente");
+      return cleaned.slice(start, end + 1);
+    };
+
+    let out: z.infer<typeof schema>;
+    try {
+      out = schema.parse(JSON.parse(extractJson(text)));
+    } catch {
+      throw new Error("A IA não retornou um cronograma válido. Tente gerar novamente.");
+    }
 
     // Anexa metadados + força stories a herdarem o tema do feed do mesmo dia
     const enriquecidos = out.temas
