@@ -62,13 +62,12 @@ export const getPublicationDestination = createServerFn({ method: "POST" })
     );
 
     const hasMeta = Boolean(perfil?.instagram_access_token && perfil?.instagram_business_account_id);
-    const webhookUrl = String(perfil?.instagram_webhook_url || perfil?.webhook_url || "");
 
     return {
-      webhookUrl,
+      webhookUrl: "",
       hasMeta,
-      mode: hasMeta ? "meta" : webhookUrl ? "webhook" : "missing",
-      status: hasMeta || webhookUrl ? "ok" : "missing",
+      mode: hasMeta ? "meta" : "missing",
+      status: hasMeta ? "ok" : "missing",
     } as const;
   });
 
