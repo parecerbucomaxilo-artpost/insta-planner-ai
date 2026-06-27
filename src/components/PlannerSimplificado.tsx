@@ -104,7 +104,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     toast.success(`Conta @${n} selecionada.`);
   };
 
-  // Carrega destino (webhook/token Meta) configurado para esta conta
+  // Carrega destino Meta/token configurado para esta conta
   useEffect(() => {
     if (!conta) { setDestinoStatus("missing"); setDestinoModo("missing"); return; }
     setDestinoStatus("loading");
