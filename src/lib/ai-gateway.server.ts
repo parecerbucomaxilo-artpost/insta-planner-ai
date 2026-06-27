@@ -1,14 +1,13 @@
 // Server-only helper.
 // Texto: chamadas diretas ao Gemini (OpenAI-compatible) usando GEMINI_API_KEY.
 // Imagens: API gratuita do Pollinations.ai (modelo Flux). Sem Lovable AI Gateway → sem 402.
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 // Mapeia ids do catálogo antigo (Lovable Gateway) para modelos reais do Gemini.
 function mapModelToGemini(model: string): string {
   const m = model.toLowerCase();
   if (m.includes("pro")) return "gemini-2.5-pro";
   if (m.includes("flash-lite")) return "gemini-2.5-flash-lite";
-  // gemini-3-flash-preview, gpt-5, claude, etc. → cai no flash padrão
   return "gemini-2.5-flash";
 }
 
@@ -16,26 +15,9 @@ export function createLovableAiGatewayProvider(_ignoredKey: string) {
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!geminiKey) throw new Error("Missing GEMINI_API_KEY");
 
-  return createOpenAICompatible({
-    name: "gemini-direct",
-    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
-    headers: { Authorization: `Bearer ${geminiKey}` },
-    fetch: async (input, init) => {
-      // Reescreve o campo `model` no body para um id válido do Gemini.
-      if (init?.body && typeof init.body === "string") {
-        try {
-          const parsed = JSON.parse(init.body);
-          if (parsed?.model) {
-            parsed.model = mapModelToGemini(String(parsed.model));
-            init = { ...init, body: JSON.stringify(parsed) };
-          }
-        } catch {
-          /* body não-JSON: deixa passar */
-        }
-      }
-      return fetch(input, init);
-    },
-  });
+  const google = createGoogleGenerativeAI({ apiKey: geminiKey });
+  // Retorna função compatível: gateway(modelId) → LanguageModel
+  return (modelId: string) => google(mapModelToGemini(modelId));
 }
 
 export const MODELOS_IMAGEM = [
