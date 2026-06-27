@@ -99,7 +99,8 @@ function sizeToWH(size?: string): { width: number; height: number } {
 }
 
 // Imagens via Hugging Face Inference API (FLUX.1-dev). Requer HF_TOKEN.
-const HF_IMAGE_MODEL = "black-forest-labs/FLUX.1-dev";
+// HF Router exige sufixo de provider (fal-ai/replicate/together/nebius/...)
+const HF_IMAGE_MODEL = "black-forest-labs/FLUX.1-dev:fal-ai";
 
 export async function generateImageBase64(opts: {
   apiKey?: string;
