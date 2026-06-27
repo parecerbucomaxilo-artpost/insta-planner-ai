@@ -7,10 +7,11 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 function mapModelToGroq(model: string): string {
   const m = model.toLowerCase();
   if (m.startsWith("groq/")) return model.slice("groq/".length);
-  if (m.includes("pro") || m.includes("gpt-5") || m.includes("opus") || m.includes("70b")) {
-    return "llama-3.3-70b-versatile";
+  if (m.includes("lite") || m.includes("nano") || m.includes("8b") || m.includes("flash-lite")) {
+    return "llama-3.1-8b-instant";
   }
-  return "llama-3.1-8b-instant";
+  // Padrão: modelo de alta qualidade com decodificação especulativa.
+  return "llama-3.3-70b-specdec";
 }
 
 export function createLovableAiGatewayProvider(_ignoredKey: string) {
