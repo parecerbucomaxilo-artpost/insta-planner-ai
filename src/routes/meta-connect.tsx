@@ -30,16 +30,17 @@ export const Route = createFileRoute("/meta-connect")({
   validateSearch: (search) => ({
     next: safeNext(search.next),
     login: safeFacebookLogin(search.login),
+    privateNext: safeNext(search.privateNext),
     account: typeof search.account === "string" ? search.account.replace(/^@+/, "") : "",
   }),
   component: MetaConnectPage,
 });
 
 function MetaConnectPage() {
-  const { next, login, account } = Route.useSearch();
+  const { next, login, privateNext, account } = Route.useSearch();
   const label = account ? `@${account}` : "Instagram Business";
   const isLiga = account === "lactbmf.anhanguerasbo";
-  const actionUrl = isLiga ? login || next : next;
+  const actionUrl = isLiga ? privateNext || login || next : next;
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {
@@ -82,7 +83,7 @@ function MetaConnectPage() {
                 {isLiga ? (
                   <>
                     <p>
-                      Para a Liga, este botão abre primeiro a tela de login do Facebook. Entre com o Facebook administrador da Liga antes de autorizar.
+                      Para a Liga, este botão força nova autenticação do Facebook. Abra em janela anônima se o navegador insistir na conta Francisco.
                     </p>
                     <p>
                       Não use “Continuar como Francisco”; se aparecer Francisco, clique em sair/trocar conta no Facebook e entre com a conta administradora da Liga.
