@@ -140,9 +140,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const destino = await ensureDestino({ data: { conta } });
       const trocarFacebook = conta === LIGA_ACCOUNT;
       const r = await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: conta, logoutFacebookFirst: trocarFacebook } });
-      const manualUrl = trocarFacebook && r.loginUrl ? r.loginUrl : r.url;
+      const manualUrl = trocarFacebook && r.privateAuthUrl ? r.privateAuthUrl : trocarFacebook && r.loginUrl ? r.loginUrl : r.url;
       setMetaOauthUrl(manualUrl);
-      setMetaConnectPath(`/meta-connect?account=${encodeURIComponent(conta)}&next=${encodeURIComponent(r.url)}${r.loginUrl ? `&login=${encodeURIComponent(r.loginUrl)}` : ""}`);
+      setMetaConnectPath(`/meta-connect?account=${encodeURIComponent(conta)}&next=${encodeURIComponent(r.url)}${r.loginUrl ? `&login=${encodeURIComponent(r.loginUrl)}` : ""}${r.privateAuthUrl ? `&privateNext=${encodeURIComponent(r.privateAuthUrl)}` : ""}`);
       toast.info("Clique no botão 'Abrir conexão Meta' que apareceu abaixo.");
     } catch (e: any) {
       toast.error(e.message || "Falha ao iniciar conexão Meta.");
