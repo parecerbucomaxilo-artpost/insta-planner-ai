@@ -122,9 +122,14 @@ async function graphPost(edge: string, params: Record<string, string | number | 
   const res = await fetch(`https://${host}/${GRAPH_VERSION}/${edge}`, { method: "POST", body });
   const json = await res.json().catch(() => ({}));
   if (!res.ok || json.error) {
-    const message = json?.error?.message || `Meta respondeu ${res.status}`;
+    const raw = json?.error?.message || `Meta respondeu ${res.status}`;
+    const isBadToken = /access token|OAuthException|Cannot parse/i.test(raw);
+    const message = isBadToken
+      ? `${raw} — o token Meta salvo está inválido/expirado. Em Configurações → Redes Sociais, reconecte a conta ou cole um novo Access Token (Graph API Explorer).`
+      : raw;
     throw new Error(`Instagram: ${message}`);
   }
+
   return json as { id?: string };
 }
 
