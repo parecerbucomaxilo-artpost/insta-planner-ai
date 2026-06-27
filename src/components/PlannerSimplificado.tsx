@@ -704,7 +704,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                       </Button>
                     )}
                     {p.status === "EnviadoMake" && (
-                      <Button variant="outline" size="sm" onClick={() => tentarNovamente(p.id)} disabled={busy} title="Tentar publicar diretamente pela Meta">
+                      <Button variant="outline" size="sm" onClick={() => tentarNovamente(p.id)} disabled={busy} title="Tentar publicar pela Meta">
                         {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1" />}
                         Publicar Meta
                       </Button>
