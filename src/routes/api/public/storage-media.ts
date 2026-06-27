@@ -2,6 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 
 const ALLOWED_BUCKETS = new Set(["post-images", "posts_media"]);
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+  "Access-Control-Allow-Headers": "*",
+} as const;
 
 function isValidToken(bucket: string, path: string, token: string | null, secret: string | undefined) {
   if (!bucket || !path || !token || !secret) return false;
@@ -38,9 +43,15 @@ export const Route = createFileRoute("/api/public/storage-media")({
           headers: {
             "Content-Type": data.type || "image/jpeg",
             "Cache-Control": "public, max-age=604800, immutable",
+            ...corsHeaders,
           },
         });
       },
+      HEAD: async ({ request }) => {
+        const get = await Route.options.server.handlers.GET({ request } as any);
+        return new Response(null, { status: get.status, headers: get.headers });
+      },
+      OPTIONS: async () => new Response(null, { status: 204, headers: corsHeaders }),
     },
   },
 });
