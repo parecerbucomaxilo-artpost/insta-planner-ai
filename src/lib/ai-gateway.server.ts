@@ -45,7 +45,27 @@ function sizeToAspect(size?: string): "1:1" | "16:9" | "9:16" {
   return "1:1";
 }
 
-// Imagens via Google Imagen 3 (predict). Requer GEMINI_API_KEY com Imagen habilitado.
+// Imagens gratuitas via Pollinations (Flux). Sem chave, sem billing.
+// Endpoint: https://image.pollinations.ai/prompt/<prompt>?model=flux&enhance=true&seed=<n>&width=&height=
+const REALISM_SUFFIX =
+  ", professional editorial studio photography, highly detailed, photorealistic, 8k resolution, cinematic lighting, shot on 35mm lens, realistic anatomy, no text, no words";
+
+function sanitizeVisualPrompt(p: string): string {
+  return p
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
+    .replace(/["'`\n\r\t]/g, " ")
+    .replace(/[^\x20-\x7E]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 1500);
+}
+
+function sizeToWH(size?: string): { width: number; height: number } {
+  if (size === "1536x1024") return { width: 1536, height: 1024 };
+  if (size === "1024x1536") return { width: 1024, height: 1536 };
+  return { width: 1024, height: 1024 };
+}
+
 export async function generateImageBase64(opts: {
   apiKey?: string;
   prompt: string;
@@ -53,54 +73,30 @@ export async function generateImageBase64(opts: {
   model?: ModeloImagem;
   referenceImageUrls?: string[];
 }): Promise<string> {
-  const apiKey = getGeminiKey();
-  const aspectRatio = sizeToAspect(opts.size);
+  const cleaned = sanitizeVisualPrompt(opts.prompt) + REALISM_SUFFIX;
+  const { width, height } = sizeToWH(opts.size);
+  const seed = Math.floor(Math.random() * 1_000_000_000);
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleaned)}?model=flux&enhance=true&nologo=true&seed=${seed}&width=${width}&height=${height}`;
 
-  const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-
-  const body = {
-    instances: [{ prompt: opts.prompt.slice(0, 4000) }],
-    parameters: {
-      sampleCount: 1,
-      aspectRatio,
-      personGeneration: "allow_adult",
-    },
-  };
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
+  const res = await fetch(url, { method: "GET" });
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`Imagen 3 ${res.status}: ${txt.slice(0, 500)}`);
+    throw new Error(`Pollinations ${res.status}: ${txt.slice(0, 400)}`);
   }
 
-  const data: any = await res.json().catch(() => ({}));
-  const raw: string | undefined =
-    data?.predictions?.[0]?.bytesBase64Encoded ??
-    data?.predictions?.[0]?.base64EncodedData ??
-    data?.predictions?.[0]?.image?.bytesBase64Encoded;
-
-  if (!raw) {
-    throw new Error(`Imagen 3 retornou payload sem imagem: ${JSON.stringify(data).slice(0, 400)}`);
+  const buf = await res.arrayBuffer();
+  if (buf.byteLength < 1024) {
+    throw new Error(`Pollinations devolveu imagem muito pequena (${buf.byteLength} bytes)`);
   }
-
-  let cleaned = raw.trim();
-  if (cleaned.startsWith("data:") && cleaned.includes(",")) cleaned = cleaned.split(",")[1];
-  cleaned = cleaned.replace(/\s/g, "");
-  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(cleaned)) {
-    throw new Error("Imagen 3 retornou base64 inválido após limpeza");
+  // ArrayBuffer -> base64
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
   }
-
-  const approxBytes = Math.floor((cleaned.length * 3) / 4);
-  if (approxBytes < 1024) {
-    throw new Error(`Imagen 3 devolveu imagem muito pequena (${approxBytes} bytes)`);
-  }
-  return cleaned;
+  return btoa(binary);
 }
+
 
 
