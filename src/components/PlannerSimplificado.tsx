@@ -328,7 +328,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
       const out = await genSingle({ data: {
-        tema: t.tema, especialidade: "CTBMF",
+        tema: t.tema, especialidade,
         rede: (t.rede === "estilo-x" ? "estilo-x" : "instagram") as any,
         tipo: t.tipo as any, formato: t.formato as any, quando: t.quando,
         ambasRedes: false,
