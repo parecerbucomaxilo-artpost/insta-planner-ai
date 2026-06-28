@@ -441,6 +441,56 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       }
     }
 
+    // Fallback Francisco: usa META_FRANCISCO_ACCESS_TOKEN quando o perfil não tem token salvo.
+    const isFranciscoTarget = targetAccount === "drfranciscomenezes";
+    if (isFranciscoTarget && (!perfil.instagram_access_token || !perfil.instagram_business_account_id)) {
+      const envToken = process.env.META_FRANCISCO_ACCESS_TOKEN?.trim();
+      if (envToken) {
+        let pageToken: string | undefined;
+        let igId: string | undefined;
+        try {
+          const accounts = await graphGetFields<{ data?: Array<{ access_token?: string; instagram_business_account?: { id?: string; username?: string } }> }>(
+            "me/accounts",
+            envToken,
+            "access_token,instagram_business_account{id,username}",
+          );
+          const match = (accounts.data || []).find((p) =>
+            normalizeInstagramAccount(p.instagram_business_account?.username) === "drfranciscomenezes",
+          );
+          if (match?.instagram_business_account?.id) {
+            pageToken = match.access_token || envToken;
+            igId = match.instagram_business_account.id;
+          }
+        } catch (e) {
+          console.warn("[instagram-publish] francisco me/accounts falhou:", e instanceof Error ? e.message : e);
+        }
+        if (!igId) {
+          try {
+            const me = await graphGetFields<{ user_id?: string; id?: string; username?: string }>(
+              "me",
+              envToken,
+              "user_id,username",
+              "graph.instagram.com",
+            );
+            if (normalizeInstagramAccount(me.username) === "drfranciscomenezes") {
+              igId = me.user_id || me.id;
+              pageToken = envToken;
+            }
+          } catch (e) {
+            console.warn("[instagram-publish] francisco graph.instagram.com/me falhou:", e instanceof Error ? e.message : e);
+          }
+        }
+        if (igId && pageToken) {
+          perfil.instagram_access_token = pageToken;
+          perfil.instagram_business_account_id = igId;
+          await supabaseAdmin
+            .from("perfil_usuario")
+            .update({ instagram_access_token: pageToken, instagram_business_account_id: igId, updated_at: new Date().toISOString() })
+            .eq("id", perfil.id);
+        }
+      }
+    }
+
     if (!perfil.instagram_access_token || !perfil.instagram_business_account_id) {
       throw new Error(
         `Conta @${targetAccount || "esta conta"} sem token Meta válido. ` +
