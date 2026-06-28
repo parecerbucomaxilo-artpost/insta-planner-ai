@@ -465,6 +465,60 @@ function chooseLocalTema(audiencia: z.infer<typeof SingleInput>["audiencia"], us
 
 function topicGuidance(tema: string): TopicGuidance {
   const t = normalizeTema(tema);
+  if (/anestesia|anestesica|bloqueio|agulha|carpule|alveolar inferior/.test(t)) {
+    return {
+      oQue: "a técnica anestésica precisa atingir o nervo correto para permitir uma cirurgia bucal confortável e segura",
+      porQue: "mandíbula, maxila e mucosas têm inervações diferentes; escolher o bloqueio errado reduz a anestesia e aumenta desconforto",
+      conduta: "a conduta é revisar anatomia, localizar referências intraorais, aspirar antes de depositar o anestésico e escolher a técnica compatível com o dente e o procedimento",
+      alerta: "parestesia, dor intensa, falha repetida de anestesia ou sangramento inesperado exigem revisão técnica e supervisão",
+      ganho: "executar o procedimento com previsibilidade, conforto e menor risco anatômico",
+    };
+  }
+  if (/sutura|porta agulhas|fio|ponto|ferida cirurgica|mucosa oral/.test(t)) {
+    return {
+      oQue: "a sutura aproxima as bordas da mucosa e ajuda a estabilizar o coágulo no pós-operatório",
+      porQue: "tensão, nó mal posicionado ou escolha inadequada do fio podem atrasar cicatrização e aumentar desconforto",
+      conduta: "a conduta é fazer pontos com bordas bem aproximadas, sem estrangular o tecido, usando porta-agulhas adequado, nó estável e orientação de higiene",
+      alerta: "deiscência, sangramento persistente, secreção, dor crescente ou ponto soltando cedo merecem avaliação",
+      ganho: "melhorar cicatrização, proteger o coágulo e reduzir intercorrências no pós-operatório",
+    };
+  }
+  if (/antibiotico|antibiótico|medicacao|profilaxia/.test(t)) {
+    return {
+      oQue: "antibiótico não é obrigatório em toda cirurgia bucal e deve ter indicação clínica clara",
+      porQue: "uso desnecessário aumenta resistência bacteriana e efeitos adversos, enquanto infecção ativa ou risco sistêmico exigem avaliação cuidadosa",
+      conduta: "a conduta é avaliar história médica, sinais de infecção, extensão cirúrgica e risco do paciente antes de indicar ou não antibioticoterapia",
+      alerta: "febre, aumento progressivo de edema, secreção, trismo, mal-estar ou comprometimento sistêmico precisam de avaliação",
+      ganho: "usar medicação com segurança, evitando tanto excesso quanto falta de tratamento quando há indicação",
+    };
+  }
+  if (/alveoloplastia|regularizacao ossea|regularização óssea|rebordo|lima|cinzel/.test(t)) {
+    return {
+      oQue: "a alveoloplastia regulariza o rebordo ósseo após extrações quando há espículas, irregularidades ou necessidade protética",
+      porQue: "bordas ósseas traumáticas podem machucar a mucosa, atrapalhar cicatrização e dificultar prótese ou reabilitação",
+      conduta: "a conduta envolve avaliação do rebordo, regularização conservadora com instrumental adequado, irrigação, sutura sem tensão e orientação pós-operatória",
+      alerta: "dor localizada, ferida que machuca, espícula exposta, prótese ferindo ou cicatrização ruim pedem avaliação",
+      ganho: "deixar o rebordo mais confortável, cicatrização mais previsível e preparo melhor para reabilitação",
+    };
+  }
+  if (/forceps|fórceps|extracao|extração|exodontia|molar inferior|dente no alveolo/.test(t)) {
+    return {
+      oQue: "a exodontia é a remoção planejada de um dente quando ele não pode ser mantido com segurança ou quando há indicação cirúrgica",
+      porQue: "raiz, osso, posição do dente e proximidade com nervos influenciam força, movimento e risco do procedimento",
+      conduta: "a conduta é planejar por exame e imagem, fazer luxação controlada, usar fórceps ou alavancas compatíveis, preservar tecidos e orientar pós-operatório",
+      alerta: "dor intensa, sangramento persistente, edema progressivo, febre, mau gosto ou dormência precisam de avaliação",
+      ganho: "remover a causa do problema com menor trauma e recuperação mais previsível",
+    };
+  }
+  if (/forame mentual|nervo mentual|canal mandibular/.test(t)) {
+    return {
+      oQue: "o forame mentual é a saída do nervo mentual, estrutura importante na região de pré-molares inferiores",
+      porQue: "procedimentos próximos ao forame podem irritar ou lesar o nervo se a anatomia não for reconhecida",
+      conduta: "a conduta é identificar a região por exame e imagem, respeitar distância de segurança e evitar incisões ou pressão instrumental direta sobre o trajeto nervoso",
+      alerta: "formigamento, dormência no lábio inferior ou alteração de sensibilidade após procedimento deve ser avaliada",
+      ganho: "planejar com mais segurança e reduzir risco neurossensorial",
+    };
+  }
   if (/alveolite|coagulo|pos exodontia|pos operatorio/.test(t)) {
     return {
       oQue: "dor intensa alguns dias após a extração pode indicar inflamação do alvéolo quando o coágulo se perde ou não protege bem a ferida",
@@ -579,6 +633,66 @@ function visualSceneForTopic(tema: string, g: TopicGuidance, audiencia: z.infer<
   const estudante = audiencia === "estudantes-graduacao";
   const prefixo = estudante ? "Cena didática acadêmica" : "Cena clínica premium";
 
+  if (/anestesia|anestesica|bloqueio|agulha|carpule|alveolar inferior/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando seringa carpule posicionada próxima à região do forame mandibular em manequim anatômico realista`,
+      `${prefixo} mostrando referências intraorais do bloqueio do nervo alveolar inferior com afastamento seguro`,
+      `${prefixo} com corte anatômico da mandíbula evidenciando nervo alveolar inferior, língula da mandíbula e canal mandibular`,
+      `${prefixo} mostrando aspiração e deposição controlada do anestésico com técnica limpa e supervisão acadêmica`,
+      `${prefixo} mostrando aluno revisando anatomia e técnica anestésica em ambiente clínico universitário`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/sutura|porta agulhas|fio|ponto|ferida cirurgica|mucosa oral/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando porta-agulhas segurando agulha curva sobre mucosa oral simulada, sem sangue`,
+      `${prefixo} mostrando bordas de mucosa aproximadas com ponto simples em modelo anatômico realista`,
+      `${prefixo} com macro realista do nó cirúrgico estável sem tensão e coágulo protegido`,
+      `${prefixo} mostrando sequência didática de aproximação das bordas e orientação de higiene pós-operatória`,
+      `${prefixo} mostrando cicatrização organizada em mucosa oral com material de sutura adequado`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/antibiotico|antibiótico|medicacao|profilaxia/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando prontuário clínico sem letras, cápsulas neutras e avaliação oral como decisão baseada em indicação`,
+      `${prefixo} mostrando comparação visual entre cirurgia simples sem infecção e quadro com sinais inflamatórios, sem texto`,
+      `${prefixo} com equipe avaliando sinais sistêmicos e foco infeccioso oral em ambiente clínico`,
+      `${prefixo} mostrando decisão segura de antibioticoterapia associada a controle do foco e acompanhamento`,
+      `${prefixo} mostrando paciente orientado com medicação apenas quando indicada e retorno programado`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/alveoloplastia|regularizacao ossea|regularização óssea|rebordo|lima|cinzel/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando rebordo alveolar irregular em render anatômico realista após extração`,
+      `${prefixo} mostrando espícula óssea traumática sob mucosa fina em modelo anatômico limpo`,
+      `${prefixo} com instrumento de regularização óssea trabalhando suavemente no rebordo, sem sangue`,
+      `${prefixo} mostrando rebordo regularizado, irrigação e sutura sem tensão como etapa de solução`,
+      `${prefixo} mostrando mucosa confortável e rebordo preparado para reabilitação`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/forceps|fórceps|extracao|extração|exodontia|molar inferior|dente no alveolo/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando dente indicado para exodontia com fórceps compatível e campo clínico limpo`,
+      `${prefixo} mostrando anatomia de raiz e alvéolo que orienta movimento controlado de luxação`,
+      `${prefixo} com corte anatômico da mandíbula mostrando raiz, osso alveolar e canal mandibular em posição correta`,
+      `${prefixo} mostrando exodontia planejada com luxação controlada, preservação tecidual e irrigação`,
+      `${prefixo} mostrando alvéolo protegido, gaze e orientações pós-operatórias representadas sem texto`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/forame mentual|nervo mentual|canal mandibular/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando região de pré-molares inferiores com destaque anatômico para o forame mentual`,
+      `${prefixo} mostrando trajeto do nervo mentual saindo do forame mentual em render realista da mandíbula`,
+      `${prefixo} com corte anatômico do canal mandibular terminando no forame mentual, relação com raízes de pré-molares`,
+      `${prefixo} mostrando planejamento de incisão e afastamento respeitando distância de segurança do nervo mentual`,
+      `${prefixo} mostrando avaliação sensitiva do lábio inferior em contexto clínico seguro`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
   if (/siso|terceiro molar|38|dente incluso|incluso/.test(t)) {
     const cenas = [
       `${prefixo} mostrando terceiro molar inferior impactado na região retromolar, com mandíbula posterior em destaque`,
