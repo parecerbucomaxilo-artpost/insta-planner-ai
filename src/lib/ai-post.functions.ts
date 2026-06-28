@@ -280,7 +280,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - ESTILO OBRIGATÓRIO: ${estiloEscolhido}.
 - CENA LITERAL E RECONHECÍVEL do tema "${tema}": siso → região posterior da mandíbula; ATM → mão na região pré-auricular; trauma facial → cena de pronto-socorro plausível; apneia → pessoa dormindo / CPAP; infecção → edema cervical; ortognática → perfil facial; UTI/VAP → leito hospitalar com tubo orotraqueal. Jamais imagem genérica desconectada do tema.
 - ANATOMIA CORRETA: proporções humanas reais, mãos com exatamente 5 dedos, dentes em número e posição corretos, instrumental plausível. Se a IA tiver dúvida, prefira enquadramento que esconda a região (mão na boca, perfil, plano fechado em instrumental, foco seletivo).
-- TEXTO NA IMAGEM: NO MÁXIMO 1 headline IMPACTANTE de 3 a 6 palavras (gancho forte tipo "DOR NO SISO?", "ATM TRAVADA", "RONCO MATA"), tipografia bold sans-serif condensada, BRANCO ou AZUL CIANO #2dd4ff, PT-BR com acentuação perfeita. SEM parágrafos, listas, números, bullets ou legendas — texto longo vai na legenda.
+- TEXTO NA IMAGEM (CAPA / 1ª imagem): OBRIGATÓRIO 1 headline-GANCHO ULTRA FORTE de 3 a 6 palavras — pergunta direta de dor, dado-choque ou frase de identificação imediata sobre o TEMA (ex.: "DOR NO SISO?", "ATM TRAVADA?", "RONCO MATA", "PERDEU UM DENTE?", "INCHAÇO NO ROSTO?") — tipografia bold sans-serif condensada gigante, BRANCO ou AZUL CIANO #2dd4ff, PT-BR com acentuação perfeita. PROIBIDO citar "@drfranciscomenezes", nome do profissional, "Dr.", "Prof.", clínica, consultório ou marca (assinatura entra como overlay do sistema). SEM parágrafos, listas, números, bullets ou legendas — texto longo vai na legenda.
 - PALETA OBRIGATÓRIA (fundo dominante AZUL NAVY LUMINOSO #14366b — tom vibrante, NÃO escuro/preto — em toda a imagem): NAVY LUMINOSO #14366b = fundo principal com leve gradiente para AZUL CIANO #2dd4ff nos cantos (atmosfera arejada, "daylight"); CIANO #2dd4ff = highlights, linhas, headline; BRANCO = pele/instrumental/texto; VERMELHO #E11D2E só em ponto de dor. Proibido fundo branco, fundo preto, navy chapado escuro tipo meia-noite, roxo, verde, laranja, amarelo, rosa, magenta, filtros saturados.
 - Iluminação CLARA, ARTICULADA e LUMINOSA tipo capa de revista médica premium (key light suave + rim light ciano), nada de cena noturna ou low-key pesado. Profundidade real, qualidade 8K, hierarquia limpa, muito espaço negativo navy luminoso.${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semDiagnostico}${semBibliografia}${slideInfo}
 - PROIBIDO: rostos reconhecíveis de pessoas reais, watermark de IA, dentes hiper-saturados, sorrisos clichês de banco de imagens, mãos deformadas, dedos a mais, anatomia impossível, texto em inglês, palavras duplicadas, cores fora da paleta, chamadas comerciais.
@@ -1088,7 +1088,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           const papeis = data.rede === "estilo-x"
             ? ["TWEET 1: gancho/pergunta", "TWEET 2: explicação científica curta", "TWEET 3: CTA fechamento"]
             : [
-                "CAPA: gancho de dor/identificação",
+                "CAPA: GANCHO ULTRA FORTE 3-6 palavras (dor real/pergunta direta sobre o TEMA, sem citar marca ou @drfranciscomenezes)",
                 "PROBLEMA: aprofundar o sintoma em linguagem leiga",
                 "MECANISMO: como o problema acontece (analogia anatômica simples)",
                 "SOLUÇÃO/GANHO: como o cirurgião resolve, foco no ganho do paciente",
@@ -1142,7 +1142,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
 
     if (formato === "Carrossel") {
       const fullSpec = [
-        { n: 1, total: 5, papel: "CAPA: GANCHO forte de conversão (pergunta/dor real) + rodapé textual obrigatório. Layout impactante de revista. SEM bibliografia." },
+        { n: 1, total: 5, papel: "CAPA: GANCHO ULTRA FORTE de conversão obrigatório em tipografia gigante (3-6 palavras, bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre navy luminoso) — pergunta direta de dor real, dado de impacto ou frase-choque do TIPO 'DOR NO SISO?', 'SEU MAXILAR TRAVA?', 'RONCO PODE MATAR', 'ESSE CARO NÃO É NORMAL', 'PERDEU UM DENTE?'. O gancho fala DIRETO ao paciente sobre o TEMA — NÃO menciona '@drfranciscomenezes', nome do profissional, marca, clínica ou consultório (a assinatura entra como overlay do sistema). Layout impactante de capa de revista médica, hierarquia visual brutal, ZERO bibliografia, ZERO logo desenhada." },
         { n: 2, total: 5, papel: "PROBLEMA: aprofunda a dor em linguagem leiga, faz a pessoa se identificar. SEM anatomia clínica interna." },
         { n: 3, total: 5, papel: "MECANISMO: explica COMO o problema acontece com analogia visual simples. Reforço de autoridade hospitalar." },
         { n: 4, total: 5, papel: "SOLUÇÃO/GANHO: como o cirurgião resolve. Foco no GANHO CONCRETO do paciente (dormir bem, mastigar sem dor, voltar a sorrir, respirar melhor)." },
