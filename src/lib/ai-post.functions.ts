@@ -914,7 +914,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         "Dica de técnica: passo a passo da sutura simples em mucosa oral",
         "Você sabia que o nervo alveolar inferior corre dentro do canal mandibular",
         "Mito ou verdade: tomar antibiótico antes de toda exodontia é obrigatório",
-        "Curiosidade anatômica sobre o forame mentual e o nervo mentoniano",
+        "Curiosidade anatômica sobre o forame mentual e o nervo mentual",
         "Caiu na prova: indicações clínicas da alveoloplastia após exodontia",
         "Dica de técnica: como posicionar o fórceps para extração de molar inferior",
         "Enquete: qual sutura usar em ferida cirúrgica intraoral de mucosa",
