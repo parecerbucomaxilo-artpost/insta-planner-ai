@@ -190,7 +190,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   };
 
   const publishSuccessMessage = (out: Awaited<ReturnType<typeof publishIg>>) => {
-    if (out && "via" in out && (out.via as string) === "manual-liga") return "Liga salva como rascunho para postagem manual.";
     if (out && "via" in out && out.via === "meta") return "Publicado diretamente no Instagram.";
     return "Publicado diretamente no Instagram.";
   };
@@ -342,7 +341,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         if (!canPublishAutomatically) {
           await approveFn({ data: { id: preview.id, acao: "arquivar" } });
           await copiarTexto(preview.legenda, "Legenda copiada para publicar manualmente.");
-          toast.success(isLiga ? "Liga em modo manual: salvei o post e copiei a legenda." : "Sem conexão ativa: salvei o post e deixei pronto para publicação manual.", { id: tid });
+          toast.success("Sem conexão ativa: salvei o post e deixei pronto para publicação manual.", { id: tid });
           setPreview(null);
           carregar();
           return;
@@ -400,9 +399,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         toast.success(publishSuccessMessage(out));
       } else if (quando === "agora") {
         await copiarTexto(legenda, "Legenda copiada para publicar manualmente.");
-        toast.success(isLiga ? "Liga em modo manual: post salvo, imagem pronta para baixar e legenda copiada." : "Post salvo para publicação manual.");
+        toast.success("Post salvo para publicação manual.");
       } else {
-        toast.success(isLiga ? "Liga salva como rascunho manual." : "Post agendado!");
+        toast.success("Post agendado!");
       }
       setLegenda(""); setFile(null); setPreviewImg(null);
       carregar();
@@ -751,7 +750,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               </div>
               <Button onClick={salvarManual} disabled={savingManual} className="w-full" variant="outline">
                 {savingManual ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : quando === "agora" ? <Zap className="w-4 h-4 mr-2" /> : <CalendarClock className="w-4 h-4 mr-2" />}
-                {isLiga ? "Salvar rascunho manual" : quando === "agora" && !canPublishAutomatically ? "Salvar para postar manual" : quando === "agora" ? "Publicar agora" : "Agendar"}
+                {quando === "agora" && !canPublishAutomatically ? "Salvar para postar manual" : quando === "agora" ? "Publicar agora" : "Agendar"}
               </Button>
             </Card>
           )}
