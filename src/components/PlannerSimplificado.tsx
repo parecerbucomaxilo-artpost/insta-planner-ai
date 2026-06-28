@@ -89,8 +89,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const usarTipoLiga = permiteTipoLiga && tipoPostagem === "liga";
   const effectiveAudiencia: typeof audiencia = usarTipoLiga ? "estudantes-graduacao" : audiencia;
   const effectiveConta = usarTipoLiga ? LIGA_ACCOUNT : conta;
-  // Liga agora publica via @drfranciscomenezes (que está conectado) convidando @lactbmf como colaboradora.
-  const canPublishAutomatically = isLiga ? true : destinoStatus === "ok";
+  const canPublishAutomatically = destinoStatus === "ok";
 
 
   useEffect(() => {
@@ -114,7 +113,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   // Carrega destino Meta/token configurado para esta conta
   useEffect(() => {
     if (!conta) { setDestinoStatus("missing"); setDestinoModo("missing"); return; }
-    if (conta === LIGA_ACCOUNT) { setDestinoStatus("missing"); setDestinoModo("missing"); return; }
     setDestinoStatus("loading");
     (async () => {
       try {
@@ -140,7 +138,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const manualUrl = r.url;
       setMetaOauthUrl(manualUrl);
       setMetaConnectPath(`/meta-connect?account=${encodeURIComponent(conta)}&next=${encodeURIComponent(r.url)}`);
-      toast.info(trocarFacebook ? "Clique em 'Abrir conexão Instagram' para entrar direto na conta da Liga." : "Clique no botão 'Abrir conexão Meta' que apareceu abaixo.");
+      toast.info(trocarFacebook ? "Clique em 'Abrir conexão Instagram Liga' que apareceu abaixo." : "Clique no botão 'Abrir conexão Meta' que apareceu abaixo.");
     } catch (e: any) {
       toast.error(e.message || "Falha ao iniciar conexão Meta.");
     }
@@ -192,7 +190,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   };
 
   const publishSuccessMessage = (out: Awaited<ReturnType<typeof publishIg>>) => {
-    if (out && "via" in out && (out.via as string) === "manual-liga") return "Liga salva como rascunho para postagem manual.";
     if (out && "via" in out && out.via === "meta") return "Publicado diretamente no Instagram.";
     return "Publicado diretamente no Instagram.";
   };
@@ -288,7 +285,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modeloImagem,
       } as any });
       await marcarConta(out.id);
-      if (isLiga) await approveFn({ data: { id: out.id, acao: "arquivar" } });
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
       setTema("");
       toast.success("Pré-visualize abaixo.", { id: tid });
@@ -327,9 +323,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modeloImagem,
       } as any });
       await marcarConta(out.id);
-      await approveFn({ data: { id: out.id, acao: isLiga ? "arquivar" : "agendar" } });
+      await approveFn({ data: { id: out.id, acao: "agendar" } });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
-      toast.success(isLiga ? "Liga salva como rascunho manual." : "Agendado!", { id: tid });
+      toast.success("Agendado!", { id: tid });
       carregar();
     } catch (e: any) {
       toast.error(e.message || "Falha", { id: tid });
@@ -345,7 +341,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         if (!canPublishAutomatically) {
           await approveFn({ data: { id: preview.id, acao: "arquivar" } });
           await copiarTexto(preview.legenda, "Legenda copiada para publicar manualmente.");
-          toast.success(isLiga ? "Liga em modo manual: salvei o post e copiei a legenda." : "Sem conexão ativa: salvei o post e deixei pronto para publicação manual.", { id: tid });
+          toast.success("Sem conexão ativa: salvei o post e deixei pronto para publicação manual.", { id: tid });
           setPreview(null);
           carregar();
           return;
@@ -355,8 +351,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         assertPublishOk(out);
         toast.success(publishSuccessMessage(out), { id: tid });
       } else {
-        await approveFn({ data: { id: preview.id, acao: isLiga ? "arquivar" : acao } });
-        toast.success(isLiga ? "Liga salva como rascunho manual." : "Salvo!", { id: tid });
+        await approveFn({ data: { id: preview.id, acao } });
+        toast.success("Salvo!", { id: tid });
       }
       setPreview(null);
       carregar();
@@ -388,7 +384,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const url = await uploadPostImage(file, uid);
       const iso = buildAgendamentoIso();
       const shouldAutoPublish = quando === "agora" && canPublishAutomatically;
-      const status = isLiga ? "Rascunho" : shouldAutoPublish ? "Agendado" : quando === "agora" ? "Rascunho" : "Agendado";
+      const status = shouldAutoPublish ? "Agendado" : quando === "agora" ? "Rascunho" : "Agendado";
       const { data: ins, error } = await supabase.from("posts").insert({
         user_id: uid, tipo_post: "Post Único",
         legenda, url_imagem: url,
@@ -403,9 +399,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         toast.success(publishSuccessMessage(out));
       } else if (quando === "agora") {
         await copiarTexto(legenda, "Legenda copiada para publicar manualmente.");
-        toast.success(isLiga ? "Liga em modo manual: post salvo, imagem pronta para baixar e legenda copiada." : "Post salvo para publicação manual.");
+        toast.success("Post salvo para publicação manual.");
       } else {
-        toast.success(isLiga ? "Liga salva como rascunho manual." : "Post agendado!");
+        toast.success("Post agendado!");
       }
       setLegenda(""); setFile(null); setPreviewImg(null);
       carregar();
@@ -519,13 +515,13 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             <p className="text-xs text-emerald-800">✅ Publicação direta Meta ativa para @{conta}.</p>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={conectarMetaConta} variant="secondary">
-              <Instagram className="w-4 h-4 mr-1" /> {`Conectar Instagram @${conta}`}
+            <Button onClick={conectarMetaConta} className={isLiga ? "bg-blue-700 hover:bg-blue-800" : undefined} variant={isLiga ? "default" : "secondary"}>
+              <Instagram className="w-4 h-4 mr-1" /> {isLiga ? "Conectar Instagram Liga pelo Meta" : `Conectar Instagram @${conta}`}
             </Button>
             {metaConnectPath && (
               <Button asChild variant="outline">
                 <a href={metaConnectPath} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-1" /> Abrir conexão Meta
+                  <ExternalLink className="w-4 h-4 mr-1" /> {isLiga ? "Abrir conexão Instagram Liga" : "Abrir conexão Meta"}
                 </a>
               </Button>
             )}
@@ -539,6 +535,11 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {metaConnectPath && (
             <p className="text-xs text-zinc-600">
               Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview.
+            </p>
+          )}
+          {isLiga && destinoStatus === "ok" && (
+            <p className="text-xs text-emerald-800 font-medium">
+              Liga conectada: os posts desta aba serão publicados diretamente em @lactbmf.anhanguerasbo.
             </p>
           )}
         </Card>
@@ -633,7 +634,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 </div>
                 <Button onClick={handleGerar} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                  Gerador local criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {isLiga ? "(salvar rascunho manual)" : quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
+                  Gerador local criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
                 </Button>
               </>
             ) : (
@@ -709,7 +710,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                   </Button>
                 ) : (
                   <Button onClick={() => decidirPreview("agendar")} className="bg-emerald-600 hover:bg-emerald-700 col-span-2">
-                    <CalendarClock className="w-4 h-4 mr-1" /> {isLiga ? "Salvar rascunho manual" : "Agendar"}
+                    <CalendarClock className="w-4 h-4 mr-1" /> Agendar
                   </Button>
                 )}
                 <Button variant="outline" onClick={descartarPreview}>
@@ -718,7 +719,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               </div>
               {!canPublishAutomatically && (
                 <div className="rounded-md border border-amber-200 bg-white/80 p-3 space-y-2 text-xs text-amber-950">
-                  <p className="font-semibold">{isLiga ? "Liga em modo manual: publique diretamente no Instagram da Liga." : `Conexão indisponível: publique manualmente na conta @${conta}.`}</p>
+                  <p className="font-semibold">Conexão indisponível: conecte a conta @${conta} pelo Meta ou publique manualmente.</p>
                   <div className="flex flex-wrap gap-2">
                     {preview.urls[0] && (
                       <Button type="button" size="sm" variant="outline" onClick={() => baixarMidia(preview.urls[0], `post-${conta}-${preview.id}.png`)}>
@@ -749,7 +750,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               </div>
               <Button onClick={salvarManual} disabled={savingManual} className="w-full" variant="outline">
                 {savingManual ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : quando === "agora" ? <Zap className="w-4 h-4 mr-2" /> : <CalendarClock className="w-4 h-4 mr-2" />}
-                {isLiga ? "Salvar rascunho manual" : quando === "agora" && !canPublishAutomatically ? "Salvar para postar manual" : quando === "agora" ? "Publicar agora" : "Agendar"}
+                {quando === "agora" && !canPublishAutomatically ? "Salvar para postar manual" : quando === "agora" ? "Publicar agora" : "Agendar"}
               </Button>
             </Card>
           )}
