@@ -89,8 +89,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const usarTipoLiga = permiteTipoLiga && tipoPostagem === "liga";
   const effectiveAudiencia: typeof audiencia = usarTipoLiga ? "estudantes-graduacao" : audiencia;
   const effectiveConta = usarTipoLiga ? LIGA_ACCOUNT : conta;
-  // Liga agora publica via @drfranciscomenezes (que está conectado) convidando @lactbmf como colaboradora.
-  const canPublishAutomatically = isLiga ? true : destinoStatus === "ok";
+  const canPublishAutomatically = destinoStatus === "ok";
 
 
   useEffect(() => {
@@ -114,7 +113,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   // Carrega destino Meta/token configurado para esta conta
   useEffect(() => {
     if (!conta) { setDestinoStatus("missing"); setDestinoModo("missing"); return; }
-    if (conta === LIGA_ACCOUNT) { setDestinoStatus("missing"); setDestinoModo("missing"); return; }
     setDestinoStatus("loading");
     (async () => {
       try {
@@ -140,7 +138,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const manualUrl = r.url;
       setMetaOauthUrl(manualUrl);
       setMetaConnectPath(`/meta-connect?account=${encodeURIComponent(conta)}&next=${encodeURIComponent(r.url)}`);
-      toast.info(trocarFacebook ? "Clique em 'Abrir conexão Instagram' para entrar direto na conta da Liga." : "Clique no botão 'Abrir conexão Meta' que apareceu abaixo.");
+      toast.info(trocarFacebook ? "Clique em 'Abrir conexão Instagram Liga' que apareceu abaixo." : "Clique no botão 'Abrir conexão Meta' que apareceu abaixo.");
     } catch (e: any) {
       toast.error(e.message || "Falha ao iniciar conexão Meta.");
     }
@@ -288,7 +286,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modeloImagem,
       } as any });
       await marcarConta(out.id);
-      if (isLiga) await approveFn({ data: { id: out.id, acao: "arquivar" } });
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
       setTema("");
       toast.success("Pré-visualize abaixo.", { id: tid });
@@ -327,9 +324,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modeloImagem,
       } as any });
       await marcarConta(out.id);
-      await approveFn({ data: { id: out.id, acao: isLiga ? "arquivar" : "agendar" } });
+      await approveFn({ data: { id: out.id, acao: "agendar" } });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
-      toast.success(isLiga ? "Liga salva como rascunho manual." : "Agendado!", { id: tid });
+      toast.success("Agendado!", { id: tid });
       carregar();
     } catch (e: any) {
       toast.error(e.message || "Falha", { id: tid });
@@ -355,8 +352,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         assertPublishOk(out);
         toast.success(publishSuccessMessage(out), { id: tid });
       } else {
-        await approveFn({ data: { id: preview.id, acao: isLiga ? "arquivar" : acao } });
-        toast.success(isLiga ? "Liga salva como rascunho manual." : "Salvo!", { id: tid });
+        await approveFn({ data: { id: preview.id, acao } });
+        toast.success("Salvo!", { id: tid });
       }
       setPreview(null);
       carregar();
@@ -388,7 +385,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const url = await uploadPostImage(file, uid);
       const iso = buildAgendamentoIso();
       const shouldAutoPublish = quando === "agora" && canPublishAutomatically;
-      const status = isLiga ? "Rascunho" : shouldAutoPublish ? "Agendado" : quando === "agora" ? "Rascunho" : "Agendado";
+      const status = shouldAutoPublish ? "Agendado" : quando === "agora" ? "Rascunho" : "Agendado";
       const { data: ins, error } = await supabase.from("posts").insert({
         user_id: uid, tipo_post: "Post Único",
         legenda, url_imagem: url,
