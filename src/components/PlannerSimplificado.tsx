@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X, Image as ImageIcon, Layers, Film, RotateCcw, ScanEye, Copy, ExternalLink, Download } from "lucide-react";
+import { Instagram, Loader2, Trash2, CalendarClock, Wand2, Zap, CalendarDays, Check, X, Image as ImageIcon, Layers, Film, RotateCcw, ScanEye, Copy, ExternalLink, Download, Sparkles, Stethoscope } from "lucide-react";
 import { LogoPreviewDialog } from "@/components/LogoPreviewDialog";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
@@ -65,6 +65,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [modo, setModo] = useState<Modo>("feed");
   const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
+  const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar">("CTBMF");
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");
@@ -287,7 +288,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const formato = modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único";
       const out = await genSingle({ data: {
         tema: tema.trim(),
-        especialidade: "CTBMF",
+        especialidade,
         rede: "instagram",
         tipo,
         formato,
@@ -312,7 +313,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     const tid = "local-week-simple";
     toast.loading("Gerador local planejando 7 dias...", { id: tid });
     try {
-      const out = await genWeek({ data: { especialidade: "CTBMF", modelo } as any });
+      const out = await genWeek({ data: { especialidade, modelo } as any });
       // Filtra apenas slots do Instagram para a conta simplificada
       const igOnly = (out.temas as any[]).filter((t) => t.rede === "instagram" || t.rede === "estilo-x");
       setTemas(igOnly);
@@ -327,7 +328,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
       const out = await genSingle({ data: {
-        tema: t.tema, especialidade: "CTBMF",
+        tema: t.tema, especialidade,
         rede: (t.rede === "estilo-x" ? "estilo-x" : "instagram") as any,
         tipo: t.tipo as any, formato: t.formato as any, quando: t.quando,
         ambasRedes: false,
@@ -571,6 +572,28 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               <QuandoBtn active={modo === "semana"} onClick={() => { setModo("semana"); setQuando("7dias"); }} icon={<CalendarDays className="w-4 h-4" />} label="7 dias" />
             </div>
           </Card>
+
+          {/* Especialidade do post */}
+          <Card className="p-5 space-y-3">
+            <Label className="text-sm font-semibold">Especialidade</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <QuandoBtn
+                active={especialidade === "CTBMF"}
+                onClick={() => setEspecialidade("CTBMF")}
+                icon={<Sparkles className="w-4 h-4" />}
+                label="CTBMF"
+              />
+              <QuandoBtn
+                active={especialidade === "Odontologia Hospitalar"}
+                onClick={() => setEspecialidade("Odontologia Hospitalar")}
+                icon={<Sparkles className="w-4 h-4" />}
+                label="Odontologia Hospitalar"
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">Define o foco clínico das legendas e imagens geradas.</p>
+          </Card>
+
+
 
           {/* Bloco Quando — usado pelo gerador local e manual (oculto no modo semana) */}
           {modo !== "semana" && (
