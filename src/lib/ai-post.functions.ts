@@ -318,8 +318,8 @@ function studentImagePrompt(tema: string, slide?: { n: number; total: number; pa
     : "FORMATO vertical 4:5 (1024x1280) — Instagram Feed/Carrossel padrão.";
   const conceitosCriativos = [
     "FOTOGRAFIA CLÍNICA HIPER-REALISTA com anatomia bucomaxilofacial cientificamente correta: instrumental cirúrgico real (fórceps, porta-agulhas, seringa carpule, bisturi nº 15, descolador de Molt) em macro, profundidade rasa, foco preciso, iluminação cinematográfica de centro cirúrgico.",
-    "RENDERIZAÇÃO MÉDICA 3D HIPER-REALISTA estilo Netter/Sobotta digital: corte sagital ou coronal mostrando anatomia exata (alvéolo, canal mandibular, nervo alveolar inferior, forame mentual, dente impactado), proporções científicas perfeitas, microanotações tipográficas elegantes.",
-    "IMAGEM RADIOGRÁFICA OU TOMOGRÁFICA REALISTA (panorâmica, periapical ou TC de feixe cônico) de alta resolução, tons de cinza fiéis ao exame, com a estrutura do tema em destaque sutil e anotações clínicas mínimas.",
+    "RENDERIZAÇÃO MÉDICA 3D HIPER-REALISTA estilo Netter/Sobotta digital: corte sagital ou coronal mostrando anatomia exata (alvéolo, canal mandibular, nervo alveolar inferior, forame mentual, dente impactado), proporções científicas perfeitas, destaques visuais sem letras, números ou rótulos.",
+    "IMAGEM RADIOGRÁFICA OU TOMOGRÁFICA REALISTA (panorâmica, periapical ou TC de feixe cônico) de alta resolução, tons de cinza fiéis ao exame, com a estrutura do tema em destaque sutil por luz/contorno, sem anotações escritas.",
     "MACROFOTOGRAFIA CIRÚRGICA estilo National Geographic médico: close extremo de campo operatório real (sutura em mucosa, exodontia, biópsia, frenectomia), tecidos com cor e textura fiéis, iluminação dramática vinda de cima.",
   ];
   const conceito = conceitosCriativos[Math.floor(Math.random() * conceitosCriativos.length)];
