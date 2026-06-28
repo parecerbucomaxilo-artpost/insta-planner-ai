@@ -70,7 +70,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [data, setData] = useState<string>("");
   const [hora, setHora] = useState<string>("09:00");
   const [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[] } | null>(null);
+  const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[]; slideLegendas?: string[] } | null>(null);
   const [temas, setTemas] = useState<Array<{ rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
 
   // Manual
@@ -298,7 +298,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modeloImagem,
       } as any });
       await marcarConta(out.id);
-      setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
+      setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, slideLegendas: (out as any).slideLegendas });
       setTema("");
       toast.success("Pré-visualize abaixo.", { id: tid });
     } catch (e: any) {
@@ -693,18 +693,25 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                     <>
                       <div className="grid grid-cols-2 gap-2">
                         {preview.urls.map((u, i) => (
-                          <div key={i} className="relative">
-                            <img src={u} alt={`Slide ${i + 1}`} className="rounded-md w-full object-cover aspect-[4/5]" />
-                            <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
-                              {i + 1}/{preview.urls.length}
-                            </span>
-                            <Button
-                              type="button" size="sm" variant="secondary"
-                              className="absolute bottom-1 right-1 h-6 px-2 text-[10px]"
-                              onClick={() => baixarMidia(u, `post-${conta}-${preview.id}-${i + 1}.png`)}
-                            >
-                              <Download className="w-3 h-3 mr-1" />Slide {i + 1}
-                            </Button>
+                          <div key={i} className="rounded-md border bg-white/80 overflow-hidden">
+                            <div className="relative">
+                              <img src={u} alt={`Slide ${i + 1}`} className="w-full object-cover aspect-[4/5]" />
+                              <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
+                                {i + 1}/{preview.urls.length}
+                              </span>
+                              <Button
+                                type="button" size="sm" variant="secondary"
+                                className="absolute bottom-1 right-1 h-6 px-2 text-[10px]"
+                                onClick={() => baixarMidia(u, `post-${conta}-${preview.id}-${i + 1}.png`)}
+                              >
+                                <Download className="w-3 h-3 mr-1" />Slide {i + 1}
+                              </Button>
+                            </div>
+                            {preview.slideLegendas?.[i] && (
+                              <p className="p-2 text-[11px] leading-snug text-slate-700">
+                                {preview.slideLegendas[i]}
+                              </p>
+                            )}
                           </div>
                         ))}
                       </div>
