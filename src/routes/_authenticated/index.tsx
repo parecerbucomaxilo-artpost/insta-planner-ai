@@ -202,7 +202,7 @@ function Dashboard() {
               contaFixa="drfranciscomenezes"
               storageKey="planner_simplificado_chico_v1"
               audiencia="chico-drfm"
-              permiteTipoLiga
+              
             />
           </TabsContent>
           <TabsContent value="semana" className="mt-6">
