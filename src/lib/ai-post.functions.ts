@@ -180,7 +180,8 @@ FORMATO DA LEGENDA:
 ${isLI
   ? `- LinkedIn: 1200-1800 caracteres (densidade científica real), parágrafos de no máximo 3 linhas, no máximo 1 emoji sóbrio (ou nenhum). Bloco "Referências:" obrigatório com DOI. Sem linguagem leiga, sem analogias infantis, sem chamadas de Instagram.`
   : `- Instagram: 400-700 caracteres (NUNCA ultrapasse 800), gancho na 1ª linha, 2-4 emojis estratégicos, parágrafos de 1-2 linhas, 4-6 hashtags ao final. CTA indireto na última linha.`}
-NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
+NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.
+${CONTEUDO_COMPLETO}`;
 }
 
 
