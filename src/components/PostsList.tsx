@@ -30,6 +30,14 @@ function normalizeInstagramAccount(value: string | null | undefined) {
   return String(value || "").trim().replace(/^@+/, "").toLowerCase();
 }
 
+function getSlideCaption(legenda: string | null | undefined, index: number) {
+  const txt = String(legenda || "").trim();
+  if (!txt) return "";
+  const matches = Array.from(txt.matchAll(/(?:^|\n)(Slide\s*(\d+)\s*[:—-]\s*[\s\S]*?)(?=\n\s*Slide\s*\d+\s*[:—-]|\n\s*Saiba mais|\n\s*Atendimento|\n\s*Salve|\n\s*#|$)/gi));
+  const found = matches.find((m) => Number(m[2]) === index + 1)?.[1]?.trim();
+  return found || txt;
+}
+
 export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () => void }) {
   // const sendAlbato = useServerFn(dispatchAlbato); // Removido para reset logic
   const publishIg = useServerFn(publishInstagramNow);
@@ -128,6 +136,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
         const alreadyPublished = p.status === "Publicado";
         const failedPublish = p.status === "Erro";
         const isLigaPost = normalizeInstagramAccount(p.instagram_conta) === LIGA_ACCOUNT;
+        const legendaExibida = isCarrossel ? getSlideCaption(p.legenda, safeIdx) : p.legenda;
         const goPrev = () =>
           setSlideIdx((s) => ({ ...s, [p.id]: (safeIdx - 1 + carrosselUrls.length) % carrosselUrls.length }));
         const goNext = () =>
@@ -204,7 +213,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                 </span>
               </div>
               <p className="text-sm line-clamp-3 flex-1 leading-relaxed">
-                {p.legenda || <span className="text-muted-foreground">(sem legenda)</span>}
+                {legendaExibida || <span className="text-muted-foreground">(sem legenda)</span>}
               </p>
               {p.data_agendamento && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">

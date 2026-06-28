@@ -455,6 +455,125 @@ function chooseLocalTema(audiencia: z.infer<typeof SingleInput>["audiencia"], us
   return `${list[start]} — abordagem ${new Date().toLocaleDateString("pt-BR")}`;
 }
 
+function topicGuidance(tema: string) {
+  const t = normalizeTema(tema);
+  if (/alveolite|coagulo|pos exodontia|pos operatorio/.test(t)) {
+    return {
+      oQue: "dor intensa alguns dias após a extração pode indicar inflamação do alvéolo quando o coágulo se perde ou não protege bem a ferida",
+      porQue: "o osso fica exposto, a cicatrização atrasa e a dor costuma irradiar para ouvido ou têmpora",
+      conduta: "a conduta envolve avaliação, limpeza delicada do alvéolo, curativo local quando indicado, controle da dor e orientação de higiene, sem cutucar a região",
+      alerta: "dor que piora depois do terceiro dia, mau gosto, mau hálito ou alvéolo vazio merecem avaliação",
+      ganho: "controlar a dor, proteger a cicatrização e evitar complicações",
+    };
+  }
+  if (/siso|terceiro molar|38|dente incluso|incluso/.test(t)) {
+    return {
+      oQue: "o siso pode ficar sem espaço, parcialmente coberto por gengiva ou em contato próximo com estruturas importantes",
+      porQue: "essa posição favorece inflamação, dor irradiada, dificuldade de higienização e risco ao dente vizinho",
+      conduta: "o tratamento começa com exame clínico e imagem; quando indicado, a exodontia planejada é feita com técnica minimamente traumática e cuidados pós-operatórios",
+      alerta: "dor recorrente, inchaço, pus, mau gosto ou dificuldade para abrir a boca pedem avaliação",
+      ganho: "resolver a causa do incômodo com mais previsibilidade e segurança",
+    };
+  }
+  if (/atm|dtm|bruxismo|mandibula|estalo|trav|dor facial|dor de cabeca|masseter/.test(t)) {
+    return {
+      oQue: "dor, estalos, travamento ou cansaço na mandíbula podem vir da articulação temporomandibular e dos músculos mastigatórios",
+      porQue: "sobrecarga, apertamento, inflamação e alterações na mordida podem desorganizar o movimento mandibular",
+      conduta: "a abordagem pode incluir orientação de hábitos, placa oclusal, fisioterapia, controle inflamatório e investigação de fatores articulares ou musculares",
+      alerta: "travamento, dor diária, limitação para abrir a boca ou dor que irradia para ouvido e cabeça precisam de avaliação",
+      ganho: "reduzir sobrecarga, recuperar função e mastigar com mais conforto",
+    };
+  }
+  if (/ortognatica|mordida|perfil facial|harmonia|respiracao|fala/.test(t)) {
+    return {
+      oQue: "alterações importantes da mordida podem afetar mastigação, fala, respiração e equilíbrio facial",
+      porQue: "maxila e mandíbula podem crescer em posições diferentes, criando compensações dentárias e musculares",
+      conduta: "o caminho costuma envolver diagnóstico facial, documentação, planejamento digital, ortodontia e cirurgia ortognática quando indicada",
+      alerta: "dificuldade para mastigar, fechar os lábios, respirar bem ou morder corretamente merece avaliação especializada",
+      ganho: "buscar função, estabilidade e harmonia facial de forma planejada",
+    };
+  }
+  if (/apneia|ronco|cpap|sono|dormir/.test(t)) {
+    return {
+      oQue: "ronco intenso e pausas respiratórias durante o sono podem indicar obstrução das vias aéreas",
+      porQue: "a anatomia facial, a posição da mandíbula e tecidos da garganta podem reduzir a passagem de ar",
+      conduta: "a avaliação pode envolver exame do sono, CPAP, dispositivos intraorais e, em casos selecionados, cirurgia ortognática ou abordagem das vias aéreas",
+      alerta: "sonolência diurna, engasgos à noite, pressão alta ou ronco com pausas respiratórias precisam de investigação",
+      ganho: "respirar melhor, dormir com mais qualidade e reduzir riscos sistêmicos",
+    };
+  }
+  if (/ferida|lesao|biopsia|patologia|mucosa|cicatriza/.test(t)) {
+    return {
+      oQue: "feridas, manchas ou aumentos de volume na boca que não cicatrizam precisam ser observados com seriedade",
+      porQue: "traumas locais, inflamações, infecções e lesões potencialmente relevantes podem ter aparência parecida",
+      conduta: "a conduta é examinar, remover fatores irritantes e indicar biópsia quando a lesão é persistente ou suspeita",
+      alerta: "lesão por mais de 14 dias, sangramento, endurecimento, crescimento ou dor persistente exigem avaliação",
+      ganho: "chegar ao diagnóstico correto cedo e definir o tratamento adequado",
+    };
+  }
+  if (/trauma|fratura|acidente|face/.test(t)) {
+    return {
+      oQue: "traumas na face podem envolver dentes, mandíbula, maxila, órbita e articulação temporomandibular",
+      porQue: "impactos alteram o encaixe dos ossos e podem comprometer mordida, respiração, visão ou abertura da boca",
+      conduta: "a conduta envolve avaliação rápida, exames de imagem e, quando necessário, redução e fixação interna rígida das fraturas",
+      alerta: "mordida alterada, assimetria, dormência, sangramento, visão dupla ou dificuldade para abrir a boca são sinais de alerta",
+      ganho: "restaurar forma, função e segurança no tempo certo",
+    };
+  }
+  if (/frenectomia|freio|lingual|labial/.test(t)) {
+    return {
+      oQue: "freios labiais ou linguais podem limitar movimento, higiene, fala ou estabilidade gengival em alguns casos",
+      porQue: "a inserção do tecido pode criar tração mecânica ou restringir funções orais",
+      conduta: "a conduta é avaliar função e indicação; quando necessário, a frenectomia remove ou reposiciona o freio com técnica controlada",
+      alerta: "dificuldade funcional, retração gengival, espaço persistente entre dentes ou limitação de língua merecem avaliação",
+      ganho: "melhorar função oral com indicação correta, sem procedimento desnecessário",
+    };
+  }
+  return {
+    oQue: "um sinal na boca, face ou mandíbula pode ter causas diferentes e não deve ser interpretado isoladamente",
+    porQue: "dor, inflamação, sobrecarga muscular, posição dos dentes e alterações anatômicas podem produzir sintomas parecidos",
+    conduta: "o caminho seguro é avaliação clínica, exame de imagem quando necessário e plano individual com orientação, controle dos fatores de risco e tratamento específico",
+    alerta: "dor persistente, inchaço, travamento, sangramento, febre ou piora progressiva pedem avaliação especializada",
+    ganho: "entender a causa real e escolher a conduta certa, sem soluções genéricas",
+  };
+}
+
+function buildSlideNarratives(tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"]) {
+  const g = topicGuidance(tema);
+  if (audiencia === "estudantes-graduacao") {
+    return [
+      `Slide 1 — Gancho acadêmico: ${tema}. O aluno precisa reconhecer o problema antes de pensar em instrumento ou técnica.`,
+      `Slide 2 — Reconhecimento clínico: ${g.oQue}. Observe sinais, tempo de evolução e relação com anatomia local.`,
+      `Slide 3 — Mecanismo/anatomia: ${g.porQue}. A decisão depende da estrutura envolvida e do risco cirúrgico.`,
+      `Slide 4 — Conduta prática: ${g.conduta}. Esse é o slide da solução, com raciocínio técnico e seguro.`,
+      `Slide 5 — Fechamento: ${g.alerta}. Salve para revisar e compare com o que você faria na clínica.`
+    ];
+  }
+  return [
+    `Slide 1 — Identificação: ${g.oQue}. Gancho visual de dor, dúvida ou desconforto real do paciente.`,
+    `Slide 2 — Problema: ${g.porQue}. Mostrar por que o sintoma não deve ser banalizado.`,
+    `Slide 3 — Caminho de tratamento: ${g.conduta}. Este slide obrigatoriamente mostra a solução/conduta, não só a doença.`,
+    `Slide 4 — Ganho concreto: ${g.ganho}. Traduzir o tratamento em benefício de vida real.`,
+    `Slide 5 — CTA: ${g.alerta}. Link na bio / WhatsApp com fechamento elegante e seguro.`
+  ];
+}
+
+function ensureCarouselCaption(base: string, slideNarratives: string[], audiencia: z.infer<typeof SingleInput>["audiencia"]) {
+  if (!slideNarratives.length) return base;
+  const firstLine = (base || "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .find((l) => l && !/^slide\s*\d/i.test(l) && !/^#/.test(l)) || "Carrossel educativo";
+  const blocks = slideNarratives.map((texto, i) => `Slide ${i + 1}: ${texto.replace(/^Slide\s*\d+\s*[—:-]\s*/i, "").trim()}`);
+  const fechamento = audiencia === "estudantes-graduacao"
+    ? "Salve para revisar e comente qual conduta você escolheria."
+    : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
+  const hashtags = audiencia === "estudantes-graduacao"
+    ? "#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF"
+    : "#bucomaxilofacial #CTBMF #drfranciscomenezes #cirurgiabucomaxilofacial #saudebucal";
+  return `${firstLine}\n\n${blocks.join("\n\n")}\n\n${fechamento}\n\n${hashtags}`;
+}
+
 function buildLocalCaption(params: {
   tema: string;
   rede: "instagram" | "linkedin" | "estilo-x" | "google";
@@ -464,22 +583,33 @@ function buildLocalCaption(params: {
   audiencia: z.infer<typeof SingleInput>["audiencia"];
 }) {
   const { tema, rede, formato, especialidade, audiencia } = params;
+  const g = topicGuidance(tema);
+  if (formato === "Carrossel") {
+    const slides = buildSlideNarratives(tema, audiencia);
+    const fechamento = audiencia === "estudantes-graduacao"
+      ? "Comente qual conduta você escolheria e salve para revisar antes da clínica."
+      : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
+    const hashtags = audiencia === "estudantes-graduacao"
+      ? "#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF"
+      : "#bucomaxilofacial #CTBMF #drfranciscomenezes #cirurgiabucomaxilofacial #saudebucal";
+    return `${tema}\n\n${slides.join("\n\n")}\n\n${fechamento}\n\n${hashtags}`;
+  }
   if (audiencia === "estudantes-graduacao") {
-    return `Caiu na clínica: ${tema}\n\nAntes de decorar condutas, entenda a lógica anatômica e cirúrgica por trás do procedimento. Em cirurgia bucal, indicação correta, técnica limpa e respeito aos tecidos fazem diferença desde a graduação.\n\nDica prática: descreva o passo principal em voz alta antes de executar. Isso organiza raciocínio, biossegurança e instrumentação.\n\n#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF`;
+    return `Caiu na clínica: ${tema}\n\nO que observar: ${g.oQue}.\n\nPor que acontece: ${g.porQue}.\n\nConduta prática: ${g.conduta}.\n\nSinal de alerta: ${g.alerta}.\n\n#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF`;
   }
   if (audiencia === "chico-drfm") {
-    return `Você se identificou com isso?\n\n${tema}. Muitas queixas da face, boca e mandíbula começam discretas, mas podem interferir no sono, na mastigação, na fala e na qualidade de vida.\n\nInformação correta ajuda você a reconhecer sinais importantes sem pânico e buscar uma avaliação especializada quando necessário.\n\nDúvidas? Link na bio para contato e agendamento pelo WhatsApp.\n\nAtendo em ${CHICO_CIDADES}.\n\n#drfranciscomenezes #bucomaxilofacial #CTBMF #ATM #cirurgiabucomaxilofacial`;
+    return `Você se identificou com isso?\n\n${g.oQue}.\n\nIsso acontece porque ${g.porQue}.\n\nO tratamento não é uma receita pronta: ${g.conduta}.\n\nSe você percebe ${g.alerta}, vale investigar com segurança.\n\nDúvidas? Link na bio para contato e agendamento pelo WhatsApp.\n\nAtendo em ${CHICO_CIDADES}.\n\n#drfranciscomenezes #bucomaxilofacial #CTBMF #cirurgiabucomaxilofacial #saudebucal`;
   }
   if (rede === "linkedin") {
-    return `**${tema}**\n\nNa prática em ${especialidade}, esse tema exige integração entre diagnóstico clínico, avaliação funcional e planejamento baseado em evidências. A conduta deve considerar risco, benefício, timing cirúrgico e impacto na qualidade de vida.\n\nPrincipais pontos para discussão profissional:\n• avaliação individualizada reduz intervenções desnecessárias;\n• imagem e exame físico continuam centrais na decisão;\n• acompanhamento longitudinal melhora previsibilidade;\n• comunicação clara com paciente e equipe reduz falhas de adesão.\n\nReferências:\n1. Journal of Oral and Maxillofacial Surgery. Clinical practice updates in oral and maxillofacial surgery. J Oral Maxillofac Surg.\n2. International Journal of Oral and Maxillofacial Surgery. Evidence-based decision making in maxillofacial care. Int J Oral Maxillofac Surg.\n\nDiscussão aberta aos colegas. WhatsApp: ${WHATSAPP}\n\n#CTBMF #CirurgiaBucoMaxiloFacial #OdontologiaHospitalar #EvidenceBasedPractice`;
+    return `**${tema}**\n\nNa prática em ${especialidade}, a apresentação clínica exige diferenciar sintoma, mecanismo e indicação terapêutica. ${g.oQue}.\n\nMecanismo provável: ${g.porQue}. A decisão clínica deve considerar exame físico, imagem quando indicada, risco anatômico e impacto funcional.\n\nImpacto para a prática:\n• ${g.conduta};\n• ${g.alerta};\n• o objetivo é ${g.ganho}.\n\nReferências:\n1. Journal of Oral and Maxillofacial Surgery. Clinical practice updates in oral and maxillofacial surgery. J Oral Maxillofac Surg.\n2. International Journal of Oral and Maxillofacial Surgery. Evidence-based decision making in maxillofacial care. Int J Oral Maxillofac Surg.\n\nDiscussão aberta aos colegas. WhatsApp: ${WHATSAPP}\n\n#CTBMF #CirurgiaBucoMaxiloFacial #OdontologiaHospitalar #EvidenceBasedPractice`;
   }
   if (rede === "google") {
-    return `**${tema}?**\n\nVocê percebe dor, incômodo, estalo, travamento ou dificuldade para mastigar? Esses sinais podem ter diferentes causas e merecem uma avaliação cuidadosa.\n\nO acompanhamento com cirurgião bucomaxilofacial ajuda a entender a origem do problema e definir o melhor caminho com segurança. Atendimento em ${CIDADES_ATENDIMENTO}.\n\nSaiba mais pelo perfil ou envie mensagem pelo WhatsApp ${WHATSAPP}.\n\nPalavras-chave SEO: Cirurgião Bucomaxilofacial São Paulo, CTBMF, ATM, DTM, Siso incluso, Odontologia Hospitalar\nALT TEXT: arte médica em azul navy sobre ${tema}`;
+    return `**${tema}?**\n\n${g.oQue}. Isso pode acontecer porque ${g.porQue}.\n\nO acompanhamento com cirurgião bucomaxilofacial ajuda a definir o melhor caminho: ${g.conduta}. Atendimento em ${CIDADES_ATENDIMENTO}.\n\nSaiba mais pelo perfil ou envie mensagem pelo WhatsApp ${WHATSAPP}.\n\nPalavras-chave SEO: Cirurgião Bucomaxilofacial São Paulo, CTBMF, tratamento bucomaxilofacial, ${tema}, Odontologia Hospitalar\nALT TEXT: cena médica realista sobre ${tema} mostrando problema, mecanismo e conduta`;
   }
   if (formato === "Story") {
-    return `${tema}\n\nVocê já sentiu algo parecido?\n\nVeja o post completo no feed.\n\nLink na Bio`;
+    return `${tema}\n\n${g.oQue}.\n\nO caminho seguro: ${g.conduta}.\n\nLink na Bio`;
   }
-  return `Isso pode estar tentando te avisar algo.\n\n${tema}. Quando dor, travamento, estalo ou desconforto aparecem na face e na boca, o mais importante é entender a causa antes de procurar soluções rápidas.\n\nInformação de qualidade ajuda você a reconhecer sinais, evitar medo desnecessário e buscar orientação no momento certo.\n\nSaiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.\n\n#bucomaxilofacial #CTBMF #drfranciscomenezes #saudebucal #ATM #cirurgiaoral`;
+  return `Isso pode estar tentando te avisar algo.\n\n${g.oQue}.\n\nPor trás disso, geralmente existe um mecanismo: ${g.porQue}.\n\nA solução começa entendendo a causa. Na prática, ${g.conduta}.\n\n${g.alerta}.\n\nSaiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.\n\n#bucomaxilofacial #CTBMF #drfranciscomenezes #saudebucal #cirurgiaoral`;
 }
 
 
@@ -565,9 +695,12 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         const system = isChico
           ? chicoCaptionSystem(formato)
           : isEstudantes
-            ? `Você é monitor sênior de Cirurgia Bucal escrevendo para estudantes de graduação em Odontologia (Liga de CTBMF). PT-BR Brasil impecável, ZERO inglês, sem repetições, sem palavras inventadas. Tom didático, direto, próximo do aluno; linguagem clínica correta com terminologia anatômica oficial (TA2/SBA). PROIBIDO copy comercial, diagnóstico afirmativo, "agende", "promoção". Encerre com 5-7 hashtags acadêmicas (#CTBMF #LigaAcademica #CirurgiaBucal #EstudanteDeOdontologia #Graduacao). Formato: ${formato}.`
-            : `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, ZERO palavras em inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.`;
-        const prompt = `Tema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Escreva a legenda final pronta para publicação, sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
+            ? `Você é monitor sênior de Cirurgia Bucal escrevendo para estudantes de graduação em Odontologia (Liga de CTBMF). PT-BR Brasil impecável, ZERO inglês, sem repetições, sem palavras inventadas. Tom didático, direto, próximo do aluno; linguagem clínica correta com terminologia anatômica oficial (TA2/SBA). PROIBIDO copy comercial, diagnóstico afirmativo, "agende", "promoção". Encerre com 5-7 hashtags acadêmicas (#CTBMF #LigaAcademica #CirurgiaBucal #EstudanteDeOdontologia #Graduacao). Formato: ${formato}.${CONTEUDO_COMPLETO}`
+            : `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, ZERO palavras em inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.${CONTEUDO_COMPLETO}`;
+        const roteiroCarrossel = formato === "Carrossel"
+          ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter 5 blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
+          : "";
+        const prompt = `Tema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${roteiroCarrossel}\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Escreva a legenda final pronta para publicação, sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
         const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : 700 });
         return txt || localCaption();
       } catch (err) {
@@ -635,7 +768,11 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         .then(applyOverlay)
         .then(uploadOne);
 
-    const legendaResolvida = await legendaPromise;
+    const legendaBaseResolvida = await legendaPromise;
+    const slideNarratives = formato === "Carrossel" ? buildSlideNarratives(tema, data.audiencia) : [];
+    const legendaResolvida = formato === "Carrossel"
+      ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia)
+      : legendaBaseResolvida;
 
     // === NEXO LEGENDA ↔ IMAGEM ===
     // Extrai HEADLINE (1ª linha não-vazia) + ALT TEXT da legenda e, quando possível,
@@ -673,7 +810,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
               ];
           try {
             const carrosselSys = `Você é diretor de arte médico. Para o tema "${tema}" e a LEGENDA dada, descreva ${papeis.length} CENAS VISUAIS DISTINTAS — uma por slide — coerentes entre si mas SEM repetir composição. Cada cena: 1 frase em PT-BR (máx. 220 caracteres), literal, sujeito + ação + contexto anatômico/clínico. Sem texto na imagem, sem cor nomeada, sem pessoa real. Responda APENAS um JSON array de ${papeis.length} strings, na ordem dos slides.`;
-            const carrosselPrompt = `LEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nPAPÉIS DOS SLIDES (na ordem):\n${papeis.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nResponda só o JSON array.`;
+            const carrosselPrompt = `LEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nROTEIRO TEXTUAL OBRIGATÓRIO POR SLIDE:\n${slideNarratives.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nPAPÉIS DOS SLIDES (na ordem):\n${papeis.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nResponda só o JSON array.`;
             const raw = (await generateTextAI({ system: carrosselSys, prompt: carrosselPrompt, model: data.modelo, maxTokens: 600 }) || "").trim();
             const jsonMatch = raw.match(/\[[\s\S]*\]/);
             if (jsonMatch) {
@@ -694,9 +831,11 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     ].filter(Boolean).join("\n");
     const withVisual = (basePrompt: string, slideIndex?: number) => {
       const cenaSlide = typeof slideIndex === "number" ? cenasPorSlide[slideIndex] : "";
+      const narrativaSlide = typeof slideIndex === "number" ? slideNarratives[slideIndex] : "";
       const cena = cenaSlide || cenaVisualNexo;
       const blocos = [
         briefingNexoBase,
+        narrativaSlide ? `LEGENDA/ROTEIRO EXCLUSIVO DESTE SLIDE (não repetir nos outros): ${narrativaSlide}` : "",
         cena ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cena}` : "",
       ].filter(Boolean).join("\n");
       return blocos
@@ -794,7 +933,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const urls = imagensCarrosselCache.length
       ? imagensCarrosselCache
       : [urlImagemCache || urlImagem];
-    return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.length, urls };
+    return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.length, urls, slideLegendas: slideNarratives.slice(0, urls.length) };
   });
 
 // Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado gerado.
