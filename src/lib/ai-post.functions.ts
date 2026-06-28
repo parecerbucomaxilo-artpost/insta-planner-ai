@@ -785,9 +785,10 @@ function completeCaptionIfNeeded(params: {
   rede: "instagram" | "linkedin" | "estilo-x" | "google";
   formato: "Carrossel" | "Story" | "Post Único";
   audiencia: z.infer<typeof SingleInput>["audiencia"];
+  especialidade: string;
 }) {
   const raw = (params.legenda || "").trim();
-  if (!raw) return buildLocalCaption({ tema: params.tema, rede: params.rede, formato: params.formato, especialidade: "CTBMF", nivel: resolveNivel("auto", params.rede), audiencia: params.audiencia });
+  if (!raw) return buildLocalCaption({ tema: params.tema, rede: params.rede, formato: params.formato, especialidade: params.especialidade, nivel: resolveNivel("auto", params.rede), audiencia: params.audiencia });
   const g = topicGuidance(params.tema);
   const norm = normalizeTema(raw);
   const hasConduta = /(trat|conduta|avaliacao|avaliar|planej|fisioterapia|placa|cpap|biopsia|exodontia|higiene|protocolo|fixacao|orientacao|controle|acompanhamento)/.test(norm);
@@ -1046,6 +1047,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       rede: data.rede,
       formato,
       audiencia: data.audiencia,
+      especialidade: data.especialidade,
     });
     const slideNarratives = formato === "Carrossel" ? buildSlideNarratives(tema, data.audiencia) : [];
     const legendaResolvida = formato === "Carrossel"
