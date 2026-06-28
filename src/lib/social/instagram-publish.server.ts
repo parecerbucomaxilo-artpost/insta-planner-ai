@@ -390,11 +390,15 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     // Fallback Liga: usa token da Liga salvo como secret (META_LIGA_ACCESS_TOKEN)
     // quando o perfil ainda não tem token Meta próprio. Resolve o IG Business ID via /me/accounts.
     if (isLigaTarget && (!perfil.instagram_access_token || !perfil.instagram_business_account_id)) {
-      const envToken = process.env.META_LIGA_ACCESS_TOKEN?.trim();
-      if (envToken) {
+      // A Liga (@lactbmf.anhanguerasbo) é administrada pelo Facebook do Francisco Rogério Aguiar de Menezes.
+      // Aceitamos tanto META_LIGA_ACCESS_TOKEN quanto META_FRANCISCO_ACCESS_TOKEN como fallback.
+      const tokensTentativa = [
+        process.env.META_LIGA_ACCESS_TOKEN?.trim(),
+        process.env.META_FRANCISCO_ACCESS_TOKEN?.trim(),
+      ].filter((t): t is string => Boolean(t));
+      for (const envToken of tokensTentativa) {
         let pageToken: string | undefined;
         let igId: string | undefined;
-        // Tentativa 1: token de usuário Facebook → /me/accounts → instagram_business_account
         try {
           const accounts = await graphGetFields<{ data?: Array<{ access_token?: string; instagram_business_account?: { id?: string; username?: string } }> }>(
             "me/accounts",
@@ -409,9 +413,8 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
             igId = match.instagram_business_account.id;
           }
         } catch (e) {
-          console.warn("[instagram-publish] me/accounts indisponível, tentando graph.instagram.com:", e instanceof Error ? e.message : e);
+          console.warn("[instagram-publish] liga me/accounts falhou:", e instanceof Error ? e.message : e);
         }
-        // Tentativa 2: token Instagram Direct (graph.instagram.com/me)
         if (!igId) {
           try {
             const me = await graphGetFields<{ user_id?: string; id?: string; username?: string }>(
@@ -425,7 +428,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
               pageToken = envToken;
             }
           } catch (e) {
-            console.warn("[instagram-publish] graph.instagram.com/me falhou:", e instanceof Error ? e.message : e);
+            console.warn("[instagram-publish] liga graph.instagram.com/me falhou:", e instanceof Error ? e.message : e);
           }
         }
         if (igId && pageToken) {
@@ -435,9 +438,11 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
             .from("perfil_usuario")
             .update({ instagram_access_token: pageToken, instagram_business_account_id: igId, updated_at: new Date().toISOString() })
             .eq("id", perfil.id);
-        } else {
-          console.warn("[instagram-publish] META_LIGA_ACCESS_TOKEN não resolveu IG Business ID para", LIGA_ACCOUNT);
+          break;
         }
+      }
+      if (!perfil.instagram_business_account_id) {
+        console.warn("[instagram-publish] nenhum token Meta (Liga/Francisco) resolveu IG Business ID para", LIGA_ACCOUNT);
       }
     }
 
