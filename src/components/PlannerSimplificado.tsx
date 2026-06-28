@@ -591,6 +591,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               />
             </div>
             <p className="text-[11px] text-muted-foreground">Define o foco clínico das legendas e imagens geradas.</p>
+          </Card>
+
+
 
           {/* Bloco Quando — usado pelo gerador local e manual (oculto no modo semana) */}
           {modo !== "semana" && (
