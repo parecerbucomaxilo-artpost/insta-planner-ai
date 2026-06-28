@@ -1142,7 +1142,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
 
     if (formato === "Carrossel") {
       const fullSpec = [
-        { n: 1, total: 5, papel: "CAPA: GANCHO forte de conversão (pergunta/dor real) + rodapé textual obrigatório. Layout impactante de revista. SEM bibliografia." },
+        { n: 1, total: 5, papel: "CAPA: GANCHO ULTRA FORTE de conversão obrigatório em tipografia gigante (3-6 palavras, bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre navy luminoso) — pergunta direta de dor real, dado de impacto ou frase-choque do TIPO 'DOR NO SISO?', 'SEU MAXILAR TRAVA?', 'RONCO PODE MATAR', 'ESSE CARO NÃO É NORMAL', 'PERDEU UM DENTE?'. O gancho fala DIRETO ao paciente sobre o TEMA — NÃO menciona '@drfranciscomenezes', nome do profissional, marca, clínica ou consultório (a assinatura entra como overlay do sistema). Layout impactante de capa de revista médica, hierarquia visual brutal, ZERO bibliografia, ZERO logo desenhada." },
         { n: 2, total: 5, papel: "PROBLEMA: aprofunda a dor em linguagem leiga, faz a pessoa se identificar. SEM anatomia clínica interna." },
         { n: 3, total: 5, papel: "MECANISMO: explica COMO o problema acontece com analogia visual simples. Reforço de autoridade hospitalar." },
         { n: 4, total: 5, papel: "SOLUÇÃO/GANHO: como o cirurgião resolve. Foco no GANHO CONCRETO do paciente (dormir bem, mastigar sem dor, voltar a sorrir, respirar melhor)." },
