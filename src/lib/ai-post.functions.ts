@@ -139,7 +139,9 @@ REGRAS DE FORMATO:
 - NÃO incluir a assinatura no corpo — entra como overlay na imagem.
 
 ${CTAS_PROIBIDOS}
-${LOCALIZACAO_OBRIGATORIA}`;
+${CTAS_PROIBIDOS}
+${LOCALIZACAO_OBRIGATORIA}
+${CONTEUDO_COMPLETO}`;
   }
 
   const estrutura = isLI
