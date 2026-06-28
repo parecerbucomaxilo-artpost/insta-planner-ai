@@ -76,6 +76,18 @@ const CTAS_PROIBIDOS = `PROIBIDO ABSOLUTO nos textos: "agende sua consulta", "ag
 const CTAS_PERMITIDOS_IG = `CTAs PERMITIDOS (IG/X): "Saiba mais pelo link da bio." | "Expliquei esse assunto em detalhes no link da bio." | "Veja o conteúdo completo através do link da bio." | "Link na Bio".`;
 const CTAS_PERMITIDOS_LI = `CTA permitido (LinkedIn): convite à discussão profissional entre colegas ou WhatsApp ${WHATSAPP} ("Fale comigo no WhatsApp").`;
 
+// REGRA SUPREMA DE COERÊNCIA CLÍNICA — aplicada a TODOS os tipos de post (IG, LinkedIn, Google, Chico, Liga).
+// Resolve a falha recorrente: posts apresentam a patologia mas não dizem como tratar / o que fazer.
+const CONTEUDO_COMPLETO = `\n\n=== REGRA SUPREMA — CONTEÚDO COMPLETO (NÃO PODE FALTAR) ===
+Todo post DEVE responder, de forma equilibrada, às 4 perguntas do leitor — não basta descrever a patologia:
+1) O QUE É (sintoma/condição em 1 frase).
+2) POR QUE ACONTECE (mecanismo simples, 1-2 frases).
+3) COMO SE TRATA / O QUE FAZER (conduta clínica, abordagem terapêutica ou dicas práticas — OBRIGATÓRIO, nunca omitir). Cite opções reais usadas na prática (ex.: placa oclusal para bruxismo/DTM; exodontia minimamente traumática para siso; fisioterapia + controle inflamatório para ATM; redução e fixação interna rígida para fraturas; CPAP/cirurgia ortognática para apneia; biópsia para lesões suspeitas etc.) — sem prometer cura, sem prescrever dose, sem afirmar diagnóstico individual.
+4) QUANDO PROCURAR ESPECIALISTA (sinal de alerta + CTA).
+PROIBIDO: post que só descreve a doença/sintoma e termina sem orientação prática; post que diz "procure um especialista" sem antes explicar QUAIS são as condutas/tratamentos disponíveis.
+A IMAGEM e a LEGENDA devem contar a MESMA história nessa ordem (problema → mecanismo → solução → CTA). Em carrossel, os slides centrais OBRIGATORIAMENTE mostram a SOLUÇÃO/TRATAMENTO, não só a dor.
+=== FIM DA REGRA DE CONTEÚDO COMPLETO ===\n`;
+
 function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x" | "google", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
   if (nivel !== "auto") return nivel;
   if (rede === "google") return "google-business";
