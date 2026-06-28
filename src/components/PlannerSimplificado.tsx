@@ -516,13 +516,13 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             <p className="text-xs text-emerald-800">✅ Publicação direta Meta ativa para @{conta}.</p>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={conectarMetaConta} variant="secondary">
-              <Instagram className="w-4 h-4 mr-1" /> {`Conectar Instagram @${conta}`}
+            <Button onClick={conectarMetaConta} className={isLiga ? "bg-blue-700 hover:bg-blue-800" : undefined} variant={isLiga ? "default" : "secondary"}>
+              <Instagram className="w-4 h-4 mr-1" /> {isLiga ? "Conectar Instagram Liga pelo Meta" : `Conectar Instagram @${conta}`}
             </Button>
             {metaConnectPath && (
               <Button asChild variant="outline">
                 <a href={metaConnectPath} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-1" /> Abrir conexão Meta
+                  <ExternalLink className="w-4 h-4 mr-1" /> {isLiga ? "Abrir conexão Instagram Liga" : "Abrir conexão Meta"}
                 </a>
               </Button>
             )}
@@ -536,6 +536,11 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {metaConnectPath && (
             <p className="text-xs text-zinc-600">
               Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview.
+            </p>
+          )}
+          {isLiga && destinoStatus === "ok" && (
+            <p className="text-xs text-emerald-800 font-medium">
+              Liga conectada: os posts desta aba serão publicados diretamente em @lactbmf.anhanguerasbo.
             </p>
           )}
         </Card>
@@ -630,7 +635,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 </div>
                 <Button onClick={handleGerar} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                  Gerador local criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {isLiga ? "(salvar rascunho manual)" : quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
+                  Gerador local criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
                 </Button>
               </>
             ) : (
@@ -706,7 +711,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                   </Button>
                 ) : (
                   <Button onClick={() => decidirPreview("agendar")} className="bg-emerald-600 hover:bg-emerald-700 col-span-2">
-                    <CalendarClock className="w-4 h-4 mr-1" /> {isLiga ? "Salvar rascunho manual" : "Agendar"}
+                    <CalendarClock className="w-4 h-4 mr-1" /> Agendar
                   </Button>
                 )}
                 <Button variant="outline" onClick={descartarPreview}>
@@ -715,7 +720,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               </div>
               {!canPublishAutomatically && (
                 <div className="rounded-md border border-amber-200 bg-white/80 p-3 space-y-2 text-xs text-amber-950">
-                  <p className="font-semibold">{isLiga ? "Liga em modo manual: publique diretamente no Instagram da Liga." : `Conexão indisponível: publique manualmente na conta @${conta}.`}</p>
+                  <p className="font-semibold">Conexão indisponível: conecte a conta @${conta} pelo Meta ou publique manualmente.</p>
                   <div className="flex flex-wrap gap-2">
                     {preview.urls[0] && (
                       <Button type="button" size="sm" variant="outline" onClick={() => baixarMidia(preview.urls[0], `post-${conta}-${preview.id}.png`)}>
