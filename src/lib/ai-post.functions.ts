@@ -1077,7 +1077,11 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         const briefSys = `Você é diretor de arte médico. Use o CONTRATO CLÍNICO como fonte única de verdade e devolva UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente tema + conduta. Sem metáforas vagas, sem texto na imagem, sem cor nomeada, sem pessoa real. Se a legenda estiver genérica, siga o contrato.`;
         const briefPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
         const cenaIA = (await generateTextAI({ system: briefSys, prompt: briefPrompt, model: data.modelo, maxTokens: 140 }) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
-        if (cenaIA && normalizeTema(cenaIA).includes(normalizeTema(tema).split(" ")[0])) cenaVisualNexo = cenaIA;
+        const cenaIANorm = normalizeTema(cenaIA);
+        const palavrasTema = normalizeTema(tema).split(" ").filter((p) => p.length > 4);
+        const palavrasContrato = normalizeTema(`${guiaTema.oQue} ${guiaTema.conduta}`).split(" ").filter((p) => p.length > 5);
+        const cenaAncorada = [...palavrasTema, ...palavrasContrato].some((p) => cenaIANorm.includes(p));
+        if (cenaIA && cenaAncorada) cenaVisualNexo = cenaIA;
 
         // Carrossel: gera 1 cena DISTINTA por slide, ancorada na legenda + papel narrativo.
         if (formato === "Carrossel") {
