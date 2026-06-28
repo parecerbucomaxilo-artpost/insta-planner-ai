@@ -76,6 +76,14 @@ const CTAS_PROIBIDOS = `PROIBIDO ABSOLUTO nos textos: "agende sua consulta", "ag
 const CTAS_PERMITIDOS_IG = `CTAs PERMITIDOS (IG/X): "Saiba mais pelo link da bio." | "Expliquei esse assunto em detalhes no link da bio." | "Veja o conteúdo completo através do link da bio." | "Link na Bio".`;
 const CTAS_PERMITIDOS_LI = `CTA permitido (LinkedIn): convite à discussão profissional entre colegas ou WhatsApp ${WHATSAPP} ("Fale comigo no WhatsApp").`;
 
+type TopicGuidance = {
+  oQue: string;
+  porQue: string;
+  conduta: string;
+  alerta: string;
+  ganho: string;
+};
+
 // REGRA SUPREMA DE COERÊNCIA CLÍNICA — aplicada a TODOS os tipos de post (IG, LinkedIn, Google, Chico, Liga).
 // Resolve a falha recorrente: posts apresentam a patologia mas não dizem como tratar / o que fazer.
 const CONTEUDO_COMPLETO = `\n\n=== REGRA SUPREMA — CONTEÚDO COMPLETO (NÃO PODE FALTAR) ===
@@ -310,8 +318,8 @@ function studentImagePrompt(tema: string, slide?: { n: number; total: number; pa
     : "FORMATO vertical 4:5 (1024x1280) — Instagram Feed/Carrossel padrão.";
   const conceitosCriativos = [
     "FOTOGRAFIA CLÍNICA HIPER-REALISTA com anatomia bucomaxilofacial cientificamente correta: instrumental cirúrgico real (fórceps, porta-agulhas, seringa carpule, bisturi nº 15, descolador de Molt) em macro, profundidade rasa, foco preciso, iluminação cinematográfica de centro cirúrgico.",
-    "RENDERIZAÇÃO MÉDICA 3D HIPER-REALISTA estilo Netter/Sobotta digital: corte sagital ou coronal mostrando anatomia exata (alvéolo, canal mandibular, nervo alveolar inferior, forame mentual, dente impactado), proporções científicas perfeitas, microanotações tipográficas elegantes.",
-    "IMAGEM RADIOGRÁFICA OU TOMOGRÁFICA REALISTA (panorâmica, periapical ou TC de feixe cônico) de alta resolução, tons de cinza fiéis ao exame, com a estrutura do tema em destaque sutil e anotações clínicas mínimas.",
+    "RENDERIZAÇÃO MÉDICA 3D HIPER-REALISTA estilo Netter/Sobotta digital: corte sagital ou coronal mostrando anatomia exata (alvéolo, canal mandibular, nervo alveolar inferior, forame mentual, dente impactado), proporções científicas perfeitas, destaques visuais sem letras, números ou rótulos.",
+    "IMAGEM RADIOGRÁFICA OU TOMOGRÁFICA REALISTA (panorâmica, periapical ou TC de feixe cônico) de alta resolução, tons de cinza fiéis ao exame, com a estrutura do tema em destaque sutil por luz/contorno, sem anotações escritas.",
     "MACROFOTOGRAFIA CIRÚRGICA estilo National Geographic médico: close extremo de campo operatório real (sutura em mucosa, exodontia, biópsia, frenectomia), tecidos com cor e textura fiéis, iluminação dramática vinda de cima.",
   ];
   const conceito = conceitosCriativos[Math.floor(Math.random() * conceitosCriativos.length)];
@@ -455,8 +463,62 @@ function chooseLocalTema(audiencia: z.infer<typeof SingleInput>["audiencia"], us
   return `${list[start]} — abordagem ${new Date().toLocaleDateString("pt-BR")}`;
 }
 
-function topicGuidance(tema: string) {
+function topicGuidance(tema: string): TopicGuidance {
   const t = normalizeTema(tema);
+  if (/anestesia|anestesica|bloqueio|agulha|carpule|alveolar inferior/.test(t)) {
+    return {
+      oQue: "a técnica anestésica precisa atingir o nervo correto para permitir uma cirurgia bucal confortável e segura",
+      porQue: "mandíbula, maxila e mucosas têm inervações diferentes; escolher o bloqueio errado reduz a anestesia e aumenta desconforto",
+      conduta: "a conduta é revisar anatomia, localizar referências intraorais, aspirar antes de depositar o anestésico e escolher a técnica compatível com o dente e o procedimento",
+      alerta: "parestesia, dor intensa, falha repetida de anestesia ou sangramento inesperado exigem revisão técnica e supervisão",
+      ganho: "executar o procedimento com previsibilidade, conforto e menor risco anatômico",
+    };
+  }
+  if (/sutura|porta agulhas|fio|ponto|ferida cirurgica|mucosa oral/.test(t)) {
+    return {
+      oQue: "a sutura aproxima as bordas da mucosa e ajuda a estabilizar o coágulo no pós-operatório",
+      porQue: "tensão, nó mal posicionado ou escolha inadequada do fio podem atrasar cicatrização e aumentar desconforto",
+      conduta: "a conduta é fazer pontos com bordas bem aproximadas, sem estrangular o tecido, usando porta-agulhas adequado, nó estável e orientação de higiene",
+      alerta: "deiscência, sangramento persistente, secreção, dor crescente ou ponto soltando cedo merecem avaliação",
+      ganho: "melhorar cicatrização, proteger o coágulo e reduzir intercorrências no pós-operatório",
+    };
+  }
+  if (/antibiotico|antibiótico|medicacao|profilaxia/.test(t)) {
+    return {
+      oQue: "antibiótico não é obrigatório em toda cirurgia bucal e deve ter indicação clínica clara",
+      porQue: "uso desnecessário aumenta resistência bacteriana e efeitos adversos, enquanto infecção ativa ou risco sistêmico exigem avaliação cuidadosa",
+      conduta: "a conduta é avaliar história médica, sinais de infecção, extensão cirúrgica e risco do paciente antes de indicar ou não antibioticoterapia",
+      alerta: "febre, aumento progressivo de edema, secreção, trismo, mal-estar ou comprometimento sistêmico precisam de avaliação",
+      ganho: "usar medicação com segurança, evitando tanto excesso quanto falta de tratamento quando há indicação",
+    };
+  }
+  if (/alveoloplastia|regularizacao ossea|regularização óssea|rebordo|lima|cinzel/.test(t)) {
+    return {
+      oQue: "a alveoloplastia regulariza o rebordo ósseo após extrações quando há espículas, irregularidades ou necessidade protética",
+      porQue: "bordas ósseas traumáticas podem machucar a mucosa, atrapalhar cicatrização e dificultar prótese ou reabilitação",
+      conduta: "a conduta envolve avaliação do rebordo, regularização conservadora com instrumental adequado, irrigação, sutura sem tensão e orientação pós-operatória",
+      alerta: "dor localizada, ferida que machuca, espícula exposta, prótese ferindo ou cicatrização ruim pedem avaliação",
+      ganho: "deixar o rebordo mais confortável, cicatrização mais previsível e preparo melhor para reabilitação",
+    };
+  }
+  if (/forceps|fórceps|extracao|extração|exodontia|molar inferior|dente no alveolo/.test(t)) {
+    return {
+      oQue: "a exodontia é a remoção planejada de um dente quando ele não pode ser mantido com segurança ou quando há indicação cirúrgica",
+      porQue: "raiz, osso, posição do dente e proximidade com nervos influenciam força, movimento e risco do procedimento",
+      conduta: "a conduta é planejar por exame e imagem, fazer luxação controlada, usar fórceps ou alavancas compatíveis, preservar tecidos e orientar pós-operatório",
+      alerta: "dor intensa, sangramento persistente, edema progressivo, febre, mau gosto ou dormência precisam de avaliação",
+      ganho: "remover a causa do problema com menor trauma e recuperação mais previsível",
+    };
+  }
+  if (/forame mentual|nervo mentual|canal mandibular/.test(t)) {
+    return {
+      oQue: "o forame mentual é a saída do nervo mentual, estrutura importante na região de pré-molares inferiores",
+      porQue: "procedimentos próximos ao forame podem irritar ou lesar o nervo se a anatomia não for reconhecida",
+      conduta: "a conduta é identificar a região por exame e imagem, respeitar distância de segurança e evitar incisões ou pressão instrumental direta sobre o trajeto nervoso",
+      alerta: "formigamento, dormência no lábio inferior ou alteração de sensibilidade após procedimento deve ser avaliada",
+      ganho: "planejar com mais segurança e reduzir risco neurossensorial",
+    };
+  }
   if (/alveolite|coagulo|pos exodontia|pos operatorio/.test(t)) {
     return {
       oQue: "dor intensa alguns dias após a extração pode indicar inflamação do alvéolo quando o coágulo se perde ou não protege bem a ferida",
@@ -529,6 +591,33 @@ function topicGuidance(tema: string) {
       ganho: "melhorar função oral com indicação correta, sem procedimento desnecessário",
     };
   }
+  if (/uti|pneumonia|vap|ventilacao|intubad|higiene oral|paciente critico|internad/.test(t)) {
+    return {
+      oQue: "a boca do paciente internado pode acumular biofilme e microrganismos que aumentam o risco de complicações sistêmicas",
+      porQue: "em UTI, ventilação mecânica, boca seca e dificuldade de higiene favorecem colonização bacteriana e inflamação",
+      conduta: "a conduta envolve protocolo de higiene oral, avaliação odontológica hospitalar, controle de focos infecciosos e integração com a equipe multiprofissional",
+      alerta: "sangramento, secreção, lesões, dentes com mobilidade, próteses soltas ou piora do quadro respiratório exigem avaliação",
+      ganho: "reduzir risco infeccioso, proteger a mucosa e aumentar a segurança do cuidado hospitalar",
+    };
+  }
+  if (/oncolog|quimioterapia|radioterapia|mronj|bisfosfonato|osteonecrose|terapia sistemica/.test(t)) {
+    return {
+      oQue: "tratamentos oncológicos e medicamentos antirreabsortivos podem deixar a boca mais vulnerável a infecção, mucosite e alterações ósseas",
+      porQue: "a imunidade, a vascularização, a salivação e a remodelação óssea podem ser impactadas pelo tratamento sistêmico",
+      conduta: "o cuidado começa com avaliação odontológica prévia, remoção de focos infecciosos, higiene orientada, acompanhamento durante a terapia e condutas conservadoras quando há risco ósseo",
+      alerta: "dor óssea, exposição de osso, feridas que não cicatrizam, febre, secreção ou dificuldade para se alimentar precisam de avaliação",
+      ganho: "atravessar o tratamento médico com menos interrupções, menos infecção e mais segurança oral",
+    };
+  }
+  if (/hospitalar|equipe multiprofissional|cirurgia medica|pre operatorio|pos operatorio|risco cirurgico|foco infeccioso/.test(t)) {
+    return {
+      oQue: "a Odontologia Hospitalar identifica riscos bucais que podem interferir em cirurgias, internações e terapias médicas",
+      porQue: "infecções dentárias, doença periodontal, próteses instáveis e lesões de mucosa podem piorar inflamação, dor e risco infeccioso",
+      conduta: "a conduta inclui avaliação no leito ou ambulatorial, controle de focos, adequação de higiene, parecer odontológico e plano integrado com a equipe médica",
+      alerta: "dor, febre sem foco claro, secreção, sangramento oral, trauma por prótese ou lesão persistente durante internação merecem cuidado especializado",
+      ganho: "dar mais segurança ao tratamento médico e reduzir complicações evitáveis relacionadas à boca",
+    };
+  }
   return {
     oQue: "um sinal na boca, face ou mandíbula pode ter causas diferentes e não deve ser interpretado isoladamente",
     porQue: "dor, inflamação, sobrecarga muscular, posição dos dentes e alterações anatômicas podem produzir sintomas parecidos",
@@ -536,6 +625,188 @@ function topicGuidance(tema: string) {
     alerta: "dor persistente, inchaço, travamento, sangramento, febre ou piora progressiva pedem avaliação especializada",
     ganho: "entender a causa real e escolher a conduta certa, sem soluções genéricas",
   };
+}
+
+function visualSceneForTopic(tema: string, g: TopicGuidance, audiencia: z.infer<typeof SingleInput>["audiencia"], slideIndex?: number) {
+  const t = normalizeTema(tema);
+  const etapa = typeof slideIndex === "number" ? slideIndex : -1;
+  const estudante = audiencia === "estudantes-graduacao";
+  const prefixo = estudante ? "Cena didática acadêmica" : "Cena clínica premium";
+
+  if (/anestesia|anestesica|bloqueio|agulha|carpule|alveolar inferior/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando seringa carpule posicionada próxima à região do forame mandibular em manequim anatômico realista`,
+      `${prefixo} mostrando referências intraorais do bloqueio do nervo alveolar inferior com afastamento seguro`,
+      `${prefixo} com corte anatômico da mandíbula evidenciando nervo alveolar inferior, língula da mandíbula e canal mandibular`,
+      `${prefixo} mostrando aspiração e deposição controlada do anestésico com técnica limpa e supervisão acadêmica`,
+      `${prefixo} mostrando aluno revisando anatomia e técnica anestésica em ambiente clínico universitário`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/sutura|porta agulhas|fio|ponto|ferida cirurgica|mucosa oral/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando porta-agulhas segurando agulha curva sobre mucosa oral simulada, sem sangue`,
+      `${prefixo} mostrando bordas de mucosa aproximadas com ponto simples em modelo anatômico realista`,
+      `${prefixo} com macro realista do nó cirúrgico estável sem tensão e coágulo protegido`,
+      `${prefixo} mostrando sequência didática de aproximação das bordas e orientação de higiene pós-operatória`,
+      `${prefixo} mostrando cicatrização organizada em mucosa oral com material de sutura adequado`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/antibiotico|antibiótico|medicacao|profilaxia/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando prontuário clínico sem letras, cápsulas neutras e avaliação oral como decisão baseada em indicação`,
+      `${prefixo} mostrando comparação visual entre cirurgia simples sem infecção e quadro com sinais inflamatórios, sem texto`,
+      `${prefixo} com equipe avaliando sinais sistêmicos e foco infeccioso oral em ambiente clínico`,
+      `${prefixo} mostrando decisão segura de antibioticoterapia associada a controle do foco e acompanhamento`,
+      `${prefixo} mostrando paciente orientado com medicação apenas quando indicada e retorno programado`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/alveoloplastia|regularizacao ossea|regularização óssea|rebordo|lima|cinzel/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando rebordo alveolar irregular em render anatômico realista após extração`,
+      `${prefixo} mostrando espícula óssea traumática sob mucosa fina em modelo anatômico limpo`,
+      `${prefixo} com instrumento de regularização óssea trabalhando suavemente no rebordo, sem sangue`,
+      `${prefixo} mostrando rebordo regularizado, irrigação e sutura sem tensão como etapa de solução`,
+      `${prefixo} mostrando mucosa confortável e rebordo preparado para reabilitação`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/forceps|fórceps|extracao|extração|exodontia|molar inferior|dente no alveolo/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando dente indicado para exodontia com fórceps compatível e campo clínico limpo`,
+      `${prefixo} mostrando anatomia de raiz e alvéolo que orienta movimento controlado de luxação`,
+      `${prefixo} com corte anatômico da mandíbula mostrando raiz, osso alveolar e canal mandibular em posição correta`,
+      `${prefixo} mostrando exodontia planejada com luxação controlada, preservação tecidual e irrigação`,
+      `${prefixo} mostrando alvéolo protegido, gaze e orientações pós-operatórias representadas sem texto`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/forame mentual|nervo mentual|canal mandibular/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando região de pré-molares inferiores com destaque anatômico para o forame mentual`,
+      `${prefixo} mostrando trajeto do nervo mentual saindo do forame mentual em render realista da mandíbula`,
+      `${prefixo} com corte anatômico do canal mandibular terminando no forame mentual, relação com raízes de pré-molares`,
+      `${prefixo} mostrando planejamento de incisão e afastamento respeitando distância de segurança do nervo mentual`,
+      `${prefixo} mostrando avaliação sensitiva do lábio inferior em contexto clínico seguro`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/siso|terceiro molar|38|dente incluso|incluso/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando terceiro molar inferior impactado na região retromolar, com mandíbula posterior em destaque`,
+      `${prefixo} mostrando gengiva inflamada sobre siso parcialmente erupcionado, sem sangue e sem diagnóstico escrito`,
+      `${prefixo} com corte anatômico limpo mostrando a proximidade do terceiro molar com o canal mandibular e o nervo alveolar inferior`,
+      `${prefixo} mostrando planejamento de exodontia minimamente traumática com instrumental cirúrgico real ao lado de imagem anatômica`,
+      `${prefixo} mostrando paciente tranquilo após orientação pós-operatória, com foco visual em cuidado e segurança`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/atm|dtm|bruxismo|mandibula|estalo|trav|dor facial|dor de cabeca|masseter/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando mão tocando a região pré-auricular da ATM com expressão discreta de desconforto`,
+      `${prefixo} mostrando sobrecarga do músculo masseter e articulação temporomandibular em render anatômico realista`,
+      `${prefixo} com corte lateral da ATM, côndilo mandibular e disco articular em relação anatômica correta`,
+      `${prefixo} mostrando placa oclusal translúcida, orientação de hábitos e fisioterapia como abordagem integrada`,
+      `${prefixo} mostrando recuperação funcional com abertura bucal confortável e ambiente clínico sofisticado`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/apneia|ronco|cpap|sono|dormir/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando pessoa dormindo de perfil com via aérea superior indicada por iluminação anatômica sutil`,
+      `${prefixo} mostrando obstrução das vias aéreas superiores relacionada à posição mandibular, sem dramatização`,
+      `${prefixo} com perfil facial e trajeto da respiração em render anatômico limpo`,
+      `${prefixo} mostrando CPAP, dispositivo intraoral e planejamento bucomaxilofacial como opções de cuidado`,
+      `${prefixo} mostrando sono tranquilo e respiração estável em atmosfera médica luminosa`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/trauma|fratura|acidente|face/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando avaliação de trauma facial em pronto atendimento, com foco em mandíbula e oclusão`,
+      `${prefixo} mostrando assimetria facial discreta e mordida alterada como sinais de alerta, sem sangue`,
+      `${prefixo} com render anatômico de linha de fratura mandibular e relação com dentes e nervo alveolar inferior`,
+      `${prefixo} mostrando placas de titânio e planejamento de redução e fixação interna rígida em contexto cirúrgico limpo`,
+      `${prefixo} mostrando retorno de simetria, função e segurança após tratamento planejado`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/ferida|lesao|biopsia|patologia|mucosa|cicatriza/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando close não invasivo de mucosa oral com área suspeita discreta e foco em avaliação`,
+      `${prefixo} mostrando comparação visual entre irritação traumática e lesão persistente sem afirmar diagnóstico`,
+      `${prefixo} com instrumento de exame e luz clínica avaliando mucosa oral, sem corte e sem sangue`,
+      `${prefixo} mostrando biópsia representada de forma não gráfica por frasco de anatomopatológico sem texto e instrumental estéril`,
+      `${prefixo} mostrando acompanhamento e orientação segura após investigação de lesão oral`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/uti|pneumonia|vap|ventilacao|intubad|higiene oral|paciente critico|internad/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando cuidado oral seguro em paciente hospitalar, com equipe usando materiais de higiene sem exposição invasiva`,
+      `${prefixo} mostrando biofilme oral como risco em paciente internado por meio de macrofotografia educativa sem nojo ou sensacionalismo`,
+      `${prefixo} com leito de UTI e cavidade oral representada de forma limpa, conectando higiene bucal e segurança respiratória`,
+      `${prefixo} mostrando protocolo de higiene oral e avaliação odontológica hospitalar em integração multiprofissional`,
+      `${prefixo} mostrando paciente hospitalar mais seguro com equipe multiprofissional ao redor, ambiente claro e humanizado`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/oncolog|quimioterapia|radioterapia|mronj|bisfosfonato|osteonecrose|terapia sistemica/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando avaliação oral pré-tratamento oncológico em ambiente hospitalar, sem marcas ou textos`,
+      `${prefixo} mostrando mucosa oral sensível e cuidado de suporte durante terapia sistêmica, sem lesões explícitas`,
+      `${prefixo} com mandíbula em render anatômico realista destacando remodelação óssea e risco de cicatrização`,
+      `${prefixo} mostrando higiene orientada, remoção de focos infecciosos e acompanhamento conservador como plano de segurança`,
+      `${prefixo} mostrando continuidade do tratamento médico com boca protegida e equipe integrada`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  return `${prefixo} sobre "${tema}" mostrando especificamente: ${g.oQue}; mecanismo visual: ${g.porQue}; solução representada: ${g.conduta}`;
+}
+
+function clinicalContract(tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"], slideIndex?: number) {
+  const g = topicGuidance(tema);
+  return `CONTRATO CLÍNICO DO POST — FONTE ÚNICA DE VERDADE:
+- Tema único: ${tema}
+- O que é: ${g.oQue}
+- Por que acontece: ${g.porQue}
+- Conduta/tratamento obrigatório: ${g.conduta}
+- Alerta: ${g.alerta}
+- Ganho forte: ${g.ganho}
+- Cena visual obrigatória: ${visualSceneForTopic(tema, g, audiencia, slideIndex)}
+REGRAS: legenda e imagem devem seguir exatamente este contrato; proibido trocar o assunto, falar só da doença sem conduta, ou criar imagem genérica de odontologia.`;
+}
+
+function completeCaptionIfNeeded(params: {
+  legenda: string;
+  tema: string;
+  rede: "instagram" | "linkedin" | "estilo-x" | "google";
+  formato: "Carrossel" | "Story" | "Post Único";
+  audiencia: z.infer<typeof SingleInput>["audiencia"];
+  especialidade: string;
+}) {
+  const raw = (params.legenda || "").trim();
+  if (!raw) return buildLocalCaption({ tema: params.tema, rede: params.rede, formato: params.formato, especialidade: params.especialidade, nivel: resolveNivel("auto", params.rede), audiencia: params.audiencia });
+  const g = topicGuidance(params.tema);
+  const norm = normalizeTema(raw);
+  const hasConduta = /(trat|conduta|avaliacao|avaliar|planej|fisioterapia|placa|cpap|biopsia|exodontia|higiene|protocolo|fixacao|orientacao|controle|acompanhamento)/.test(norm);
+  const hasWhy = /(porque|por que|acontece|mecanismo|causa|favorece|sobrecarga|inflamacao|risco)/.test(norm);
+  const hasAlert = /(alerta|procure|avaliacao|especialista|persistente|piora|febre|inchaco|sangramento|travamento)/.test(norm);
+  const tooShort = raw.length < (params.formato === "Story" ? 120 : 320);
+  if (!tooShort && hasConduta && hasWhy && hasAlert) return raw;
+
+  if (params.formato === "Story") {
+    return `${raw}\n\nO que fazer: ${g.conduta}.\n\nAtenção: ${g.alerta}.\n\nLink na Bio`;
+  }
+  if (params.rede === "linkedin") {
+    return `${raw}\n\nConduta prática: ${g.conduta}. O objetivo é ${g.ganho}.\n\nSinais de alerta: ${g.alerta}.`;
+  }
+  const fechamento = params.audiencia === "estudantes-graduacao"
+    ? "Salve para revisar e compare com sua conduta na clínica."
+    : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
+  return `${raw}\n\nComo conduzir: ${g.conduta}.\n\nQuando ligar o alerta: ${g.alerta}.\n\nGanho esperado: ${g.ganho}.\n\n${fechamento}`;
 }
 
 function buildSlideNarratives(tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"]) {
@@ -643,7 +914,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         "Dica de técnica: passo a passo da sutura simples em mucosa oral",
         "Você sabia que o nervo alveolar inferior corre dentro do canal mandibular",
         "Mito ou verdade: tomar antibiótico antes de toda exodontia é obrigatório",
-        "Curiosidade anatômica sobre o forame mentual e o nervo mentoniano",
+        "Curiosidade anatômica sobre o forame mentual e o nervo mentual",
         "Caiu na prova: indicações clínicas da alveoloplastia após exodontia",
         "Dica de técnica: como posicionar o fórceps para extração de molar inferior",
         "Enquete: qual sutura usar em ferida cirúrgica intraoral de mucosa",
@@ -677,7 +948,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
     const isStory = formato === "Story";
 
-    // 2. Dispara legenda + imagens EM PARALELO (não dependem entre si).
+    // 2. Primeiro gera/fecha a legenda e o contrato clínico. As imagens só nascem
+    //    depois disso, para evitar arte genérica ou legenda incompleta.
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const isChico = data.audiencia === "chico-drfm";
     const localCaption = () => buildLocalCaption({
@@ -697,11 +969,12 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           : isEstudantes
             ? `Você é monitor sênior de Cirurgia Bucal escrevendo para estudantes de graduação em Odontologia (Liga de CTBMF). PT-BR Brasil impecável, ZERO inglês, sem repetições, sem palavras inventadas. Tom didático, direto, próximo do aluno; linguagem clínica correta com terminologia anatômica oficial (TA2/SBA). PROIBIDO copy comercial, diagnóstico afirmativo, "agende", "promoção". Encerre com 5-7 hashtags acadêmicas (#CTBMF #LigaAcademica #CirurgiaBucal #EstudanteDeOdontologia #Graduacao). Formato: ${formato}.${CONTEUDO_COMPLETO}`
             : `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, ZERO palavras em inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.${CONTEUDO_COMPLETO}`;
+        const contrato = clinicalContract(tema, data.audiencia);
         const roteiroCarrossel = formato === "Carrossel"
           ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter 5 blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
           : "";
-        const prompt = `Tema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${roteiroCarrossel}\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Escreva a legenda final pronta para publicação, sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
-        const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : 700 });
+        const prompt = `${contrato}\n\nTema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${roteiroCarrossel}\n\nTAREFA: escreva a legenda final pronta para publicação. Ela só será aceita se mencionar explicitamente O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA. Não termine antes da conduta/tratamento.\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
+        const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1700 : formato === "Carrossel" ? 1200 : 950 });
         return txt || localCaption();
       } catch (err) {
         console.warn("[ai-post] legenda caiu para local:", err instanceof Error ? err.message : err);
@@ -768,7 +1041,14 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         .then(applyOverlay)
         .then(uploadOne);
 
-    const legendaBaseResolvida = await legendaPromise;
+    const legendaBaseResolvida = completeCaptionIfNeeded({
+      legenda: await legendaPromise,
+      tema,
+      rede: data.rede,
+      formato,
+      audiencia: data.audiencia,
+      especialidade: data.especialidade,
+    });
     const slideNarratives = formato === "Carrossel" ? buildSlideNarratives(tema, data.audiencia) : [];
     const legendaResolvida = formato === "Carrossel"
       ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia)
@@ -788,14 +1068,20 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
     const headlineLegenda = extractHeadline(legendaResolvida);
     const altLegenda = extractAlt(legendaResolvida);
-    let cenaVisualNexo = "";
-    let cenasPorSlide: string[] = [];
+    const guiaTema = topicGuidance(tema);
+    let cenaVisualNexo = visualSceneForTopic(tema, guiaTema, data.audiencia);
+    let cenasPorSlide: string[] = slideNarratives.map((_, i) => visualSceneForTopic(tema, guiaTema, data.audiencia, i));
     try {
       if (process.env.LOVABLE_API_KEY && data.modelo !== "local/sem-custo") {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
-        const briefSys = `Você é diretor de arte médico. Recebe uma LEGENDA pronta de post sobre "${tema}" e devolve UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente o que a legenda diz — sem metáforas vagas, sem texto na imagem, sem nome de cor, sem nome de pessoa. Apenas a cena (sujeito + ação + contexto anatômico/clínico).`;
-        const briefPrompt = `LEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
-        cenaVisualNexo = (await generateTextAI({ system: briefSys, prompt: briefPrompt, model: data.modelo, maxTokens: 120 }) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
+        const briefSys = `Você é diretor de arte médico. Use o CONTRATO CLÍNICO como fonte única de verdade e devolva UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente tema + conduta. Sem metáforas vagas, sem texto na imagem, sem cor nomeada, sem pessoa real. Se a legenda estiver genérica, siga o contrato.`;
+        const briefPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
+        const cenaIA = (await generateTextAI({ system: briefSys, prompt: briefPrompt, model: data.modelo, maxTokens: 140 }) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
+        const cenaIANorm = normalizeTema(cenaIA);
+        const palavrasTema = normalizeTema(tema).split(" ").filter((p) => p.length > 4);
+        const palavrasContrato = normalizeTema(`${guiaTema.oQue} ${guiaTema.conduta}`).split(" ").filter((p) => p.length > 5);
+        const cenaAncorada = [...palavrasTema, ...palavrasContrato].some((p) => cenaIANorm.includes(p));
+        if (cenaIA && cenaAncorada) cenaVisualNexo = cenaIA;
 
         // Carrossel: gera 1 cena DISTINTA por slide, ancorada na legenda + papel narrativo.
         if (formato === "Carrossel") {
@@ -809,13 +1095,16 @@ export const generateSinglePost = createServerFn({ method: "POST" })
                 "FECHAMENTO: CTA premium Link na Bio + WhatsApp",
               ];
           try {
-            const carrosselSys = `Você é diretor de arte médico. Para o tema "${tema}" e a LEGENDA dada, descreva ${papeis.length} CENAS VISUAIS DISTINTAS — uma por slide — coerentes entre si mas SEM repetir composição. Cada cena: 1 frase em PT-BR (máx. 220 caracteres), literal, sujeito + ação + contexto anatômico/clínico. Sem texto na imagem, sem cor nomeada, sem pessoa real. Responda APENAS um JSON array de ${papeis.length} strings, na ordem dos slides.`;
-            const carrosselPrompt = `LEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nROTEIRO TEXTUAL OBRIGATÓRIO POR SLIDE:\n${slideNarratives.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nPAPÉIS DOS SLIDES (na ordem):\n${papeis.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nResponda só o JSON array.`;
+            const carrosselSys = `Você é diretor de arte médico. Para o tema "${tema}", use o CONTRATO CLÍNICO como fonte única de verdade. Descreva ${papeis.length} CENAS VISUAIS DISTINTAS — uma por slide — na ordem problema → mecanismo → conduta/tratamento → ganho → CTA. Cada cena: 1 frase em PT-BR (máx. 220 caracteres), literal, sujeito + ação + contexto anatômico/clínico. Sem texto na imagem, sem cor nomeada, sem pessoa real. Responda APENAS um JSON array de ${papeis.length} strings.`;
+            const carrosselPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nROTEIRO TEXTUAL OBRIGATÓRIO POR SLIDE:\n${slideNarratives.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nPAPÉIS DOS SLIDES (na ordem):\n${papeis.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nResponda só o JSON array.`;
             const raw = (await generateTextAI({ system: carrosselSys, prompt: carrosselPrompt, model: data.modelo, maxTokens: 600 }) || "").trim();
             const jsonMatch = raw.match(/\[[\s\S]*\]/);
             if (jsonMatch) {
               const arr = JSON.parse(jsonMatch[0]);
-              if (Array.isArray(arr)) cenasPorSlide = arr.map((s) => String(s || "").trim()).filter(Boolean);
+                if (Array.isArray(arr) && arr.length >= cenasPorSlide.length) {
+                  const parsed = arr.map((s) => String(s || "").trim()).filter(Boolean);
+                  cenasPorSlide = cenasPorSlide.map((fallback, i) => parsed[i] || fallback);
+                }
             }
           } catch (err) {
             console.warn("[ai-post] cenas por slide caíram:", err instanceof Error ? err.message : err);
@@ -832,14 +1121,16 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const withVisual = (basePrompt: string, slideIndex?: number) => {
       const cenaSlide = typeof slideIndex === "number" ? cenasPorSlide[slideIndex] : "";
       const narrativaSlide = typeof slideIndex === "number" ? slideNarratives[slideIndex] : "";
-      const cena = cenaSlide || cenaVisualNexo;
+      const cena = cenaSlide || visualSceneForTopic(tema, guiaTema, data.audiencia, slideIndex) || cenaVisualNexo;
+      const contrato = clinicalContract(tema, data.audiencia, slideIndex);
       const blocos = [
+        contrato,
         briefingNexoBase,
         narrativaSlide ? `LEGENDA/ROTEIRO EXCLUSIVO DESTE SLIDE (não repetir nos outros): ${narrativaSlide}` : "",
         cena ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cena}` : "",
       ].filter(Boolean).join("\n");
       return blocos
-        ? `${basePrompt}\n\n=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${blocos}\n=== FIM DO NEXO ===\n`
+        ? `=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${blocos}\nA imagem deve mostrar a CONDUTA/TRATAMENTO quando o slide pedir solução. Se houver conflito com o prompt base, ESTE NEXO vence.\n=== FIM DO NEXO ===\n\n${basePrompt}`
         : basePrompt;
     };
 
