@@ -42,7 +42,7 @@ function MetaConnectPage() {
   const { next, login, privateNext, account } = Route.useSearch();
   const label = account ? `@${account}` : "Instagram Business";
   const isLiga = account === "lactbmf.anhanguerasbo";
-  const actionUrl = isLiga ? privateNext || login || next : next;
+  const actionUrl = isLiga ? login || privateNext || next : next;
   const isInstagramDirect = actionUrl.includes("instagram.com/oauth/authorize");
   const [copied, setCopied] = useState(false);
 
@@ -85,9 +85,9 @@ function MetaConnectPage() {
               <div className="rounded-lg border bg-muted/40 p-3 text-muted-foreground leading-relaxed space-y-2">
                 {isLiga ? (
                   <>
-                    <p>Nova tentativa: este botão usa um caminho isolado para conectar a Liga, sem reaproveitar o destino do Chico.</p>
+                    <p>Nova tentativa: este botão usa o Facebook/Meta da Página da Liga e valida que o Instagram conectado é exatamente @{account}.</p>
                     <p>
-                      Entre com o Instagram profissional da Liga. Se aparecer outra conta, saia do Instagram no navegador ou abra em janela anônima.
+                      Entre com o Facebook que administra a Página vinculada à Liga. Se aparecer a conta do Prof. Francisco, abra este link em janela anônima.
                     </p>
                   </>
                 ) : (
@@ -99,7 +99,7 @@ function MetaConnectPage() {
               <Button asChild className="w-full" size="lg">
                 <a href={actionUrl} target="_blank" rel="noopener noreferrer">
                   {isLiga ? <LogIn className="h-4 w-4" /> : <Instagram className="h-4 w-4" />}
-                  {isLiga && isInstagramDirect ? "Entrar com Instagram da Liga" : isLiga ? "Entrar com o Facebook da Liga" : "Continuar no Facebook"}
+                  {isLiga && isInstagramDirect ? "Entrar com Instagram da Liga" : isLiga ? "Entrar com Facebook/Meta da Liga" : "Continuar no Facebook"}
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>

@@ -23,7 +23,7 @@ import { ensurePublicationDestinationProfile, getPublicationDestination, saveMan
 import type { PostRow } from "@/lib/posts-types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { createInstagramOAuthStartUrl, createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
+import { createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 
 const ACCOUNT_KEY = "planner_simplificado_conta_v1";
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
@@ -47,7 +47,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const saveManualToken = useServerFn(saveManualInstagramToken);
   const ensureDestino = useServerFn(ensurePublicationDestinationProfile);
   const startMetaOAuth = useServerFn(createMetaOAuthStartUrl);
-  const startInstagramOAuth = useServerFn(createInstagramOAuthStartUrl);
 
   const [conta, setConta] = useState<string>("");
   const [contaInput, setContaInput] = useState<string>("");
@@ -132,13 +131,27 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     try {
       const destino = await ensureDestino({ data: { conta } });
       const trocarFacebook = conta === LIGA_ACCOUNT;
-      const r = trocarFacebook
-        ? await startInstagramOAuth({ data: { perfilId: destino.id, targetAccount: conta } })
-        : await startMetaOAuth({ data: { perfilId: destino.id, targetAccount: conta } });
-      const manualUrl = r.url;
+      const r = await startMetaOAuth({
+        data: {
+          perfilId: destino.id,
+          targetAccount: conta,
+          forceReauth: trocarFacebook,
+          logoutFacebookFirst: trocarFacebook,
+        },
+      });
+      const manualUrl = trocarFacebook ? (r.loginUrl || r.privateAuthUrl || r.url) : r.url;
+      const params = new URLSearchParams({ account: conta, next: r.url });
+      if (r.loginUrl) params.set("login", r.loginUrl);
+      if (r.privateAuthUrl) params.set("privateNext", r.privateAuthUrl);
+      const connectPath = `/meta-connect?${params.toString()}`;
       setMetaOauthUrl(manualUrl);
-      setMetaConnectPath(`/meta-connect?account=${encodeURIComponent(conta)}&next=${encodeURIComponent(r.url)}`);
-      toast.info(trocarFacebook ? "Clique em 'Abrir conexão Instagram Liga' que apareceu abaixo." : "Clique no botão 'Abrir conexão Meta' que apareceu abaixo.");
+      setMetaConnectPath(connectPath);
+      const opened = window.open(connectPath, "_blank", "noopener,noreferrer");
+      if (opened) {
+        toast.success(trocarFacebook ? "Abri a conexão da Liga em nova aba." : "Abri a conexão Meta em nova aba.");
+      } else {
+        toast.info(trocarFacebook ? "Clique em 'Abrir conexão da Liga' que apareceu abaixo." : "Clique no botão 'Abrir conexão Meta' que apareceu abaixo.");
+      }
     } catch (e: any) {
       toast.error(e.message || "Falha ao iniciar conexão Meta.");
     }
@@ -503,7 +516,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               {isLiga ? (
                 <>
                   <p>1. <strong>Saia do Facebook</strong> no navegador (ou abra uma janela anônima) — senão o Meta vai usar a conta do Prof. Francisco automaticamente.</p>
-                  <p>2. Clique em "Conectar Instagram @{conta}" abaixo e <strong>entre com o Facebook que administra a Página vinculada ao @{conta}</strong>.</p>
+                  <p>2. Clique em "Conectar Liga pelo Facebook/Meta" abaixo e <strong>entre com o Facebook que administra a Página vinculada ao @{conta}</strong>.</p>
                   <p>3. Aceite as permissões. O app valida que a conta é exatamente @{conta} antes de salvar o token.</p>
                 </>
               ) : (
@@ -516,12 +529,12 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           )}
           <div className="flex flex-wrap gap-2">
             <Button onClick={conectarMetaConta} className={isLiga ? "bg-blue-700 hover:bg-blue-800" : undefined} variant={isLiga ? "default" : "secondary"}>
-              <Instagram className="w-4 h-4 mr-1" /> {isLiga ? "Conectar Instagram Liga pelo Meta" : `Conectar Instagram @${conta}`}
+              <Instagram className="w-4 h-4 mr-1" /> {isLiga ? "Conectar Liga pelo Facebook/Meta" : `Conectar Instagram @${conta}`}
             </Button>
             {metaConnectPath && (
               <Button asChild variant="outline">
                 <a href={metaConnectPath} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-1" /> {isLiga ? "Abrir conexão Instagram Liga" : "Abrir conexão Meta"}
+                  <ExternalLink className="w-4 h-4 mr-1" /> {isLiga ? "Abrir conexão da Liga" : "Abrir conexão Meta"}
                 </a>
               </Button>
             )}
