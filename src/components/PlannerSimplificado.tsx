@@ -494,7 +494,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       )}
 
 
-      {conta && !isLiga && (
+      {conta && (
           <Card className={`p-5 space-y-3 border-2 ${destinoStatus === "ok" ? "border-emerald-200 bg-emerald-50/30" : "border-amber-300 bg-amber-50/40"}`}>
           <Label className="text-sm font-semibold flex items-center gap-2">
             Destino de publicação de @{conta}
@@ -503,8 +503,16 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           </Label>
           {destinoStatus === "missing" && (
             <div className="rounded-md border border-amber-200 bg-white/70 p-3 text-xs text-amber-950 space-y-1">
-              <p className="font-semibold">Conecte o Instagram @{conta} pelo Meta:</p>
-              <p>clique em "Conectar Instagram @{conta}" abaixo, faça login com a conta Facebook que administra essa página e aceite as permissões. O app salva o token e passa a publicar direto, sem Make.</p>
+              <p className="font-semibold">Conectar Instagram @{conta} pelo Meta:</p>
+              {isLiga ? (
+                <>
+                  <p>1. <strong>Saia do Facebook</strong> no navegador (ou abra uma janela anônima) — senão o Meta vai usar a conta do Prof. Francisco automaticamente.</p>
+                  <p>2. Clique em "Conectar Instagram @{conta}" abaixo e <strong>entre com o Facebook que administra a Página vinculada ao @{conta}</strong>.</p>
+                  <p>3. Aceite as permissões. O app valida que a conta é exatamente @{conta} antes de salvar o token.</p>
+                </>
+              ) : (
+                <p>clique em "Conectar Instagram @{conta}" abaixo, faça login com a conta Facebook que administra essa página e aceite as permissões. O app salva o token e passa a publicar direto, sem Make.</p>
+              )}
             </div>
           )}
           {destinoModo === "meta" && (
@@ -533,19 +541,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               Se o navegador bloquear a abertura, use “Copiar link Meta” e cole o link diretamente na barra do navegador, fora do preview.
             </p>
           )}
-        </Card>
-      )}
-
-      {isLiga && (
-        <Card className="p-5 space-y-3 border-2 border-emerald-200 bg-emerald-50/40">
-          <Label className="text-sm font-semibold flex items-center gap-2">
-            Fluxo seguro da Liga
-            <Badge className="bg-emerald-600">Manual aprovado</Badge>
-          </Label>
-          <div className="rounded-md border border-emerald-200 bg-white/80 p-3 text-xs text-emerald-950 space-y-1">
-            <p className="font-semibold">A Liga não depende mais de Meta, Make, token ou webhook.</p>
-            <p>O app gera o criativo, mostra o preview, salva como rascunho e entrega botões para baixar imagem e copiar legenda. Assim nada sai na conta errada.</p>
-          </div>
         </Card>
       )}
 
