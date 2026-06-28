@@ -709,12 +709,13 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
       // Gera TODAS as imagens em paralelo (3-5x mais rápido que lotes sequenciais).
       const uploads = await Promise.all(
-        slidesSpec.map((s) => genAndUpload(withVisual(
+        slidesSpec.map((s, idx) => genAndUpload(withVisual(
           isEstudantes
             ? studentImagePrompt(tema, s)
             : isChico
               ? chicoImagePrompt(tema, s)
-              : imageSystemPrompt(tema, data.rede, nivel, s)
+              : imageSystemPrompt(tema, data.rede, nivel, s),
+          idx,
         )))
       );
       urlImagem = uploads[0].publicUrl;
