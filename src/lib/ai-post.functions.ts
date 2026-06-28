@@ -635,25 +635,57 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const headlineLegenda = extractHeadline(legendaResolvida);
     const altLegenda = extractAlt(legendaResolvida);
     let cenaVisualNexo = "";
+    let cenasPorSlide: string[] = [];
     try {
       if (process.env.LOVABLE_API_KEY && data.modelo !== "local/sem-custo") {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
         const briefSys = `Você é diretor de arte médico. Recebe uma LEGENDA pronta de post sobre "${tema}" e devolve UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente o que a legenda diz — sem metáforas vagas, sem texto na imagem, sem nome de cor, sem nome de pessoa. Apenas a cena (sujeito + ação + contexto anatômico/clínico).`;
         const briefPrompt = `LEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
         cenaVisualNexo = (await generateTextAI({ system: briefSys, prompt: briefPrompt, model: data.modelo, maxTokens: 120 }) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
+
+        // Carrossel: gera 1 cena DISTINTA por slide, ancorada na legenda + papel narrativo.
+        if (formato === "Carrossel") {
+          const papeis = data.rede === "estilo-x"
+            ? ["TWEET 1: gancho/pergunta", "TWEET 2: explicação científica curta", "TWEET 3: CTA fechamento"]
+            : [
+                "CAPA: gancho de dor/identificação",
+                "PROBLEMA: aprofundar o sintoma em linguagem leiga",
+                "MECANISMO: como o problema acontece (analogia anatômica simples)",
+                "SOLUÇÃO/GANHO: como o cirurgião resolve, foco no ganho do paciente",
+                "FECHAMENTO: CTA premium Link na Bio + WhatsApp",
+              ];
+          try {
+            const carrosselSys = `Você é diretor de arte médico. Para o tema "${tema}" e a LEGENDA dada, descreva ${papeis.length} CENAS VISUAIS DISTINTAS — uma por slide — coerentes entre si mas SEM repetir composição. Cada cena: 1 frase em PT-BR (máx. 220 caracteres), literal, sujeito + ação + contexto anatômico/clínico. Sem texto na imagem, sem cor nomeada, sem pessoa real. Responda APENAS um JSON array de ${papeis.length} strings, na ordem dos slides.`;
+            const carrosselPrompt = `LEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nPAPÉIS DOS SLIDES (na ordem):\n${papeis.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nResponda só o JSON array.`;
+            const raw = (await generateTextAI({ system: carrosselSys, prompt: carrosselPrompt, model: data.modelo, maxTokens: 600 }) || "").trim();
+            const jsonMatch = raw.match(/\[[\s\S]*\]/);
+            if (jsonMatch) {
+              const arr = JSON.parse(jsonMatch[0]);
+              if (Array.isArray(arr)) cenasPorSlide = arr.map((s) => String(s || "").trim()).filter(Boolean);
+            }
+          } catch (err) {
+            console.warn("[ai-post] cenas por slide caíram:", err instanceof Error ? err.message : err);
+          }
+        }
       }
     } catch (err) {
       console.warn("[ai-post] brief visual caiu:", err instanceof Error ? err.message : err);
     }
-    const briefingNexo = [
+    const briefingNexoBase = [
       headlineLegenda ? `HEADLINE DA LEGENDA (use como ESPÍRITO da cena, NÃO escreva na imagem): "${headlineLegenda}"` : "",
       altLegenda ? `ALT TEXT GUIA (a cena PRECISA bater com isso): "${altLegenda}"` : "",
-      cenaVisualNexo ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cenaVisualNexo}` : "",
     ].filter(Boolean).join("\n");
-    const withVisual = (basePrompt: string) =>
-      briefingNexo
-        ? `${basePrompt}\n\n=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${briefingNexo}\n=== FIM DO NEXO ===\n`
+    const withVisual = (basePrompt: string, slideIndex?: number) => {
+      const cenaSlide = typeof slideIndex === "number" ? cenasPorSlide[slideIndex] : "";
+      const cena = cenaSlide || cenaVisualNexo;
+      const blocos = [
+        briefingNexoBase,
+        cena ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cena}` : "",
+      ].filter(Boolean).join("\n");
+      return blocos
+        ? `${basePrompt}\n\n=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${blocos}\n=== FIM DO NEXO ===\n`
         : basePrompt;
+    };
 
 
     let urlImagem: string;
