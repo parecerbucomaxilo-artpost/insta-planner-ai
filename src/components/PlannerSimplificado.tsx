@@ -313,7 +313,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     const tid = "local-week-simple";
     toast.loading("Gerador local planejando 7 dias...", { id: tid });
     try {
-      const out = await genWeek({ data: { especialidade: "CTBMF", modelo } as any });
+      const out = await genWeek({ data: { especialidade, modelo } as any });
       // Filtra apenas slots do Instagram para a conta simplificada
       const igOnly = (out.temas as any[]).filter((t) => t.rede === "instagram" || t.rede === "estilo-x");
       setTemas(igOnly);
