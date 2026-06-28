@@ -76,6 +76,18 @@ const CTAS_PROIBIDOS = `PROIBIDO ABSOLUTO nos textos: "agende sua consulta", "ag
 const CTAS_PERMITIDOS_IG = `CTAs PERMITIDOS (IG/X): "Saiba mais pelo link da bio." | "Expliquei esse assunto em detalhes no link da bio." | "Veja o conteúdo completo através do link da bio." | "Link na Bio".`;
 const CTAS_PERMITIDOS_LI = `CTA permitido (LinkedIn): convite à discussão profissional entre colegas ou WhatsApp ${WHATSAPP} ("Fale comigo no WhatsApp").`;
 
+// REGRA SUPREMA DE COERÊNCIA CLÍNICA — aplicada a TODOS os tipos de post (IG, LinkedIn, Google, Chico, Liga).
+// Resolve a falha recorrente: posts apresentam a patologia mas não dizem como tratar / o que fazer.
+const CONTEUDO_COMPLETO = `\n\n=== REGRA SUPREMA — CONTEÚDO COMPLETO (NÃO PODE FALTAR) ===
+Todo post DEVE responder, de forma equilibrada, às 4 perguntas do leitor — não basta descrever a patologia:
+1) O QUE É (sintoma/condição em 1 frase).
+2) POR QUE ACONTECE (mecanismo simples, 1-2 frases).
+3) COMO SE TRATA / O QUE FAZER (conduta clínica, abordagem terapêutica ou dicas práticas — OBRIGATÓRIO, nunca omitir). Cite opções reais usadas na prática (ex.: placa oclusal para bruxismo/DTM; exodontia minimamente traumática para siso; fisioterapia + controle inflamatório para ATM; redução e fixação interna rígida para fraturas; CPAP/cirurgia ortognática para apneia; biópsia para lesões suspeitas etc.) — sem prometer cura, sem prescrever dose, sem afirmar diagnóstico individual.
+4) QUANDO PROCURAR ESPECIALISTA (sinal de alerta + CTA).
+PROIBIDO: post que só descreve a doença/sintoma e termina sem orientação prática; post que diz "procure um especialista" sem antes explicar QUAIS são as condutas/tratamentos disponíveis.
+A IMAGEM e a LEGENDA devem contar a MESMA história nessa ordem (problema → mecanismo → solução → CTA). Em carrossel, os slides centrais OBRIGATORIAMENTE mostram a SOLUÇÃO/TRATAMENTO, não só a dor.
+=== FIM DA REGRA DE CONTEÚDO COMPLETO ===\n`;
+
 function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x" | "google", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
   if (nivel !== "auto") return nivel;
   if (rede === "google") return "google-business";
@@ -127,7 +139,9 @@ REGRAS DE FORMATO:
 - NÃO incluir a assinatura no corpo — entra como overlay na imagem.
 
 ${CTAS_PROIBIDOS}
-${LOCALIZACAO_OBRIGATORIA}`;
+${CTAS_PROIBIDOS}
+${LOCALIZACAO_OBRIGATORIA}
+${CONTEUDO_COMPLETO}`;
   }
 
   const estrutura = isLI
@@ -166,7 +180,8 @@ FORMATO DA LEGENDA:
 ${isLI
   ? `- LinkedIn: 1200-1800 caracteres (densidade científica real), parágrafos de no máximo 3 linhas, no máximo 1 emoji sóbrio (ou nenhum). Bloco "Referências:" obrigatório com DOI. Sem linguagem leiga, sem analogias infantis, sem chamadas de Instagram.`
   : `- Instagram: 400-700 caracteres (NUNCA ultrapasse 800), gancho na 1ª linha, 2-4 emojis estratégicos, parágrafos de 1-2 linhas, 4-6 hashtags ao final. CTA indireto na última linha.`}
-NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.`;
+NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.
+${CONTEUDO_COMPLETO}`;
 }
 
 
@@ -283,7 +298,8 @@ ESTRUTURA DA LEGENDA (Instagram, 400-700 caracteres):
 5. 4-6 hashtags: #OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto + 1 do tema.
 PROIBIDO: chamadas comerciais ("agende", "promoção"), WhatsApp do consultório, bibliografia tipo Lancet/JOMS, jargão hospitalar pesado, tom de paciente leigo. Sem assinatura no corpo — entra como logos no overlay.
 REGRA DE PORTUGUÊS (revisão dupla obrigatória, não-negociável): texto 100% em Português do Brasil (pt-BR), com acentuação completa (á é í ó ú â ê ô ã õ à), cedilha (ç) e crase corretas. PROIBIDO: palavras em inglês, espanhol ou pseudo-latim; palavras inventadas; palavras duplicadas ("dor dor"); letras embaralhadas; abreviações não-padrão; termos técnicos grafados errados (correto: "exodontia", "frenectomia", "alveoloplastia", "biópsia", "anestesia", "sutura", "fórceps", "porta-agulhas", "carpule", "terceiro molar", "siso", "mandíbula", "maxila", "nervo alveolar inferior", "forame mentual", "canal mandibular", "panorâmica", "periapical", "tomografia computadorizada de feixe cônico"). Antes de devolver a legenda, releia palavra por palavra duas vezes e corrija qualquer erro de português; se houver QUALQUER dúvida sobre uma palavra, troque por sinônimo simples e correto.
-REGRA DE NOMENCLATURA ANATÔMICA (obrigatória): toda estrutura citada deve usar a Terminologia Anatômica oficial em pt-BR (TA2 / Sociedade Brasileira de Anatomia), com a indicação clínica/topográfica correta. Exemplos válidos: "nervo alveolar inferior" (não "nervo dentário"), "nervo lingual", "nervo bucal", "nervo mentual", "forame mentual" (não "forame mental"), "forame mandibular", "espinha de Spix" (= língula da mandíbula), "côndilo da mandíbula", "processo coronoide", "ramo da mandíbula", "corpo da mandíbula", "sínfise mentual", "tuberosidade da maxila", "seio maxilar", "fossa pterigopalatina", "músculo masseter", "músculo temporal", "músculos pterigóideos medial e lateral", "articulação temporomandibular (ATM)", "disco articular", "côndilo mandibular", "fossa mandibular do osso temporal", "tubérculo articular", "primeiro/segundo/terceiro molar inferior", "região retromolar", "trígono retromolar", "mucosa alveolar", "gengiva inserida", "freio labial/lingual". PROIBIDO usar nomes populares como nome técnico ("dente do siso" só como sinônimo coloquial entre parênteses), inventar variações ("nervo alveolário", "forame mentoniano"), trocar lado (inferior/superior, medial/lateral, anterior/posterior) ou atribuir função/inervação errada. Sempre confira a indicação clínica: bloqueio do nervo alveolar inferior anestesia hemiarcada inferior ipsilateral; nervo lingual anestesia 2/3 anteriores da língua e mucosa lingual; nervo bucal anestesia mucosa jugal e gengiva vestibular dos molares inferiores. Em caso de dúvida sobre nome ou indicação, NÃO cite a estrutura.`;
+REGRA DE NOMENCLATURA ANATÔMICA (obrigatória): toda estrutura citada deve usar a Terminologia Anatômica oficial em pt-BR (TA2 / Sociedade Brasileira de Anatomia), com a indicação clínica/topográfica correta. Exemplos válidos: "nervo alveolar inferior" (não "nervo dentário"), "nervo lingual", "nervo bucal", "nervo mentual", "forame mentual" (não "forame mental"), "forame mandibular", "espinha de Spix" (= língula da mandíbula), "côndilo da mandíbula", "processo coronoide", "ramo da mandíbula", "corpo da mandíbula", "sínfise mentual", "tuberosidade da maxila", "seio maxilar", "fossa pterigopalatina", "músculo masseter", "músculo temporal", "músculos pterigóideos medial e lateral", "articulação temporomandibular (ATM)", "disco articular", "côndilo mandibular", "fossa mandibular do osso temporal", "tubérculo articular", "primeiro/segundo/terceiro molar inferior", "região retromolar", "trígono retromolar", "mucosa alveolar", "gengiva inserida", "freio labial/lingual". PROIBIDO usar nomes populares como nome técnico ("dente do siso" só como sinônimo coloquial entre parênteses), inventar variações ("nervo alveolário", "forame mentoniano"), trocar lado (inferior/superior, medial/lateral, anterior/posterior) ou atribuir função/inervação errada. Sempre confira a indicação clínica: bloqueio do nervo alveolar inferior anestesia hemiarcada inferior ipsilateral; nervo lingual anestesia 2/3 anteriores da língua e mucosa lingual; nervo bucal anestesia mucosa jugal e gengiva vestibular dos molares inferiores. Em caso de dúvida sobre nome ou indicação, NÃO cite a estrutura.
+${CONTEUDO_COMPLETO}`;
 }
 
 function studentImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }) {
@@ -351,7 +367,8 @@ PROIBIDO ABSOLUTO: "agende sua consulta", "agende sua avaliação", "marque cons
 NÃO inclua a assinatura no corpo — aparece como overlay na imagem.
 
 REGRA DE PORTUGUÊS (revisão dupla obrigatória, não-negociável): texto 100% em Português do Brasil (pt-BR) com acentuação completa (á é í ó ú â ê ô ã õ à), cedilha (ç) e crase corretas. PROIBIDO: palavras em inglês/espanhol/pseudo-latim, palavras inventadas, palavras duplicadas ("dor dor"), letras embaralhadas, abreviações não-padrão, ortografia errada. Termos técnicos sempre exatos: "bucomaxilofacial", "exodontia", "siso", "terceiro molar", "ATM", "DTM", "bruxismo", "ortognática", "mandíbula", "maxila", "anestesia", "sutura", "trauma facial". Releia palavra por palavra duas vezes antes de devolver; em caso de QUALQUER dúvida, troque por sinônimo simples e correto. NÃO MISTURE ASSUNTOS: o post inteiro é sobre UM único tema — proibido citar outras patologias ou procedimentos não relacionados ao tema.
-REGRA DE NOMENCLATURA ANATÔMICA (obrigatória): use a Terminologia Anatômica oficial em pt-BR (TA2 / Sociedade Brasileira de Anatomia) com indicação clínica/topográfica correta. Nomes corretos: "nervo alveolar inferior" (nunca "nervo dentário"), "nervo lingual", "nervo bucal", "nervo mentual", "forame mentual" (nunca "mental" ou "mentoniano"), "forame mandibular", "língula da mandíbula" (= espinha de Spix), "côndilo da mandíbula", "processo coronoide", "ramo/corpo/sínfise da mandíbula", "tuberosidade da maxila", "seio maxilar", "ATM / disco articular / fossa mandibular / tubérculo articular", "músculos masseter, temporal e pterigóideos medial e lateral", "região e trígono retromolar". Sempre confirme lado (inferior/superior, medial/lateral), inervação, irrigação e indicação clínica antes de citar. Em caso de QUALQUER dúvida sobre nome, lado, função ou indicação, NÃO cite a estrutura. Proibido nomes populares como nome técnico ou variações inventadas.`;
+REGRA DE NOMENCLATURA ANATÔMICA (obrigatória): use a Terminologia Anatômica oficial em pt-BR (TA2 / Sociedade Brasileira de Anatomia) com indicação clínica/topográfica correta. Nomes corretos: "nervo alveolar inferior" (nunca "nervo dentário"), "nervo lingual", "nervo bucal", "nervo mentual", "forame mentual" (nunca "mental" ou "mentoniano"), "forame mandibular", "língula da mandíbula" (= espinha de Spix), "côndilo da mandíbula", "processo coronoide", "ramo/corpo/sínfise da mandíbula", "tuberosidade da maxila", "seio maxilar", "ATM / disco articular / fossa mandibular / tubérculo articular", "músculos masseter, temporal e pterigóideos medial e lateral", "região e trígono retromolar". Sempre confirme lado (inferior/superior, medial/lateral), inervação, irrigação e indicação clínica antes de citar. Em caso de QUALQUER dúvida sobre nome, lado, função ou indicação, NÃO cite a estrutura. Proibido nomes populares como nome técnico ou variações inventadas.
+${CONTEUDO_COMPLETO}`;
 }
 
 function chicoImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }, isStory = false) {
