@@ -833,7 +833,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
     const isStory = formato === "Story";
 
-    // 2. Dispara legenda + imagens EM PARALELO (não dependem entre si).
+    // 2. Primeiro gera/fecha a legenda e o contrato clínico. As imagens só nascem
+    //    depois disso, para evitar arte genérica ou legenda incompleta.
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const isChico = data.audiencia === "chico-drfm";
     const localCaption = () => buildLocalCaption({
@@ -853,11 +854,12 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           : isEstudantes
             ? `Você é monitor sênior de Cirurgia Bucal escrevendo para estudantes de graduação em Odontologia (Liga de CTBMF). PT-BR Brasil impecável, ZERO inglês, sem repetições, sem palavras inventadas. Tom didático, direto, próximo do aluno; linguagem clínica correta com terminologia anatômica oficial (TA2/SBA). PROIBIDO copy comercial, diagnóstico afirmativo, "agende", "promoção". Encerre com 5-7 hashtags acadêmicas (#CTBMF #LigaAcademica #CirurgiaBucal #EstudanteDeOdontologia #Graduacao). Formato: ${formato}.${CONTEUDO_COMPLETO}`
             : `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, ZERO palavras em inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.${CONTEUDO_COMPLETO}`;
+        const contrato = clinicalContract(tema, data.audiencia);
         const roteiroCarrossel = formato === "Carrossel"
           ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter 5 blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
           : "";
-        const prompt = `Tema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${roteiroCarrossel}\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Escreva a legenda final pronta para publicação, sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
-        const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : 700 });
+        const prompt = `${contrato}\n\nTema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${roteiroCarrossel}\n\nTAREFA: escreva a legenda final pronta para publicação. Ela só será aceita se mencionar explicitamente O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA. Não termine antes da conduta/tratamento.\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
+        const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1700 : formato === "Carrossel" ? 1200 : 950 });
         return txt || localCaption();
       } catch (err) {
         console.warn("[ai-post] legenda caiu para local:", err instanceof Error ? err.message : err);
@@ -924,7 +926,13 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         .then(applyOverlay)
         .then(uploadOne);
 
-    const legendaBaseResolvida = await legendaPromise;
+    const legendaBaseResolvida = completeCaptionIfNeeded({
+      legenda: await legendaPromise,
+      tema,
+      rede: data.rede,
+      formato,
+      audiencia: data.audiencia,
+    });
     const slideNarratives = formato === "Carrossel" ? buildSlideNarratives(tema, data.audiencia) : [];
     const legendaResolvida = formato === "Carrossel"
       ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia)
@@ -944,14 +952,16 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
     const headlineLegenda = extractHeadline(legendaResolvida);
     const altLegenda = extractAlt(legendaResolvida);
-    let cenaVisualNexo = "";
-    let cenasPorSlide: string[] = [];
+    const guiaTema = topicGuidance(tema);
+    let cenaVisualNexo = visualSceneForTopic(tema, guiaTema, data.audiencia);
+    let cenasPorSlide: string[] = slideNarratives.map((_, i) => visualSceneForTopic(tema, guiaTema, data.audiencia, i));
     try {
       if (process.env.LOVABLE_API_KEY && data.modelo !== "local/sem-custo") {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
-        const briefSys = `Você é diretor de arte médico. Recebe uma LEGENDA pronta de post sobre "${tema}" e devolve UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente o que a legenda diz — sem metáforas vagas, sem texto na imagem, sem nome de cor, sem nome de pessoa. Apenas a cena (sujeito + ação + contexto anatômico/clínico).`;
-        const briefPrompt = `LEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
-        cenaVisualNexo = (await generateTextAI({ system: briefSys, prompt: briefPrompt, model: data.modelo, maxTokens: 120 }) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
+        const briefSys = `Você é diretor de arte médico. Use o CONTRATO CLÍNICO como fonte única de verdade e devolva UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente tema + conduta. Sem metáforas vagas, sem texto na imagem, sem cor nomeada, sem pessoa real. Se a legenda estiver genérica, siga o contrato.`;
+        const briefPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
+        const cenaIA = (await generateTextAI({ system: briefSys, prompt: briefPrompt, model: data.modelo, maxTokens: 140 }) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
+        if (cenaIA && normalizeTema(cenaIA).includes(normalizeTema(tema).split(" ")[0])) cenaVisualNexo = cenaIA;
 
         // Carrossel: gera 1 cena DISTINTA por slide, ancorada na legenda + papel narrativo.
         if (formato === "Carrossel") {
@@ -965,13 +975,16 @@ export const generateSinglePost = createServerFn({ method: "POST" })
                 "FECHAMENTO: CTA premium Link na Bio + WhatsApp",
               ];
           try {
-            const carrosselSys = `Você é diretor de arte médico. Para o tema "${tema}" e a LEGENDA dada, descreva ${papeis.length} CENAS VISUAIS DISTINTAS — uma por slide — coerentes entre si mas SEM repetir composição. Cada cena: 1 frase em PT-BR (máx. 220 caracteres), literal, sujeito + ação + contexto anatômico/clínico. Sem texto na imagem, sem cor nomeada, sem pessoa real. Responda APENAS um JSON array de ${papeis.length} strings, na ordem dos slides.`;
-            const carrosselPrompt = `LEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nROTEIRO TEXTUAL OBRIGATÓRIO POR SLIDE:\n${slideNarratives.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nPAPÉIS DOS SLIDES (na ordem):\n${papeis.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nResponda só o JSON array.`;
+            const carrosselSys = `Você é diretor de arte médico. Para o tema "${tema}", use o CONTRATO CLÍNICO como fonte única de verdade. Descreva ${papeis.length} CENAS VISUAIS DISTINTAS — uma por slide — na ordem problema → mecanismo → conduta/tratamento → ganho → CTA. Cada cena: 1 frase em PT-BR (máx. 220 caracteres), literal, sujeito + ação + contexto anatômico/clínico. Sem texto na imagem, sem cor nomeada, sem pessoa real. Responda APENAS um JSON array de ${papeis.length} strings.`;
+            const carrosselPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nROTEIRO TEXTUAL OBRIGATÓRIO POR SLIDE:\n${slideNarratives.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nPAPÉIS DOS SLIDES (na ordem):\n${papeis.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nResponda só o JSON array.`;
             const raw = (await generateTextAI({ system: carrosselSys, prompt: carrosselPrompt, model: data.modelo, maxTokens: 600 }) || "").trim();
             const jsonMatch = raw.match(/\[[\s\S]*\]/);
             if (jsonMatch) {
               const arr = JSON.parse(jsonMatch[0]);
-              if (Array.isArray(arr)) cenasPorSlide = arr.map((s) => String(s || "").trim()).filter(Boolean);
+                if (Array.isArray(arr) && arr.length >= cenasPorSlide.length) {
+                  const parsed = arr.map((s) => String(s || "").trim()).filter(Boolean);
+                  cenasPorSlide = cenasPorSlide.map((fallback, i) => parsed[i] || fallback);
+                }
             }
           } catch (err) {
             console.warn("[ai-post] cenas por slide caíram:", err instanceof Error ? err.message : err);
@@ -988,14 +1001,16 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const withVisual = (basePrompt: string, slideIndex?: number) => {
       const cenaSlide = typeof slideIndex === "number" ? cenasPorSlide[slideIndex] : "";
       const narrativaSlide = typeof slideIndex === "number" ? slideNarratives[slideIndex] : "";
-      const cena = cenaSlide || cenaVisualNexo;
+      const cena = cenaSlide || visualSceneForTopic(tema, guiaTema, data.audiencia, slideIndex) || cenaVisualNexo;
+      const contrato = clinicalContract(tema, data.audiencia, slideIndex);
       const blocos = [
+        contrato,
         briefingNexoBase,
         narrativaSlide ? `LEGENDA/ROTEIRO EXCLUSIVO DESTE SLIDE (não repetir nos outros): ${narrativaSlide}` : "",
         cena ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cena}` : "",
       ].filter(Boolean).join("\n");
       return blocos
-        ? `${basePrompt}\n\n=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${blocos}\n=== FIM DO NEXO ===\n`
+        ? `=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${blocos}\nA imagem deve mostrar a CONDUTA/TRATAMENTO quando o slide pedir solução. Se houver conflito com o prompt base, ESTE NEXO vence.\n=== FIM DO NEXO ===\n\n${basePrompt}`
         : basePrompt;
     };
 
