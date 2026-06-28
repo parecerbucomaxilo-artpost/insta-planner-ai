@@ -288,7 +288,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const formato = modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único";
       const out = await genSingle({ data: {
         tema: tema.trim(),
-        especialidade: "CTBMF",
+        especialidade,
         rede: "instagram",
         tipo,
         formato,
