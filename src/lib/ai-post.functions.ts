@@ -558,6 +558,22 @@ function buildSlideNarratives(tema: string, audiencia: z.infer<typeof SingleInpu
   ];
 }
 
+function ensureCarouselCaption(base: string, slideNarratives: string[], audiencia: z.infer<typeof SingleInput>["audiencia"]) {
+  if (!slideNarratives.length) return base;
+  const firstLine = (base || "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .find((l) => l && !/^slide\s*\d/i.test(l) && !/^#/.test(l)) || "Carrossel educativo";
+  const blocks = slideNarratives.map((texto, i) => `Slide ${i + 1}: ${texto.replace(/^Slide\s*\d+\s*[—:-]\s*/i, "").trim()}`);
+  const fechamento = audiencia === "estudantes-graduacao"
+    ? "Salve para revisar e comente qual conduta você escolheria."
+    : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
+  const hashtags = audiencia === "estudantes-graduacao"
+    ? "#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF"
+    : "#bucomaxilofacial #CTBMF #drfranciscomenezes #cirurgiabucomaxilofacial #saudebucal";
+  return `${firstLine}\n\n${blocks.join("\n\n")}\n\n${fechamento}\n\n${hashtags}`;
+}
+
 function buildLocalCaption(params: {
   tema: string;
   rede: "instagram" | "linkedin" | "estilo-x" | "google";
@@ -752,8 +768,11 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         .then(applyOverlay)
         .then(uploadOne);
 
-    const legendaResolvida = await legendaPromise;
+    const legendaBaseResolvida = await legendaPromise;
     const slideNarratives = formato === "Carrossel" ? buildSlideNarratives(tema, data.audiencia) : [];
+    const legendaResolvida = formato === "Carrossel"
+      ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia)
+      : legendaBaseResolvida;
 
     // === NEXO LEGENDA ↔ IMAGEM ===
     // Extrai HEADLINE (1ª linha não-vazia) + ALT TEXT da legenda e, quando possível,
@@ -914,7 +933,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const urls = imagensCarrosselCache.length
       ? imagensCarrosselCache
       : [urlImagemCache || urlImagem];
-    return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.length, urls };
+    return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.length, urls, slideLegendas: slideNarratives.slice(0, urls.length) };
   });
 
 // Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado gerado.
