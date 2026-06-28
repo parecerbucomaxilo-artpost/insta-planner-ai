@@ -76,6 +76,14 @@ const CTAS_PROIBIDOS = `PROIBIDO ABSOLUTO nos textos: "agende sua consulta", "ag
 const CTAS_PERMITIDOS_IG = `CTAs PERMITIDOS (IG/X): "Saiba mais pelo link da bio." | "Expliquei esse assunto em detalhes no link da bio." | "Veja o conteúdo completo através do link da bio." | "Link na Bio".`;
 const CTAS_PERMITIDOS_LI = `CTA permitido (LinkedIn): convite à discussão profissional entre colegas ou WhatsApp ${WHATSAPP} ("Fale comigo no WhatsApp").`;
 
+type TopicGuidance = {
+  oQue: string;
+  porQue: string;
+  conduta: string;
+  alerta: string;
+  ganho: string;
+};
+
 // REGRA SUPREMA DE COERÊNCIA CLÍNICA — aplicada a TODOS os tipos de post (IG, LinkedIn, Google, Chico, Liga).
 // Resolve a falha recorrente: posts apresentam a patologia mas não dizem como tratar / o que fazer.
 const CONTEUDO_COMPLETO = `\n\n=== REGRA SUPREMA — CONTEÚDO COMPLETO (NÃO PODE FALTAR) ===
@@ -455,7 +463,7 @@ function chooseLocalTema(audiencia: z.infer<typeof SingleInput>["audiencia"], us
   return `${list[start]} — abordagem ${new Date().toLocaleDateString("pt-BR")}`;
 }
 
-function topicGuidance(tema: string) {
+function topicGuidance(tema: string): TopicGuidance {
   const t = normalizeTema(tema);
   if (/alveolite|coagulo|pos exodontia|pos operatorio/.test(t)) {
     return {
@@ -529,6 +537,33 @@ function topicGuidance(tema: string) {
       ganho: "melhorar função oral com indicação correta, sem procedimento desnecessário",
     };
   }
+  if (/uti|pneumonia|vap|ventilacao|intubad|higiene oral|paciente critico|internad/.test(t)) {
+    return {
+      oQue: "a boca do paciente internado pode acumular biofilme e microrganismos que aumentam o risco de complicações sistêmicas",
+      porQue: "em UTI, ventilação mecânica, boca seca e dificuldade de higiene favorecem colonização bacteriana e inflamação",
+      conduta: "a conduta envolve protocolo de higiene oral, avaliação odontológica hospitalar, controle de focos infecciosos e integração com a equipe multiprofissional",
+      alerta: "sangramento, secreção, lesões, dentes com mobilidade, próteses soltas ou piora do quadro respiratório exigem avaliação",
+      ganho: "reduzir risco infeccioso, proteger a mucosa e aumentar a segurança do cuidado hospitalar",
+    };
+  }
+  if (/oncolog|quimioterapia|radioterapia|mronj|bisfosfonato|osteonecrose|terapia sistemica/.test(t)) {
+    return {
+      oQue: "tratamentos oncológicos e medicamentos antirreabsortivos podem deixar a boca mais vulnerável a infecção, mucosite e alterações ósseas",
+      porQue: "a imunidade, a vascularização, a salivação e a remodelação óssea podem ser impactadas pelo tratamento sistêmico",
+      conduta: "o cuidado começa com avaliação odontológica prévia, remoção de focos infecciosos, higiene orientada, acompanhamento durante a terapia e condutas conservadoras quando há risco ósseo",
+      alerta: "dor óssea, exposição de osso, feridas que não cicatrizam, febre, secreção ou dificuldade para se alimentar precisam de avaliação",
+      ganho: "atravessar o tratamento médico com menos interrupções, menos infecção e mais segurança oral",
+    };
+  }
+  if (/hospitalar|equipe multiprofissional|cirurgia medica|pre operatorio|pos operatorio|risco cirurgico|foco infeccioso/.test(t)) {
+    return {
+      oQue: "a Odontologia Hospitalar identifica riscos bucais que podem interferir em cirurgias, internações e terapias médicas",
+      porQue: "infecções dentárias, doença periodontal, próteses instáveis e lesões de mucosa podem piorar inflamação, dor e risco infeccioso",
+      conduta: "a conduta inclui avaliação no leito ou ambulatorial, controle de focos, adequação de higiene, parecer odontológico e plano integrado com a equipe médica",
+      alerta: "dor, febre sem foco claro, secreção, sangramento oral, trauma por prótese ou lesão persistente durante internação merecem cuidado especializado",
+      ganho: "dar mais segurança ao tratamento médico e reduzir complicações evitáveis relacionadas à boca",
+    };
+  }
   return {
     oQue: "um sinal na boca, face ou mandíbula pode ter causas diferentes e não deve ser interpretado isoladamente",
     porQue: "dor, inflamação, sobrecarga muscular, posição dos dentes e alterações anatômicas podem produzir sintomas parecidos",
@@ -536,6 +571,127 @@ function topicGuidance(tema: string) {
     alerta: "dor persistente, inchaço, travamento, sangramento, febre ou piora progressiva pedem avaliação especializada",
     ganho: "entender a causa real e escolher a conduta certa, sem soluções genéricas",
   };
+}
+
+function visualSceneForTopic(tema: string, g: TopicGuidance, audiencia: z.infer<typeof SingleInput>["audiencia"], slideIndex?: number) {
+  const t = normalizeTema(tema);
+  const etapa = typeof slideIndex === "number" ? slideIndex : -1;
+  const estudante = audiencia === "estudantes-graduacao";
+  const prefixo = estudante ? "Cena didática acadêmica" : "Cena clínica premium";
+
+  if (/siso|terceiro molar|38|dente incluso|incluso/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando terceiro molar inferior impactado na região retromolar, com mandíbula posterior em destaque`,
+      `${prefixo} mostrando gengiva inflamada sobre siso parcialmente erupcionado, sem sangue e sem diagnóstico escrito`,
+      `${prefixo} com corte anatômico limpo mostrando a proximidade do terceiro molar com o canal mandibular e o nervo alveolar inferior`,
+      `${prefixo} mostrando planejamento de exodontia minimamente traumática com instrumental cirúrgico real ao lado de imagem anatômica`,
+      `${prefixo} mostrando paciente tranquilo após orientação pós-operatória, com foco visual em cuidado e segurança`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/atm|dtm|bruxismo|mandibula|estalo|trav|dor facial|dor de cabeca|masseter/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando mão tocando a região pré-auricular da ATM com expressão discreta de desconforto`,
+      `${prefixo} mostrando sobrecarga do músculo masseter e articulação temporomandibular em render anatômico realista`,
+      `${prefixo} com corte lateral da ATM, côndilo mandibular e disco articular em relação anatômica correta`,
+      `${prefixo} mostrando placa oclusal translúcida, orientação de hábitos e fisioterapia como abordagem integrada`,
+      `${prefixo} mostrando recuperação funcional com abertura bucal confortável e ambiente clínico sofisticado`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/apneia|ronco|cpap|sono|dormir/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando pessoa dormindo de perfil com via aérea superior indicada por iluminação anatômica sutil`,
+      `${prefixo} mostrando obstrução das vias aéreas superiores relacionada à posição mandibular, sem dramatização`,
+      `${prefixo} com perfil facial e trajeto da respiração em render anatômico limpo`,
+      `${prefixo} mostrando CPAP, dispositivo intraoral e planejamento bucomaxilofacial como opções de cuidado`,
+      `${prefixo} mostrando sono tranquilo e respiração estável em atmosfera médica luminosa`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/trauma|fratura|acidente|face/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando avaliação de trauma facial em pronto atendimento, com foco em mandíbula e oclusão`,
+      `${prefixo} mostrando assimetria facial discreta e mordida alterada como sinais de alerta, sem sangue`,
+      `${prefixo} com render anatômico de linha de fratura mandibular e relação com dentes e nervo alveolar inferior`,
+      `${prefixo} mostrando placas de titânio e planejamento de redução e fixação interna rígida em contexto cirúrgico limpo`,
+      `${prefixo} mostrando retorno de simetria, função e segurança após tratamento planejado`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/ferida|lesao|biopsia|patologia|mucosa|cicatriza/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando close não invasivo de mucosa oral com área suspeita discreta e foco em avaliação`,
+      `${prefixo} mostrando comparação visual entre irritação traumática e lesão persistente sem afirmar diagnóstico`,
+      `${prefixo} com instrumento de exame e luz clínica avaliando mucosa oral, sem corte e sem sangue`,
+      `${prefixo} mostrando biópsia representada de forma não gráfica por frasco de anatomopatológico sem texto e instrumental estéril`,
+      `${prefixo} mostrando acompanhamento e orientação segura após investigação de lesão oral`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/uti|pneumonia|vap|ventilacao|intubad|higiene oral|paciente critico|internad/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando cuidado oral seguro em paciente hospitalar, com equipe usando materiais de higiene sem exposição invasiva`,
+      `${prefixo} mostrando biofilme oral como risco em paciente internado por meio de macrofotografia educativa sem nojo ou sensacionalismo`,
+      `${prefixo} com leito de UTI e cavidade oral representada de forma limpa, conectando higiene bucal e segurança respiratória`,
+      `${prefixo} mostrando protocolo de higiene oral e avaliação odontológica hospitalar em integração multiprofissional`,
+      `${prefixo} mostrando paciente hospitalar mais seguro com equipe multiprofissional ao redor, ambiente claro e humanizado`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  if (/oncolog|quimioterapia|radioterapia|mronj|bisfosfonato|osteonecrose|terapia sistemica/.test(t)) {
+    const cenas = [
+      `${prefixo} mostrando avaliação oral pré-tratamento oncológico em ambiente hospitalar, sem marcas ou textos`,
+      `${prefixo} mostrando mucosa oral sensível e cuidado de suporte durante terapia sistêmica, sem lesões explícitas`,
+      `${prefixo} com mandíbula em render anatômico realista destacando remodelação óssea e risco de cicatrização`,
+      `${prefixo} mostrando higiene orientada, remoção de focos infecciosos e acompanhamento conservador como plano de segurança`,
+      `${prefixo} mostrando continuidade do tratamento médico com boca protegida e equipe integrada`,
+    ];
+    return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
+  }
+  return `${prefixo} sobre "${tema}" mostrando especificamente: ${g.oQue}; mecanismo visual: ${g.porQue}; solução representada: ${g.conduta}`;
+}
+
+function clinicalContract(tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"], slideIndex?: number) {
+  const g = topicGuidance(tema);
+  return `CONTRATO CLÍNICO DO POST — FONTE ÚNICA DE VERDADE:
+- Tema único: ${tema}
+- O que é: ${g.oQue}
+- Por que acontece: ${g.porQue}
+- Conduta/tratamento obrigatório: ${g.conduta}
+- Alerta: ${g.alerta}
+- Ganho forte: ${g.ganho}
+- Cena visual obrigatória: ${visualSceneForTopic(tema, g, audiencia, slideIndex)}
+REGRAS: legenda e imagem devem seguir exatamente este contrato; proibido trocar o assunto, falar só da doença sem conduta, ou criar imagem genérica de odontologia.`;
+}
+
+function completeCaptionIfNeeded(params: {
+  legenda: string;
+  tema: string;
+  rede: "instagram" | "linkedin" | "estilo-x" | "google";
+  formato: "Carrossel" | "Story" | "Post Único";
+  audiencia: z.infer<typeof SingleInput>["audiencia"];
+}) {
+  const raw = (params.legenda || "").trim();
+  if (!raw) return buildLocalCaption({ tema: params.tema, rede: params.rede, formato: params.formato, especialidade: "CTBMF", nivel: resolveNivel("auto", params.rede), audiencia: params.audiencia });
+  const g = topicGuidance(params.tema);
+  const norm = normalizeTema(raw);
+  const hasConduta = /(trat|conduta|avaliacao|avaliar|planej|fisioterapia|placa|cpap|biopsia|exodontia|higiene|protocolo|fixacao|orientacao|controle|acompanhamento)/.test(norm);
+  const hasWhy = /(porque|por que|acontece|mecanismo|causa|favorece|sobrecarga|inflamacao|risco)/.test(norm);
+  const hasAlert = /(alerta|procure|avaliacao|especialista|persistente|piora|febre|inchaco|sangramento|travamento)/.test(norm);
+  const tooShort = raw.length < (params.formato === "Story" ? 120 : 320);
+  if (!tooShort && hasConduta && hasWhy && hasAlert) return raw;
+
+  if (params.formato === "Story") {
+    return `${raw}\n\nO que fazer: ${g.conduta}.\n\nAtenção: ${g.alerta}.\n\nLink na Bio`;
+  }
+  if (params.rede === "linkedin") {
+    return `${raw}\n\nConduta prática: ${g.conduta}. O objetivo é ${g.ganho}.\n\nSinais de alerta: ${g.alerta}.`;
+  }
+  const fechamento = params.audiencia === "estudantes-graduacao"
+    ? "Salve para revisar e compare com sua conduta na clínica."
+    : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
+  return `${raw}\n\nComo conduzir: ${g.conduta}.\n\nQuando ligar o alerta: ${g.alerta}.\n\nGanho esperado: ${g.ganho}.\n\n${fechamento}`;
 }
 
 function buildSlideNarratives(tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"]) {
