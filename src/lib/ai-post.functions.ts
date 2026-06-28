@@ -1088,7 +1088,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           const papeis = data.rede === "estilo-x"
             ? ["TWEET 1: gancho/pergunta", "TWEET 2: explicação científica curta", "TWEET 3: CTA fechamento"]
             : [
-                "CAPA: gancho de dor/identificação",
+                "CAPA: GANCHO ULTRA FORTE 3-6 palavras (dor real/pergunta direta sobre o TEMA, sem citar marca ou @drfranciscomenezes)",
                 "PROBLEMA: aprofundar o sintoma em linguagem leiga",
                 "MECANISMO: como o problema acontece (analogia anatômica simples)",
                 "SOLUÇÃO/GANHO: como o cirurgião resolve, foco no ganho do paciente",
