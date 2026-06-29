@@ -146,7 +146,13 @@ const METODOLOGIAS_COPY = [
 
 function pickMetodologiaCopy() {
   const m = METODOLOGIAS_COPY[Math.floor(Math.random() * METODOLOGIAS_COPY.length)];
-  return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n=== FIM DA METODOLOGIA ===\n`;
+  return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n\n=== HOOK PARA A IMAGEM (OBRIGATÓRIO — APLICAR A METODOLOGIA AO NICHO/TEMA) ===\nNa PRIMEIRA linha da sua resposta, ANTES de qualquer coisa, escreva exatamente assim:\nHOOK_IMAGEM: "<frase de 3 a 6 palavras, PT-BR, MAIÚSCULAS, no ESPÍRITO do método "${m.nome}", citando o sintoma/estrutura/condição do TEMA do post (ex.: 'DOR NO SISO?', 'RONCO PODE MATAR', 'ATM TRAVADA?', 'CÂNCER NA BOCA?', 'MAXILAR QUEBRADO?', 'SANGRA AO ESCOVAR?')>"\nEssa frase será renderizada DENTRO da imagem da capa (ou single) como gancho visual. PROIBIDO citar nome do profissional, "Dr.", "Prof.", clínica ou marca. Depois pule uma linha e siga com a legenda normal.\n=== FIM DA METODOLOGIA ===\n`;
+}
+
+function extractHookImagem(txt: string): string {
+  const m = (txt || "").match(/HOOK_IMAGEM\s*:\s*["“']?([^"”'\n]+)["”']?/i);
+  if (!m) return "";
+  return m[1].trim().toUpperCase().slice(0, 60);
 }
 
 function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x" | "google", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
