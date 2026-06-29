@@ -182,29 +182,20 @@ export async function overlayAlunoLogos(
     const marginX = Math.round(w * 0.035);
     const marginY = Math.round(h * 0.025);
 
-    // Carrega as DUAS logos (faculdade + liga) e estampa
-    // logo-aluno-1 no canto INFERIOR ESQUERDO
-    // logo-aluno-2 no canto INFERIOR DIREITO
+    // Logo oficial ÚNICA da Liga (selo circular já contém faculdade + curso).
     const a1 = (await import("@/assets/logo-aluno-1.png.asset.json")).default;
-    const a2 = (await import("@/assets/logo-aluno-2.png.asset.json")).default;
-
     const freeList: Array<{ free: () => void }> = [];
-    const stamp = async (assetUrl: string, side: "left" | "right") => {
-      const bytes = await fetchBytes(assetUrl, origin);
-      const full = PhotonImage.new_from_byteslice(bytes);
-      const fw = full.get_width();
-      const fh = full.get_height();
-      const targetW = Math.max(80, Math.round((w * sizePct) / 100));
-      const targetH = Math.max(48, Math.round((fh * targetW) / Math.max(1, fw)));
-      const small = resize(full, targetW, targetH, SamplingFilter.Lanczos3);
-      const x = side === "left" ? marginX : Math.max(0, w - targetW - marginX);
-      const y = Math.max(0, h - targetH - marginY);
-      watermark(base, small, BigInt(x), BigInt(y));
-      freeList.push(full, small);
-    };
-
-    await stamp(a1.url, "left");
-    await stamp(a2.url, "right");
+    const bytes = await fetchBytes(a1.url, origin);
+    const full = PhotonImage.new_from_byteslice(bytes);
+    const fw = full.get_width();
+    const fh = full.get_height();
+    const targetW = Math.max(120, Math.round((w * sizePct) / 100));
+    const targetH = Math.max(80, Math.round((fh * targetW) / Math.max(1, fw)));
+    const small = resize(full, targetW, targetH, SamplingFilter.Lanczos3);
+    const x = Math.max(0, w - targetW - marginX);
+    const y = Math.max(0, h - targetH - marginY);
+    watermark(base, small, BigInt(x), BigInt(y));
+    freeList.push(full, small);
 
     const outBytes = base.get_bytes_jpeg(90);
     base.free();
