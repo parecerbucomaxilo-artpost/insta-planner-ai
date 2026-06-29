@@ -175,15 +175,27 @@ function pickHookForTopic(tema: string): string {
   return genericos[Math.floor(Math.random() * genericos.length)];
 }
 
+// Devolve TODOS os ganchos do nicho do tema (até 6) — usados como menu de
+// EXEMPLOS para o LLM adaptar à própria copy. Se nenhum nicho casar, devolve
+// os genéricos. Não é a frase final; é referência de estilo/tom.
+function listHookExamplesForTopic(tema: string): string[] {
+  const t = (tema || "").trim();
+  for (const { match, hooks } of HOOK_BANK) {
+    if (match.test(t)) return hooks.slice(0, 6);
+  }
+  return ["RESOLVA HOJE, NÃO AMANHÃ", "TRATE A CAUSA, NÃO O SINTOMA", "DOR NÃO É NORMAL", "DIAGNÓSTICO CERTO MUDA TUDO", "SUA BOCA MERECE CIÊNCIA"];
+}
+
 
 function pickMetodologiaCopy(tema?: string) {
   const m = METODOLOGIAS_COPY[Math.floor(Math.random() * METODOLOGIAS_COPY.length)];
-  const sugestoes = tema ? pickHookForTopic(tema) : "";
-  const bancoLinha = tema
-    ? `\nGANCHO SUGERIDO (preferir este ou variação curta no mesmo espírito, sempre amarrado ao TEMA "${tema}"): ${sugestoes}`
+  const exemplos = tema ? listHookExamplesForTopic(tema) : [];
+  const bancoLinha = exemplos.length
+    ? `\n\nEXEMPLOS DE GANCHO PARA ESTE NICHO (apenas referência de TOM e IMPACTO — NÃO copie literal; adapte ao TEMA "${tema}" com palavras suas, mantendo o mesmo poder de chamada):\n- ${exemplos.join("\n- ")}\nRegras do gancho: 3 a 6 palavras, PT-BR, MAIÚSCULAS, oferece ganho/solução ou alerta direto (nunca jargão técnico), fala com o paciente em 1ª pessoa do leitor, sem citar profissional/clínica/marca.`
     : "";
   return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n\n=== HOOK PARA A IMAGEM (OBRIGATÓRIO — APLICAR A METODOLOGIA AO NICHO/TEMA) ===\nNa PRIMEIRA linha da sua resposta, ANTES de qualquer coisa, escreva exatamente assim:\nHOOK_IMAGEM: "<frase de 3 a 6 palavras, PT-BR, MAIÚSCULAS, no ESPÍRITO do método "${m.nome}", citando o sintoma/estrutura/condição do TEMA do post>"${bancoLinha}\nEssa frase será renderizada DENTRO da imagem da capa (ou single) como gancho visual. PROIBIDO citar nome do profissional, "Dr.", "Prof.", clínica ou marca. Depois pule uma linha e siga com a legenda normal.\n=== FIM DA METODOLOGIA ===\n`;
 }
+
 
 function extractHookImagem(txt: string): string {
   const m = (txt || "").match(/HOOK_IMAGEM\s*:\s*["“']?([^"”'\n]+)["”']?/i);
