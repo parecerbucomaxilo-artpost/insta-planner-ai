@@ -96,6 +96,59 @@ PROIBIDO: post que só descreve a doença/sintoma e termina sem orientação pr�
 A IMAGEM e a LEGENDA devem contar a MESMA história nessa ordem (problema → mecanismo → solução → CTA). Em carrossel, os slides centrais OBRIGATORIAMENTE mostram a SOLUÇÃO/TRATAMENTO, não só a dor.
 === FIM DA REGRA DE CONTEÚDO COMPLETO ===\n`;
 
+// === METODOLOGIAS DE COPYWRITING / CONEXÃO ===
+// Rotacionadas aleatoriamente a cada post para evitar repetição de estrutura
+// e gerar maior identificação emocional com o leitor. Cada método ENVELOPA
+// a estrutura padrão (não substitui) — orienta o RITMO, a ABERTURA e o
+// FECHAMENTO da legenda.
+const METODOLOGIAS_COPY = [
+  {
+    nome: "AIDA (Atenção · Interesse · Desejo · Ação)",
+    guia: "Abra com uma frase-choque que ROUBA a atenção em 5 palavras (ex.: 'Acorda com a mandíbula travada?'). Desperte INTERESSE com 1 fato pouco conhecido. Crie DESEJO mostrando o alívio possível. Feche com AÇÃO clara (link na bio).",
+  },
+  {
+    nome: "PAS (Problema · Agitação · Solução)",
+    guia: "Apresente o PROBLEMA real do leitor em 1 frase curta. AGITE: descreva o que acontece se ele ignorar (dor que piora, função que se perde, qualidade de vida que cai). SOLUÇÃO: revele a conduta clínica disponível hoje.",
+  },
+  {
+    nome: "BAB (Before · After · Bridge)",
+    guia: "BEFORE: descreva o cenário atual de sofrimento/limitação do leitor. AFTER: pinte o cenário pós-tratamento (dormir bem, mastigar sem dor, voltar ao trabalho). BRIDGE: a ponte entre os dois é a avaliação especializada.",
+  },
+  {
+    nome: "Storytelling clínico (mini-caso)",
+    guia: "Abra com um mini-caso anônimo em 2 frases ('Paciente chegou com X há meses, achava que era Y...'). Conduza pelo raciocínio clínico. Encerre com o desfecho e a lição que vale para QUEM lê.",
+  },
+  {
+    nome: "FAB (Feature · Advantage · Benefit)",
+    guia: "FEATURE: cite a característica técnica (técnica minimamente traumática, planejamento digital, fixação rígida). ADVANTAGE: o que ela faz de diferente. BENEFIT: o que MUDA na vida do paciente (menos edema, menos dias parado, mais segurança).",
+  },
+  {
+    nome: "4U (Útil · Único · Urgente · Ultra-específico)",
+    guia: "Cada frase deve ser ÚTIL (ensina algo), ÚNICA (ângulo não-óbvio), URGENTE (por que importa AGORA) e ULTRA-ESPECÍFICA (cite a estrutura anatômica, o sintoma exato, o tempo correto).",
+  },
+  {
+    nome: "PASTOR (Problema · Amplifica · Solução · Testemunho · Oferta · Resposta)",
+    guia: "Problema em 1 linha. Amplifica a dor real. Solução clínica. Testemunho científico (1 dado/estudo sem inventar). Oferta = acesso à avaliação especializada. Resposta = CTA link na bio.",
+  },
+  {
+    nome: "4Cs (Claro · Conciso · Convincente · Crível)",
+    guia: "Cada frase passa nos 4 filtros antes de ficar: está CLARA (leigo entende)? CONCISA (sem gordura)? CONVINCENTE (gera ação)? CRÍVEL (sem exagero e sem promessa de cura)?",
+  },
+  {
+    nome: "Empatia radical (Brené Brown aplicado à saúde)",
+    guia: "Comece nomeando a EMOÇÃO do leitor ('Sei que dói dormir mal há meses', 'Entendo o medo de uma cirurgia'). Valide o sentimento ANTES de oferecer a informação técnica. Só depois entre na conduta.",
+  },
+  {
+    nome: "Pergunta socrática",
+    guia: "Estruture a legenda em 3 perguntas que o próprio leitor faria ao especialista ('Por que dói só de um lado?', 'É normal estalar?', 'Tem como tratar sem cirurgia?'). Responda cada uma em 1-2 frases curtas. Feche com convite.",
+  },
+];
+
+function pickMetodologiaCopy() {
+  const m = METODOLOGIAS_COPY[Math.floor(Math.random() * METODOLOGIAS_COPY.length)];
+  return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n=== FIM DA METODOLOGIA ===\n`;
+}
+
 function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x" | "google", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
   if (nivel !== "auto") return nivel;
   if (rede === "google") return "google-business";
