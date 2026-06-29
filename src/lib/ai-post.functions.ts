@@ -96,6 +96,59 @@ PROIBIDO: post que só descreve a doença/sintoma e termina sem orientação pr�
 A IMAGEM e a LEGENDA devem contar a MESMA história nessa ordem (problema → mecanismo → solução → CTA). Em carrossel, os slides centrais OBRIGATORIAMENTE mostram a SOLUÇÃO/TRATAMENTO, não só a dor.
 === FIM DA REGRA DE CONTEÚDO COMPLETO ===\n`;
 
+// === METODOLOGIAS DE COPYWRITING / CONEXÃO ===
+// Rotacionadas aleatoriamente a cada post para evitar repetição de estrutura
+// e gerar maior identificação emocional com o leitor. Cada método ENVELOPA
+// a estrutura padrão (não substitui) — orienta o RITMO, a ABERTURA e o
+// FECHAMENTO da legenda.
+const METODOLOGIAS_COPY = [
+  {
+    nome: "AIDA (Atenção · Interesse · Desejo · Ação)",
+    guia: "Abra com uma frase-choque que ROUBA a atenção em 5 palavras (ex.: 'Acorda com a mandíbula travada?'). Desperte INTERESSE com 1 fato pouco conhecido. Crie DESEJO mostrando o alívio possível. Feche com AÇÃO clara (link na bio).",
+  },
+  {
+    nome: "PAS (Problema · Agitação · Solução)",
+    guia: "Apresente o PROBLEMA real do leitor em 1 frase curta. AGITE: descreva o que acontece se ele ignorar (dor que piora, função que se perde, qualidade de vida que cai). SOLUÇÃO: revele a conduta clínica disponível hoje.",
+  },
+  {
+    nome: "BAB (Before · After · Bridge)",
+    guia: "BEFORE: descreva o cenário atual de sofrimento/limitação do leitor. AFTER: pinte o cenário pós-tratamento (dormir bem, mastigar sem dor, voltar ao trabalho). BRIDGE: a ponte entre os dois é a avaliação especializada.",
+  },
+  {
+    nome: "Storytelling clínico (mini-caso)",
+    guia: "Abra com um mini-caso anônimo em 2 frases ('Paciente chegou com X há meses, achava que era Y...'). Conduza pelo raciocínio clínico. Encerre com o desfecho e a lição que vale para QUEM lê.",
+  },
+  {
+    nome: "FAB (Feature · Advantage · Benefit)",
+    guia: "FEATURE: cite a característica técnica (técnica minimamente traumática, planejamento digital, fixação rígida). ADVANTAGE: o que ela faz de diferente. BENEFIT: o que MUDA na vida do paciente (menos edema, menos dias parado, mais segurança).",
+  },
+  {
+    nome: "4U (Útil · Único · Urgente · Ultra-específico)",
+    guia: "Cada frase deve ser ÚTIL (ensina algo), ÚNICA (ângulo não-óbvio), URGENTE (por que importa AGORA) e ULTRA-ESPECÍFICA (cite a estrutura anatômica, o sintoma exato, o tempo correto).",
+  },
+  {
+    nome: "PASTOR (Problema · Amplifica · Solução · Testemunho · Oferta · Resposta)",
+    guia: "Problema em 1 linha. Amplifica a dor real. Solução clínica. Testemunho científico (1 dado/estudo sem inventar). Oferta = acesso à avaliação especializada. Resposta = CTA link na bio.",
+  },
+  {
+    nome: "4Cs (Claro · Conciso · Convincente · Crível)",
+    guia: "Cada frase passa nos 4 filtros antes de ficar: está CLARA (leigo entende)? CONCISA (sem gordura)? CONVINCENTE (gera ação)? CRÍVEL (sem exagero e sem promessa de cura)?",
+  },
+  {
+    nome: "Empatia radical (Brené Brown aplicado à saúde)",
+    guia: "Comece nomeando a EMOÇÃO do leitor ('Sei que dói dormir mal há meses', 'Entendo o medo de uma cirurgia'). Valide o sentimento ANTES de oferecer a informação técnica. Só depois entre na conduta.",
+  },
+  {
+    nome: "Pergunta socrática",
+    guia: "Estruture a legenda em 3 perguntas que o próprio leitor faria ao especialista ('Por que dói só de um lado?', 'É normal estalar?', 'Tem como tratar sem cirurgia?'). Responda cada uma em 1-2 frases curtas. Feche com convite.",
+  },
+];
+
+function pickMetodologiaCopy() {
+  const m = METODOLOGIAS_COPY[Math.floor(Math.random() * METODOLOGIAS_COPY.length)];
+  return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n=== FIM DA METODOLOGIA ===\n`;
+}
+
 function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x" | "google", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
   if (nivel !== "auto") return nivel;
   if (rede === "google") return "google-business";
@@ -149,7 +202,7 @@ REGRAS DE FORMATO:
 ${CTAS_PROIBIDOS}
 ${CTAS_PROIBIDOS}
 ${LOCALIZACAO_OBRIGATORIA}
-${CONTEUDO_COMPLETO}`;
+${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
   }
 
   const estrutura = isLI
@@ -189,7 +242,7 @@ ${isLI
   ? `- LinkedIn: 1200-1800 caracteres (densidade científica real), parágrafos de no máximo 3 linhas, no máximo 1 emoji sóbrio (ou nenhum). Bloco "Referências:" obrigatório com DOI. Sem linguagem leiga, sem analogias infantis, sem chamadas de Instagram.`
   : `- Instagram: 400-700 caracteres (NUNCA ultrapasse 800), gancho na 1ª linha, 2-4 emojis estratégicos, parágrafos de 1-2 linhas, 4-6 hashtags ao final. CTA indireto na última linha.`}
 NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.
-${CONTEUDO_COMPLETO}`;
+${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
 }
 
 
@@ -307,7 +360,7 @@ ESTRUTURA DA LEGENDA (Instagram, 400-700 caracteres):
 PROIBIDO: chamadas comerciais ("agende", "promoção"), WhatsApp do consultório, bibliografia tipo Lancet/JOMS, jargão hospitalar pesado, tom de paciente leigo. Sem assinatura no corpo — entra como logos no overlay.
 REGRA DE PORTUGUÊS (revisão dupla obrigatória, não-negociável): texto 100% em Português do Brasil (pt-BR), com acentuação completa (á é í ó ú â ê ô ã õ à), cedilha (ç) e crase corretas. PROIBIDO: palavras em inglês, espanhol ou pseudo-latim; palavras inventadas; palavras duplicadas ("dor dor"); letras embaralhadas; abreviações não-padrão; termos técnicos grafados errados (correto: "exodontia", "frenectomia", "alveoloplastia", "biópsia", "anestesia", "sutura", "fórceps", "porta-agulhas", "carpule", "terceiro molar", "siso", "mandíbula", "maxila", "nervo alveolar inferior", "forame mentual", "canal mandibular", "panorâmica", "periapical", "tomografia computadorizada de feixe cônico"). Antes de devolver a legenda, releia palavra por palavra duas vezes e corrija qualquer erro de português; se houver QUALQUER dúvida sobre uma palavra, troque por sinônimo simples e correto.
 REGRA DE NOMENCLATURA ANATÔMICA (obrigatória): toda estrutura citada deve usar a Terminologia Anatômica oficial em pt-BR (TA2 / Sociedade Brasileira de Anatomia), com a indicação clínica/topográfica correta. Exemplos válidos: "nervo alveolar inferior" (não "nervo dentário"), "nervo lingual", "nervo bucal", "nervo mentual", "forame mentual" (não "forame mental"), "forame mandibular", "espinha de Spix" (= língula da mandíbula), "côndilo da mandíbula", "processo coronoide", "ramo da mandíbula", "corpo da mandíbula", "sínfise mentual", "tuberosidade da maxila", "seio maxilar", "fossa pterigopalatina", "músculo masseter", "músculo temporal", "músculos pterigóideos medial e lateral", "articulação temporomandibular (ATM)", "disco articular", "côndilo mandibular", "fossa mandibular do osso temporal", "tubérculo articular", "primeiro/segundo/terceiro molar inferior", "região retromolar", "trígono retromolar", "mucosa alveolar", "gengiva inserida", "freio labial/lingual". PROIBIDO usar nomes populares como nome técnico ("dente do siso" só como sinônimo coloquial entre parênteses), inventar variações ("nervo alveolário", "forame mentoniano"), trocar lado (inferior/superior, medial/lateral, anterior/posterior) ou atribuir função/inervação errada. Sempre confira a indicação clínica: bloqueio do nervo alveolar inferior anestesia hemiarcada inferior ipsilateral; nervo lingual anestesia 2/3 anteriores da língua e mucosa lingual; nervo bucal anestesia mucosa jugal e gengiva vestibular dos molares inferiores. Em caso de dúvida sobre nome ou indicação, NÃO cite a estrutura.
-${CONTEUDO_COMPLETO}`;
+${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
 }
 
 function studentImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }) {
@@ -376,7 +429,7 @@ NÃO inclua a assinatura no corpo — aparece como overlay na imagem.
 
 REGRA DE PORTUGUÊS (revisão dupla obrigatória, não-negociável): texto 100% em Português do Brasil (pt-BR) com acentuação completa (á é í ó ú â ê ô ã õ à), cedilha (ç) e crase corretas. PROIBIDO: palavras em inglês/espanhol/pseudo-latim, palavras inventadas, palavras duplicadas ("dor dor"), letras embaralhadas, abreviações não-padrão, ortografia errada. Termos técnicos sempre exatos: "bucomaxilofacial", "exodontia", "siso", "terceiro molar", "ATM", "DTM", "bruxismo", "ortognática", "mandíbula", "maxila", "anestesia", "sutura", "trauma facial". Releia palavra por palavra duas vezes antes de devolver; em caso de QUALQUER dúvida, troque por sinônimo simples e correto. NÃO MISTURE ASSUNTOS: o post inteiro é sobre UM único tema — proibido citar outras patologias ou procedimentos não relacionados ao tema.
 REGRA DE NOMENCLATURA ANATÔMICA (obrigatória): use a Terminologia Anatômica oficial em pt-BR (TA2 / Sociedade Brasileira de Anatomia) com indicação clínica/topográfica correta. Nomes corretos: "nervo alveolar inferior" (nunca "nervo dentário"), "nervo lingual", "nervo bucal", "nervo mentual", "forame mentual" (nunca "mental" ou "mentoniano"), "forame mandibular", "língula da mandíbula" (= espinha de Spix), "côndilo da mandíbula", "processo coronoide", "ramo/corpo/sínfise da mandíbula", "tuberosidade da maxila", "seio maxilar", "ATM / disco articular / fossa mandibular / tubérculo articular", "músculos masseter, temporal e pterigóideos medial e lateral", "região e trígono retromolar". Sempre confirme lado (inferior/superior, medial/lateral), inervação, irrigação e indicação clínica antes de citar. Em caso de QUALQUER dúvida sobre nome, lado, função ou indicação, NÃO cite a estrutura. Proibido nomes populares como nome técnico ou variações inventadas.
-${CONTEUDO_COMPLETO}`;
+${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
 }
 
 function chicoImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }, isStory = false) {
@@ -967,8 +1020,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         const system = isChico
           ? chicoCaptionSystem(formato)
           : isEstudantes
-            ? `Você é monitor sênior de Cirurgia Bucal escrevendo para estudantes de graduação em Odontologia (Liga de CTBMF). PT-BR Brasil impecável, ZERO inglês, sem repetições, sem palavras inventadas. Tom didático, direto, próximo do aluno; linguagem clínica correta com terminologia anatômica oficial (TA2/SBA). PROIBIDO copy comercial, diagnóstico afirmativo, "agende", "promoção". Encerre com 5-7 hashtags acadêmicas (#CTBMF #LigaAcademica #CirurgiaBucal #EstudanteDeOdontologia #Graduacao). Formato: ${formato}.${CONTEUDO_COMPLETO}`
-            : `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, ZERO palavras em inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.${CONTEUDO_COMPLETO}`;
+            ? `Você é monitor sênior de Cirurgia Bucal escrevendo para estudantes de graduação em Odontologia (Liga de CTBMF). PT-BR Brasil impecável, ZERO inglês, sem repetições, sem palavras inventadas. Tom didático, direto, próximo do aluno; linguagem clínica correta com terminologia anatômica oficial (TA2/SBA). PROIBIDO copy comercial, diagnóstico afirmativo, "agende", "promoção". Encerre com 5-7 hashtags acadêmicas (#CTBMF #LigaAcademica #CirurgiaBucal #EstudanteDeOdontologia #Graduacao). Formato: ${formato}.${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`
+            : `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, ZERO palavras em inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
         const contrato = clinicalContract(tema, data.audiencia);
         const roteiroCarrossel = formato === "Carrossel"
           ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter 5 blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
