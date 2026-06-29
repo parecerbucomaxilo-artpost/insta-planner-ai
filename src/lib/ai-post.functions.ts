@@ -1269,7 +1269,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
     const hookImagem = extractHookImagem(legendaResolvida) || pickHookForTopic(tema);
     // remove a linha HOOK_IMAGEM da legenda exibida/publicada
-    const legendaSemHook = (legendaResolvida || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "").trim();
+    let legendaSemHook = (legendaResolvida || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "").trim();
+    legendaSemHook = enforceHookCoherence(legendaSemHook, hookImagem, tema);
     const headlineLegenda = extractHeadline(legendaSemHook) || hookImagem;
     const altLegenda = extractAlt(legendaSemHook);
     const guiaTema = topicGuidance(tema);
