@@ -890,19 +890,33 @@ function completeCaptionIfNeeded(params: {
   const hasConduta = /(trat|conduta|avaliacao|avaliar|planej|fisioterapia|placa|cpap|biopsia|exodontia|higiene|protocolo|fixacao|orientacao|controle|acompanhamento)/.test(norm);
   const hasWhy = /(porque|por que|acontece|mecanismo|causa|favorece|sobrecarga|inflamacao|risco)/.test(norm);
   const hasAlert = /(alerta|procure|avaliacao|especialista|persistente|piora|febre|inchaco|sangramento|travamento)/.test(norm);
-  const tooShort = raw.length < (params.formato === "Story" ? 120 : 320);
-  if (!tooShort && hasConduta && hasWhy && hasAlert) return raw;
+  const hasGanho = /(ganho|benef|qualidade de vida|volta a|sem dor|recuper|sorr|mastig|respir|dormir bem)/.test(norm);
+  const minLen = params.formato === "Story" ? 140 : params.rede === "linkedin" ? 600 : 380;
+  const tooShort = raw.length < minLen;
+  if (!tooShort && hasConduta && hasWhy && hasAlert && hasGanho) return raw;
 
   if (params.formato === "Story") {
-    return `${raw}\n\nO que fazer: ${g.conduta}.\n\nAtenção: ${g.alerta}.\n\nLink na Bio`;
+    return `${raw}\n\nO que fazer: ${g.conduta}.\n\nGanho: ${g.ganho}.\n\nAtenção: ${g.alerta}.\n\nLink na Bio`;
   }
   if (params.rede === "linkedin") {
-    return `${raw}\n\nConduta prática: ${g.conduta}. O objetivo é ${g.ganho}.\n\nSinais de alerta: ${g.alerta}.`;
+    const extra: string[] = [];
+    if (!hasWhy) extra.push(`Por que acontece: ${g.porQue}.`);
+    if (!hasConduta) extra.push(`Conduta prática: ${g.conduta}.`);
+    if (!hasGanho) extra.push(`Ganho clínico esperado: ${g.ganho}.`);
+    if (!hasAlert) extra.push(`Sinais de alerta: ${g.alerta}.`);
+    return `${raw}\n\n${extra.join("\n\n")}`;
   }
   const fechamento = params.audiencia === "estudantes-graduacao"
     ? "Salve para revisar e compare com sua conduta na clínica."
     : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
-  return `${raw}\n\nComo conduzir: ${g.conduta}.\n\nQuando ligar o alerta: ${g.alerta}.\n\nGanho esperado: ${g.ganho}.\n\n${fechamento}`;
+  const partes: string[] = [raw];
+  if (!hasWhy) partes.push(`Por que acontece: ${g.porQue}.`);
+  if (!hasConduta) partes.push(`Como conduzir: ${g.conduta}.`);
+  if (!hasGanho) partes.push(`Ganho real: ${g.ganho}.`);
+  if (!hasAlert) partes.push(`Quando ligar o alerta: ${g.alerta}.`);
+  partes.push(fechamento);
+  return partes.join("\n\n");
+
 }
 
 function buildSlideNarratives(tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"]) {
