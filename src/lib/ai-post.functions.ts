@@ -144,9 +144,44 @@ const METODOLOGIAS_COPY = [
   },
 ];
 
-function pickMetodologiaCopy() {
+// === BANCO DE GANCHOS VISUAIS POR NICHO ===
+// Frases-choque curtas (3-6 palavras, PT-BR, MAIÚSCULAS) que vão IMPRESSAS DENTRO
+// da imagem da capa. Cada nicho tem várias opções para evitar repetição entre posts.
+const HOOK_BANK: Array<{ match: RegExp; hooks: string[] }> = [
+  { match: /(siso|terceiro molar|exodontia)/i, hooks: ["DOR NO SISO?", "SISO INCLUSO INCOMODA?", "EXTRAIR OU NÃO?", "INCHAÇO APÓS O SISO?", "SISO PODE ENTORTAR DENTE?"] },
+  { match: /(atm|disfun|dtm|articula.*temporomand)/i, hooks: ["ATM TRAVADA?", "MAXILAR ESTALA?", "DOR AO ABRIR A BOCA?", "ACORDA COM A FACE DOENDO?", "DTM ROUBA SEU SONO?"] },
+  { match: /(bruxismo|aperto|range)/i, hooks: ["RANGE OS DENTES?", "ACORDA COM DOR FACIAL?", "BRUXISMO DESGASTA TUDO", "APERTA OS DENTES DORMINDO?"] },
+  { match: /(ronco|apneia|sono|saos)/i, hooks: ["RONCO PODE MATAR", "PARA DE RESPIRAR DORMINDO?", "CANSADO MESMO DORMINDO?", "APNEIA NÃO É FRESCURA"] },
+  { match: /(c[âa]ncer|les[ãa]o|biopsia|leucopl|eritropl|maligno)/i, hooks: ["CÂNCER NA BOCA?", "FERIDA QUE NÃO SARA?", "MANCHA BRANCA NA BOCA?", "LESÃO NA LÍNGUA?", "30 DIAS SEM SARAR?"] },
+  { match: /(fratura|trauma|acidente|maxilar quebrad|mandibula quebr)/i, hooks: ["MAXILAR QUEBRADO?", "TRAUMA NO ROSTO?", "FRATURA DA FACE", "QUEIXO FORA DO LUGAR?"] },
+  { match: /(implant|reabilita|perda dent)/i, hooks: ["PERDEU UM DENTE?", "USA DENTADURA?", "IMPLANTE OU PONTE?", "BOCA SEM OSSO?"] },
+  { match: /(ortognát|deformidade|classe iii|prognat|retrognat|mordida)/i, hooks: ["QUEIXO PROJETADO?", "MORDIDA ERRADA?", "ROSTO ASSIMÉTRICO?", "CIRURGIA ORTOGNÁTICA MUDA TUDO"] },
+  { match: /(cisto|tumor odontog|ameloblast)/i, hooks: ["CISTO NA MANDÍBULA?", "INCHAÇO NO OSSO?", "TUMOR BENIGNO DA BOCA"] },
+  { match: /(infec|abscesso|pus|celulite facial|odontog[êe]nica)/i, hooks: ["INCHAÇO NO ROSTO?", "PUS NA GENGIVA?", "INFECÇÃO DENTÁRIA MATA", "DOR PULSANTE? CORRA"] },
+  { match: /(sinus|seio maxilar|comunica.*buco)/i, hooks: ["SINUSITE DE DENTE?", "AR SAI PELO NARIZ?", "DENTE NO SEIO MAXILAR?"] },
+  { match: /(nervo|parestesia|mentual|alveolar inferior|lingual)/i, hooks: ["LÁBIO DORMENTE?", "PERDEU A SENSIBILIDADE?", "NERVO LESADO NO DENTE?"] },
+  { match: /(gengiv|periodont|sangra)/i, hooks: ["SANGRA AO ESCOVAR?", "GENGIVA RETRAIU?", "DENTE MOLE?"] },
+  { match: /(hospital|uti|paciente intern|pré.?operat|cirurgia cardíaca|oncolog)/i, hooks: ["INTERNADO PRECISA DE DENTISTA?", "BOCA LIMPA SALVA VIDAS", "INFECÇÃO DA BOCA NA UTI"] },
+  { match: /(crian|pediátr|odontopedi)/i, hooks: ["DENTE DO LEITE QUEBROU?", "TRAUMA NA CRIANÇA?", "FREIO LINGUAL CURTO?"] },
+];
+
+function pickHookForTopic(tema: string): string {
+  const t = (tema || "").trim();
+  for (const { match, hooks } of HOOK_BANK) {
+    if (match.test(t)) return hooks[Math.floor(Math.random() * hooks.length)];
+  }
+  // genérico — gancho de identificação ampla
+  const genericos = ["DÓI DEMAIS?", "ISSO É NORMAL?", "ATENÇÃO À SUA BOCA", "NÃO IGNORE ESSE SINAL", "SUA BOCA AVISA ANTES"];
+  return genericos[Math.floor(Math.random() * genericos.length)];
+}
+
+function pickMetodologiaCopy(tema?: string) {
   const m = METODOLOGIAS_COPY[Math.floor(Math.random() * METODOLOGIAS_COPY.length)];
-  return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n\n=== HOOK PARA A IMAGEM (OBRIGATÓRIO — APLICAR A METODOLOGIA AO NICHO/TEMA) ===\nNa PRIMEIRA linha da sua resposta, ANTES de qualquer coisa, escreva exatamente assim:\nHOOK_IMAGEM: "<frase de 3 a 6 palavras, PT-BR, MAIÚSCULAS, no ESPÍRITO do método "${m.nome}", citando o sintoma/estrutura/condição do TEMA do post (ex.: 'DOR NO SISO?', 'RONCO PODE MATAR', 'ATM TRAVADA?', 'CÂNCER NA BOCA?', 'MAXILAR QUEBRADO?', 'SANGRA AO ESCOVAR?')>"\nEssa frase será renderizada DENTRO da imagem da capa (ou single) como gancho visual. PROIBIDO citar nome do profissional, "Dr.", "Prof.", clínica ou marca. Depois pule uma linha e siga com a legenda normal.\n=== FIM DA METODOLOGIA ===\n`;
+  const sugestoes = tema ? pickHookForTopic(tema) : "";
+  const bancoLinha = tema
+    ? `\nGANCHO SUGERIDO (preferir este ou variação curta no mesmo espírito, sempre amarrado ao TEMA "${tema}"): ${sugestoes}`
+    : "";
+  return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n\n=== HOOK PARA A IMAGEM (OBRIGATÓRIO — APLICAR A METODOLOGIA AO NICHO/TEMA) ===\nNa PRIMEIRA linha da sua resposta, ANTES de qualquer coisa, escreva exatamente assim:\nHOOK_IMAGEM: "<frase de 3 a 6 palavras, PT-BR, MAIÚSCULAS, no ESPÍRITO do método "${m.nome}", citando o sintoma/estrutura/condição do TEMA do post>"${bancoLinha}\nEssa frase será renderizada DENTRO da imagem da capa (ou single) como gancho visual. PROIBIDO citar nome do profissional, "Dr.", "Prof.", clínica ou marca. Depois pule uma linha e siga com a legenda normal.\n=== FIM DA METODOLOGIA ===\n`;
 }
 
 function extractHookImagem(txt: string): string {
@@ -154,6 +189,7 @@ function extractHookImagem(txt: string): string {
   if (!m) return "";
   return m[1].trim().toUpperCase().slice(0, 60);
 }
+
 
 function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x" | "google", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
   if (nivel !== "auto") return nivel;
