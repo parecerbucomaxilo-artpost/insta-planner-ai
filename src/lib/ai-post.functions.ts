@@ -202,7 +202,7 @@ REGRAS DE FORMATO:
 ${CTAS_PROIBIDOS}
 ${CTAS_PROIBIDOS}
 ${LOCALIZACAO_OBRIGATORIA}
-${CONTEUDO_COMPLETO}`;
+${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
   }
 
   const estrutura = isLI
@@ -242,7 +242,7 @@ ${isLI
   ? `- LinkedIn: 1200-1800 caracteres (densidade científica real), parágrafos de no máximo 3 linhas, no máximo 1 emoji sóbrio (ou nenhum). Bloco "Referências:" obrigatório com DOI. Sem linguagem leiga, sem analogias infantis, sem chamadas de Instagram.`
   : `- Instagram: 400-700 caracteres (NUNCA ultrapasse 800), gancho na 1ª linha, 2-4 emojis estratégicos, parágrafos de 1-2 linhas, 4-6 hashtags ao final. CTA indireto na última linha.`}
 NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.
-${CONTEUDO_COMPLETO}`;
+${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
 }
 
 
@@ -360,7 +360,7 @@ ESTRUTURA DA LEGENDA (Instagram, 400-700 caracteres):
 PROIBIDO: chamadas comerciais ("agende", "promoção"), WhatsApp do consultório, bibliografia tipo Lancet/JOMS, jargão hospitalar pesado, tom de paciente leigo. Sem assinatura no corpo — entra como logos no overlay.
 REGRA DE PORTUGUÊS (revisão dupla obrigatória, não-negociável): texto 100% em Português do Brasil (pt-BR), com acentuação completa (á é í ó ú â ê ô ã õ à), cedilha (ç) e crase corretas. PROIBIDO: palavras em inglês, espanhol ou pseudo-latim; palavras inventadas; palavras duplicadas ("dor dor"); letras embaralhadas; abreviações não-padrão; termos técnicos grafados errados (correto: "exodontia", "frenectomia", "alveoloplastia", "biópsia", "anestesia", "sutura", "fórceps", "porta-agulhas", "carpule", "terceiro molar", "siso", "mandíbula", "maxila", "nervo alveolar inferior", "forame mentual", "canal mandibular", "panorâmica", "periapical", "tomografia computadorizada de feixe cônico"). Antes de devolver a legenda, releia palavra por palavra duas vezes e corrija qualquer erro de português; se houver QUALQUER dúvida sobre uma palavra, troque por sinônimo simples e correto.
 REGRA DE NOMENCLATURA ANATÔMICA (obrigatória): toda estrutura citada deve usar a Terminologia Anatômica oficial em pt-BR (TA2 / Sociedade Brasileira de Anatomia), com a indicação clínica/topográfica correta. Exemplos válidos: "nervo alveolar inferior" (não "nervo dentário"), "nervo lingual", "nervo bucal", "nervo mentual", "forame mentual" (não "forame mental"), "forame mandibular", "espinha de Spix" (= língula da mandíbula), "côndilo da mandíbula", "processo coronoide", "ramo da mandíbula", "corpo da mandíbula", "sínfise mentual", "tuberosidade da maxila", "seio maxilar", "fossa pterigopalatina", "músculo masseter", "músculo temporal", "músculos pterigóideos medial e lateral", "articulação temporomandibular (ATM)", "disco articular", "côndilo mandibular", "fossa mandibular do osso temporal", "tubérculo articular", "primeiro/segundo/terceiro molar inferior", "região retromolar", "trígono retromolar", "mucosa alveolar", "gengiva inserida", "freio labial/lingual". PROIBIDO usar nomes populares como nome técnico ("dente do siso" só como sinônimo coloquial entre parênteses), inventar variações ("nervo alveolário", "forame mentoniano"), trocar lado (inferior/superior, medial/lateral, anterior/posterior) ou atribuir função/inervação errada. Sempre confira a indicação clínica: bloqueio do nervo alveolar inferior anestesia hemiarcada inferior ipsilateral; nervo lingual anestesia 2/3 anteriores da língua e mucosa lingual; nervo bucal anestesia mucosa jugal e gengiva vestibular dos molares inferiores. Em caso de dúvida sobre nome ou indicação, NÃO cite a estrutura.
-${CONTEUDO_COMPLETO}`;
+${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
 }
 
 function studentImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }) {
@@ -429,7 +429,7 @@ NÃO inclua a assinatura no corpo — aparece como overlay na imagem.
 
 REGRA DE PORTUGUÊS (revisão dupla obrigatória, não-negociável): texto 100% em Português do Brasil (pt-BR) com acentuação completa (á é í ó ú â ê ô ã õ à), cedilha (ç) e crase corretas. PROIBIDO: palavras em inglês/espanhol/pseudo-latim, palavras inventadas, palavras duplicadas ("dor dor"), letras embaralhadas, abreviações não-padrão, ortografia errada. Termos técnicos sempre exatos: "bucomaxilofacial", "exodontia", "siso", "terceiro molar", "ATM", "DTM", "bruxismo", "ortognática", "mandíbula", "maxila", "anestesia", "sutura", "trauma facial". Releia palavra por palavra duas vezes antes de devolver; em caso de QUALQUER dúvida, troque por sinônimo simples e correto. NÃO MISTURE ASSUNTOS: o post inteiro é sobre UM único tema — proibido citar outras patologias ou procedimentos não relacionados ao tema.
 REGRA DE NOMENCLATURA ANATÔMICA (obrigatória): use a Terminologia Anatômica oficial em pt-BR (TA2 / Sociedade Brasileira de Anatomia) com indicação clínica/topográfica correta. Nomes corretos: "nervo alveolar inferior" (nunca "nervo dentário"), "nervo lingual", "nervo bucal", "nervo mentual", "forame mentual" (nunca "mental" ou "mentoniano"), "forame mandibular", "língula da mandíbula" (= espinha de Spix), "côndilo da mandíbula", "processo coronoide", "ramo/corpo/sínfise da mandíbula", "tuberosidade da maxila", "seio maxilar", "ATM / disco articular / fossa mandibular / tubérculo articular", "músculos masseter, temporal e pterigóideos medial e lateral", "região e trígono retromolar". Sempre confirme lado (inferior/superior, medial/lateral), inervação, irrigação e indicação clínica antes de citar. Em caso de QUALQUER dúvida sobre nome, lado, função ou indicação, NÃO cite a estrutura. Proibido nomes populares como nome técnico ou variações inventadas.
-${CONTEUDO_COMPLETO}`;
+${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
 }
 
 function chicoImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }, isStory = false) {
@@ -1021,7 +1021,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           ? chicoCaptionSystem(formato)
           : isEstudantes
             ? `Você é monitor sênior de Cirurgia Bucal escrevendo para estudantes de graduação em Odontologia (Liga de CTBMF). PT-BR Brasil impecável, ZERO inglês, sem repetições, sem palavras inventadas. Tom didático, direto, próximo do aluno; linguagem clínica correta com terminologia anatômica oficial (TA2/SBA). PROIBIDO copy comercial, diagnóstico afirmativo, "agende", "promoção". Encerre com 5-7 hashtags acadêmicas (#CTBMF #LigaAcademica #CirurgiaBucal #EstudanteDeOdontologia #Graduacao). Formato: ${formato}.${CONTEUDO_COMPLETO}`
-            : `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, ZERO palavras em inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.${CONTEUDO_COMPLETO}`;
+            : `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, ZERO palavras em inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
         const contrato = clinicalContract(tema, data.audiencia);
         const roteiroCarrossel = formato === "Carrossel"
           ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter 5 blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
