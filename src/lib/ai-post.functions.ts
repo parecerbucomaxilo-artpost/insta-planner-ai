@@ -1127,8 +1127,9 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
     const applyOverlay = async (b64: string) => {
       if (isEstudantes) return overlayAlunoLogos(b64);
-      if (isChico) return overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: true });
-      return b64;
+      // Para "chico-drfm" E "geral" (default do PostComposer) — sempre aplica
+      // a logo oficial do Prof. Francisco no canto inferior direito.
+      return overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: true });
     };
     const genAndUpload = (prompt: string) =>
       generateImageWithRetry(prompt)
