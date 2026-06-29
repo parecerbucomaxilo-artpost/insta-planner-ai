@@ -148,21 +148,21 @@ const METODOLOGIAS_COPY = [
 // Frases-choque curtas (3-6 palavras, PT-BR, MAIÚSCULAS) que vão IMPRESSAS DENTRO
 // da imagem da capa. Cada nicho tem várias opções para evitar repetição entre posts.
 const HOOK_BANK: Array<{ match: RegExp; hooks: string[] }> = [
-  { match: /(siso|terceiro molar|exodontia)/i, hooks: ["DOR NO SISO?", "SISO INCLUSO INCOMODA?", "EXTRAIR OU NÃO?", "INCHAÇO APÓS O SISO?", "SISO PODE ENTORTAR DENTE?"] },
-  { match: /(atm|disfun|dtm|articula.*temporomand)/i, hooks: ["ATM TRAVADA?", "MAXILAR ESTALA?", "DOR AO ABRIR A BOCA?", "ACORDA COM A FACE DOENDO?", "DTM ROUBA SEU SONO?"] },
-  { match: /(bruxismo|aperto|range)/i, hooks: ["RANGE OS DENTES?", "ACORDA COM DOR FACIAL?", "BRUXISMO DESGASTA TUDO", "APERTA OS DENTES DORMINDO?"] },
-  { match: /(ronco|apneia|sono|saos)/i, hooks: ["RONCO PODE MATAR", "PARA DE RESPIRAR DORMINDO?", "CANSADO MESMO DORMINDO?", "APNEIA NÃO É FRESCURA"] },
-  { match: /(c[âa]ncer|les[ãa]o|biopsia|leucopl|eritropl|maligno)/i, hooks: ["CÂNCER NA BOCA?", "FERIDA QUE NÃO SARA?", "MANCHA BRANCA NA BOCA?", "LESÃO NA LÍNGUA?", "30 DIAS SEM SARAR?"] },
-  { match: /(fratura|trauma|acidente|maxilar quebrad|mandibula quebr)/i, hooks: ["MAXILAR QUEBRADO?", "TRAUMA NO ROSTO?", "FRATURA DA FACE", "QUEIXO FORA DO LUGAR?"] },
-  { match: /(implant|reabilita|perda dent)/i, hooks: ["PERDEU UM DENTE?", "USA DENTADURA?", "IMPLANTE OU PONTE?", "BOCA SEM OSSO?"] },
-  { match: /(ortognát|deformidade|classe iii|prognat|retrognat|mordida)/i, hooks: ["QUEIXO PROJETADO?", "MORDIDA ERRADA?", "ROSTO ASSIMÉTRICO?", "CIRURGIA ORTOGNÁTICA MUDA TUDO"] },
-  { match: /(cisto|tumor odontog|ameloblast)/i, hooks: ["CISTO NA MANDÍBULA?", "INCHAÇO NO OSSO?", "TUMOR BENIGNO DA BOCA"] },
-  { match: /(infec|abscesso|pus|celulite facial|odontog[êe]nica)/i, hooks: ["INCHAÇO NO ROSTO?", "PUS NA GENGIVA?", "INFECÇÃO DENTÁRIA MATA", "DOR PULSANTE? CORRA"] },
-  { match: /(sinus|seio maxilar|comunica.*buco)/i, hooks: ["SINUSITE DE DENTE?", "AR SAI PELO NARIZ?", "DENTE NO SEIO MAXILAR?"] },
-  { match: /(nervo|parestesia|mentual|alveolar inferior|lingual)/i, hooks: ["LÁBIO DORMENTE?", "PERDEU A SENSIBILIDADE?", "NERVO LESADO NO DENTE?"] },
-  { match: /(gengiv|periodont|sangra)/i, hooks: ["SANGRA AO ESCOVAR?", "GENGIVA RETRAIU?", "DENTE MOLE?"] },
-  { match: /(hospital|uti|paciente intern|pré.?operat|cirurgia cardíaca|oncolog)/i, hooks: ["INTERNADO PRECISA DE DENTISTA?", "BOCA LIMPA SALVA VIDAS", "INFECÇÃO DA BOCA NA UTI"] },
-  { match: /(crian|pediátr|odontopedi)/i, hooks: ["DENTE DO LEITE QUEBROU?", "TRAUMA NA CRIANÇA?", "FREIO LINGUAL CURTO?"] },
+  { match: /(siso|terceiro molar|exodontia)/i, hooks: ["SISO SEM DOR EXISTE", "DOR NO SISO? RESOLVA HOJE", "EXTRAIR O SISO EM 30 MIN", "SISO INCLUSO: PARE DE SOFRER", "ADEUS INCHAÇO PÓS-SISO"] },
+  { match: /(atm|disfun|dtm|articula.*temporomand)/i, hooks: ["ATM TRAVADA TEM SOLUÇÃO", "PARE DE ESTALAR O MAXILAR", "DTM ROUBA SEU SONO?", "ABRA A BOCA SEM DOR", "CHEGA DE DOR DE OUVIDO SEM CAUSA"] },
+  { match: /(bruxismo|aperto|range)/i, hooks: ["PARE DE DESTRUIR SEUS DENTES", "BRUXISMO TEM TRATAMENTO", "DURMA SEM RANGER", "ACORDE SEM DOR NA FACE"] },
+  { match: /(ronco|apneia|sono|saos)/i, hooks: ["RONCO PODE MATAR", "VOLTE A DORMIR DE VERDADE", "APNEIA NÃO É FRESCURA", "ENERGIA DE VOLTA EM 30 DIAS"] },
+  { match: /(c[âa]ncer|les[ãa]o|biopsia|leucopl|eritropl|maligno)/i, hooks: ["DIAGNÓSTICO PRECOCE SALVA", "FERIDA QUE NÃO SARA: ALERTA", "30 DIAS SEM SARAR? AVALIE", "CÂNCER DE BOCA TEM CURA"] },
+  { match: /(fratura|trauma|acidente|maxilar quebrad|mandibula quebr)/i, hooks: ["TRAUMA NA FACE? AJA RÁPIDO", "FRATURA DA FACE TEM SOLUÇÃO", "RECUPERE SEU SORRISO", "CIRURGIA QUE DEVOLVE A FACE"] },
+  { match: /(implant|reabilita|perda dent)/i, hooks: ["VOLTE A MORDER FORTE", "DENTES FIXOS EM 1 DIA", "ADEUS DENTADURA SOLTA", "SORRIR SEM MEDO DE NOVO"] },
+  { match: /(ortognát|deformidade|classe iii|prognat|retrognat|mordida)/i, hooks: ["A CIRURGIA QUE MUDA A VIDA", "MORDIDA CERTA, ROSTO HARMÔNICO", "ORTOGNÁTICA DEVOLVE O SONO", "RESPIRE, MASTIGUE, SORRIA"] },
+  { match: /(cisto|tumor odontog|ameloblast)/i, hooks: ["CISTO NA MANDÍBULA TEM CURA", "REMOÇÃO SEGURA, OSSO PRESERVADO", "INCHAÇO NO OSSO? AVALIE JÁ"] },
+  { match: /(infec|abscesso|pus|celulite facial|odontog[êe]nica)/i, hooks: ["INFECÇÃO DENTÁRIA MATA", "INCHAÇO NO ROSTO? URGÊNCIA", "PUS NA GENGIVA NÃO ESPERA"] },
+  { match: /(sinus|seio maxilar|comunica.*buco)/i, hooks: ["SINUSITE QUE NASCE DO DENTE", "AR PELO NARIZ AO BEBER?", "DENTE NO SEIO: TEM SOLUÇÃO"] },
+  { match: /(nervo|parestesia|mentual|alveolar inferior|lingual)/i, hooks: ["LÁBIO DORMENTE TEM CONDUTA", "RECUPERE A SENSIBILIDADE", "NERVO LESADO: AGE NAS 72H"] },
+  { match: /(gengiv|periodont|sangra)/i, hooks: ["GENGIVA QUE SANGRA AVISA", "PARE A PERDA ÓSSEA", "DENTE MOLE TEM TRATAMENTO"] },
+  { match: /(hospital|uti|paciente intern|pré.?operat|cirurgia cardíaca|oncolog)/i, hooks: ["BOCA LIMPA SALVA VIDAS", "UTI EXIGE DENTISTA", "MENOS PNEUMONIA HOSPITALAR"] },
+  { match: /(crian|pediátr|odontopedi)/i, hooks: ["TRAUMA NA CRIANÇA? CORRA", "FREIO LINGUAL CURTO TEM SOLUÇÃO", "DENTE DE LEITE QUEBROU?"] },
 ];
 
 function pickHookForTopic(tema: string): string {
@@ -170,10 +170,11 @@ function pickHookForTopic(tema: string): string {
   for (const { match, hooks } of HOOK_BANK) {
     if (match.test(t)) return hooks[Math.floor(Math.random() * hooks.length)];
   }
-  // genérico — gancho de identificação ampla
-  const genericos = ["DÓI DEMAIS?", "ISSO É NORMAL?", "ATENÇÃO À SUA BOCA", "NÃO IGNORE ESSE SINAL", "SUA BOCA AVISA ANTES"];
+  // genérico — sempre com ganho/solução, nunca só pergunta
+  const genericos = ["RESOLVA HOJE, NÃO AMANHÃ", "SUA BOCA MERECE CIÊNCIA", "TRATE A CAUSA, NÃO O SINTOMA", "DOR NÃO É NORMAL", "DIAGNÓSTICO CERTO MUDA TUDO"];
   return genericos[Math.floor(Math.random() * genericos.length)];
 }
+
 
 function pickMetodologiaCopy(tema?: string) {
   const m = METODOLOGIAS_COPY[Math.floor(Math.random() * METODOLOGIAS_COPY.length)];
@@ -889,19 +890,33 @@ function completeCaptionIfNeeded(params: {
   const hasConduta = /(trat|conduta|avaliacao|avaliar|planej|fisioterapia|placa|cpap|biopsia|exodontia|higiene|protocolo|fixacao|orientacao|controle|acompanhamento)/.test(norm);
   const hasWhy = /(porque|por que|acontece|mecanismo|causa|favorece|sobrecarga|inflamacao|risco)/.test(norm);
   const hasAlert = /(alerta|procure|avaliacao|especialista|persistente|piora|febre|inchaco|sangramento|travamento)/.test(norm);
-  const tooShort = raw.length < (params.formato === "Story" ? 120 : 320);
-  if (!tooShort && hasConduta && hasWhy && hasAlert) return raw;
+  const hasGanho = /(ganho|benef|qualidade de vida|volta a|sem dor|recuper|sorr|mastig|respir|dormir bem)/.test(norm);
+  const minLen = params.formato === "Story" ? 140 : params.rede === "linkedin" ? 600 : 380;
+  const tooShort = raw.length < minLen;
+  if (!tooShort && hasConduta && hasWhy && hasAlert && hasGanho) return raw;
 
   if (params.formato === "Story") {
-    return `${raw}\n\nO que fazer: ${g.conduta}.\n\nAtenção: ${g.alerta}.\n\nLink na Bio`;
+    return `${raw}\n\nO que fazer: ${g.conduta}.\n\nGanho: ${g.ganho}.\n\nAtenção: ${g.alerta}.\n\nLink na Bio`;
   }
   if (params.rede === "linkedin") {
-    return `${raw}\n\nConduta prática: ${g.conduta}. O objetivo é ${g.ganho}.\n\nSinais de alerta: ${g.alerta}.`;
+    const extra: string[] = [];
+    if (!hasWhy) extra.push(`Por que acontece: ${g.porQue}.`);
+    if (!hasConduta) extra.push(`Conduta prática: ${g.conduta}.`);
+    if (!hasGanho) extra.push(`Ganho clínico esperado: ${g.ganho}.`);
+    if (!hasAlert) extra.push(`Sinais de alerta: ${g.alerta}.`);
+    return `${raw}\n\n${extra.join("\n\n")}`;
   }
   const fechamento = params.audiencia === "estudantes-graduacao"
     ? "Salve para revisar e compare com sua conduta na clínica."
     : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
-  return `${raw}\n\nComo conduzir: ${g.conduta}.\n\nQuando ligar o alerta: ${g.alerta}.\n\nGanho esperado: ${g.ganho}.\n\n${fechamento}`;
+  const partes: string[] = [raw];
+  if (!hasWhy) partes.push(`Por que acontece: ${g.porQue}.`);
+  if (!hasConduta) partes.push(`Como conduzir: ${g.conduta}.`);
+  if (!hasGanho) partes.push(`Ganho real: ${g.ganho}.`);
+  if (!hasAlert) partes.push(`Quando ligar o alerta: ${g.alerta}.`);
+  partes.push(fechamento);
+  return partes.join("\n\n");
+
 }
 
 function buildSlideNarratives(tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"]) {
@@ -1127,8 +1142,9 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
     const applyOverlay = async (b64: string) => {
       if (isEstudantes) return overlayAlunoLogos(b64);
-      if (isChico) return overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: true });
-      return b64;
+      // Para "chico-drfm" E "geral" (default do PostComposer) — sempre aplica
+      // a logo oficial do Prof. Francisco no canto inferior direito.
+      return overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: true });
     };
     const genAndUpload = (prompt: string) =>
       generateImageWithRetry(prompt)

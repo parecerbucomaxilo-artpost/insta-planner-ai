@@ -168,97 +168,47 @@ export async function overlayLogo(
 export async function overlayAlunoLogos(
   imageB64: string,
   origin?: string,
-  sizePct = 12,
+  sizePct = 13,
 ): Promise<string> {
   try {
     const photon: any = await import("@cf-wasm/photon").catch(() => null);
     if (!photon) return imageB64;
-    const { PhotonImage, resize, watermark, SamplingFilter, crop } = photon;
-    const logoLiga = (await import("@/assets/logo-liga-ctbmf.png.asset.json")).default;
+    const { PhotonImage, resize, watermark, SamplingFilter } = photon;
 
     const baseBytes = Uint8Array.from(atob(imageB64), (c) => c.charCodeAt(0));
     const base = PhotonImage.new_from_byteslice(baseBytes);
     const w = base.get_width();
     const h = base.get_height();
-    const marginX = Math.round(w * 0.03);
-    const marginY = Math.round(h * 0.02);
+    const marginX = Math.round(w * 0.035);
+    const marginY = Math.round(h * 0.025);
 
-    const bytes = await fetchBytes(logoLiga.url, origin);
-    const full = PhotonImage.new_from_byteslice(bytes);
-    const fw = full.get_width();
-    const fh = full.get_height();
+    // Carrega as DUAS logos (faculdade + liga) e estampa
+    // logo-aluno-1 no canto INFERIOR ESQUERDO
+    // logo-aluno-2 no canto INFERIOR DIREITO
+    const a1 = (await import("@/assets/logo-aluno-1.png.asset.json")).default;
+    const a2 = (await import("@/assets/logo-aluno-2.png.asset.json")).default;
 
-    let targetW = Math.max(72, Math.round((w * sizePct) / 100));
-    let alpha = 1;
-    type Spot = { name: "bl" | "bc" | "br"; x: number };
-    let chosen: Spot = { name: "bc", x: Math.max(0, Math.round((w - targetW) / 2)) };
+    const freeList: Array<{ free: () => void }> = [];
+    const stamp = async (assetUrl: string, side: "left" | "right") => {
+      const bytes = await fetchBytes(assetUrl, origin);
+      const full = PhotonImage.new_from_byteslice(bytes);
+      const fw = full.get_width();
+      const fh = full.get_height();
+      const targetW = Math.max(80, Math.round((w * sizePct) / 100));
+      const targetH = Math.max(48, Math.round((fh * targetW) / Math.max(1, fw)));
+      const small = resize(full, targetW, targetH, SamplingFilter.Lanczos3);
+      const x = side === "left" ? marginX : Math.max(0, w - targetW - marginX);
+      const y = Math.max(0, h - targetH - marginY);
+      watermark(base, small, BigInt(x), BigInt(y));
+      freeList.push(full, small);
+    };
 
-    try {
-      const sampleH = Math.round(h * 0.18);
-      const sampleW = Math.max(targetW + marginX * 2, Math.round(w * 0.34));
-      const y1 = Math.max(0, h - sampleH);
-      const spots: Array<Spot & { x1: number }> = [
-        { name: "bl", x: marginX, x1: 0 },
-        { name: "bc", x: Math.max(0, Math.round((w - targetW) / 2)), x1: Math.max(0, Math.round((w - sampleW) / 2)) },
-        { name: "br", x: Math.max(0, w - targetW - marginX), x1: Math.max(0, w - sampleW) },
-      ];
-      let best: { spot: Spot; std: number; mean: number } | null = null;
-      if (typeof crop === "function") {
-        for (const s of spots) {
-          try {
-            const region = crop(base, s.x1, y1, Math.min(w, s.x1 + sampleW), h);
-            const px = typeof region.get_raw_pixels === "function" ? region.get_raw_pixels() : null;
-            if (px) {
-              const { mean, std } = statsRGBA(px);
-              const penalty = s.name === "bc" ? 0 : 4;
-              const score = std + penalty;
-              if (!best || score < best.std) best = { spot: s, std: score, mean };
-            }
-            region.free();
-          } catch {}
-        }
-      }
-      if (best) {
-        const busy = Math.min(1, best.std / 60);
-        const scale = 1 - busy * 0.25;
-        targetW = Math.max(80, Math.round(((w * sizePct) / 100) * scale));
-        alpha = best.mean > 180 ? 0.95 : best.mean < 60 ? 0.85 : 0.9;
-        if (busy > 0.55) alpha = Math.min(alpha, 0.78);
-        chosen = {
-          name: best.spot.name,
-          x:
-            best.spot.name === "bl"
-              ? marginX
-              : best.spot.name === "br"
-                ? Math.max(0, w - targetW - marginX)
-                : Math.max(0, Math.round((w - targetW) / 2)),
-        };
-      }
-    } catch (e) {
-      console.warn("[overlayAlunoLogos] smart-mode falhou, usando centro:", e);
-    }
-
-    const targetH = Math.max(48, Math.round((fh * targetW) / Math.max(1, fw)));
-    const small = resize(full, targetW, targetH, SamplingFilter.Lanczos3);
-    let stamp: any = small;
-    let extraFree: any = null;
-    if (alpha < 0.99) {
-      try {
-        const px = small.get_raw_pixels();
-        const adjusted = applyAlpha(px, alpha);
-        const withAlpha = PhotonImage.new(adjusted, targetW, targetH);
-        stamp = withAlpha;
-        extraFree = withAlpha;
-      } catch {}
-    }
-    const y = Math.max(0, h - targetH - marginY);
-    watermark(base, stamp, BigInt(chosen.x), BigInt(y));
+    await stamp(a1.url, "left");
+    await stamp(a2.url, "right");
 
     const outBytes = base.get_bytes_jpeg(90);
     base.free();
-    full.free();
-    small.free();
-    if (extraFree) extraFree.free();
+    for (const f of freeList) f.free();
     let bin = "";
     for (let i = 0; i < outBytes.length; i++) bin += String.fromCharCode(outBytes[i]);
     return btoa(bin);
@@ -267,6 +217,7 @@ export async function overlayAlunoLogos(
     return imageB64;
   }
 }
+
 
 
 export async function ensureJpegB64(imageB64: string, quality = 90): Promise<string> {
