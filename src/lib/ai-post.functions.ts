@@ -184,6 +184,9 @@ function listHookExamplesForTopic(tema: string): string[] {
     if (match.test(t)) return hooks.slice(0, 6);
   }
   return ["RESOLVA HOJE, NÃO AMANHÃ", "TRATE A CAUSA, NÃO O SINTOMA", "DOR NÃO É NORMAL", "DIAGNÓSTICO CERTO MUDA TUDO", "SUA BOCA MERECE CIÊNCIA"];
+}
+
+
 
 
 // Garante que a 1ª frase da legenda responde diretamente ao gancho da imagem.
