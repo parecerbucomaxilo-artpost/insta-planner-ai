@@ -187,13 +187,91 @@ function listHookExamplesForTopic(tema: string): string[] {
 }
 
 
+// === TEMPLATES DE GANCHO (50 estruturas universais) ===
+// Frases com "___" no lugar do TEMA. A IA preenche o "___" com a expressão
+// do nicho do post (ex.: "siso incluso", "ATM travada", "ronco noturno"),
+// gerando um gancho visual altamente magnético. A legenda OBRIGATORIAMENTE
+// responde/desenvolve a mesma frase — sem trocar de assunto.
+const TEMPLATES_GANCHO: string[] = [
+  // Verdades Duras
+  "A verdade sobre ___ que ninguém quer te contar",
+  "O conselho de ___ que todo mundo dá e te mantém travado",
+  "Você está fazendo ___ errado e nem percebe",
+  "Por que ___ não funciona mais",
+  "O erro de ___ que parece certo, mas te sabota",
+  "A dica de ___ mais repetida da internet, e por que ela falha",
+  "___ não é sobre o que você pensa",
+  "O lado de ___ que ninguém mostra",
+  "Se você ainda faz ___, é por isso que não melhora",
+  "O que te ensinaram sobre ___ está te atrasando",
+  // Curiosidade & Open Loops
+  "Eu mudei uma coisa em ___ e tudo virou",
+  "O detalhe de ___ que quase ninguém repara",
+  "O que acontece quando você para de ___",
+  "A parte de ___ que ninguém explica",
+  "O que os números mostram sobre ___",
+  "O motivo real de você travar em ___",
+  "Testei ___ por 30 dias e o resultado surpreendeu",
+  "O ajuste de ___ que faz toda a diferença",
+  "Por que ___ deu certo quando menos se esperava",
+  "Tem um jeito de ___ que pouca gente conhece",
+  // História, Prova & Autoridade
+  "Como saí do zero em ___",
+  "O momento em que ___ finalmente fez sentido",
+  "O que ___ tentativas fracassadas me ensinaram",
+  "A decisão que mudou tudo em ___",
+  "Fiz ___ por 90 dias e foi isso que ficou",
+  "Como transformei um fracasso em ___ numa virada",
+  "O sistema simples por trás de ___",
+  "O que anos de ___ me ensinaram",
+  "A prova de que ___ devagar e constante vence",
+  "O dia em que parei de fazer ___ do jeito difícil",
+  // Experimentos, Trocas & Desafios
+  "Testei ___ por 7 dias e foi isso que mudou",
+  "Troquei meu ___ velho por um melhor",
+  "30 dias de mudança em ___",
+  "Cortei ___ da rotina e nada quebrou",
+  "Troquei esforço por estratégia em ___",
+  "Testei 5 jeitos de ___ e um ganhou disparado",
+  "Fiz menos ___ e consegui mais",
+  "Simplifiquei todo o meu ___",
+  "Testei o jeito devagar de ___ contra o rápido",
+  "Refiz meu melhor ___ e ficou ainda melhor",
+  // Um Problema pra Resolver
+  "Travado em ___? Tenta esse sistema simples",
+  "Sem resultado em ___? Muda isso",
+  "Começando do zero em ___? Comece pelo básico",
+  "Sem motivação pra ___? Faça menor",
+  "Sobrecarregado com ___? Uma coisa de cada vez",
+  "Não consegue manter ___? Crie uma rotina",
+  "Sem tempo pra ___? Isso leva cinco minutos",
+  "Sem ideia pra ___? Use o que você já tem",
+  "Cansado de ___? Troca a abordagem",
+  "Ainda não é bom em ___? Foca no próximo passo",
+  // Mito x Verdade (variação clínica — exige resposta na 1ª linha da legenda)
+  "Mito ou verdade: ___ ?",
+  "Verdade que dói sobre ___",
+  "O mito mais repetido sobre ___",
+];
+
+function pickTemplatesForPost(): string[] {
+  const arr = [...TEMPLATES_GANCHO];
+  const out: string[] = [];
+  for (let i = 0; i < 6 && arr.length; i++) {
+    out.push(arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
+  }
+  return out;
+}
+
 function pickMetodologiaCopy(tema?: string) {
   const m = METODOLOGIAS_COPY[Math.floor(Math.random() * METODOLOGIAS_COPY.length)];
   const exemplos = tema ? listHookExamplesForTopic(tema) : [];
+  const templates = pickTemplatesForPost();
   const bancoLinha = exemplos.length
-    ? `\n\nEXEMPLOS DE GANCHO PARA ESTE NICHO (apenas referência de TOM e IMPACTO — NÃO copie literal; adapte ao TEMA "${tema}" com palavras suas, mantendo o mesmo poder de chamada):\n- ${exemplos.join("\n- ")}\nRegras do gancho: 3 a 6 palavras, PT-BR, MAIÚSCULAS, oferece ganho/solução ou alerta direto (nunca jargão técnico), fala com o paciente em 1ª pessoa do leitor, sem citar profissional/clínica/marca.`
+    ? `\n\nEXEMPLOS DE GANCHO DO NICHO (referência de TOM — NÃO copie literal):\n- ${exemplos.join("\n- ")}`
     : "";
-  return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n\n=== HOOK PARA A IMAGEM (OBRIGATÓRIO — APLICAR A METODOLOGIA AO NICHO/TEMA) ===\nNa PRIMEIRA linha da sua resposta, ANTES de qualquer coisa, escreva exatamente assim:\nHOOK_IMAGEM: "<frase de 3 a 6 palavras, PT-BR, MAIÚSCULAS, no ESPÍRITO do método "${m.nome}", citando o sintoma/estrutura/condição do TEMA do post>"${bancoLinha}\nEssa frase será renderizada DENTRO da imagem da capa (ou single) como gancho visual. PROIBIDO citar nome do profissional, "Dr.", "Prof.", clínica ou marca. Depois pule uma linha e siga com a legenda normal.\n=== FIM DA METODOLOGIA ===\n`;
+  const templatesLinha = `\n\nTEMPLATES DE GANCHO (escolha UM e PREENCHA o "___" com a expressão do TEMA "${tema || ""}" adaptada ao nicho clínico — ex.: "siso incluso", "ATM travada", "ronco noturno", "infecção odontogênica"):\n- ${templates.join("\n- ")}\nRegras: PT-BR, MAIÚSCULAS, 4 a 9 palavras no total, sem citar profissional/clínica/marca, sem jargão técnico de pós-graduação. O gancho vai IMPRESSO DENTRO da imagem da capa.`;
+  return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n\n=== HOOK PARA A IMAGEM (OBRIGATÓRIO) ===\nNa PRIMEIRA linha da sua resposta, ANTES de qualquer coisa, escreva exatamente:\nHOOK_IMAGEM: "<frase final, em MAIÚSCULAS, derivada de UM dos templates abaixo, com o "___" já preenchido pelo TEMA adaptado ao nicho>"${templatesLinha}${bancoLinha}\n\n=== REGRA SUPREMA DE COERÊNCIA (NÃO QUEBRE) ===\nA LEGENDA inteira deve responder/desenvolver EXATAMENTE a frase do HOOK_IMAGEM. Proibido trocar de assunto.\n- Se o gancho for PERGUNTA ("Por que...?", "Travado em...?", "Sem resultado em...?"): a 1ª frase da legenda RESPONDE diretamente a pergunta, citando o mesmo termo do gancho.\n- Se o gancho começar com "Mito ou verdade": a 1ª palavra da legenda DEVE ser "MITO." ou "VERDADE." (em caixa alta, com ponto), seguida da justificativa clínica em 1-2 frases. NUNCA ignore a pergunta.\n- Se o gancho for AFIRMAÇÃO ("A verdade sobre...", "O erro de...", "Testei ___ por 30 dias..."): a legenda revela essa verdade/erro/resultado de forma concreta nos 2 primeiros parágrafos.\nDepois siga com Por que acontece → Conduta → Ganho → Quando procurar (link na bio / WhatsApp).\n=== FIM DA METODOLOGIA ===\n`;
 }
 
 
