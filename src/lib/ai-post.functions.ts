@@ -146,7 +146,13 @@ const METODOLOGIAS_COPY = [
 
 function pickMetodologiaCopy() {
   const m = METODOLOGIAS_COPY[Math.floor(Math.random() * METODOLOGIAS_COPY.length)];
-  return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n=== FIM DA METODOLOGIA ===\n`;
+  return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n\n=== HOOK PARA A IMAGEM (OBRIGATÓRIO — APLICAR A METODOLOGIA AO NICHO/TEMA) ===\nNa PRIMEIRA linha da sua resposta, ANTES de qualquer coisa, escreva exatamente assim:\nHOOK_IMAGEM: "<frase de 3 a 6 palavras, PT-BR, MAIÚSCULAS, no ESPÍRITO do método "${m.nome}", citando o sintoma/estrutura/condição do TEMA do post (ex.: 'DOR NO SISO?', 'RONCO PODE MATAR', 'ATM TRAVADA?', 'CÂNCER NA BOCA?', 'MAXILAR QUEBRADO?', 'SANGRA AO ESCOVAR?')>"\nEssa frase será renderizada DENTRO da imagem da capa (ou single) como gancho visual. PROIBIDO citar nome do profissional, "Dr.", "Prof.", clínica ou marca. Depois pule uma linha e siga com a legenda normal.\n=== FIM DA METODOLOGIA ===\n`;
+}
+
+function extractHookImagem(txt: string): string {
+  const m = (txt || "").match(/HOOK_IMAGEM\s*:\s*["“']?([^"”'\n]+)["”']?/i);
+  if (!m) return "";
+  return m[1].trim().toUpperCase().slice(0, 60);
 }
 
 function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x" | "google", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
@@ -1119,8 +1125,11 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const m = (txt || "").match(/ALT\s*TEXT\s*:\s*([^\n]+)/i);
       return m ? m[1].trim().slice(0, 240) : "";
     };
-    const headlineLegenda = extractHeadline(legendaResolvida);
-    const altLegenda = extractAlt(legendaResolvida);
+    const hookImagem = extractHookImagem(legendaResolvida);
+    // remove a linha HOOK_IMAGEM da legenda exibida/publicada
+    const legendaSemHook = (legendaResolvida || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "").trim();
+    const headlineLegenda = extractHeadline(legendaSemHook) || hookImagem;
+    const altLegenda = extractAlt(legendaSemHook);
     const guiaTema = topicGuidance(tema);
     let cenaVisualNexo = visualSceneForTopic(tema, guiaTema, data.audiencia);
     let cenasPorSlide: string[] = slideNarratives.map((_, i) => visualSceneForTopic(tema, guiaTema, data.audiencia, i));
@@ -1176,11 +1185,17 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const narrativaSlide = typeof slideIndex === "number" ? slideNarratives[slideIndex] : "";
       const cena = cenaSlide || visualSceneForTopic(tema, guiaTema, data.audiencia, slideIndex) || cenaVisualNexo;
       const contrato = clinicalContract(tema, data.audiencia, slideIndex);
+      // CAPA (slide 0) OU imagem única não-story renderiza o HOOK_IMAGEM como tipografia.
+      const isCapa = slideIndex === 0 || typeof slideIndex === "undefined";
+      const hookBloco = (isCapa && hookImagem)
+        ? `TEXTO OBRIGATÓRIO NA IMAGEM (renderize EXATAMENTE esta frase como tipografia gigante bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre o fundo navy luminoso, 3-6 palavras, PT-BR com acentuação perfeita, centralizado na parte superior/central da arte): "${hookImagem}". NÃO altere, NÃO traduza, NÃO adicione outras palavras, NÃO escreva nome de profissional/clínica/marca. É o ÚNICO texto permitido na imagem.`
+        : "";
       const blocos = [
         contrato,
         briefingNexoBase,
         narrativaSlide ? `LEGENDA/ROTEIRO EXCLUSIVO DESTE SLIDE (não repetir nos outros): ${narrativaSlide}` : "",
         cena ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cena}` : "",
+        hookBloco,
       ].filter(Boolean).join("\n");
       return blocos
         ? `=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${blocos}\nA imagem deve mostrar a CONDUTA/TRATAMENTO quando o slide pedir solução. Se houver conflito com o prompt base, ESTE NEXO vence.\n=== FIM DO NEXO ===\n\n${basePrompt}`
@@ -1234,7 +1249,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       urlImagemCache = upload.signedUrl;
     }
 
-    const legenda = legendaResolvida;
+    const legenda = legendaSemHook;
 
 
     const tipoPost = formato === "Carrossel" ? "Carrossel" : "Post Único";
