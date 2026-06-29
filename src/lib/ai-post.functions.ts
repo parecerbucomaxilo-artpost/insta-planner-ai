@@ -184,7 +184,34 @@ function listHookExamplesForTopic(tema: string): string[] {
     if (match.test(t)) return hooks.slice(0, 6);
   }
   return ["RESOLVA HOJE, NÃO AMANHÃ", "TRATE A CAUSA, NÃO O SINTOMA", "DOR NÃO É NORMAL", "DIAGNÓSTICO CERTO MUDA TUDO", "SUA BOCA MERECE CIÊNCIA"];
+
+
+// Garante que a 1ª frase da legenda responde diretamente ao gancho da imagem.
+// Caso "Mito ou verdade: X?" → começa com "VERDADE." (default seguro com
+// justificativa) se a legenda não trouxer MITO./VERDADE. Caso pergunta direta
+// → garante que o termo central do gancho aparece nas primeiras 280 letras.
+function enforceHookCoherence(legenda: string, hook: string, tema: string): string {
+  const txt = (legenda || "").trim();
+  if (!txt || !hook) return txt;
+  const hookLower = hook.toLowerCase();
+  const isMitoVerdade = /mito\s*ou\s*verdade|^mito\b|^verdade\b/i.test(hookLower);
+  const isPergunta = /\?/.test(hook) || /^(por que|sem |travado|cansado|come[cç]ando|sobrecarreg|n[ãa]o consegue|sem tempo|sem ideia|ainda n[ãa]o)/i.test(hook);
+  const first280 = txt.slice(0, 280).toLowerCase();
+  const startsMV = /^\s*(mito|verdade)\s*\.?/i.test(txt);
+  const out: string[] = [];
+  if (isMitoVerdade && !startsMV) {
+    out.push(`VERDADE. ${tema.charAt(0).toUpperCase()}${tema.slice(1)} merece um olhar honesto: nem todo caso é igual, e o senso comum costuma simplificar demais.`);
+  } else if (isPergunta) {
+    const termo = (tema || "").split(/\s+/).slice(0, 3).join(" ").toLowerCase();
+    if (termo && !first280.includes(termo)) {
+      out.push(`Resposta direta sobre ${tema}: a conduta certa depende do quadro clínico, e existe caminho seguro para resolver.`);
+    }
+  }
+  out.push(txt);
+  return out.join("\n\n");
 }
+
+
 
 
 // === TEMPLATES DE GANCHO (50 estruturas universais) ===
