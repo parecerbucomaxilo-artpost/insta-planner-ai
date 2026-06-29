@@ -1185,11 +1185,17 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const narrativaSlide = typeof slideIndex === "number" ? slideNarratives[slideIndex] : "";
       const cena = cenaSlide || visualSceneForTopic(tema, guiaTema, data.audiencia, slideIndex) || cenaVisualNexo;
       const contrato = clinicalContract(tema, data.audiencia, slideIndex);
+      // CAPA (slide 0) OU imagem única não-story renderiza o HOOK_IMAGEM como tipografia.
+      const isCapa = slideIndex === 0 || typeof slideIndex === "undefined";
+      const hookBloco = (isCapa && hookImagem)
+        ? `TEXTO OBRIGATÓRIO NA IMAGEM (renderize EXATAMENTE esta frase como tipografia gigante bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre o fundo navy luminoso, 3-6 palavras, PT-BR com acentuação perfeita, centralizado na parte superior/central da arte): "${hookImagem}". NÃO altere, NÃO traduza, NÃO adicione outras palavras, NÃO escreva nome de profissional/clínica/marca. É o ÚNICO texto permitido na imagem.`
+        : "";
       const blocos = [
         contrato,
         briefingNexoBase,
         narrativaSlide ? `LEGENDA/ROTEIRO EXCLUSIVO DESTE SLIDE (não repetir nos outros): ${narrativaSlide}` : "",
         cena ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cena}` : "",
+        hookBloco,
       ].filter(Boolean).join("\n");
       return blocos
         ? `=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${blocos}\nA imagem deve mostrar a CONDUTA/TRATAMENTO quando o slide pedir solução. Se houver conflito com o prompt base, ESTE NEXO vence.\n=== FIM DO NEXO ===\n\n${basePrompt}`
