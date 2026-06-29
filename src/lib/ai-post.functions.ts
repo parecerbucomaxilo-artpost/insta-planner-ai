@@ -445,7 +445,7 @@ const CHICO_CIANO = "#3BB5E8";
 const CHICO_CIDADES = "São Paulo, Santa Bárbara d'Oeste e Americana";
 const CHICO_CTA = `Dúvidas? Link na bio para contato e agendamento pelo WhatsApp.`;
 
-function chicoCaptionSystem(formato: "Carrossel" | "Story" | "Post Único") {
+function chicoCaptionSystem(formato: "Carrossel" | "Story" | "Post Único", tema?: string) {
   return `Você é copywriter médico do consultório do Dr. Francisco Menezes — Cirurgião Bucomaxilofacial. Atendimento em ${CHICO_CIDADES}.
 
 PRINCÍPIO NORTEADOR: cada publicação deve fazer o leitor sentir que finalmente encontrou quem entende o problema dele — e que existe solução. NUNCA vender diretamente; sempre educar, gerar identificação e construir confiança. O link na bio faz o resto.
