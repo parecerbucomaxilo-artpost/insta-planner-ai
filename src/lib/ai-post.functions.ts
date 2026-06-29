@@ -1125,8 +1125,11 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const m = (txt || "").match(/ALT\s*TEXT\s*:\s*([^\n]+)/i);
       return m ? m[1].trim().slice(0, 240) : "";
     };
-    const headlineLegenda = extractHeadline(legendaResolvida);
-    const altLegenda = extractAlt(legendaResolvida);
+    const hookImagem = extractHookImagem(legendaResolvida);
+    // remove a linha HOOK_IMAGEM da legenda exibida/publicada
+    const legendaSemHook = (legendaResolvida || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "").trim();
+    const headlineLegenda = extractHeadline(legendaSemHook) || hookImagem;
+    const altLegenda = extractAlt(legendaSemHook);
     const guiaTema = topicGuidance(tema);
     let cenaVisualNexo = visualSceneForTopic(tema, guiaTema, data.audiencia);
     let cenasPorSlide: string[] = slideNarratives.map((_, i) => visualSceneForTopic(tema, guiaTema, data.audiencia, i));
