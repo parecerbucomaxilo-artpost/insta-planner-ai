@@ -1243,7 +1243,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       urlImagemCache = upload.signedUrl;
     }
 
-    const legenda = legendaResolvida;
+    const legenda = legendaSemHook;
 
 
     const tipoPost = formato === "Carrossel" ? "Carrossel" : "Post Único";
