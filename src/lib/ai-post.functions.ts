@@ -1161,7 +1161,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const m = (txt || "").match(/ALT\s*TEXT\s*:\s*([^\n]+)/i);
       return m ? m[1].trim().slice(0, 240) : "";
     };
-    const hookImagem = extractHookImagem(legendaResolvida);
+    const hookImagem = extractHookImagem(legendaResolvida) || pickHookForTopic(tema);
     // remove a linha HOOK_IMAGEM da legenda exibida/publicada
     const legendaSemHook = (legendaResolvida || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "").trim();
     const headlineLegenda = extractHeadline(legendaSemHook) || hookImagem;
