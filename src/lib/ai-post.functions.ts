@@ -1231,11 +1231,12 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") return localCaption();
       try {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
-        const system = isChico
+        const systemBase = isChico
           ? chicoCaptionSystem(formato, tema)
           : isEstudantes
             ? `Você é monitor sênior de Cirurgia Bucal escrevendo para estudantes de graduação em Odontologia (Liga de CTBMF). PT-BR Brasil impecável, ZERO inglês, sem repetições, sem palavras inventadas. Tom didático, direto, próximo do aluno; linguagem clínica correta com terminologia anatômica oficial (TA2/SBA). PROIBIDO copy comercial, diagnóstico afirmativo, "agende", "promoção". Encerre com 5-7 hashtags acadêmicas (#CTBMF #LigaAcademica #CirurgiaBucal #EstudanteDeOdontologia #Graduacao). Formato: ${formato}.${CONTEUDO_COMPLETO}${pickMetodologiaCopy(tema)}`
             : `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, ZERO palavras em inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.${CONTEUDO_COMPLETO}${pickMetodologiaCopy(tema)}`;
+        const system = `${CONSTITUICAO_AGENTE}\n\n${systemBase}`;
         const contrato = clinicalContract(tema, data.audiencia);
         const roteiroCarrossel = formato === "Carrossel"
           ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter 5 blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
