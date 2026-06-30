@@ -121,6 +121,38 @@ AUTOAUDITORIA OBRIGATÓRIA antes de entregar — se qualquer resposta for "não"
 === FIM DA CONSTITUIÇÃO ===
 `;
 
+// ============================================================
+// MOTOR DE GERAÇÃO (Prompt 2 — fluxo obrigatório por solicitação)
+// Define o passo-a-passo que a IA executa internamente ANTES de
+// devolver a legenda final. Trabalha em conjunto com a Constituição.
+// ============================================================
+const MOTOR_GERACAO = `
+=== MOTOR DE GERAÇÃO (executar em ORDEM, nunca pular etapas) ===
+ETAPA 1 — PERFIL: confirmar @drfranciscomenezes (consultas/autoridade/humanização/educação) OU @lactbmf.anhanguerasbo (ensino/ciência/Liga/alunos). Em caso de ambiguidade, usar o perfil indicado pela audiência do pedido.
+ETAPA 2 — OBJETIVO: escolher UM — Autoridade · Consulta · Engajamento · Ensino · Relacionamento · Divulgação científica · Conversão · Captação de alunos.
+ETAPA 3 — PÚBLICO: paciente · acadêmico · professor · residente · dentista · público geral.
+ETAPA 4 — FORMATO: respeitar o solicitado (Carrossel · Reel · Story · Post Único).
+ETAPA 5 — GANCHO: selecionar o MELHOR modelo entre Verdades Duras · Curiosidade · Open Loop · História · Prova · Experimento · Desafio · Problema. Nunca usar título genérico.
+ETAPA 6 — HEADLINE: gerar mentalmente 3 opções de headline (3–6 palavras), classificar da mais forte para a mais fraca e escolher a melhor. Esta headline VAI OBRIGATORIAMENTE ESCRITA NA IMAGEM (capa, se carrossel).
+ETAPA 7 — ROTEIRO:
+ • CARROSSEL: S1 gancho · S2 problema · S3 explicação · S4 consequências · S5 como resolver · S6 quando procurar ajuda · S7 resumo · S8 CTA. Se o pedido limitar a 5 slides, condensar para: S1 gancho · S2 problema · S3 mecanismo · S4 solução/conduta · S5 CTA.
+ • REEL: 0–3s gancho · 3–10s problema · 10–25s explicação · 25–40s solução · 40–50s conclusão · 50–60s CTA.
+ • POST ÚNICO / STORY: gancho → mini-explicação → CTA.
+ETAPA 8 — BRIEF VISUAL: descrever a cena exigida (identidade do perfil, paleta, logo correta, headline visível, hierarquia, pouco texto, imagem coerente com o tema, 4:5 feed / 9:16 story-reel / 1.91:1 LinkedIn).
+ETAPA 9 — LEGENDA: estrutura fixa — (1) gancho · (2) contextualização · (3) conteúdo · (4) conclusão · (5) CTA — sempre desenvolvendo EXATAMENTE o tema da imagem.
+ETAPA 10 — HASHTAGS: específicas do tema/nicho, qualidade > quantidade. Sem hashtags em inglês.
+ETAPA 11 — SEO IG: incluir naturalmente termos que o público busca.
+ETAPA 12 — CTA: escolher o mais adequado ao objetivo (Salve · Compartilhe · Envie para quem precisa · Marque um colega · Agende sua avaliação [apenas Marca 1] · Conheça nossa Liga [apenas Marca 2]).
+ETAPA 13 — AUDITORIA FINAL (TODAS precisam passar):
+ Identidade: [ ] perfil correto [ ] logo correta [ ] cores corretas [ ] tipografia correta
+ Imagem:    [ ] gancho ESCRITO na imagem [ ] imagem representa o tema [ ] desperta curiosidade [ ] dentro do Brand Book
+ Texto:     [ ] legenda continua o assunto da imagem [ ] agrega valor [ ] tem storytelling [ ] tem autoridade [ ] tem clareza
+ Marketing: [ ] gera salvamentos [ ] gera compartilhamentos [ ] incentiva comentários [ ] CTA adequado [ ] objetivo atingido
+ETAPA 14 — CORREÇÃO AUTOMÁTICA: se QUALQUER item falhar, REFAZER internamente antes de devolver. Nunca entregar conteúdo reprovado na auditoria.
+SAÍDA: entregar apenas a LEGENDA final pronta para publicação (sem listar as etapas, sem comentários meta). O roteiro e o brief visual já são consumidos pelos outros módulos do sistema.
+=== FIM DO MOTOR DE GERAÇÃO ===
+`;
+
 // REGRA SUPREMA DE COERÊNCIA CLÍNICA — aplicada a TODOS os tipos de post (IG, LinkedIn, Google, Chico, Liga).
 // Resolve a falha recorrente: posts apresentam a patologia mas não dizem como tratar / o que fazer.
 const CONTEUDO_COMPLETO = `\n\n=== REGRA SUPREMA — CONTEÚDO COMPLETO (NÃO PODE FALTAR) ===
@@ -1236,7 +1268,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           : isEstudantes
             ? `Você é monitor sênior de Cirurgia Bucal escrevendo para estudantes de graduação em Odontologia (Liga de CTBMF). PT-BR Brasil impecável, ZERO inglês, sem repetições, sem palavras inventadas. Tom didático, direto, próximo do aluno; linguagem clínica correta com terminologia anatômica oficial (TA2/SBA). PROIBIDO copy comercial, diagnóstico afirmativo, "agende", "promoção". Encerre com 5-7 hashtags acadêmicas (#CTBMF #LigaAcademica #CirurgiaBucal #EstudanteDeOdontologia #Graduacao). Formato: ${formato}.${CONTEUDO_COMPLETO}${pickMetodologiaCopy(tema)}`
             : `Você é o copywriter sênior do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar). PT-BR Brasil impecável, ZERO palavras em inglês, sem repetições. Tom segue o nível editorial: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com a assinatura "${ASSINATURA}" e o subtítulo "${ASSINATURA_SUBTITULO}" quando fizer sentido. Não inventar diagnóstico.${CONTEUDO_COMPLETO}${pickMetodologiaCopy(tema)}`;
-        const system = `${CONSTITUICAO_AGENTE}\n\n${systemBase}`;
+        const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${systemBase}`;
         const contrato = clinicalContract(tema, data.audiencia);
         const roteiroCarrossel = formato === "Carrossel"
           ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter 5 blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
