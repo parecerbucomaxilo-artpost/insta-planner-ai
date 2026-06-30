@@ -65,7 +65,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [modo, setModo] = useState<Modo>("feed");
   const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
-  const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar">("CTBMF");
+  const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");
@@ -576,7 +576,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {/* Especialidade do post */}
           <Card className="p-5 space-y-3">
             <Label className="text-sm font-semibold">Especialidade</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <QuandoBtn
                 active={especialidade === "CTBMF"}
                 onClick={() => setEspecialidade("CTBMF")}
@@ -587,7 +587,13 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 active={especialidade === "Odontologia Hospitalar"}
                 onClick={() => setEspecialidade("Odontologia Hospitalar")}
                 icon={<Sparkles className="w-4 h-4" />}
-                label="Odontologia Hospitalar"
+                label="Hospitalar"
+              />
+              <QuandoBtn
+                active={especialidade === "Ambas"}
+                onClick={() => setEspecialidade("Ambas")}
+                icon={<Sparkles className="w-4 h-4" />}
+                label="Ambas"
               />
             </div>
             <p className="text-[11px] text-muted-foreground">Define o foco clínico das legendas e imagens geradas.</p>
