@@ -690,6 +690,15 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                   Gerador local criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
                 </Button>
                 <Button
+                  onClick={() => handleGerar({ forcarEspecialidade: "Odontologia Hospitalar" })}
+                  disabled={busy}
+                  variant="secondary"
+                  className="w-full border-2 border-sky-300 bg-sky-50 text-sky-900 hover:bg-sky-100"
+                >
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Stethoscope className="w-4 h-4 mr-2" />}
+                  Gerar tema — Odontologia Hospitalar
+                </Button>
+                <Button
                   onClick={() => handleGerar({ conjugado: true })}
                   disabled={busy}
                   variant="secondary"
