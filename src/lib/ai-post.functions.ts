@@ -1337,8 +1337,10 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       // a logo oficial do Prof. Francisco no canto inferior direito.
       return overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: true });
     };
+    const { brandBookPrompt: brandBookPromptImg } = await import("@/lib/brand-book");
+    const brandBookImg = brandBookPromptImg(data.audiencia);
     const genAndUpload = (prompt: string) =>
-      generateImageWithRetry(prompt)
+      generateImageWithRetry(`${brandBookImg}\n\n${prompt}`)
         .then((b64) => ensureJpegB64(b64))
         .then(applyOverlay)
         .then(uploadOne);
