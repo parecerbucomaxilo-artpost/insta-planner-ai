@@ -681,9 +681,18 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                   <Label className="text-xs">Tema (opcional — deixe vazio para o gerador local escolher)</Label>
                   <Input value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Ex.: cirurgia de siso, ATM, bruxismo..." />
                 </div>
-                <Button onClick={handleGerar} disabled={busy} className="w-full">
+                <Button onClick={() => handleGerar()} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
                   Gerador local criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
+                </Button>
+                <Button
+                  onClick={() => handleGerar({ conjugado: true })}
+                  disabled={busy}
+                  variant="secondary"
+                  className="w-full border-2 border-teal-300 bg-teal-50 text-teal-900 hover:bg-teal-100"
+                >
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Stethoscope className="w-4 h-4 mr-2" />}
+                  Gerar tema conjugado — CTBMF + Odontologia Hospitalar
                 </Button>
               </>
             ) : (
