@@ -276,19 +276,26 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     await supabase.from("posts").update({ instagram_conta: effectiveConta } as any).eq("id", postId);
   };
 
-  const handleGerar = async () => {
+  const handleGerar = async (opts?: { conjugado?: boolean }) => {
     if (!conta) return toast.error("Selecione uma conta do Instagram.");
     setBusy(true);
     const tid = "local-simple";
     const labelModo = modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post de feed";
-    toast.loading(`Gerador local criando ${labelModo}...`, { id: tid });
+    toast.loading(`Gerador local criando ${labelModo}${opts?.conjugado ? " conjugado" : ""}...`, { id: tid });
     try {
       const iso = buildAgendamentoIso();
       const tipo = modo === "stories" ? "stories" : "feed";
       const formato = modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único";
+      const especialidadeReq = opts?.conjugado ? "Ambas" : especialidade;
+      const temaBase = tema.trim();
+      const temaReq = opts?.conjugado
+        ? (temaBase
+            ? `${temaBase} — abordagem conjugada CTBMF + Odontologia Hospitalar (mostrar interface consultório-hospital)`
+            : "Tema conjugado CTBMF + Odontologia Hospitalar: caso que exige manejo cirúrgico bucomaxilofacial em ambiente hospitalar (ex.: paciente com comorbidade, trauma facial, infecção odontogênica grave, cirurgia sob anestesia geral)")
+        : temaBase;
       const out = await genSingle({ data: {
-        tema: tema.trim(),
-        especialidade,
+        tema: temaReq,
+        especialidade: especialidadeReq,
         rede: "instagram",
         tipo,
         formato,
