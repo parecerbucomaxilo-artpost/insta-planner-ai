@@ -276,7 +276,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     await supabase.from("posts").update({ instagram_conta: effectiveConta } as any).eq("id", postId);
   };
 
-  const handleGerar = async (opts?: { conjugado?: boolean }) => {
+  const handleGerar = async (opts?: { conjugado?: boolean; forcarEspecialidade?: "CTBMF" | "Odontologia Hospitalar" | "Ambas" }) => {
     if (!conta) return toast.error("Selecione uma conta do Instagram.");
     setBusy(true);
     const tid = "local-simple";
@@ -286,13 +286,17 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const iso = buildAgendamentoIso();
       const tipo = modo === "stories" ? "stories" : "feed";
       const formato = modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único";
-      const especialidadeReq = opts?.conjugado ? "Ambas" : especialidade;
+      const especialidadeReq = opts?.conjugado ? "Ambas" : (opts?.forcarEspecialidade ?? especialidade);
       const temaBase = tema.trim();
       const temaReq = opts?.conjugado
         ? (temaBase
             ? `${temaBase} — abordagem conjugada CTBMF + Odontologia Hospitalar (mostrar interface consultório-hospital)`
             : "Tema conjugado CTBMF + Odontologia Hospitalar: caso que exige manejo cirúrgico bucomaxilofacial em ambiente hospitalar (ex.: paciente com comorbidade, trauma facial, infecção odontogênica grave, cirurgia sob anestesia geral)")
-        : temaBase;
+        : opts?.forcarEspecialidade === "Odontologia Hospitalar"
+          ? (temaBase
+              ? `${temaBase} — foco Odontologia Hospitalar (ambiente hospitalar, paciente sistêmico, centro cirúrgico)`
+              : "Tema de Odontologia Hospitalar: atendimento odontológico em ambiente hospitalar (UTI, enfermaria, centro cirúrgico), paciente com comorbidade, prevenção de PAV, protocolo pré-operatório, foco infeccioso odontogênico.")
+          : temaBase;
       const out = await genSingle({ data: {
         tema: temaReq,
         especialidade: especialidadeReq,
@@ -684,6 +688,15 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 <Button onClick={() => handleGerar()} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
                   Gerador local criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
+                </Button>
+                <Button
+                  onClick={() => handleGerar({ forcarEspecialidade: "Odontologia Hospitalar" })}
+                  disabled={busy}
+                  variant="secondary"
+                  className="w-full border-2 border-sky-300 bg-sky-50 text-sky-900 hover:bg-sky-100"
+                >
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Stethoscope className="w-4 h-4 mr-2" />}
+                  Gerar tema — Odontologia Hospitalar
                 </Button>
                 <Button
                   onClick={() => handleGerar({ conjugado: true })}
