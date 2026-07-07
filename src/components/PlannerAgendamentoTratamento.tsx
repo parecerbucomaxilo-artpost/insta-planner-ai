@@ -108,17 +108,19 @@ export function PlannerAgendamentoTratamento() {
       const tratObj = TRATAMENTOS.find((t) => t.id === tratamento)!;
       const tipo = modo === "stories" ? "stories" : "feed";
       const formato = modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único";
+      const assuntoTxt = assunto.trim();
       const capaBrief = `CAPA (1º slide) — IDENTIDADE FIXA OBRIGATÓRIA da Liga LACTBMF:
 • Fundo sólido GRAFITE #2D2C32 (sem gradiente, sem textura).
 • Faixa/bloco de destaque ÂMBAR #DD8E3C na diagonal ou lateral esquerda.
-• HEADLINE: nome do tratamento "${tratObj.label.toUpperCase()}" em caixa-alta, sans-serif bold pesado, cor off-white #FBFBFB, ocupando o terço superior.
+• HEADLINE gigante: nome do tratamento "${tratObj.label.toUpperCase()}" em caixa-alta, sans-serif bold pesado, cor off-white #FBFBFB, ocupando o terço superior.
 • Subtítulo curto em âmbar #DD8E3C: "AGENDA ABERTA — CLÍNICA ESCOLA".
 • Telefone impresso no card em bloco âmbar com número off-white: "📞 ${telefone.trim()}".
 • Rodapé com selo institucional discreto off-white: "Clínica Escola · Faculdade Anhanguera SBO".
 • Cantos inferiores esquerdo e direito RESERVADOS LIMPOS para overlay das 2 logos (sistema aplica).
 • PROIBIDO: fundo branco, azul, ciano, verde, roxo, rosa, gradientes, fotos realistas de pacientes, rostos.
-Slides 2 a N: mesma paleta grafite/âmbar/off-white, tipografia bold, sem quebrar a identidade.`;
-      const tema = `${tratObj.tema}. CONVITE PÚBLICO para pacientes agendarem TRIAGEM pelo telefone ${telefone.trim()} na Clínica Escola do Curso de Odontologia da Faculdade Anhanguera de Santa Bárbara d'Oeste. Público-alvo: PACIENTES (não estudantes). Tom: acolhedor, seguro, institucional.\n\n${capaBrief}`;
+TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em português-BR claro, linguagem simples para leigo (evite termos técnicos; se usar, explique em 1 linha). Cada slide traz 1 frase-chave curta em destaque + 2 a 4 bullets objetivos. Ícones simples e pictogramas quando ajudarem o entendimento. Mesma paleta grafite/âmbar/off-white, tipografia bold, alto contraste, sem quebrar a identidade.`;
+      const assuntoBlock = assuntoTxt ? `\n\nASSUNTO/ÂNGULO ESPECÍFICO desta postagem (priorize sobre o padrão): ${assuntoTxt}` : "";
+      const tema = `${tratObj.tema}. CONVITE PÚBLICO para pacientes agendarem TRIAGEM pelo telefone ${telefone.trim()} na Clínica Escola do Curso de Odontologia da Faculdade Anhanguera de Santa Bárbara d'Oeste. Público-alvo: PACIENTES LEIGOS (não estudantes). Tom: acolhedor, seguro, institucional, LINGUAGEM SIMPLES.${assuntoBlock}\n\n${capaBrief}`;
 
       const out = await genSingle({
         data: {
