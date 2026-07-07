@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, TrendingUp, KeyRound, CalendarDays, LogOut, Sparkles } from "lucide-react";
 import { PostComposer } from "@/components/PostComposer";
 import { PlannerSimplificado } from "@/components/PlannerSimplificado";
+import { PlannerAgendamentoTratamento } from "@/components/PlannerAgendamentoTratamento";
 import { PostsCalendar } from "@/components/PostsCalendar";
 import { PostsList } from "@/components/PostsList";
 import { ProfileSettings, type Perfil } from "@/components/ProfileSettings";
