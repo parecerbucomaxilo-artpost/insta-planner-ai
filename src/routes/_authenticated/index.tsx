@@ -207,6 +207,9 @@ function Dashboard() {
               
             />
           </TabsContent>
+          <TabsContent value="agendamento-liga" className="mt-6">
+            <PlannerAgendamentoTratamento />
+          </TabsContent>
           <TabsContent value="semana" className="mt-6">
             <WeeklyCalendar perfil={perfil} onCreated={load} autoGenerate={autoGenWeekly} />
           </TabsContent>
