@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, TrendingUp, KeyRound, CalendarDays, LogOut, Sparkles } from "lucide-react";
+import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, TrendingUp, KeyRound, CalendarDays, LogOut, Sparkles, Stethoscope } from "lucide-react";
 import { PostComposer } from "@/components/PostComposer";
 import { PlannerSimplificado } from "@/components/PlannerSimplificado";
 import { PlannerAgendamentoTratamento } from "@/components/PlannerAgendamentoTratamento";
