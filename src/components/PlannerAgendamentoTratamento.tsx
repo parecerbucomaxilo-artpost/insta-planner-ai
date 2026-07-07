@@ -48,8 +48,8 @@ function buildPatientCaption(params: {
 }) {
   const t = TRATAMENTOS.find((x) => x.id === params.tratamento)!;
   const tel = params.telefone.trim() || "(consulte pelo Direct)";
-  const abertura = `📢 A Liga Acadêmica de Cirurgia e Traumatologia Bucomaxilofacial Anhanguera Sorocaba (@lactbmf.anhanguerasbo) está com AGENDA ABERTA para atendimento de:\n\n👉 ${t.label}`;
-  const meio = `\n\nOs atendimentos acontecem na clínica-escola da Faculdade Anhanguera de Sorocaba, sempre sob supervisão de professores cirurgiões bucomaxilofaciais.\n\nQuem pode se beneficiar:\n• Pacientes com indicação para ${t.label.toLowerCase()};\n• Pessoas que buscam tratamento seguro, acessível e com acompanhamento acadêmico;\n• Encaminhamentos de dentistas parceiros.`;
+  const abertura = `📢 A Liga Acadêmica de Cirurgia e Traumatologia Bucomaxilofacial (@lactbmf.anhanguerasbo) está com AGENDA ABERTA para atendimento de:\n\n👉 ${t.label}`;
+  const meio = `\n\nOs atendimentos acontecem na Clínica Escola do Curso de Odontologia da Faculdade Anhanguera de Santa Bárbara d'Oeste, sempre sob supervisão de professores cirurgiões bucomaxilofaciais.\n\nQuem pode se beneficiar:\n• Pacientes com indicação para ${t.label.toLowerCase()};\n• Pessoas que buscam tratamento seguro, acessível e com acompanhamento acadêmico;\n• Encaminhamentos de dentistas parceiros.`;
   const cta = `\n\n📞 Agende sua triagem pelo telefone: ${tel}\n(Atendimento de segunda a sexta, em horário comercial.)\n\nVagas limitadas — envie mensagem no Direct também para dúvidas.\n\n#LigaAcademica #LACTBMF #Anhanguera #CirurgiaBucomaxilofacial #${t.id} #AtendimentoOdontologico #ClínicaEscola`;
   return `${abertura}${meio}${cta}`;
 }
@@ -107,7 +107,7 @@ export function PlannerAgendamentoTratamento() {
       const tratObj = TRATAMENTOS.find((t) => t.id === tratamento)!;
       const tipo = modo === "stories" ? "stories" : "feed";
       const formato = modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único";
-      const tema = `${tratObj.tema}. CONVITE PÚBLICO para pacientes agendarem TRIAGEM pelo telefone ${telefone.trim()} na clínica-escola da Faculdade Anhanguera de Sorocaba. Público-alvo: PACIENTES (não estudantes). Tom: acolhedor, seguro, institucional.`;
+      const tema = `${tratObj.tema}. CONVITE PÚBLICO para pacientes agendarem TRIAGEM pelo telefone ${telefone.trim()} na Clínica Escola do Curso de Odontologia da Faculdade Anhanguera de Santa Bárbara d'Oeste. Público-alvo: PACIENTES (não estudantes). Tom: acolhedor, seguro, institucional.`;
 
       const out = await genSingle({
         data: {
