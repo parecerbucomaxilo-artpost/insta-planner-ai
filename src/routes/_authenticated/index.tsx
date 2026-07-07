@@ -6,9 +6,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, TrendingUp, KeyRound, CalendarDays, LogOut, Sparkles } from "lucide-react";
+import { LayoutGrid, Calendar as CalendarIcon, PlusCircle, Settings, TrendingUp, KeyRound, CalendarDays, LogOut, Sparkles, Stethoscope } from "lucide-react";
 import { PostComposer } from "@/components/PostComposer";
 import { PlannerSimplificado } from "@/components/PlannerSimplificado";
+import { PlannerAgendamentoTratamento } from "@/components/PlannerAgendamentoTratamento";
 import { PostsCalendar } from "@/components/PostsCalendar";
 import { PostsList } from "@/components/PostsList";
 import { ProfileSettings, type Perfil } from "@/components/ProfileSettings";
@@ -174,6 +175,7 @@ function Dashboard() {
               <TabsTrigger value="criar"><PlusCircle className="h-4 w-4 mr-1.5" /> Criar</TabsTrigger>
               <TabsTrigger value="simplificado"><Sparkles className="h-4 w-4 mr-1.5" /> Planner Simplificado Liga</TabsTrigger>
               <TabsTrigger value="simplificado-chico"><Sparkles className="h-4 w-4 mr-1.5" /> Planner Simplificado Chico</TabsTrigger>
+              <TabsTrigger value="agendamento-liga"><Stethoscope className="h-4 w-4 mr-1.5" /> Agendamento Tratamento Liga</TabsTrigger>
               <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" /> Cronograma de 7 dias</TabsTrigger>
               <TabsTrigger value="calendario"><CalendarIcon className="h-4 w-4 mr-1.5" /> Calendário</TabsTrigger>
               <TabsTrigger value="todos"><LayoutGrid className="h-4 w-4 mr-1.5" /> Todas as publicações</TabsTrigger>
@@ -204,6 +206,9 @@ function Dashboard() {
               audiencia="chico-drfm"
               
             />
+          </TabsContent>
+          <TabsContent value="agendamento-liga" className="mt-6">
+            <PlannerAgendamentoTratamento />
           </TabsContent>
           <TabsContent value="semana" className="mt-6">
             <WeeklyCalendar perfil={perfil} onCreated={load} autoGenerate={autoGenWeekly} />
