@@ -1341,7 +1341,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
     const { brandBookPrompt: brandBookPromptImg } = await import("@/lib/brand-book");
     const { hooksLibraryPrompt: hooksImg } = await import("@/lib/hooks-library");
-    const brandBookImg = `${brandBookPromptImg(data.audiencia)}\n\n${hooksImg()}`;
+    const { strategyPrompt: strategyImg } = await import("@/lib/strategy-prompt");
+    const brandBookImg = `${strategyImg()}\n\n${brandBookPromptImg(data.audiencia)}\n\n${hooksImg()}`;
     const genAndUpload = (prompt: string) =>
       generateImageWithRetry(`${brandBookImg}\n\n${prompt}`)
         .then((b64) => ensureJpegB64(b64))
