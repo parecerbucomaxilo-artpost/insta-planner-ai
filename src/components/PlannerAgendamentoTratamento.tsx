@@ -236,6 +236,21 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
         </div>
       </Card>
 
+      <Card className="p-5 space-y-2">
+        <Label className="text-sm font-semibold">Assunto / ângulo específico (opcional)</Label>
+        <Textarea
+          value={assunto}
+          onChange={(e) => setAssunto(e.target.value)}
+          placeholder="Ex.: focar em pacientes com dor facial em choque há semanas; destacar que é atendimento supervisionado; explicar sinais de alerta de cisto na arcada."
+          rows={3}
+          className="text-sm"
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Se preenchido, a IA prioriza este ângulo. Textos e imagens vêm em linguagem simples, com frases grandes impressas nos cards para o público leigo entender de imediato.
+        </p>
+      </Card>
+
+
       <Card className="p-5 space-y-3">
         <Label className="text-sm font-semibold">Formato do post</Label>
         <div className="grid grid-cols-3 gap-2">
