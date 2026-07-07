@@ -75,6 +75,7 @@ export function PlannerAgendamentoTratamento() {
   const [hora, setHora] = useState("09:00");
   const [modelo, setModelo] = useState<(typeof MODELOS_IA)[number]["id"]>("local/sem-custo");
   const [modeloImagem, setModeloImagem] = useState<(typeof MODELOS_IMAGEM)[number]["id"]>("local/sem-custo");
+  const [assunto, setAssunto] = useState("");
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<PreviewState | null>(null);
 
