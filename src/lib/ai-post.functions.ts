@@ -1428,17 +1428,9 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const applyOverlay = async (b64: string) => {
       if (isEstudantes) return overlayAlunoLogos(b64);
       // Chico/geral: SEMPRE canto inferior direito, sem escolha inteligente.
-      // Nota: se o photon WASM estiver indisponível no runtime, overlayLogo
-      // devolve a imagem original (log warn). NÃO rejeitamos o post por isso —
-      // a arte já foi gerada com a área reservada e a legenda depende dela.
-      // O preview e a publicação continuam; a logo é reaplicada quando o
-      // WASM voltar a resolver.
-      try {
-        return await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false });
-      } catch (e) {
-        console.warn("[applyOverlay] falha ao aplicar logo, devolvendo original:", e);
-        return b64;
-      }
+      const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false });
+      if (stamped === b64) throw new Error("A logo oficial não foi aplicada. Publicação bloqueada.");
+      return stamped;
     };
 
     const { brandBookPrompt: brandBookPromptImg } = await import("@/lib/brand-book");

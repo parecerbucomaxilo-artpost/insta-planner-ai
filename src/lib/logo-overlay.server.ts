@@ -1,6 +1,6 @@
 // Aplica a LOGO REAL no canto inferior direito da imagem gerada pela IA.
 // Não depende de WASM: usa composição RGBA em JS puro para nunca publicar sem logo.
-import jpeg from "jpeg-js";
+import * as jpeg from "jpeg-js";
 import { PNG } from "pngjs";
 import logoAsset from "@/assets/logo-planner.png.asset.json";
 import avatarAsset from "@/assets/avatar-francisco.jpg.asset.json";
@@ -103,33 +103,6 @@ function statsRegion(image: RgbaImage, x0: number, y0: number, size: number): { 
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
   const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
   return { mean, std: Math.sqrt(variance) };
-}
-
-function statsRGBA(px: Uint8Array): { mean: number; std: number } {
-  let sum = 0;
-  let sumSq = 0;
-  let n = 0;
-  for (let i = 0; i + 3 < px.length; i += 4) {
-    const a = px[i + 3];
-    if (a === 0) continue;
-    const lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-    sum += lum;
-    sumSq += lum * lum;
-    n++;
-  }
-  if (!n) return { mean: 128, std: 0 };
-  const mean = sum / n;
-  const std = Math.sqrt(Math.max(0, sumSq / n - mean * mean));
-  return { mean, std };
-}
-
-function applyAlpha(px: Uint8Array, alpha: number): Uint8Array {
-  const out = new Uint8Array(px.length);
-  out.set(px);
-  for (let i = 3; i < out.length; i += 4) {
-    out[i] = Math.round(out[i] * alpha);
-  }
-  return out;
 }
 
 export async function overlayLogo(
