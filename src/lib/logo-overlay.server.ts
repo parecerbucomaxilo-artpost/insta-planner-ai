@@ -1,7 +1,11 @@
 // Aplica a LOGO REAL no canto inferior direito da imagem gerada pela IA.
 // Não depende de WASM: usa composição RGBA em JS puro para nunca publicar sem logo.
 import * as jpeg from "jpeg-js";
-import { decode as decodePng } from "fast-png";
+// upng-js: PNG decoder puro em JS (sem zlib nativo) — compatível com Cloudflare Workers.
+// Substitui fast-png, que quebrava com "Class constructor Inflate cannot be invoked without 'new'".
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — upng-js não expõe types.
+import UPNG from "upng-js";
 import logoAsset from "@/assets/logo-planner.png.asset.json";
 import avatarAsset from "@/assets/avatar-francisco.jpg.asset.json";
 import logoAluno1 from "@/assets/logo-aluno-1.png.asset.json";
