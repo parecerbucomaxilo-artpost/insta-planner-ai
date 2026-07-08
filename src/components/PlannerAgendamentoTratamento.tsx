@@ -50,10 +50,10 @@ function buildPatientCaption(params: {
   base: string;
 }) {
   const t = TRATAMENTOS.find((x) => x.id === params.tratamento)!;
-  const tel = params.telefone.trim() || "(consulte pelo Direct)";
-  const abertura = `📢 A Liga Acadêmica de Cirurgia e Traumatologia Bucomaxilofacial (@lactbmf.anhanguerasbo) está com AGENDA ABERTA para atendimento de:\n\n👉 ${t.label}`;
-  const meio = `\n\nOs atendimentos acontecem na Clínica Escola do Curso de Odontologia da Faculdade Anhanguera de Santa Bárbara d'Oeste, sempre sob supervisão de professores cirurgiões bucomaxilofaciais.\n\nQuem pode se beneficiar:\n• Pacientes com indicação para ${t.label.toLowerCase()};\n• Pessoas que buscam tratamento seguro, acessível e com acompanhamento acadêmico;\n• Encaminhamentos de dentistas parceiros.`;
-  const cta = `\n\n📞 Agende sua triagem pelo telefone: ${tel}\n(Atendimento de segunda a sexta, em horário comercial.)\n\nVagas limitadas — envie mensagem no Direct também para dúvidas.\n\n#LigaAcademica #LACTBMF #Anhanguera #CirurgiaBucomaxilofacial #${t.id} #AtendimentoOdontologico #ClínicaEscola`;
+  const tel = params.telefone.trim() || TELEFONE_PADRAO;
+  const abertura = `📢 ${SERVICO} — ${INSTITUICAO}\n\n👉 ${t.label}`;
+  const meio = `\n\nAtendimento supervisionado por professores especialistas em Cirurgia e Traumatologia Bucomaxilofacial. Ambiente seguro, humanizado e acolhedor para pacientes de Santa Bárbara d'Oeste e cidades vizinhas.\n\nQuem pode ser atendido:\n• Pessoas com indicação para ${t.label.toLowerCase()};\n• Quem precisa avaliar lesões na boca (manchas, feridas que não cicatrizam, caroços);\n• Encaminhamentos de dentistas parceiros.\n\n💬 Não deixe lesões sem avaliação — quanto antes você procura, mais simples é o tratamento.`;
+  const cta = `\n\n📞 Agende sua avaliação: ${tel}\n(Atendimento em horário comercial.)\n\n#CirurgiaBucal #BiopsiaBucal #SaudeBucal #SantaBarbaraDOeste #Anhanguera #ClinicaEscola #Odontologia #Siso #LesaoBucal #SaudeDaBoca`;
   return `${abertura}${meio}${cta}`;
 }
 
