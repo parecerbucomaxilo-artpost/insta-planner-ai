@@ -83,7 +83,10 @@ export function PlannerAgendamentoTratamento() {
   const [preview, setPreview] = useState<PreviewState | null>(null);
 
   useEffect(() => {
-    try { setTelefone(window.localStorage.getItem(LS_PHONE) || ""); } catch {}
+    try {
+      const saved = window.localStorage.getItem(LS_PHONE);
+      setTelefone(saved && saved.trim() ? saved : TELEFONE_PADRAO);
+    } catch { setTelefone(TELEFONE_PADRAO); }
   }, []);
 
   const salvarTelefone = useCallback((v: string) => {
