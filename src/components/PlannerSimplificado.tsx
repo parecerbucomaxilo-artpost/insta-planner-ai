@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { signPostMediaUrls } from "@/lib/storage-url";
-import { generateSinglePost, generateWeekThemes, approvePost, discardPost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
+import { generateSinglePost, generateWeekThemes, generateCaptionOnly, approvePost, discardPost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
 import { cn } from "@/lib/utils";
 
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
@@ -40,6 +40,7 @@ interface PlannerSimplificadoProps {
 export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao", permiteTipoLiga = false }: PlannerSimplificadoProps = {}) {
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
+  const genCaption = useServerFn(generateCaptionOnly);
   const approveFn = useServerFn(approvePost);
   const discardFn = useServerFn(discardPost);
   const publishIg = useServerFn(publishInstagramNow);
@@ -76,6 +77,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   // Manual
   const [legenda, setLegenda] = useState("");
+  const [temaManual, setTemaManual] = useState("");
+  const [gerandoLegenda, setGerandoLegenda] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [previewImg, setPreviewImg] = useState<string | null>(null);
   const [savingManual, setSavingManual] = useState(false);
@@ -823,8 +826,48 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 {previewImg && <img src={previewImg} alt="Prévia" className="rounded-md max-h-64 object-cover" />}
               </div>
               <div className="space-y-2">
+                <Label>Sugira um tema (opcional) para a IA escrever a legenda</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={temaManual}
+                    onChange={(e) => setTemaManual(e.target.value)}
+                    placeholder="Ex.: dor no siso, ATM travada, ronco..."
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={gerandoLegenda || !temaManual.trim()}
+                    onClick={async () => {
+                      const tid = "gen-caption";
+                      setGerandoLegenda(true);
+                      toast.loading("Gerando legenda com IA...", { id: tid });
+                      try {
+                        const out = await genCaption({
+                          data: {
+                            tema: temaManual.trim(),
+                            rede: "instagram",
+                            formato: modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único",
+                            especialidade,
+                            audiencia: effectiveAudiencia === "estudantes-graduacao" ? "estudantes-graduacao" : effectiveAudiencia === "chico-drfm" ? "chico-drfm" : "geral",
+                            modelo,
+                          },
+                        });
+                        setLegenda(out.legenda);
+                        toast.success(out.via === "ia" ? "Legenda gerada pela IA." : "Legenda gerada (modo local).", { id: tid });
+                      } catch (e: any) {
+                        toast.error(e?.message || "Falha ao gerar legenda.", { id: tid });
+                      } finally {
+                        setGerandoLegenda(false);
+                      }
+                    }}
+                  >
+                    {gerandoLegenda ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4 mr-1" />IA</>}
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
                 <Label>Legenda</Label>
-                <Textarea rows={4} value={legenda} onChange={(e) => setLegenda(e.target.value)} />
+                <Textarea rows={6} value={legenda} onChange={(e) => setLegenda(e.target.value)} />
               </div>
               <Button onClick={salvarManual} disabled={savingManual} className="w-full" variant="outline">
                 {savingManual ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : quando === "agora" ? <Zap className="w-4 h-4 mr-2" /> : <CalendarClock className="w-4 h-4 mr-2" />}
