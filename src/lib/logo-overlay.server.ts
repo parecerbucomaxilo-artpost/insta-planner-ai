@@ -10,6 +10,22 @@ import logoAluno2 from "@/assets/logo-aluno-2.png.asset.json";
 const DEFAULT_ORIGIN = "https://insta-planner-ai.lovable.app";
 const cache = new Map<string, Uint8Array>();
 
+function cleanBase64(input: string): string {
+  const raw = String(input || "").trim();
+  const withoutPrefix = raw.startsWith("data:") && raw.includes(",") ? raw.split(",").pop() || "" : raw;
+  const cleaned = withoutPrefix.replace(/\s/g, "");
+  if (!cleaned) throw new Error("imagem base64 vazia");
+  return cleaned;
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  return Buffer.from(bytes).toString("base64");
+}
+
+function base64ToBytes(input: string): Uint8Array {
+  return new Uint8Array(Buffer.from(cleanBase64(input), "base64"));
+}
+
 async function fetchBytes(url: string, origin?: string): Promise<Uint8Array> {
   const cached = cache.get(url);
   if (cached) return cached;
@@ -28,9 +44,13 @@ type RgbaImage = { width: number; height: number; data: Uint8Array };
 
 function decodeImage(bytes: Uint8Array): RgbaImage {
   const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+  const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
   if (isPng) {
     const png = PNG.sync.read(Buffer.from(bytes));
     return { width: png.width, height: png.height, data: new Uint8Array(png.data) };
+  }
+  if (!isJpeg) {
+    throw new Error(`formato de imagem não suportado para overlay: ${Array.from(bytes.slice(0, 8)).join(",")}`);
   }
 
   const decoded = jpeg.decode(bytes, {
@@ -112,7 +132,7 @@ export async function overlayLogo(
   opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean; position?: Pos; smart?: boolean },
 ): Promise<string> {
   try {
-    const base = decodeImage(Buffer.from(imageB64, "base64"));
+    const base = decodeImage(base64ToBytes(imageB64));
     const w = base.width;
     const h = base.height;
     const margin = Math.round(w * 0.03);
@@ -190,7 +210,7 @@ export async function overlayAlunoLogos(
   sizePct = 13,
 ): Promise<string> {
   try {
-    const base = decodeImage(Buffer.from(imageB64, "base64"));
+    const base = decodeImage(base64ToBytes(imageB64));
     const w = base.width;
     const h = base.height;
     const marginX = Math.round(w * 0.035);
@@ -220,10 +240,24 @@ export async function overlayAlunoLogos(
 
 export async function ensureJpegB64(imageB64: string, quality = 90): Promise<string> {
   try {
-    const img = decodeImage(Buffer.from(imageB64, "base64"));
+    const img = decodeImage(base64ToBytes(imageB64));
     return encodeJpegB64(img, quality);
   } catch (e) {
     console.error("[ensureJpegB64] falha — devolvendo original:", e);
     return imageB64;
   }
+}
+
+export async function fetchImageAsBase64(url: string): Promise<string> {
+  if (url.startsWith("data:")) return cleanBase64(url);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`imagem indisponível para overlay: HTTP ${res.status}`);
+  const contentType = res.headers.get("content-type") || "";
+  if (/text\/html/i.test(contentType)) throw new Error("URL retornou HTML, não imagem");
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  return bytesToBase64(bytes);
+}
+
+export function imageBase64ToJpegBytes(imageB64: string): Uint8Array {
+  return base64ToBytes(imageB64);
 }

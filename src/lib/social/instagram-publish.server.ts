@@ -347,20 +347,15 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     const contaParaLogo = originalContaAlvo || contaAlvo || normalizeInstagramAccount(perfil?.arroba_usuario);
     if (contaParaLogo === "drfranciscomenezes" || contaParaLogo === "lactbmf.anhanguerasbo") {
       try {
-        const { overlayLogo, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
+        const { fetchImageAsBase64, imageBase64ToJpegBytes, overlayLogo, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
         imageUrls = await Promise.all(imageUrls.map(async (url) => {
-          const res = await fetch(url);
-          if (!res.ok) return url;
-          const buf = new Uint8Array(await res.arrayBuffer());
-          let bin = "";
-          for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-          const b64 = btoa(bin);
+          const b64 = await fetchImageAsBase64(url);
           const stamped = contaParaLogo === "lactbmf.anhanguerasbo"
             ? await overlayAlunoLogos(b64)
             : await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false });
           if (stamped === b64) throw new Error("A logo oficial não foi aplicada. Publicação bloqueada.");
           const fileName = `published/stamped-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-          const bytes = Uint8Array.from(atob(stamped), (c) => c.charCodeAt(0));
+          const bytes = imageBase64ToJpegBytes(stamped);
           const { error: upErr } = await supabaseAdmin.storage
             .from("post-images")
             .upload(fileName, bytes, { contentType: "image/jpeg", cacheControl: "604800", upsert: false });
