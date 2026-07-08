@@ -40,6 +40,7 @@ interface PlannerSimplificadoProps {
 export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao", permiteTipoLiga = false }: PlannerSimplificadoProps = {}) {
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
+  const genCaption = useServerFn(generateCaptionOnly);
   const approveFn = useServerFn(approvePost);
   const discardFn = useServerFn(discardPost);
   const publishIg = useServerFn(publishInstagramNow);
