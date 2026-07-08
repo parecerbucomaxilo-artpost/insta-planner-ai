@@ -1427,9 +1427,14 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
     const applyOverlay = async (b64: string) => {
       if (isEstudantes) return overlayAlunoLogos(b64);
-      // Para "chico-drfm" E "geral" (default do PostComposer) — sempre aplica
-      // a logo oficial do Prof. Francisco no canto inferior direito.
-      return overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: true });
+      // Chico/geral: SEMPRE canto inferior direito, sem escolha inteligente.
+      const out = await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false });
+      // Validação estrita: se o overlay falhou (photon indisponível),
+      // devolveria a imagem original inalterada — recusamos publicar sem logo.
+      if (out === b64) {
+        throw new Error("LOGO_OVERLAY_FAILED: overlay da logo oficial não foi aplicado — arte rejeitada.");
+      }
+      return out;
     };
     const { brandBookPrompt: brandBookPromptImg } = await import("@/lib/brand-book");
     const { hooksLibraryPrompt: hooksImg } = await import("@/lib/hooks-library");
