@@ -1,7 +1,11 @@
 // Aplica a LOGO REAL no canto inferior direito da imagem gerada pela IA.
 // Não depende de WASM: usa composição RGBA em JS puro para nunca publicar sem logo.
 import * as jpeg from "jpeg-js";
-import { decode as decodePng } from "fast-png";
+// upng-js: PNG decoder puro em JS (sem zlib nativo) — compatível com Cloudflare Workers.
+// Substitui fast-png, que quebrava com "Class constructor Inflate cannot be invoked without 'new'".
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — upng-js não expõe types.
+import UPNG from "upng-js";
 import logoAsset from "@/assets/logo-planner.png.asset.json";
 import avatarAsset from "@/assets/avatar-francisco.jpg.asset.json";
 import logoAluno1 from "@/assets/logo-aluno-1.png.asset.json";
@@ -46,36 +50,12 @@ function decodeImage(bytes: Uint8Array): RgbaImage {
   const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
   const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
   if (isPng) {
-    const png = decodePng(bytes, { checkCrc: false });
-    const channels = png.channels || 4;
-    const src = png.data;
-    const out = new Uint8Array(png.width * png.height * 4);
-    for (let i = 0, j = 0; i < out.length; i += 4, j += channels) {
-      if (channels === 1) {
-        const v = Number(src[j] ?? 0);
-        out[i] = v;
-        out[i + 1] = v;
-        out[i + 2] = v;
-        out[i + 3] = 255;
-      } else if (channels === 2) {
-        const v = Number(src[j] ?? 0);
-        out[i] = v;
-        out[i + 1] = v;
-        out[i + 2] = v;
-        out[i + 3] = Number(src[j + 1] ?? 255);
-      } else if (channels === 3) {
-        out[i] = Number(src[j] ?? 0);
-        out[i + 1] = Number(src[j + 1] ?? 0);
-        out[i + 2] = Number(src[j + 2] ?? 0);
-        out[i + 3] = 255;
-      } else {
-        out[i] = Number(src[j] ?? 0);
-        out[i + 1] = Number(src[j + 1] ?? 0);
-        out[i + 2] = Number(src[j + 2] ?? 0);
-        out[i + 3] = Number(src[j + 3] ?? 255);
-      }
-    }
-    return { width: png.width, height: png.height, data: out };
+    // UPNG.toRGBA8 devolve sempre RGBA 8-bit em ArrayBuffer, uma entrada por frame.
+    const png = UPNG.decode(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+    const frames = UPNG.toRGBA8(png);
+    if (!frames || !frames.length) throw new Error("PNG sem frames decodificáveis");
+    const rgba = new Uint8Array(frames[0]);
+    return { width: png.width, height: png.height, data: rgba };
   }
   if (!isJpeg) {
     throw new Error(`formato de imagem não suportado para overlay: ${Array.from(bytes.slice(0, 8)).join(",")}`);
