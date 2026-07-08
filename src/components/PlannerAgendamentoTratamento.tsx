@@ -21,6 +21,9 @@ import { cn } from "@/lib/utils";
 
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 const LS_PHONE = "planner_agend_liga_phone_v1";
+const TELEFONE_PADRAO = "(19) 99018-0802";
+const INSTITUICAO = "Faculdade Anhanguera de Santa Bárbara";
+const SERVICO = "Clínica Escola – Cirurgia Bucal e Biópsias";
 
 const TRATAMENTOS = [
   { id: "trigemio", label: "Neuralgia do Trigêmeo", tema: "Neuralgia do trigêmeo: dor facial em choque, diagnóstico e tratamento cirúrgico/medicamentoso avaliado na clínica da Liga LACTBMF" },
@@ -47,10 +50,10 @@ function buildPatientCaption(params: {
   base: string;
 }) {
   const t = TRATAMENTOS.find((x) => x.id === params.tratamento)!;
-  const tel = params.telefone.trim() || "(consulte pelo Direct)";
-  const abertura = `📢 A Liga Acadêmica de Cirurgia e Traumatologia Bucomaxilofacial (@lactbmf.anhanguerasbo) está com AGENDA ABERTA para atendimento de:\n\n👉 ${t.label}`;
-  const meio = `\n\nOs atendimentos acontecem na Clínica Escola do Curso de Odontologia da Faculdade Anhanguera de Santa Bárbara d'Oeste, sempre sob supervisão de professores cirurgiões bucomaxilofaciais.\n\nQuem pode se beneficiar:\n• Pacientes com indicação para ${t.label.toLowerCase()};\n• Pessoas que buscam tratamento seguro, acessível e com acompanhamento acadêmico;\n• Encaminhamentos de dentistas parceiros.`;
-  const cta = `\n\n📞 Agende sua triagem pelo telefone: ${tel}\n(Atendimento de segunda a sexta, em horário comercial.)\n\nVagas limitadas — envie mensagem no Direct também para dúvidas.\n\n#LigaAcademica #LACTBMF #Anhanguera #CirurgiaBucomaxilofacial #${t.id} #AtendimentoOdontologico #ClínicaEscola`;
+  const tel = params.telefone.trim() || TELEFONE_PADRAO;
+  const abertura = `📢 ${SERVICO} — ${INSTITUICAO}\n\n👉 ${t.label}`;
+  const meio = `\n\nAtendimento supervisionado por professores especialistas em Cirurgia e Traumatologia Bucomaxilofacial. Ambiente seguro, humanizado e acolhedor para pacientes de Santa Bárbara d'Oeste e cidades vizinhas.\n\nQuem pode ser atendido:\n• Pessoas com indicação para ${t.label.toLowerCase()};\n• Quem precisa avaliar lesões na boca (manchas, feridas que não cicatrizam, caroços);\n• Encaminhamentos de dentistas parceiros.\n\n💬 Não deixe lesões sem avaliação — quanto antes você procura, mais simples é o tratamento.`;
+  const cta = `\n\n📞 Agende sua avaliação: ${tel}\n(Atendimento em horário comercial.)\n\n#CirurgiaBucal #BiopsiaBucal #SaudeBucal #SantaBarbaraDOeste #Anhanguera #ClinicaEscola #Odontologia #Siso #LesaoBucal #SaudeDaBoca`;
   return `${abertura}${meio}${cta}`;
 }
 
@@ -80,7 +83,10 @@ export function PlannerAgendamentoTratamento() {
   const [preview, setPreview] = useState<PreviewState | null>(null);
 
   useEffect(() => {
-    try { setTelefone(window.localStorage.getItem(LS_PHONE) || ""); } catch {}
+    try {
+      const saved = window.localStorage.getItem(LS_PHONE);
+      setTelefone(saved && saved.trim() ? saved : TELEFONE_PADRAO);
+    } catch { setTelefone(TELEFONE_PADRAO); }
   }, []);
 
   const salvarTelefone = useCallback((v: string) => {
@@ -120,7 +126,8 @@ export function PlannerAgendamentoTratamento() {
 • PROIBIDO: fundo branco, azul, ciano, verde, roxo, rosa, gradientes, fotos realistas de pacientes, rostos.
 TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em português-BR claro, linguagem simples para leigo (evite termos técnicos; se usar, explique em 1 linha). Cada slide traz 1 frase-chave curta em destaque + 2 a 4 bullets objetivos. Ícones simples e pictogramas quando ajudarem o entendimento. Mesma paleta grafite/âmbar/off-white, tipografia bold, alto contraste, sem quebrar a identidade.`;
       const assuntoBlock = assuntoTxt ? `\n\nASSUNTO/ÂNGULO ESPECÍFICO desta postagem (priorize sobre o padrão): ${assuntoTxt}` : "";
-      const tema = `${tratObj.tema}. CONVITE PÚBLICO para pacientes agendarem TRIAGEM pelo telefone ${telefone.trim()} na Clínica Escola do Curso de Odontologia da Faculdade Anhanguera de Santa Bárbara d'Oeste. Público-alvo: PACIENTES LEIGOS (não estudantes). Tom: acolhedor, seguro, institucional, LINGUAGEM SIMPLES.${assuntoBlock}\n\n${capaBrief}`;
+      const diretriz = `\n\n=== DIRETRIZ MESTRA — ${SERVICO} · ${INSTITUICAO} ===\nPÚBLICO: pacientes leigos da região de Santa Bárbara d'Oeste e cidades vizinhas.\nOBJETIVO: informar que existe a oportunidade de fazer o tratamento na Clínica Escola, quebrar medos/mitos ("dói?", "é perigoso?", "demora?"), estimular o agendamento pelo telefone ${telefone.trim() || TELEFONE_PADRAO}.\nMENSAGENS-CHAVE: "Atendimento supervisionado por professores especialistas" · "Ambiente seguro e humanizado" · "Agende sua avaliação" · "Não deixe lesões sem avaliação".\nTOM: acolhedor, tranquilo, confiável, empático com medos e dúvidas. Linguagem simples, sem termos técnicos desnecessários (se usar, explique em 1 linha).\nEVITAR imagens/palavras que assustem (sangue, instrumentos agressivos, cenas invasivas).\nSEMPRE citar o telefone ${telefone.trim() || TELEFONE_PADRAO} e o nome "${SERVICO} — ${INSTITUICAO}".\nHASHTAGS: #CirurgiaBucal #BiopsiaBucal #SaudeBucal #SantaBarbaraDOeste #Anhanguera #ClinicaEscola #Odontologia #Siso #LesaoBucal #SaudeDaBoca\n=== FIM ===`;
+      const tema = `${tratObj.tema}. CONVITE PÚBLICO para pacientes agendarem AVALIAÇÃO pelo telefone ${telefone.trim() || TELEFONE_PADRAO} na ${SERVICO} — ${INSTITUICAO}. Público-alvo: PACIENTES LEIGOS. Tom: acolhedor, seguro, humanizado, LINGUAGEM SIMPLES.${assuntoBlock}${diretriz}\n\n${capaBrief}`;
 
       const out = await genSingle({
         data: {
@@ -195,11 +202,11 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       <Card className="p-5 space-y-2 border-2 border-amber-300 bg-amber-50/40">
         <div className="flex items-center gap-2 text-amber-900">
           <Stethoscope className="w-5 h-5" />
-          <h2 className="font-bold">Planner Agendamento de Tratamento — Liga LACTBMF</h2>
+          <h2 className="font-bold">Agendamento Clínicas Cirurgia e Biópsia — {SERVICO}</h2>
         </div>
         <p className="text-xs text-amber-950">
-          Gera anúncios convidando pacientes a agendarem tratamento na clínica-escola.
-          Publica no perfil <Badge variant="secondary">@{LIGA_ACCOUNT}</Badge> com paleta e logos oficiais da Liga.
+          Gera posts convidando pacientes a agendarem cirurgia bucal e biópsias na <strong>{SERVICO}</strong> ({INSTITUICAO}).
+          Telefone padrão: <strong>{TELEFONE_PADRAO}</strong>. Publica em <Badge variant="secondary">@{LIGA_ACCOUNT}</Badge>.
         </p>
       </Card>
 
