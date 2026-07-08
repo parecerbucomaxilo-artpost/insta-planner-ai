@@ -111,7 +111,7 @@ export function PlannerAgendamentoTratamento() {
   const temaAtual = () => {
     const t = TRATAMENTOS.find((x) => x.id === tratamento)!;
     const assuntoTxt = assunto.trim();
-    return `${t.tema}. Convite público para pacientes conhecerem a possibilidade de avaliação pelo telefone ${telefone.trim() || TELEFONE_PADRAO} na ${SERVICO} — ${INSTITUICAO}. Linguagem simples, acolhedora e segura.${assuntoTxt ? ` Ângulo específico: ${assuntoTxt}.` : ""}`;
+    return `TEMA ÚNICO E EXCLUSIVO DO POST: ${t.tema}. A legenda inteira fala SOMENTE sobre "${t.label}" — PROIBIDO citar outros tratamentos, outras patologias, outros procedimentos ou temas genéricos de odontologia. Contexto: convite público para pacientes conhecerem a possibilidade de avaliação de "${t.label}" na Clínica-Escola da LACTBMF (Liga Acadêmica de CTBMF · Anhanguera Santa Bárbara d'Oeste), agendamento pelo telefone ${telefone.trim() || TELEFONE_PADRAO}. Linguagem simples, acolhedora e segura, focada apenas em "${t.label}".${assuntoTxt ? ` Ângulo específico (ainda dentro do MESMO tema): ${assuntoTxt}.` : ""}`;
   };
 
   const gerarLegenda = async () => {
@@ -120,19 +120,20 @@ export function PlannerAgendamentoTratamento() {
     const tid = "agend-liga-caption";
     toast.loading("IA escrevendo a legenda...", { id: tid });
     try {
+      const tratObj = TRATAMENTOS.find((x) => x.id === tratamento)!;
       const out = await genCaption({
         data: {
           tema: temaAtual(),
           rede: "instagram",
           formato: modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único",
           especialidade: "CTBMF",
-          audiencia: "geral",
+          audiencia: "estudantes-graduacao",
           modelo,
         } as any,
       });
       const base = out.legenda.trim();
       const tel = telefone.trim() || TELEFONE_PADRAO;
-      const final = `${base}\n\n${SERVICO} — ${INSTITUICAO}\n📞 Informações pelo telefone: ${tel}`;
+      const final = `${base}\n\n${SERVICO} — ${INSTITUICAO} (Clínica-Escola)\n📞 Agende avaliação de ${tratObj.label} pelo telefone: ${tel}`;
       setLegendaGerada(final);
       toast.success(out.via === "ia" ? "Legenda criada pela IA." : "Legenda criada pelo app.", { id: tid });
     } catch (e: any) {
