@@ -21,6 +21,9 @@ import { cn } from "@/lib/utils";
 
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 const LS_PHONE = "planner_agend_liga_phone_v1";
+const TELEFONE_PADRAO = "(19) 99018-0802";
+const INSTITUICAO = "Faculdade Anhanguera de Santa Bárbara";
+const SERVICO = "Clínica Escola – Cirurgia Bucal e Biópsias";
 
 const TRATAMENTOS = [
   { id: "trigemio", label: "Neuralgia do Trigêmeo", tema: "Neuralgia do trigêmeo: dor facial em choque, diagnóstico e tratamento cirúrgico/medicamentoso avaliado na clínica da Liga LACTBMF" },
