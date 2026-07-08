@@ -202,11 +202,11 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       <Card className="p-5 space-y-2 border-2 border-amber-300 bg-amber-50/40">
         <div className="flex items-center gap-2 text-amber-900">
           <Stethoscope className="w-5 h-5" />
-          <h2 className="font-bold">Planner Agendamento de Tratamento — Liga LACTBMF</h2>
+          <h2 className="font-bold">Agendamento Clínicas Cirurgia e Biópsia — {SERVICO}</h2>
         </div>
         <p className="text-xs text-amber-950">
-          Gera anúncios convidando pacientes a agendarem tratamento na clínica-escola.
-          Publica no perfil <Badge variant="secondary">@{LIGA_ACCOUNT}</Badge> com paleta e logos oficiais da Liga.
+          Gera posts convidando pacientes a agendarem cirurgia bucal e biópsias na <strong>{SERVICO}</strong> ({INSTITUICAO}).
+          Telefone padrão: <strong>{TELEFONE_PADRAO}</strong>. Publica em <Badge variant="secondary">@{LIGA_ACCOUNT}</Badge>.
         </p>
       </Card>
 
