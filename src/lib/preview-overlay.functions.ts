@@ -56,7 +56,7 @@ export const previewPostWithLogo = createServerFn({ method: "POST" })
           const stamped = isLiga
             ? await overlayAlunoLogos(b64)
             : isChico
-              ? await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: true })
+              ? await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false })
               : b64;
           results.push(`data:image/jpeg;base64,${stamped}`);
           continue;
@@ -83,7 +83,7 @@ export const previewPostWithLogo = createServerFn({ method: "POST" })
         const stamped = isLiga
           ? await overlayAlunoLogos(b64)
           : isChico
-            ? await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: true })
+            ? await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false })
             : b64;
         results.push(`data:image/jpeg;base64,${stamped}`);
       } catch (e) {
