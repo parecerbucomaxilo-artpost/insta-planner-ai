@@ -1,5 +1,6 @@
 // Lovable AI Gateway: GPT-5-mini (texto) + Gemini 3.1 Flash Image / Nano Banana (imagem).
 // Mantém um gerador local de fallback caso o gateway retorne 402 (créditos) ou 429 (rate-limit).
+import * as jpeg from "jpeg-js";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
 
@@ -207,8 +208,6 @@ function fillRect(px: Uint8Array, w: number, h: number, x: number, y: number, rw
 }
 
 async function generateImageLocal(opts: { prompt: string; size?: "1024x1024" | "1024x1536" | "1536x1024" }): Promise<string> {
-  const photon: any = await import("@cf-wasm/photon");
-  const { PhotonImage } = photon;
   const { width, height } = sizeToWH(opts.size);
   const px = new Uint8Array(width * height * 4);
   const seed = hashText(`${opts.prompt}|${Date.now()}|${Math.random()}`);
@@ -228,9 +227,7 @@ async function generateImageLocal(opts: { prompt: string; size?: "1024x1024" | "
   fillEllipse(px, width, height, width * 0.18, height * 0.78, width * 0.22, height * 0.13, white, 0.06);
   const bandH = Math.round(height * 0.16);
   fillRect(px, width, height, 0, height - bandH, width, bandH, hexToRgb("#06182c"), 0.62);
-  const img = new PhotonImage(px, width, height);
-  const out = img.get_bytes_jpeg(90);
-  img.free();
+  const out = jpeg.encode({ data: px, width, height }, 90).data;
   void seed;
   return Buffer.from(out).toString("base64");
 }
