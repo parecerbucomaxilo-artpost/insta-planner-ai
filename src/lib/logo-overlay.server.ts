@@ -224,9 +224,9 @@ export async function overlayAlunoLogos(
     const marginX = Math.round(w * 0.035);
     const marginY = Math.round(h * 0.025);
 
-    // Logo oficial ÚNICA da Liga (selo circular já contém faculdade + curso).
-    const a1 = (await import("@/assets/logo-aluno-1.png.asset.json")).default;
-    const bytes = await fetchBytes(a1.url, origin);
+    // Logo OFICIAL da LACTBMF (Liga Acadêmica de CTBMF) — selo circular oficial.
+    const ligaAsset = (await import("@/assets/logo-liga-ctbmf.png.asset.json")).default;
+    const bytes = await fetchBytes(ligaAsset.url, origin);
     const full = decodeImage(bytes);
     const fw = full.width;
     const fh = full.height;
