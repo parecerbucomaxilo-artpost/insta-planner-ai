@@ -1727,6 +1727,56 @@ export const approvePost = createServerFn({ method: "POST" })
     return { ok: true, status };
   });
 
+// Gera APENAS a legenda a partir de um tema sugerido pelo usuário — usado
+// no composer manual dos planners pelo botão "Gerar legenda com IA".
+const CaptionOnlyInput = z.object({
+  tema: z.string().min(2, "Informe um tema."),
+  rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
+  formato: z.enum(["Carrossel", "Story", "Post Único"]).default("Post Único"),
+  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
+  audiencia: z.enum(["geral", "estudantes-graduacao", "chico-drfm"]).default("chico-drfm"),
+  nivel: NivelEnum.optional().default("auto"),
+  modelo: ModeloLocalInput,
+});
+
+export const generateCaptionOnly = createServerFn({ method: "POST" })
+  .middleware([])
+  .inputValidator((d: unknown) => CaptionOnlyInput.parse(d))
+  .handler(async ({ data }) => {
+    const nivel = resolveNivel(data.nivel, data.rede);
+    const tema = data.tema.trim();
+    const isChico = data.audiencia === "chico-drfm";
+    const isEstudantes = data.audiencia === "estudantes-graduacao";
+    const local = () => buildLocalCaption({
+      tema, rede: data.rede, formato: data.formato,
+      especialidade: data.especialidade, nivel, audiencia: data.audiencia,
+    });
+    if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") {
+      return { legenda: local(), via: "local" as const };
+    }
+    try {
+      const { generateTextAI } = await import("@/lib/ai-gateway.server");
+      const { brandBookPrompt } = await import("@/lib/brand-book");
+      const { hooksLibraryPrompt } = await import("@/lib/hooks-library");
+      const { strategyPrompt } = await import("@/lib/strategy-prompt");
+      const systemBase = isChico
+        ? chicoCaptionSystem(data.formato, tema)
+        : isEstudantes
+          ? ligaCaptionSystem(data.formato, tema)
+          : `Você é o copywriter sênior do Prof. Francisco Menezes. PT-BR Brasil impecável. Tom: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com "${ASSINATURA}" — "${ASSINATURA_SUBTITULO}".${CONTEUDO_COMPLETO}${pickMetodologiaCopy(tema)}`;
+      const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}`;
+      const contrato = clinicalContract(tema, data.audiencia);
+      const prompt = `${contrato}\n\nTema sugerido pelo usuário: ${tema}\nRede: ${data.rede}\nFormato: ${data.formato}\nEspecialidade: ${data.especialidade}\n\nTAREFA: escreva APENAS a legenda final pronta para publicação, mencionando O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA.\n\nResponda apenas em PT-BR. Sem comentários meta, sem aspas envolvendo o texto.`;
+      const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1700 : data.formato === "Carrossel" ? 1200 : 950 });
+      return { legenda: (txt || local()).trim(), via: (txt ? "ia" : "local") as "ia" | "local" };
+    } catch (err) {
+      console.warn("[caption-only] fallback local:", err instanceof Error ? err.message : err);
+      return { legenda: local(), via: "local" as const };
+    }
+  });
+
+
+
 export const generateWeekThemes = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) => WeekInput.parse(d))
