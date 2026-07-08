@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { signPostMediaUrls } from "@/lib/storage-url";
-import { generateSinglePost, generateWeekThemes, approvePost, discardPost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
+import { generateSinglePost, generateWeekThemes, generateCaptionOnly, approvePost, discardPost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
 import { cn } from "@/lib/utils";
 
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
