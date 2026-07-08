@@ -1,6 +1,7 @@
-// Aplica a LOGO REAL (canto sup. direito) e o AVATAR REAL (canto sup. esquerdo)
-// na imagem gerada pela IA. Import dinâmico do @cf-wasm/photon para não
-// derrubar o módulo quando o WASM não conseguir ser resolvido pelo bundler.
+// Aplica a LOGO REAL no canto inferior direito da imagem gerada pela IA.
+// Não depende de WASM: usa composição RGBA em JS puro para nunca publicar sem logo.
+import jpeg from "jpeg-js";
+import { PNG } from "pngjs";
 import logoAsset from "@/assets/logo-planner.png.asset.json";
 import avatarAsset from "@/assets/avatar-francisco.jpg.asset.json";
 import logoAluno1 from "@/assets/logo-aluno-1.png.asset.json";
@@ -22,6 +23,87 @@ async function fetchBytes(url: string, origin?: string): Promise<Uint8Array> {
 }
 
 type Pos = "top-right" | "bottom-right" | "bottom-left" | "top-left";
+
+type RgbaImage = { width: number; height: number; data: Uint8Array };
+
+function decodeImage(bytes: Uint8Array): RgbaImage {
+  const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+  if (isPng) {
+    const png = PNG.sync.read(Buffer.from(bytes));
+    return { width: png.width, height: png.height, data: new Uint8Array(png.data) };
+  }
+
+  const decoded = jpeg.decode(bytes, {
+    useTArray: true,
+    formatAsRGBA: true,
+    tolerantDecoding: true,
+    maxMemoryUsageInMB: 1024,
+  });
+  return { width: decoded.width, height: decoded.height, data: decoded.data };
+}
+
+function encodeJpegB64(image: RgbaImage, quality = 90): string {
+  const encoded = jpeg.encode({ data: image.data, width: image.width, height: image.height }, quality);
+  return Buffer.from(encoded.data).toString("base64");
+}
+
+function resizeRgba(source: RgbaImage, targetW: number, targetH: number): RgbaImage {
+  const out = new Uint8Array(targetW * targetH * 4);
+  const xRatio = source.width / targetW;
+  const yRatio = source.height / targetH;
+
+  for (let y = 0; y < targetH; y++) {
+    const sy = Math.min(source.height - 1, Math.floor((y + 0.5) * yRatio));
+    for (let x = 0; x < targetW; x++) {
+      const sx = Math.min(source.width - 1, Math.floor((x + 0.5) * xRatio));
+      const src = (sy * source.width + sx) * 4;
+      const dst = (y * targetW + x) * 4;
+      out[dst] = source.data[src];
+      out[dst + 1] = source.data[src + 1];
+      out[dst + 2] = source.data[src + 2];
+      out[dst + 3] = source.data[src + 3];
+    }
+  }
+
+  return { width: targetW, height: targetH, data: out };
+}
+
+function composite(base: RgbaImage, stamp: RgbaImage, x0: number, y0: number, alpha = 1): void {
+  for (let y = 0; y < stamp.height; y++) {
+    const by = y0 + y;
+    if (by < 0 || by >= base.height) continue;
+    for (let x = 0; x < stamp.width; x++) {
+      const bx = x0 + x;
+      if (bx < 0 || bx >= base.width) continue;
+      const si = (y * stamp.width + x) * 4;
+      const di = (by * base.width + bx) * 4;
+      const sa = (stamp.data[si + 3] / 255) * alpha;
+      if (sa <= 0) continue;
+      const inv = 1 - sa;
+      base.data[di] = Math.round(stamp.data[si] * sa + base.data[di] * inv);
+      base.data[di + 1] = Math.round(stamp.data[si + 1] * sa + base.data[di + 1] * inv);
+      base.data[di + 2] = Math.round(stamp.data[si + 2] * sa + base.data[di + 2] * inv);
+      base.data[di + 3] = 255;
+    }
+  }
+}
+
+function statsRegion(image: RgbaImage, x0: number, y0: number, size: number): { mean: number; std: number } {
+  const x1 = Math.min(image.width, x0 + size);
+  const y1 = Math.min(image.height, y0 + size);
+  const values: number[] = [];
+  const step = Math.max(1, Math.floor(size / 80));
+  for (let y = Math.max(0, y0); y < y1; y += step) {
+    for (let x = Math.max(0, x0); x < x1; x += step) {
+      const i = (y * image.width + x) * 4;
+      values.push(0.299 * image.data[i] + 0.587 * image.data[i + 1] + 0.114 * image.data[i + 2]);
+    }
+  }
+  if (!values.length) return { mean: 128, std: 0 };
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+  return { mean, std: Math.sqrt(variance) };
+}
 
 function statsRGBA(px: Uint8Array): { mean: number; std: number } {
   let sum = 0;
@@ -57,24 +139,15 @@ export async function overlayLogo(
   opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean; position?: Pos; smart?: boolean },
 ): Promise<string> {
   try {
-    const photon: any = await import("@cf-wasm/photon").catch((e) => {
-      console.warn("[overlayLogo] photon indisponível, pulando overlay:", e);
-      return null;
-    });
-    if (!photon) return imageB64;
-    const { PhotonImage, resize, watermark, SamplingFilter, crop } = photon;
-
-    const baseBytes = Uint8Array.from(atob(imageB64), (c) => c.charCodeAt(0));
-    const base = PhotonImage.new_from_byteslice(baseBytes);
-    const w = base.get_width();
-    const h = base.get_height();
+    const base = decodeImage(Buffer.from(imageB64, "base64"));
+    const w = base.width;
+    const h = base.height;
     const margin = Math.round(w * 0.03);
     const requested = opts?.position ?? "top-right";
-    const freeList: Array<{ free: () => void }> = [];
 
     // Smart placement: escolhe canto mais limpo, ajusta tamanho e opacidade.
     let pos: Pos = requested;
-    let target = Math.max(48, Math.round((w * sizePct) / 100));
+    let targetBox = Math.max(48, Math.round((w * sizePct) / 100));
     let alpha = 1;
 
     if (opts?.smart && opts?.withLogo !== false) {
@@ -88,24 +161,16 @@ export async function overlayLogo(
         ];
         let best = { pos: requested, std: Infinity, mean: 128 };
         for (const c of corners) {
-          try {
-            if (typeof crop !== "function") break;
-            const region = crop(base, c.x1, c.y1, Math.min(w, c.x1 + sample), Math.min(h, c.y1 + sample));
-            const px = typeof region.get_raw_pixels === "function" ? region.get_raw_pixels() : null;
-            if (px) {
-              const { mean, std } = statsRGBA(px);
-              const penalty = c.pos === requested ? 0 : 6;
-              const score = std + penalty;
-              if (score < best.std) best = { pos: c.pos, std: score, mean };
-            }
-            region.free();
-          } catch {}
+          const { mean, std } = statsRegion(base, c.x1, c.y1, sample);
+          const penalty = c.pos === requested ? 0 : 6;
+          const score = std + penalty;
+          if (score < best.std) best = { pos: c.pos, std: score, mean };
         }
         if (Number.isFinite(best.std)) {
           pos = best.pos;
           const busy = Math.min(1, best.std / 60);
           const scale = 1 - busy * 0.25;
-          target = Math.max(56, Math.round(((w * sizePct) / 100) * scale));
+          targetBox = Math.max(56, Math.round(((w * sizePct) / 100) * scale));
           alpha = best.mean > 180 ? 0.95 : best.mean < 60 ? 0.78 : 0.9;
           if (busy > 0.5) alpha = Math.min(alpha, 0.8);
         }
@@ -114,49 +179,30 @@ export async function overlayLogo(
       }
     }
 
-
-    const logoX = pos === "top-left" || pos === "bottom-left" ? margin : Math.max(0, w - target - margin);
-    const logoY = pos === "bottom-right" || pos === "bottom-left" ? Math.max(0, h - target - margin) : margin;
-
     if (opts?.withLogo !== false) {
       const logoBytes = await fetchBytes(logoAsset.url, origin);
-      const logoFull = PhotonImage.new_from_byteslice(logoBytes);
-      const logoResized = resize(logoFull, target, target, SamplingFilter.Lanczos3);
-      let logoToStamp: any = logoResized;
-      let extraFree: any = null;
-      if (alpha < 0.99) {
-        try {
-          const px = logoResized.get_raw_pixels();
-          const adjusted = applyAlpha(px, alpha);
-          const withAlpha = PhotonImage.new(adjusted, target, target);
-          logoToStamp = withAlpha;
-          extraFree = withAlpha;
-        } catch {}
-      }
-      watermark(base, logoToStamp, BigInt(logoX), BigInt(logoY));
-      freeList.push(logoFull, logoResized);
-      if (extraFree) freeList.push(extraFree);
+      const logoFull = decodeImage(logoBytes);
+      const aspect = logoFull.height / Math.max(1, logoFull.width);
+      const targetW = targetBox;
+      const targetH = Math.max(32, Math.round(targetW * aspect));
+      const logoResized = resizeRgba(logoFull, targetW, targetH);
+      const logoX = pos === "top-left" || pos === "bottom-left" ? margin : Math.max(0, w - targetW - margin);
+      const logoY = pos === "bottom-right" || pos === "bottom-left" ? Math.max(0, h - targetH - margin) : margin;
+      composite(base, logoResized, logoX, logoY, alpha);
     }
 
     if (opts?.withAvatar) {
       const avUrl = opts.avatarUrl || avatarAsset.url;
       const avBytes = await fetchBytes(avUrl, origin);
-      const avFull = PhotonImage.new_from_byteslice(avBytes);
-      const av = resize(avFull, target, target, SamplingFilter.Lanczos3);
-      watermark(base, av, BigInt(margin), BigInt(margin));
-      freeList.push(avFull, av);
+      const avFull = decodeImage(avBytes);
+      const av = resizeRgba(avFull, targetBox, targetBox);
+      composite(base, av, margin, margin);
     }
 
-    const outBytes = base.get_bytes_jpeg(90);
-    base.free();
-    for (const f of freeList) f.free();
-
-    let bin = "";
-    for (let i = 0; i < outBytes.length; i++) bin += String.fromCharCode(outBytes[i]);
-    return btoa(bin);
+    return encodeJpegB64(base, 90);
   } catch (e) {
-    console.error("[overlayLogo] falha — devolvendo imagem original:", e);
-    return imageB64;
+    console.error("[overlayLogo] falha — logo não aplicada:", e);
+    throw new Error("Falha ao aplicar a logo oficial no canto inferior direito.");
   }
 }
 
@@ -171,41 +217,29 @@ export async function overlayAlunoLogos(
   sizePct = 13,
 ): Promise<string> {
   try {
-    const photon: any = await import("@cf-wasm/photon").catch(() => null);
-    if (!photon) return imageB64;
-    const { PhotonImage, resize, watermark, SamplingFilter } = photon;
-
-    const baseBytes = Uint8Array.from(atob(imageB64), (c) => c.charCodeAt(0));
-    const base = PhotonImage.new_from_byteslice(baseBytes);
-    const w = base.get_width();
-    const h = base.get_height();
+    const base = decodeImage(Buffer.from(imageB64, "base64"));
+    const w = base.width;
+    const h = base.height;
     const marginX = Math.round(w * 0.035);
     const marginY = Math.round(h * 0.025);
 
     // Logo oficial ÚNICA da Liga (selo circular já contém faculdade + curso).
     const a1 = (await import("@/assets/logo-aluno-1.png.asset.json")).default;
-    const freeList: Array<{ free: () => void }> = [];
     const bytes = await fetchBytes(a1.url, origin);
-    const full = PhotonImage.new_from_byteslice(bytes);
-    const fw = full.get_width();
-    const fh = full.get_height();
+    const full = decodeImage(bytes);
+    const fw = full.width;
+    const fh = full.height;
     const targetW = Math.max(120, Math.round((w * sizePct) / 100));
     const targetH = Math.max(80, Math.round((fh * targetW) / Math.max(1, fw)));
-    const small = resize(full, targetW, targetH, SamplingFilter.Lanczos3);
+    const small = resizeRgba(full, targetW, targetH);
     const x = Math.max(0, w - targetW - marginX);
     const y = Math.max(0, h - targetH - marginY);
-    watermark(base, small, BigInt(x), BigInt(y));
-    freeList.push(full, small);
+    composite(base, small, x, y);
 
-    const outBytes = base.get_bytes_jpeg(90);
-    base.free();
-    for (const f of freeList) f.free();
-    let bin = "";
-    for (let i = 0; i < outBytes.length; i++) bin += String.fromCharCode(outBytes[i]);
-    return btoa(bin);
+    return encodeJpegB64(base, 90);
   } catch (e) {
-    console.error("[overlayAlunoLogos] falha — devolvendo original:", e);
-    return imageB64;
+    console.error("[overlayAlunoLogos] falha — logo não aplicada:", e);
+    throw new Error("Falha ao aplicar a logo oficial da Liga.");
   }
 }
 
@@ -213,16 +247,8 @@ export async function overlayAlunoLogos(
 
 export async function ensureJpegB64(imageB64: string, quality = 90): Promise<string> {
   try {
-    const photon = await import("@cf-wasm/photon").catch(() => null);
-    if (!photon) return imageB64;
-    const { PhotonImage } = photon;
-    const bytes = Uint8Array.from(atob(imageB64), (c) => c.charCodeAt(0));
-    const img = PhotonImage.new_from_byteslice(bytes);
-    const out = img.get_bytes_jpeg(quality);
-    img.free();
-    let bin = "";
-    for (let i = 0; i < out.length; i++) bin += String.fromCharCode(out[i]);
-    return btoa(bin);
+    const img = decodeImage(Buffer.from(imageB64, "base64"));
+    return encodeJpegB64(img, quality);
   } catch (e) {
     console.error("[ensureJpegB64] falha — devolvendo original:", e);
     return imageB64;
