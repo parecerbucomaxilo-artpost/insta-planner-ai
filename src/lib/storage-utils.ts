@@ -1,7 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 
 async function compressImageForUpload(file: File): Promise<File> {
-  if (!file.type.startsWith("image/") || file.type === "image/gif" || file.size < 350_000) return file;
+  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+  const overlaySafe = file.type === "image/jpeg" || file.type === "image/png";
+  if (overlaySafe && file.size < 350_000) return file;
 
   let bitmap: ImageBitmap;
   try {
@@ -19,7 +21,8 @@ async function compressImageForUpload(file: File): Promise<File> {
 
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
   bitmap.close();
-  if (!blob || blob.size >= file.size) return file;
+  if (!blob) return file;
+  if (overlaySafe && blob.size >= file.size) return file;
 
   const baseName = file.name.replace(/\.[^.]+$/, "");
   return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
