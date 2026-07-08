@@ -1554,29 +1554,44 @@ export const generateSinglePost = createServerFn({ method: "POST" })
 
     if (formato === "Carrossel") {
       const fullSpec = [
-        { n: 1, total: 5, papel: "CAPA: GANCHO ULTRA FORTE de conversão obrigatório em tipografia gigante (3-6 palavras, bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre navy luminoso) — pergunta direta de dor real, dado de impacto ou frase-choque do TIPO 'DOR NO SISO?', 'SEU MAXILAR TRAVA?', 'RONCO PODE MATAR', 'ESSE CARO NÃO É NORMAL', 'PERDEU UM DENTE?'. O gancho fala DIRETO ao paciente sobre o TEMA — NÃO menciona '@drfranciscomenezes', nome do profissional, marca, clínica ou consultório (a assinatura entra como overlay do sistema). Layout impactante de capa de revista médica, hierarquia visual brutal, ZERO bibliografia, ZERO logo desenhada." },
-        { n: 2, total: 5, papel: "PROBLEMA: aprofunda a dor em linguagem leiga, faz a pessoa se identificar. SEM anatomia clínica interna." },
-        { n: 3, total: 5, papel: "MECANISMO: explica COMO o problema acontece com analogia visual simples. Reforço de autoridade hospitalar." },
-        { n: 4, total: 5, papel: "SOLUÇÃO/GANHO: como o cirurgião resolve. Foco no GANHO CONCRETO do paciente (dormir bem, mastigar sem dor, voltar a sorrir, respirar melhor)." },
-        { n: 5, total: 5, papel: "FECHAMENTO PREMIUM com CTA FORTE: tipografia grande 'LINK NA BIO' centralizada + ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat oficial, canto inferior direito) + número '+55 11 94768-4004' em tipografia pequena ao lado do ícone. Hierarquia editorial impecável estilo capa de revista médica top de linha. É o slide mais bonito do carrossel." },
+        { n: 1, total: 5, papel: `CAPA sobre o TEMA "${tema}": GANCHO ULTRA FORTE de conversão obrigatório em tipografia gigante (3-6 palavras, bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre navy luminoso) — pergunta direta de dor real, dado de impacto ou frase-choque relacionada EXCLUSIVAMENTE ao tema "${tema}" (ex.: 'DOR NO SISO?', 'SEU MAXILAR TRAVA?', 'RONCO PODE MATAR', 'ESSE CHEIRO NÃO É NORMAL', 'PERDEU UM DENTE?'). PT-BR impecável, acentuação correta, SEM palavras duplicadas, SEM inglês, SEM texto inventado. O gancho fala DIRETO ao paciente sobre o TEMA — NÃO menciona '@drfranciscomenezes', nome do profissional, marca, clínica ou consultório (a assinatura entra como overlay do sistema). Layout impactante de capa de revista médica, hierarquia visual brutal, ZERO bibliografia, ZERO logo desenhada.` },
+        { n: 2, total: 5, papel: `PROBLEMA do TEMA "${tema}": aprofunda a dor em linguagem leiga, faz a pessoa se identificar. SEM anatomia clínica interna. NÃO mude de assunto — permaneça em "${tema}". PT-BR sem erros.` },
+        { n: 3, total: 5, papel: `MECANISMO do TEMA "${tema}": explica COMO o problema acontece com analogia visual simples. Reforço de autoridade hospitalar. Sem trocar de patologia. PT-BR sem erros.` },
+        { n: 4, total: 5, papel: `SOLUÇÃO/GANHO do TEMA "${tema}": como o cirurgião resolve ESTE tema. Foco no GANHO CONCRETO do paciente (dormir bem, mastigar sem dor, voltar a sorrir, respirar melhor). PT-BR sem erros.` },
+        { n: 5, total: 5, papel: `FECHAMENTO PREMIUM do TEMA "${tema}" com CTA FORTE: tipografia grande 'LINK NA BIO' centralizada + ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat oficial, canto inferior direito) + número '+55 11 94768-4004' em tipografia pequena ao lado do ícone. Hierarquia editorial impecável estilo capa de revista médica top de linha. PT-BR impecável. É o slide mais bonito do carrossel.` },
       ];
       const xSpec = [
-        { n: 1, total: 3, papel: "TWEET 1: gancho/pergunta forte com assinatura." },
-        { n: 2, total: 3, papel: "TWEET 2: explicação científica curta." },
-        { n: 3, total: 3, papel: "TWEET 3: CTA WhatsApp/Link na Bio + assinatura." },
+        { n: 1, total: 3, papel: `TWEET 1 sobre "${tema}": gancho/pergunta forte com assinatura. PT-BR sem erros.` },
+        { n: 2, total: 3, papel: `TWEET 2 sobre "${tema}": explicação científica curta. Sem mudar de tema. PT-BR sem erros.` },
+        { n: 3, total: 3, papel: `TWEET 3 sobre "${tema}": CTA WhatsApp/Link na Bio + assinatura. PT-BR sem erros.` },
       ];
       const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
-      // Gera TODAS as imagens em paralelo (3-5x mais rápido que lotes sequenciais).
-      const uploads = await Promise.all(
-        slidesSpec.map((s, idx) => genAndUpload(withVisual(
+      // Gera TODAS as imagens em paralelo com retry POR SLIDE — nenhum slide pode faltar.
+      const genSlideResilient = async (s: typeof slidesSpec[number], idx: number): Promise<{ publicUrl: string; signedUrl: string }> => {
+        const prompt = withVisual(
           isEstudantes
             ? studentImagePrompt(tema, s)
             : isChico
               ? chicoImagePrompt(tema, s)
               : imageSystemPrompt(tema, data.rede, nivel, s),
           idx,
-        )))
-      );
+        );
+        let lastErr: unknown;
+        for (let tentativa = 1; tentativa <= 3; tentativa++) {
+          try {
+            return await genAndUpload(prompt);
+          } catch (err) {
+            lastErr = err;
+            console.warn(`[carrossel] slide ${idx + 1} falhou (tentativa ${tentativa}):`, err instanceof Error ? err.message : err);
+            await new Promise((r) => setTimeout(r, 1500 * tentativa));
+          }
+        }
+        throw new Error(`Slide ${idx + 1} do carrossel falhou após 3 tentativas: ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`);
+      };
+      const uploads = await Promise.all(slidesSpec.map((s, idx) => genSlideResilient(s, idx)));
+      if (uploads.length !== slidesSpec.length || uploads.some((u) => !u?.publicUrl)) {
+        throw new Error(`Carrossel incompleto: ${uploads.filter((u) => u?.publicUrl).length}/${slidesSpec.length} slides gerados.`);
+      }
       urlImagem = uploads[0].publicUrl;
       urlImagemCache = uploads[0].signedUrl;
       imagensCarrossel = uploads.map((u) => u.publicUrl);
