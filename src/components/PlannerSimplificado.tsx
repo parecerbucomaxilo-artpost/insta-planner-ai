@@ -637,7 +637,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             <div className="flex items-center gap-2">
               <Wand2 className="w-5 h-5 text-indigo-600" />
               <h3 className="font-semibold text-indigo-900">
-                Gerar sem IA paga — {modo === "feed" ? "Post de Feed" : modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Stories" : "Programação 7 dias"}
+                Gerar post completo — {modo === "feed" ? "Post de Feed" : modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Stories" : "Programação 7 dias"}
               </h3>
             </div>
 
@@ -685,12 +685,12 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             {modo !== "semana" ? (
               <>
                 <div className="space-y-1">
-                  <Label className="text-xs">Tema (opcional — deixe vazio para o gerador local escolher)</Label>
+                  <Label className="text-xs">Tema do post (opcional — escreva um tema ou deixe o app escolher)</Label>
                   <Input value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Ex.: cirurgia de siso, ATM, bruxismo..." />
                 </div>
                 <Button onClick={() => handleGerar()} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                  Gerador local criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} {quando === "agora" ? "(publicar após aprovar)" : "(agendar após aprovar)"}
+                  Criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} com imagem + legenda {modelo === "local/sem-custo" ? "pelo app" : "pela IA"}
                 </Button>
                 <Button
                   onClick={() => handleGerar({ forcarEspecialidade: "Odontologia Hospitalar" })}

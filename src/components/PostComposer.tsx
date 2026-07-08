@@ -16,7 +16,7 @@ import { getAuthedUserId } from "@/lib/auth-utils";
 import { XStyleIcon } from "@/components/icons/XStyleIcon";
 import { BRANDING } from "@/lib/branding";
 import { cn } from "@/lib/utils";
-import { generateSinglePost, generateWeekThemes, discardPost, approvePost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
+import { generateSinglePost, generateWeekThemes, generateCaptionOnly, discardPost, approvePost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
 type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
@@ -37,10 +37,13 @@ const FORMATOS: { id: Formato; label: string; icon: React.ComponentType<{ classN
 
 export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const publishIg = useServerFn(publishInstagramNow);
+  const genCaption = useServerFn(generateCaptionOnly);
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
   const [formato, setFormato] = useState<Formato>("Post Único");
   const [quando, setQuando] = useState<Quando>("agora");
   const [legenda, setLegenda] = useState("");
+  const [temaLegenda, setTemaLegenda] = useState("");
+  const [gerandoLegenda, setGerandoLegenda] = useState(false);
   const [imagem, setImagem] = useState<string | null>(null);
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -129,6 +132,39 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       setSaving(false);
     }
   }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated, dataAgendada, horaAgendada, publishIg]);
+
+  const handleGenerateCaption = useCallback(async () => {
+    const tema = temaLegenda.trim();
+    if (!tema) return toast.error("Informe o tema para a IA escrever a legenda.");
+    setGerandoLegenda(true);
+    const tid = "post-composer-caption";
+    toast.loading("IA escrevendo a legenda...", { id: tid });
+    try {
+      const rede = formato === "Estilo X"
+        ? "estilo-x"
+        : networks.includes("linkedin") && !networks.includes("instagram")
+          ? "linkedin"
+          : networks.includes("google") && !networks.includes("instagram")
+            ? "google"
+            : "instagram";
+      const out = await genCaption({
+        data: {
+          tema,
+          rede,
+          formato: formato === "Carrossel" || formato === "Estilo X" ? "Carrossel" : "Post Único",
+          especialidade: "CTBMF",
+          audiencia: "chico-drfm",
+          modelo: "openai/gpt-5.5",
+        },
+      });
+      setLegenda(out.legenda);
+      toast.success(out.via === "ia" ? "Legenda criada pela IA." : "Legenda criada pelo gerador local.", { id: tid });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao criar legenda.", { id: tid });
+    } finally {
+      setGerandoLegenda(false);
+    }
+  }, [formato, genCaption, networks, temaLegenda]);
 
 
   return (
@@ -289,6 +325,19 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
+          <div className="space-y-2 rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
+            <Label>Tema para a IA escrever a legenda</Label>
+            <div className="flex gap-2">
+              <Input
+                value={temaLegenda}
+                onChange={(e) => setTemaLegenda(e.target.value)}
+                placeholder="Ex.: dor no siso, ATM travada, ronco..."
+              />
+              <Button type="button" variant="secondary" onClick={handleGenerateCaption} disabled={gerandoLegenda || !temaLegenda.trim()}>
+                {gerandoLegenda ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4 mr-1" />IA</>}
+              </Button>
+            </div>
+          </div>
           <div className="space-y-2">
             <Label>Legenda</Label>
             <Textarea
@@ -442,8 +491,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     <Card className="p-5 space-y-4 border-2 border-dashed border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-cyan-50/30">
       <div className="flex items-center gap-2">
         <Wand2 className="w-5 h-5 text-indigo-600" />
-        <h3 className="font-semibold text-indigo-900">Gerar sem IA paga</h3>
-        <span className="text-xs text-indigo-600/70">Gerador local · sem gateway externo</span>
+        <h3 className="font-semibold text-indigo-900">Gerar post completo</h3>
+        <span className="text-xs text-indigo-600/70">Escolha: app/local ou IA</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -509,7 +558,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Texto local para legenda/tema, sem cobrança.
+          Selecione Local para o app escrever; selecione GPT/Gemini para a IA escrever.
         </p>
       </div>
 
@@ -533,7 +582,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Imagem local em azul navy, sem acionar modelos pagos.
+          Selecione Local para imagem do app; selecione Gemini/GPT Image para imagem por IA.
         </p>
       </div>
 

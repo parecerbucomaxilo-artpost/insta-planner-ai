@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CalendarClock, Copy, Download, Loader2, Phone, Sparkles, Stethoscope, Trash2, Wand2, Zap } from "lucide-react";
 import {
   generateSinglePost,
+  generateCaptionOnly,
   approvePost,
   discardPost,
   MODELOS_IA,
@@ -66,6 +67,7 @@ interface PreviewState {
 
 export function PlannerAgendamentoTratamento() {
   const genSingle = useServerFn(generateSinglePost);
+  const genCaption = useServerFn(generateCaptionOnly);
   const approveFn = useServerFn(approvePost);
   const discardFn = useServerFn(discardPost);
   const publishIg = useServerFn(publishInstagramNow);
@@ -79,6 +81,8 @@ export function PlannerAgendamentoTratamento() {
   const [modelo, setModelo] = useState<(typeof MODELOS_IA)[number]["id"]>("local/sem-custo");
   const [modeloImagem, setModeloImagem] = useState<(typeof MODELOS_IMAGEM)[number]["id"]>("local/sem-custo");
   const [assunto, setAssunto] = useState("");
+  const [legendaGerada, setLegendaGerada] = useState("");
+  const [gerandoLegenda, setGerandoLegenda] = useState(false);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<PreviewState | null>(null);
 
@@ -102,6 +106,40 @@ export function PlannerAgendamentoTratamento() {
     d.setHours(hh || 9, mm || 0, 0, 0);
     if (d.getTime() < Date.now()) throw new Error("A data/hora deve estar no futuro.");
     return d.toISOString();
+  };
+
+  const temaAtual = () => {
+    const t = TRATAMENTOS.find((x) => x.id === tratamento)!;
+    const assuntoTxt = assunto.trim();
+    return `${t.tema}. Convite público para pacientes conhecerem a possibilidade de avaliação pelo telefone ${telefone.trim() || TELEFONE_PADRAO} na ${SERVICO} — ${INSTITUICAO}. Linguagem simples, acolhedora e segura.${assuntoTxt ? ` Ângulo específico: ${assuntoTxt}.` : ""}`;
+  };
+
+  const gerarLegenda = async () => {
+    if (!telefone.trim()) return toast.error("Informe o telefone antes de gerar a legenda.");
+    setGerandoLegenda(true);
+    const tid = "agend-liga-caption";
+    toast.loading("IA escrevendo a legenda...", { id: tid });
+    try {
+      const out = await genCaption({
+        data: {
+          tema: temaAtual(),
+          rede: "instagram",
+          formato: modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único",
+          especialidade: "CTBMF",
+          audiencia: "geral",
+          modelo,
+        } as any,
+      });
+      const base = out.legenda.trim();
+      const tel = telefone.trim() || TELEFONE_PADRAO;
+      const final = `${base}\n\n${SERVICO} — ${INSTITUICAO}\n📞 Informações pelo telefone: ${tel}`;
+      setLegendaGerada(final);
+      toast.success(out.via === "ia" ? "Legenda criada pela IA." : "Legenda criada pelo app.", { id: tid });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao criar legenda.", { id: tid });
+    } finally {
+      setGerandoLegenda(false);
+    }
   };
 
   const gerar = async () => {
@@ -145,7 +183,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       });
 
       // Marca a conta da Liga e troca a legenda por copy voltada a pacientes com telefone.
-      const legendaPaciente = buildPatientCaption({ tratamento, telefone, base: out.legenda });
+      const legendaPaciente = legendaGerada.trim() || buildPatientCaption({ tratamento, telefone, base: out.legenda });
       await supabase
         .from("posts")
         .update({ instagram_conta: LIGA_ACCOUNT, legenda: legendaPaciente, legenda_instagram: legendaPaciente } as any)
@@ -255,6 +293,21 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
         <p className="text-[11px] text-muted-foreground">
           Se preenchido, a IA prioriza este ângulo. Textos e imagens vêm em linguagem simples, com frases grandes impressas nos cards para o público leigo entender de imediato.
         </p>
+      </Card>
+
+      <Card className="p-5 space-y-3 border-2 border-dashed border-amber-300 bg-amber-50/30">
+        <Label className="text-sm font-semibold">Legenda do convite</Label>
+        <Button type="button" variant="secondary" onClick={gerarLegenda} disabled={gerandoLegenda || !telefone.trim()} className="w-full border-amber-300 bg-white text-amber-900 hover:bg-amber-50">
+          {gerandoLegenda ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+          {modelo === "local/sem-custo" ? "App gerar legenda" : "IA gerar legenda"}
+        </Button>
+        <Textarea
+          value={legendaGerada}
+          onChange={(e) => setLegendaGerada(e.target.value)}
+          placeholder="Você pode escrever a legenda aqui ou clicar para a IA/app gerar pelo tema acima. Se ficar vazio, o app monta a legenda padrão ao gerar o convite."
+          rows={6}
+          className="text-sm"
+        />
       </Card>
 
 

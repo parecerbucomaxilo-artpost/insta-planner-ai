@@ -1745,13 +1745,14 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const nivel = resolveNivel(data.nivel, data.rede);
     const tema = data.tema.trim();
+    const captionModel = data.modelo === "local/sem-custo" ? "openai/gpt-5.5" : data.modelo;
     const isChico = data.audiencia === "chico-drfm";
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const local = () => buildLocalCaption({
       tema, rede: data.rede, formato: data.formato,
       especialidade: data.especialidade, nivel, audiencia: data.audiencia,
     });
-    if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") {
+    if (!process.env.LOVABLE_API_KEY) {
       return { legenda: local(), via: "local" as const };
     }
     try {
@@ -1767,7 +1768,7 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
       const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}`;
       const contrato = clinicalContract(tema, data.audiencia);
       const prompt = `${contrato}\n\nTema sugerido pelo usuário: ${tema}\nRede: ${data.rede}\nFormato: ${data.formato}\nEspecialidade: ${data.especialidade}\n\nTAREFA: escreva APENAS a legenda final pronta para publicação, mencionando O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA.\n\nResponda apenas em PT-BR. Sem comentários meta, sem aspas envolvendo o texto.`;
-      const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1700 : data.formato === "Carrossel" ? 1200 : 950 });
+      const txt = await generateTextAI({ system, prompt, model: captionModel, maxTokens: data.rede === "linkedin" ? 1700 : data.formato === "Carrossel" ? 1200 : 950 });
       return { legenda: (txt || local()).trim(), via: (txt ? "ia" : "local") as "ia" | "local" };
     } catch (err) {
       console.warn("[caption-only] fallback local:", err instanceof Error ? err.message : err);
