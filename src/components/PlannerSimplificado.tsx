@@ -77,6 +77,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   // Manual
   const [legenda, setLegenda] = useState("");
+  const [temaManual, setTemaManual] = useState("");
+  const [gerandoLegenda, setGerandoLegenda] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [previewImg, setPreviewImg] = useState<string | null>(null);
   const [savingManual, setSavingManual] = useState(false);
