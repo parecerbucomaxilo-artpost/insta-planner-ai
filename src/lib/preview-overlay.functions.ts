@@ -87,8 +87,8 @@ export const previewPostWithLogo = createServerFn({ method: "POST" })
             : b64;
         results.push(`data:image/jpeg;base64,${stamped}`);
       } catch (e) {
-        console.warn("[previewPostWithLogo] falha em imagem, devolvendo original:", e);
-        results.push(src);
+        console.error("[previewPostWithLogo] overlay obrigatório falhou:", e);
+        throw new Error("A prévia foi bloqueada porque a logo oficial não pôde ser aplicada.");
       }
     }
 

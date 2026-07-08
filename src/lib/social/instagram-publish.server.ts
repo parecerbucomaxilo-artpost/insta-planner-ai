@@ -357,14 +357,14 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
           const b64 = btoa(bin);
           const stamped = contaParaLogo === "lactbmf.anhanguerasbo"
             ? await overlayAlunoLogos(b64)
-            : await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: true });
-          if (stamped === b64) return url; // overlay falhou; mantém original
+            : await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false });
+          if (stamped === b64) throw new Error("A logo oficial não foi aplicada. Publicação bloqueada.");
           const fileName = `published/stamped-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
           const bytes = Uint8Array.from(atob(stamped), (c) => c.charCodeAt(0));
           const { error: upErr } = await supabaseAdmin.storage
             .from("post-images")
             .upload(fileName, bytes, { contentType: "image/jpeg", cacheControl: "604800", upsert: false });
-          if (upErr) return url;
+          if (upErr) throw new Error(`Falha ao salvar imagem com logo: ${upErr.message}`);
           const proxyUrl = createStorageProxyUrl("post-images", fileName);
           if (proxyUrl) return proxyUrl;
           const { data: signed } = await supabaseAdmin.storage
@@ -373,7 +373,8 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
           return signed?.signedUrl || url;
         }));
       } catch (e) {
-        console.warn("[instagram-publish] overlay na publicação falhou — seguindo com imagem original:", e);
+        console.error("[instagram-publish] overlay obrigatório falhou:", e);
+        throw new Error("A publicação foi bloqueada porque a logo oficial não pôde ser aplicada.");
       }
     }
 
