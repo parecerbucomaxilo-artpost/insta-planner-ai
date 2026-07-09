@@ -1509,16 +1509,33 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     //    depois disso, para evitar arte genérica ou legenda incompleta.
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const isChico = data.audiencia === "chico-drfm";
-    const localCaption = () => buildLocalCaption({
-      tema,
-      rede: data.rede,
-      formato,
-      especialidade: data.especialidade,
-      nivel,
-      audiencia: data.audiencia,
-    });
+    const isDiverso = data.especialidade === "Temas Diversos";
+    const localCaption = () => isDiverso
+      ? buildDiverseLocalCaption(tema, data.rede, formato)
+      : buildLocalCaption({
+          tema,
+          rede: data.rede,
+          formato,
+          especialidade: data.especialidade,
+          nivel,
+          audiencia: data.audiencia,
+        });
     const legendaPromise = (async () => {
       if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") return localCaption();
+      // TEMAS DIVERSOS: prompt totalmente fora da saúde.
+      if (isDiverso) {
+        try {
+          const { generateTextAI } = await import("@/lib/ai-gateway.server");
+          const system = diverseCaptionSystem(data.rede, formato);
+          const prompt = `Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
+          const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : formato === "Carrossel" ? 1100 : 800 });
+          return txt || localCaption();
+        } catch (err) {
+          console.warn("[ai-post] legenda diversa caiu para local:", err instanceof Error ? err.message : err);
+          return localCaption();
+        }
+      }
+
       try {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
         const systemBase = isChico
