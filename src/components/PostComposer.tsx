@@ -415,6 +415,16 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const discardFn = useServerFn(discardPost);
   const approveFn = useServerFn(approvePost);
   const [approving, setApproving] = useState<null | "arquivar" | "agendar" | "publicar">(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const cancelarGeracao = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    toast.dismiss();
+    toast.info("Criação da postagem cancelada.");
+    setBusy(null);
+  };
+
 
 
   const handleSingle = async (quickFormat: AiQuickFormat = "feed") => {
@@ -430,31 +440,46 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       temaTrim ? `Gerador local criando ${config.label}...` : `Gerador local escolhendo tema e criando ${config.label}...`,
       { id: tid },
     );
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
-      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede: "instagram", tipo: config.tipo, formato: config.formato, modelo, modeloImagem, ambasRedes: false } });
+      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede: "instagram", tipo: config.tipo, formato: config.formato, modelo, modeloImagem, ambasRedes: false }, signal: ctrl.signal });
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
       // Não chama onCreated() — post fica pendente até aprovação/descarte no preview.
     } catch (e: any) {
-      toast.error(e.message || "Falha na geração.", { id: tid });
+      if (ctrl.signal.aborted || e?.name === "AbortError") {
+        toast.dismiss(tid);
+      } else {
+        toast.error(e.message || "Falha na geração.", { id: tid });
+      }
     } finally {
+      if (abortRef.current === ctrl) abortRef.current = null;
       setBusy(null);
     }
   };
+
 
   const handleWeek = async () => {
     setBusy("week");
     const tid = "local-week";
     toast.loading("Gerador local planejando 7 dias (cronograma fixo)...", { id: tid });
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
-      const out = await genWeek({ data: { especialidade, modelo } });
+      const out = await genWeek({ data: { especialidade, modelo }, signal: ctrl.signal });
       setTemas(out.temas as any);
-      toast.success(`${out.temas.length} slots gerados. Aprove para criar imagem + agendar.`, { id: tid });
+      toast.success(`${out.temas.length} temas gerados. Aprove para criar imagem e agendar.`, { id: tid });
     } catch (e: any) {
-      toast.error(e.message || "Falha no cronograma.", { id: tid });
+      if (ctrl.signal.aborted || e?.name === "AbortError") {
+        toast.dismiss(tid);
+      } else {
+        toast.error(e.message || "Falha no cronograma.", { id: tid });
+      }
     } finally {
+      if (abortRef.current === ctrl) abortRef.current = null;
       setBusy(null);
     }
   };
@@ -464,17 +489,26 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       | "instagram" | "linkedin" | "estilo-x" | "google";
     const tid = `local-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
-      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes } });
+      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes }, signal: ctrl.signal });
       toast.success(t.quando ? "Agendado! Pré-visualize abaixo." : "Gerado! Pré-visualize abaixo.", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
       // Não chama onCreated() — fica pendente até aprovação no preview.
     } catch (e: any) {
-      toast.error(e.message || "Falha", { id: tid });
+      if (ctrl.signal.aborted || e?.name === "AbortError") {
+        toast.dismiss(tid);
+      } else {
+        toast.error(e.message || "Falha", { id: tid });
+      }
+    } finally {
+      if (abortRef.current === ctrl) abortRef.current = null;
     }
   };
+
 
   const approveAll = async () => {
     if (!temas) return;
@@ -652,7 +686,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           className="font-semibold"
         >
           {busy === "carrossel" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Layers className="w-4 h-4 mr-2" />}
-          Carrossel 6 imagens
+          Carrossel com 5 imagens
         </Button>
       </div>
       <div className="grid grid-cols-1 pt-1">
@@ -663,9 +697,21 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
         >
           {busy === "week" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CalendarDays className="w-4 h-4 mr-2" />}
-          Programar 7 dias sem IA paga
+          Programar 7 dias sem custo de IA
         </Button>
       </div>
+      {busy !== null && (
+        <div className="grid grid-cols-1 pt-1">
+          <Button
+            onClick={cancelarGeracao}
+            variant="destructive"
+            className="font-semibold"
+          >
+            Cancelar criação da postagem
+          </Button>
+        </div>
+      )}
+
       <p className="text-[11px] text-indigo-700/80 bg-indigo-50/60 rounded-md p-2 leading-relaxed">
         <strong>Cronograma fixo (seg-sáb):</strong> IG feed 09h / 15h / 19h · IG stories 08h / 13h / 17h · LinkedIn 09h e 17h30.
         <br />
