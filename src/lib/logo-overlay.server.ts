@@ -260,7 +260,7 @@ export async function overlayAlunoLogos(
     // Logo OFICIAL da LACTBMF (Liga Acadêmica de CTBMF) — selo circular oficial.
     const ligaAsset = (await import("@/assets/logo-liga-ctbmf.png.asset.json")).default;
     const bytes = await fetchBytes(ligaAsset.url, origin);
-    const full = decodeImage(bytes);
+    const full = trimAlpha(decodeImage(bytes));
     const fw = full.width;
     const fh = full.height;
     const targetW = Math.max(120, Math.round((w * sizePct) / 100));
