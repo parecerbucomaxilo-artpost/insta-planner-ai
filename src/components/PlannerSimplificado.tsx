@@ -279,7 +279,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     await supabase.from("posts").update({ instagram_conta: effectiveConta } as any).eq("id", postId);
   };
 
-  const handleGerar = async (opts?: { conjugado?: boolean; forcarEspecialidade?: "CTBMF" | "Odontologia Hospitalar" | "Ambas" }) => {
+  const handleGerar = async (opts?: { conjugado?: boolean; forcarEspecialidade?: "CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos" }) => {
     if (!conta) return toast.error("Selecione uma conta do Instagram.");
     setBusy(true);
     const tid = "local-simple";
