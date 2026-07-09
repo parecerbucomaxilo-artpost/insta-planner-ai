@@ -1,7 +1,7 @@
 // Catálogo de logos disponíveis para overlay no post.
 // Fonte única de verdade: usado tanto no dashboard (seleção) quanto no
 // pipeline de geração (aplica overlay real via `overlayLogo`).
-import logoNsp from "@/assets/logo-nsp.png?url";
+import logoNspAsset from "@/assets/logo-nsp.png.asset.json";
 import logoAnhanguera from "@/assets/logo-anhanguera-sbo.png?url";
 import logoDrFrancisco from "@/assets/logo-dr-francisco.png?url";
 import logoLiga from "@/assets/logo-liga-ctbmf.png?url";
@@ -22,12 +22,14 @@ export interface LogoOption {
   url: string;
 }
 
+export type LogoSelection = LogoKey[];
+
 export const LOGOS_DISPONIVEIS: LogoOption[] = [
   {
     key: "nsp",
     label: "NSP",
-    description: "Núcleo de Saúde e Pesquisa (Odontologia Hospitalar).",
-    url: logoNsp,
+    description: "Núcleo de Segurança do Paciente — Anhanguera Santa Bárbara.",
+    url: logoNspAsset.url,
   },
   {
     key: "anhanguera",
@@ -64,4 +66,12 @@ export const LOGOS_DISPONIVEIS: LogoOption[] = [
 export function getLogoOption(key?: LogoKey | null): LogoOption | undefined {
   if (!key) return undefined;
   return LOGOS_DISPONIVEIS.find((l) => l.key === key);
+}
+
+export function getLogoOptions(keys?: LogoKey[] | null): LogoOption[] {
+  if (!keys?.length) return [];
+  const unique = Array.from(new Set(keys)).filter((key) => key !== "nenhuma");
+  return unique
+    .map((key) => getLogoOption(key))
+    .filter((logo): logo is LogoOption => Boolean(logo?.url));
 }

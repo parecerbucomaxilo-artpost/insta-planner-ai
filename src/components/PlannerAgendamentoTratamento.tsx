@@ -88,7 +88,7 @@ export function PlannerAgendamentoTratamento() {
   const [modeloImagem, setModeloImagem] = useState<(typeof MODELOS_IMAGEM)[number]["id"]>("local/sem-custo");
   const [assunto, setAssunto] = useState("");
   const [legendaGerada, setLegendaGerada] = useState("");
-  const [logoKey, setLogoKey] = useState<LogoKey>("clinica-escola");
+  const [logoKeys, setLogoKeys] = useState<LogoKey[]>(["clinica-escola"]);
   const [gerandoLegenda, setGerandoLegenda] = useState(false);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<PreviewState | null>(null);
@@ -175,7 +175,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           audiencia: "estudantes-graduacao", // ativa paleta institucional da Liga
           modelo,
           modeloImagem,
-          logoKey,
+          logoKeys,
         } as any,
       });
 
@@ -234,6 +234,18 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
 
   const copiar = async (t: string) => {
     try { await navigator.clipboard.writeText(t); toast.success("Copiado."); } catch { toast.error("Falha ao copiar."); }
+  };
+
+  const toggleLogoKey = (key: LogoKey) => {
+    setLogoKeys((current) => {
+      if (key === "nenhuma") return ["nenhuma"];
+      const withoutNone = current.filter((item) => item !== "nenhuma");
+      if (withoutNone.includes(key)) {
+        const next = withoutNone.filter((item) => item !== key);
+        return next.length ? next : ["nenhuma"];
+      }
+      return [...withoutNone, key];
+    });
   };
 
   return (
@@ -313,15 +325,15 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
 
 
       <Card className="p-5 space-y-3">
-        <Label className="text-sm font-semibold">Logo do post</Label>
+        <Label className="text-sm font-semibold">Logos do post</Label>
         <div className="grid grid-cols-2 gap-2">
           {LOGOS_DISPONIVEIS.map((l) => {
-            const active = logoKey === l.key;
+            const active = logoKeys.includes(l.key);
             return (
               <button
                 key={l.key}
                 type="button"
-                onClick={() => setLogoKey(l.key)}
+                onClick={() => toggleLogoKey(l.key)}
                 className={cn(
                   "flex items-center gap-2 rounded-md border p-2 text-left transition",
                   active ? "border-amber-500 ring-2 ring-amber-400/30 bg-amber-50" : "border-zinc-200 bg-white/60 hover:bg-amber-50/40",
@@ -335,14 +347,17 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold truncate">{l.label}</div>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold truncate">
+                    {active && <Check className="h-3.5 w-3.5 shrink-0 text-amber-600" />}
+                    <span className="truncate">{l.label}</span>
+                  </div>
                   <div className="text-[10px] text-muted-foreground line-clamp-2">{l.description}</div>
                 </div>
               </button>
             );
           })}
         </div>
-        <p className="text-[11px] text-muted-foreground">Escolha qual logo será aplicada como marca d'água no canto inferior direito. "Sem logo" publica a arte pura.</p>
+        <p className="text-[11px] text-muted-foreground">Você pode marcar mais de uma logo. "Sem logo" limpa a seleção e publica a arte pura.</p>
       </Card>
 
       <Card className="p-5 space-y-3">

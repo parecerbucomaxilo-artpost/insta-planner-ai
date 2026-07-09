@@ -61,9 +61,10 @@ const SingleInput = z.object({
   // Temas adicionais a evitar (além do histórico dos últimos 200 posts) —
   // usado pelo agendador para não repetir assunto em dias próximos.
   temasProibidos: z.array(z.string()).optional().default([]),
-  // Logo a ser aplicada como overlay. Se omitido, usa a padrão (planner) para
-  // Chico/geral e as 3 institucionais para estudantes.
+  // Logo(s) a serem aplicadas como overlay. `logoKey` é legado; `logoKeys`
+  // permite escolher mais de uma logo no dashboard.
   logoKey: z.enum(["nsp", "anhanguera", "planner", "liga-ctbmf", "clinica-escola", "nenhuma"]).optional(),
+  logoKeys: z.array(z.enum(["nsp", "anhanguera", "planner", "liga-ctbmf", "clinica-escola", "nenhuma"])).optional(),
 });
 
 
@@ -1605,11 +1606,14 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
     const applyOverlay = async (b64: string) => {
       // Seleção manual do usuário tem prioridade absoluta.
-      if (data.logoKey === "nenhuma") return b64;
-      const { getLogoOption } = await import("@/lib/logos-catalog");
-      const opt = getLogoOption(data.logoKey || (isEstudantes ? "liga-ctbmf" : "planner"));
-      if (opt?.url) {
-        const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false, logoUrl: opt.url });
+      const selectedLogoKeys = data.logoKeys?.length
+        ? data.logoKeys
+        : [data.logoKey || (isEstudantes ? "liga-ctbmf" : "planner")];
+      if (selectedLogoKeys.includes("nenhuma")) return b64;
+      const { getLogoOptions } = await import("@/lib/logos-catalog");
+      const opts = getLogoOptions(selectedLogoKeys);
+      if (opts.length) {
+        const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false, logoUrls: opts.map((opt) => opt.url) });
         if (stamped === b64) throw new Error("A logo escolhida não foi aplicada. Publicação bloqueada.");
         return stamped;
       }

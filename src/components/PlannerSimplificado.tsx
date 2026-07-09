@@ -69,7 +69,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
   const defaultLogoKey: LogoKey = audiencia === "estudantes-graduacao" ? "liga-ctbmf" : "planner";
-  const [logoKey, setLogoKey] = useState<LogoKey>(defaultLogoKey);
+  const [logoKeys, setLogoKeys] = useState<LogoKey[]>([defaultLogoKey]);
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");
@@ -314,7 +314,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         audiencia: effectiveAudiencia,
         modelo,
         modeloImagem,
-        logoKey,
+        logoKeys,
       } as any });
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, slideLegendas: (out as any).slideLegendas });
@@ -353,7 +353,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         audiencia: effectiveAudiencia,
         modelo,
         modeloImagem,
-        logoKey,
+        logoKeys,
       } as any });
       await marcarConta(out.id);
       await approveFn({ data: { id: out.id, acao: "agendar" } });
@@ -447,6 +447,18 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     if (!confirm("Excluir este post?")) return;
     const { error } = await supabase.from("posts").delete().eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Excluído."); carregar(); }
+  };
+
+  const toggleLogoKey = (key: LogoKey) => {
+    setLogoKeys((current) => {
+      if (key === "nenhuma") return ["nenhuma"];
+      const withoutNone = current.filter((item) => item !== "nenhuma");
+      if (withoutNone.includes(key)) {
+        const next = withoutNone.filter((item) => item !== key);
+        return next.length ? next : ["nenhuma"];
+      }
+      return [...withoutNone, key];
+    });
   };
 
   const tentarNovamente = async (id: string) => {
@@ -643,15 +655,15 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
           {/* Seleção de LOGO (overlay aplicado na arte gerada) */}
           <Card className="p-5 space-y-3">
-            <Label className="text-sm font-semibold">Logo do post</Label>
+            <Label className="text-sm font-semibold">Logos do post</Label>
             <div className="grid grid-cols-2 gap-2">
               {LOGOS_DISPONIVEIS.map((l) => {
-                const active = logoKey === l.key;
+                const active = logoKeys.includes(l.key);
                 return (
                   <button
                     key={l.key}
                     type="button"
-                    onClick={() => setLogoKey(l.key)}
+                    onClick={() => toggleLogoKey(l.key)}
                     className={cn(
                       "flex items-center gap-2 rounded-md border p-2 text-left transition",
                       active ? "border-primary ring-2 ring-primary/30 bg-primary/5" : "border-border hover:bg-muted",
@@ -665,14 +677,17 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                       )}
                     </div>
                     <div className="min-w-0">
-                      <div className="text-xs font-semibold truncate">{l.label}</div>
+                      <div className="flex items-center gap-1.5 text-xs font-semibold truncate">
+                        {active && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                        <span className="truncate">{l.label}</span>
+                      </div>
                       <div className="text-[10px] text-muted-foreground line-clamp-2">{l.description}</div>
                     </div>
                   </button>
                 );
               })}
             </div>
-            <p className="text-[11px] text-muted-foreground">Ordem correta: NSP, Anhanguera Santa Bárbara d'Oeste, Prof. Francisco Menezes, Liga, Clínica Escola. A logo escolhida é aplicada pelo sistema; a IA não desenha logo.</p>
+            <p className="text-[11px] text-muted-foreground">Você pode marcar mais de uma logo. O sistema aplica as logos selecionadas em faixa no rodapé; a IA não desenha logo.</p>
           </Card>
 
 

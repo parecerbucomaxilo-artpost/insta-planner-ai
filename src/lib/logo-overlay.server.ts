@@ -8,11 +8,12 @@ import * as jpeg from "jpeg-js";
 import UPNG from "upng-js";
 import logoDrFrancisco from "@/assets/logo-dr-francisco.png?url";
 import logoAnhanguera from "@/assets/logo-anhanguera-sbo.png?url";
-import logoNsp from "@/assets/logo-nsp.png?url";
+import logoNspAsset from "@/assets/logo-nsp.png.asset.json";
 import logoLiga from "@/assets/logo-liga-ctbmf.png?url";
 import avatarAsset from "@/assets/avatar-francisco.jpg.asset.json";
 
 const DEFAULT_ORIGIN = "https://insta-planner-ai.lovable.app";
+const logoNsp = logoNspAsset.url;
 const cache = new Map<string, Uint8Array>();
 
 function cleanBase64(input: string): string {
@@ -141,6 +142,58 @@ function trimAlpha(image: RgbaImage): RgbaImage {
   return { width: nw, height: nh, data: out };
 }
 
+function cropImage(image: RgbaImage, minX: number, minY: number, maxX: number, maxY: number): RgbaImage {
+  const { width: w, data } = image;
+  const pad = Math.max(2, Math.round(Math.max(maxX - minX + 1, maxY - minY + 1) * 0.025));
+  const x0 = Math.max(0, minX - pad);
+  const y0 = Math.max(0, minY - pad);
+  const x1 = Math.min(image.width - 1, maxX + pad);
+  const y1 = Math.min(image.height - 1, maxY + pad);
+  const nw = x1 - x0 + 1;
+  const nh = y1 - y0 + 1;
+  if (nw === image.width && nh === image.height) return image;
+  const out = new Uint8Array(nw * nh * 4);
+  for (let y = 0; y < nh; y++) {
+    const srcRow = (y + y0) * w + x0;
+    const dstRow = y * nw;
+    for (let x = 0; x < nw; x++) {
+      const s = (srcRow + x) * 4;
+      const d = (dstRow + x) * 4;
+      out[d] = data[s]; out[d + 1] = data[s + 1]; out[d + 2] = data[s + 2]; out[d + 3] = data[s + 3];
+    }
+  }
+  return { width: nw, height: nh, data: out };
+}
+
+function trimLogoCanvas(image: RgbaImage): RgbaImage {
+  const alphaTrimmed = trimAlpha(image);
+  const { width: w, height: h, data } = alphaTrimmed;
+  const corner = (x: number, y: number) => {
+    const i = (y * w + x) * 4;
+    return [data[i], data[i + 1], data[i + 2]] as const;
+  };
+  const samples = [corner(0, 0), corner(w - 1, 0), corner(0, h - 1), corner(w - 1, h - 1)];
+  const bg = samples.reduce((acc, rgb) => [acc[0] + rgb[0], acc[1] + rgb[1], acc[2] + rgb[2]], [0, 0, 0]).map((v) => v / samples.length);
+  const isLikelySolidWhite = bg.every((v) => v > 232);
+  if (!isLikelySolidWhite) return alphaTrimmed;
+
+  let minX = w, minY = h, maxX = -1, maxY = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const delta = Math.abs(data[i] - bg[0]) + Math.abs(data[i + 1] - bg[1]) + Math.abs(data[i + 2] - bg[2]);
+      if (data[i + 3] > 8 && delta > 42) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0 || maxY < 0) return alphaTrimmed;
+  return cropImage(alphaTrimmed, minX, minY, maxX, maxY);
+}
+
 function composite(base: RgbaImage, stamp: RgbaImage, x0: number, y0: number, alpha = 1): void {
   for (let y = 0; y < stamp.height; y++) {
     const by = y0 + y;
@@ -182,7 +235,7 @@ export async function overlayLogo(
   imageB64: string,
   origin?: string,
   sizePct = 14,
-  opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean; position?: Pos; smart?: boolean; logoUrl?: string },
+  opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean; position?: Pos; smart?: boolean; logoUrl?: string; logoUrls?: string[] },
 ): Promise<string> {
   try {
     const base = decodeImage(base64ToBytes(imageB64));
@@ -226,8 +279,31 @@ export async function overlayLogo(
     }
 
     if (opts?.withLogo !== false) {
-      const logoBytes = await fetchBytes(opts?.logoUrl || logoDrFrancisco, origin);
-      const logoFull = decodeImage(logoBytes);
+      const logoUrls = (opts?.logoUrls?.length ? opts.logoUrls : [opts?.logoUrl || logoDrFrancisco]).filter(Boolean);
+      const logoImages = await Promise.all(
+        logoUrls.map(async (url) => trimLogoCanvas(decodeImage(await fetchBytes(url, origin)))),
+      );
+
+      if (logoImages.length > 1) {
+        const gap = Math.round(w * 0.018);
+        const maxW = Math.round(w * 0.88);
+        let targetH = Math.max(42, Math.round(targetBox * 0.68));
+        let resized = logoImages.map((logo) => resizeRgba(logo, Math.max(34, Math.round((logo.width * targetH) / Math.max(1, logo.height))), targetH));
+        let totalW = resized.reduce((sum, logo) => sum + logo.width, 0) + gap * (resized.length - 1);
+        if (totalW > maxW) {
+          const scale = maxW / totalW;
+          targetH = Math.max(32, Math.round(targetH * scale));
+          resized = logoImages.map((logo) => resizeRgba(logo, Math.max(28, Math.round((logo.width * targetH) / Math.max(1, logo.height))), targetH));
+          totalW = resized.reduce((sum, logo) => sum + logo.width, 0) + gap * (resized.length - 1);
+        }
+        let cursorX = Math.round((w - totalW) / 2);
+        const y = Math.max(0, h - targetH - margin);
+        for (const logo of resized) {
+          composite(base, logo, cursorX, y, alpha);
+          cursorX += logo.width + gap;
+        }
+      } else if (logoImages[0]) {
+      const logoFull = logoImages[0];
       const aspect = logoFull.height / Math.max(1, logoFull.width);
       // Faixa horizontal (múltiplas logos institucionais) — fixa no rodapé
       // centralizada, com largura proporcional à imagem para manter tamanho
@@ -250,6 +326,7 @@ export async function overlayLogo(
       }
       const logoResized = resizeRgba(logoFull, targetW, targetH);
       composite(base, logoResized, logoX, logoY, isWideStrip ? 1 : alpha);
+      }
     }
 
     if (opts?.withAvatar) {
