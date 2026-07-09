@@ -1702,10 +1702,10 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const genSlideResilient = async (s: typeof slidesSpec[number], idx: number): Promise<{ publicUrl: string; signedUrl: string }> => {
         const prompt = withVisual(
           isEstudantes
-            ? studentImagePrompt(tema, s)
+            ? studentImagePrompt(tema, s, data.especialidade)
             : isChico
-              ? chicoImagePrompt(tema, s)
-              : imageSystemPrompt(tema, data.rede, nivel, s),
+              ? chicoImagePrompt(tema, s, false, data.especialidade)
+              : imageSystemPrompt(tema, data.rede, nivel, s, data.especialidade),
           idx,
         );
         let lastErr: unknown;
