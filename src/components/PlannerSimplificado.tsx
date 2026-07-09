@@ -313,6 +313,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         audiencia: effectiveAudiencia,
         modelo,
         modeloImagem,
+        logoKey,
       } as any });
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, slideLegendas: (out as any).slideLegendas });
