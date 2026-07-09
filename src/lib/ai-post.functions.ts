@@ -61,6 +61,9 @@ const SingleInput = z.object({
   // Temas adicionais a evitar (além do histórico dos últimos 200 posts) —
   // usado pelo agendador para não repetir assunto em dias próximos.
   temasProibidos: z.array(z.string()).optional().default([]),
+  // Logo a ser aplicada como overlay. Se omitido, usa a padrão (planner) para
+  // Chico/geral e as 3 institucionais para estudantes.
+  logoKey: z.enum(["planner", "aluno-1", "aluno-2", "liga-ctbmf", "nenhuma"]).optional(),
 });
 
 
