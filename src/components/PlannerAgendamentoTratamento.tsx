@@ -137,6 +137,7 @@ export function PlannerAgendamentoTratamento() {
 
 
   const gerar = async () => {
+    if (!tratamento) return toast.error("Escolha primeiro o tipo de tratamento.");
     if (!telefone.trim()) return toast.error("Informe o telefone de agendamento antes de gerar.");
     setBusy(true);
     const tid = "agend-liga";
