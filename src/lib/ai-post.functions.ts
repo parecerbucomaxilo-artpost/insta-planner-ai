@@ -58,6 +58,9 @@ const SingleInput = z.object({
   nivel: NivelEnum.optional().default("auto"),
   // Audiência: "geral" (padrão) ou "estudantes-graduacao" (Planner Simplificado).
   audiencia: z.enum(["geral", "estudantes-graduacao", "chico-drfm"]).optional().default("geral"),
+  // Temas adicionais a evitar (além do histórico dos últimos 200 posts) —
+  // usado pelo agendador para não repetir assunto em dias próximos.
+  temasProibidos: z.array(z.string()).optional().default([]),
 });
 
 
