@@ -98,9 +98,8 @@ async function uploadDataUrl(supabaseAdmin: any, value: string) {
     .from("post-images")
     .upload(fileName, parsed.buffer, { contentType: parsed.mimeType, cacheControl: "604800", upsert: false });
   if (error) throw new Error(`Upload da imagem para publicação falhou: ${error.message}`);
-  const proxyUrl = createStorageProxyUrl("post-images", fileName);
-  if (proxyUrl) return proxyUrl;
-  // Bucket post-images é privado por política do workspace — usar sempre URL assinada (Instagram aceita).
+  // Meta valida a mídia pelo caminho/Content-Type. A URL assinada mantém o arquivo .jpg/.png no path;
+  // a rota proxy (/api/public/storage-media?...), embora funcione no navegador, pode ser recusada com 400.
   const { data, error: signError } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
   if (signError || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${signError?.message || fileName}`);
   return data.signedUrl;
@@ -144,10 +143,8 @@ async function createFetchableUrl(supabaseAdmin: any, value: string | null | und
     }
     return value;
   }
-  // Bucket post-images é privado — sempre assinar (a URL pública retorna 400 e o Instagram rejeita com erro 9004).
-  const proxyUrl = createStorageProxyUrl(ref.bucket, ref.path);
-  if (proxyUrl) return proxyUrl;
-
+  // Bucket post-images é privado: a URL pública retorna 400. Para publicação direta na Meta,
+  // preferimos URL assinada do Storage, não proxy, para preservar extensão real do arquivo.
   const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
   if (error || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${error?.message || ref.path}`);
   return data.signedUrl;
@@ -390,12 +387,11 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
             .from("post-images")
             .upload(fileName, bytes, { contentType: "image/jpeg", cacheControl: "604800", upsert: false });
           if (upErr) throw new Error(`Falha ao salvar imagem com logo: ${upErr.message}`);
-          const proxyUrl = createStorageProxyUrl("post-images", fileName);
-          if (proxyUrl) return proxyUrl;
-          const { data: signed } = await supabaseAdmin.storage
+          const { data: signed, error: signError } = await supabaseAdmin.storage
             .from("post-images")
             .createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
-          return signed?.signedUrl || url;
+          if (signError || !signed?.signedUrl) throw new Error(`Imagem com logo indisponível para publicação: ${signError?.message || fileName}`);
+          return signed.signedUrl;
         }));
       } catch (e) {
         console.error("[instagram-publish] overlay obrigatório falhou:", e);
