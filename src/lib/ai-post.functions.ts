@@ -1552,9 +1552,10 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         cena ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cena}` : "",
         hookBloco,
       ].filter(Boolean).join("\n");
+      const guardaPtBr = `IDIOMA OBRIGATÓRIO — TODO E QUALQUER texto renderizado na imagem (headline, gancho, CTA, número, rótulo, palavra em placa/tela/jaleco) DEVE ser 100% em Português do Brasil (pt-BR) com acentuação completa (á é í ó ú â ê ô ã õ à ç) e crase correta. PROIBIDO absolutamente qualquer palavra em inglês, espanhol, latim, francês ou italiano; PROIBIDO palavras inventadas, embaralhadas, duplicadas ("dor dor"), com letras faltando/trocadas ou sem acento. Exemplos CORRETOS: "DOR NO SISO?", "ATM TRAVADA?", "PERDEU UM DENTE?", "AVALIAÇÃO", "CIRURGIA". Exemplos PROIBIDOS: "PAIN", "TOOTH", "SURGERY", "SISOO", "AVALIACAO" (sem til), "DÖR". Se tiver QUALQUER dúvida sobre uma palavra, use sinônimo simples e correto em pt-BR. Revise a arte antes de devolver — se houver 1 letra errada em português, refaça.`;
       return blocos
-        ? `=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${blocos}\nA imagem deve mostrar a CONDUTA/TRATAMENTO quando o slide pedir solução. Se houver conflito com o prompt base, ESTE NEXO vence.\n=== FIM DO NEXO ===\n\n${basePrompt}`
-        : basePrompt;
+        ? `=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${guardaPtBr}\n${blocos}\nA imagem deve mostrar a CONDUTA/TRATAMENTO quando o slide pedir solução. Se houver conflito com o prompt base, ESTE NEXO vence.\n=== FIM DO NEXO ===\n\n${basePrompt}`
+        : `${guardaPtBr}\n\n${basePrompt}`;
     };
 
 
