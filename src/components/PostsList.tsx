@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2, ChevronLeft, ChevronRight, Clock, RotateCcw, ScanEye, Copy, Download } from "lucide-react";
+import { Trash2, Calendar as CalIcon, Image as ImgIcon, Film, Eye, Send, Loader2, ChevronLeft, ChevronRight, Clock, RotateCcw, ScanEye, Copy, Download, Pencil, Check, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,29 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [slideIdx, setSlideIdx] = useState<Record<string, number>>({});
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const startEdit = (p: PostRow) => {
+    setEditingId(p.id);
+    setEditingText(String(p.legenda || ""));
+  };
+  const cancelEdit = () => { setEditingId(null); setEditingText(""); };
+  const saveEdit = async (id: string) => {
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase.from("posts").update({ legenda: editingText }).eq("id", id);
+      if (error) throw error;
+      toast.success("Legenda atualizada.");
+      cancelEdit();
+      onChange();
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao salvar legenda.");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -212,9 +236,46 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                   </span>
                 </span>
               </div>
-              <p className="text-sm line-clamp-3 flex-1 leading-relaxed">
-                {legendaExibida || <span className="text-muted-foreground">(sem legenda)</span>}
-              </p>
+              {editingId === p.id ? (
+                <div className="flex flex-col gap-2 flex-1">
+                  <Textarea
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    rows={6}
+                    className="text-sm leading-relaxed"
+                    maxLength={2200}
+                    autoFocus
+                  />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{editingText.length}/2200</span>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={savingEdit}>
+                        <X className="h-3.5 w-3.5 mr-1" /> Cancelar
+                      </Button>
+                      <Button size="sm" onClick={() => saveEdit(p.id)} disabled={savingEdit}>
+                        {savingEdit ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Check className="h-3.5 w-3.5 mr-1" />}
+                        Salvar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex gap-2 items-start group/legenda">
+                  <p className="text-sm line-clamp-3 flex-1 leading-relaxed">
+                    {legendaExibida || <span className="text-muted-foreground">(sem legenda)</span>}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 opacity-60 hover:opacity-100 shrink-0"
+                    onClick={() => startEdit(p)}
+                    aria-label="Editar legenda"
+                    title="Editar legenda"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
               {p.data_agendamento && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <CalIcon className="h-3 w-3" /> {format(new Date(p.data_agendamento), "Pp", { locale: ptBR })}
