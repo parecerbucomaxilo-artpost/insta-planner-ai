@@ -871,8 +871,10 @@ function normalizeTema(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function chooseLocalTema(audiencia: z.infer<typeof SingleInput>["audiencia"], usados: string[], seedText: string) {
-  const list = audiencia === "estudantes-graduacao" ? TEMAS_ESTUDANTES : TEMAS_GERAIS;
+function chooseLocalTema(audiencia: z.infer<typeof SingleInput>["audiencia"], usados: string[], seedText: string, especialidade?: string) {
+  const list = especialidade === "Temas Diversos"
+    ? TEMAS_DIVERSOS
+    : audiencia === "estudantes-graduacao" ? TEMAS_ESTUDANTES : TEMAS_GERAIS;
   const usadosNorm = new Set(usados.map(normalizeTema));
   const start = Math.abs(seedText.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), Date.now())) % list.length;
   for (let i = 0; i < list.length; i++) {
