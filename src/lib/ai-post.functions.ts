@@ -1634,8 +1634,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       audiencia: data.audiencia,
       especialidade: data.especialidade,
     });
-    const slideNarratives = formato === "Carrossel" ? buildSlideNarratives(tema, data.audiencia) : [];
-    const legendaResolvida = formato === "Carrossel"
+    const slideNarratives = formato === "Carrossel" && !isDiverso ? buildSlideNarratives(tema, data.audiencia) : [];
+    const legendaResolvida = formato === "Carrossel" && !isDiverso
       ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia)
       : legendaBaseResolvida;
 
