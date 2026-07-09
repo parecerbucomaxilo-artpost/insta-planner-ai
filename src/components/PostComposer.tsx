@@ -686,7 +686,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           className="font-semibold"
         >
           {busy === "carrossel" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Layers className="w-4 h-4 mr-2" />}
-          Carrossel 6 imagens
+          Carrossel com 5 imagens
         </Button>
       </div>
       <div className="grid grid-cols-1 pt-1">
@@ -697,9 +697,21 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
         >
           {busy === "week" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CalendarDays className="w-4 h-4 mr-2" />}
-          Programar 7 dias sem IA paga
+          Programar 7 dias sem custo de IA
         </Button>
       </div>
+      {busy !== null && (
+        <div className="grid grid-cols-1 pt-1">
+          <Button
+            onClick={cancelarGeracao}
+            variant="destructive"
+            className="font-semibold"
+          >
+            Cancelar criação da postagem
+          </Button>
+        </div>
+      )}
+
       <p className="text-[11px] text-indigo-700/80 bg-indigo-50/60 rounded-md p-2 leading-relaxed">
         <strong>Cronograma fixo (seg-sáb):</strong> IG feed 09h / 15h / 19h · IG stories 08h / 13h / 17h · LinkedIn 09h e 17h30.
         <br />
