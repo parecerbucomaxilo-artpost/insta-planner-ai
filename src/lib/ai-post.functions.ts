@@ -1375,7 +1375,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const temasUsados = Array.from(
         new Set((historico ?? []).map((p: any) => (p.prompt_ia || "").trim()).filter(Boolean))
       ).slice(0, 150);
-      tema = chooseLocalTema(data.audiencia, temasUsados, `${data.rede}-${data.formato}-${data.especialidade}`);
+      tema = chooseLocalTema(data.audiencia, temasUsados, `${data.rede}-${data.formato}-${data.especialidade}`, data.especialidade);
     }
 
 
