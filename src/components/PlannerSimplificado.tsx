@@ -757,7 +757,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         {preview.urls.map((u, i) => (
                           <div key={i} className="rounded-md border bg-white/80 overflow-hidden">
                             <div className="relative">
-                              <img src={u} alt={`Slide ${i + 1}`} className="w-full object-cover aspect-[4/5]" />
+                              <img src={u} alt={`Slide ${i + 1}`} className="w-full object-contain max-h-[85vh] bg-slate-50" />
                               <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
                                 {i + 1}/{preview.urls.length}
                               </span>
