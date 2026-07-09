@@ -20,7 +20,7 @@ import {
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 import { cn } from "@/lib/utils";
 
-const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
+const LIGA_ACCOUNT = "drfranciscomenezes";
 const LS_PHONE = "planner_agend_liga_phone_v1";
 const TELEFONE_PADRAO = "(19) 99018-0802";
 const INSTITUICAO = "Faculdade Anhanguera de Santa Bárbara";
@@ -214,7 +214,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
         await approveFn({ data: { id: preview.id, acao: "arquivar" } });
         const out = await publishIg({ data: { id: preview.id } });
         if (out && "ok" in out && out.ok === false) throw new Error(("error" in out ? out.error : "Falha ao publicar."));
-        toast.success("Publicado no Instagram da Liga.", { id: tid });
+        toast.success("Publicado no Instagram @drfranciscomenezes.", { id: tid });
       } else {
         await approveFn({ data: { id: preview.id, acao } });
         toast.success("Salvo.", { id: tid });
