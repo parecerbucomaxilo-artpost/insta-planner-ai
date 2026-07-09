@@ -6,10 +6,10 @@ import * as jpeg from "jpeg-js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — upng-js não expõe types.
 import UPNG from "upng-js";
-import logoAsset from "@/assets/logo-planner.png.asset.json";
+import logoDrFrancisco from "@/assets/logo-dr-francisco.png?url";
+import logoAnhanguera from "@/assets/logo-anhanguera-sbo.png?url";
+import logoNsp from "@/assets/logo-nsp.png?url";
 import avatarAsset from "@/assets/avatar-francisco.jpg.asset.json";
-import logoAluno1 from "@/assets/logo-aluno-1.png.asset.json";
-import logoAluno2 from "@/assets/logo-aluno-2.png.asset.json";
 
 const DEFAULT_ORIGIN = "https://insta-planner-ai.lovable.app";
 const cache = new Map<string, Uint8Array>();
@@ -35,7 +35,18 @@ async function fetchBytes(url: string, origin?: string): Promise<Uint8Array> {
   if (cached) return cached;
   const base = origin || DEFAULT_ORIGIN;
   const full = url.startsWith("http") ? url : `${base}${url}`;
-  const res = await fetch(full);
+  let res = await fetch(full);
+  // Em preview local, assets importados com ?url existem no Vite em localhost,
+  // enquanto DEFAULT_ORIGIN aponta para o publicado. Tenta o host local antes
+  // de bloquear a geração por logo indisponível.
+  if (!res.ok && !origin && !url.startsWith("http")) {
+    try {
+      const local = `http://localhost:8080${url}`;
+      res = await fetch(local);
+    } catch {
+      // mantém a resposta original para a mensagem de erro abaixo
+    }
+  }
   if (!res.ok) throw new Error(`fetch ${url} ${res.status}`);
   const bytes = new Uint8Array(await res.arrayBuffer());
   cache.set(url, bytes);
@@ -214,7 +225,7 @@ export async function overlayLogo(
     }
 
     if (opts?.withLogo !== false) {
-      const logoBytes = await fetchBytes(opts?.logoUrl || logoAsset.url, origin);
+      const logoBytes = await fetchBytes(opts?.logoUrl || logoDrFrancisco, origin);
       const logoFull = decodeImage(logoBytes);
       const aspect = logoFull.height / Math.max(1, logoFull.width);
       // Faixa horizontal (múltiplas logos institucionais) — fixa no rodapé
@@ -256,10 +267,9 @@ export async function overlayLogo(
 }
 
 
-// Overlay inteligente da LOGO ÚNICA da LACTBMF — escolhe canto/centro
-// inferior mais limpo, ajusta tamanho e opacidade para nunca atrapalhar
-// leitura ou se sobrepor a texto/cena principal. Usado pelo "Planner
-// Simplificado Liga" (@lactbmf.anhanguerasbo).
+// Overlay legado com trio institucional da Liga: Anhanguera, NSP e LACTBMF.
+// A seleção manual do dashboard usa `overlayLogo`; esta função fica como
+// fallback para fluxos antigos que não enviem `logoKey`.
 export async function overlayAlunoLogos(
   imageB64: string,
   origin?: string,
@@ -272,19 +282,16 @@ export async function overlayAlunoLogos(
     const marginX = Math.round(w * 0.035);
     const marginY = Math.round(h * 0.025);
 
-    // 3 logos institucionais fixas em toda publicação do Planner Agendamento:
-    // aluno-1 (canto inferior esquerdo), aluno-2 (centro inferior),
-    // LACTBMF (canto inferior direito — selo oficial da Liga).
-    const [ligaAssetMod, aluno1Bytes, aluno2Bytes, ligaBytes] = await Promise.all([
-      import("@/assets/logo-liga-ctbmf.png.asset.json"),
-      fetchBytes(logoAluno1.url, origin),
-      fetchBytes(logoAluno2.url, origin),
+    // 3 logos institucionais fixas para publicações antigas/automáticas da Liga:
+    // Anhanguera (esq.), NSP (centro), LACTBMF (dir.).
+    const [anhangueraBytes, nspBytes, ligaBytes] = await Promise.all([
+      fetchBytes(logoAnhanguera, origin),
+      fetchBytes(logoNsp, origin),
       (async () => fetchBytes((await import("@/assets/logo-liga-ctbmf.png.asset.json")).default.url, origin))(),
     ]);
-    void ligaAssetMod;
 
     const decode = (b: Uint8Array) => trimAlpha(decodeImage(b));
-    const logos = [decode(aluno1Bytes), decode(aluno2Bytes), decode(ligaBytes)];
+    const logos = [decode(anhangueraBytes), decode(nspBytes), decode(ligaBytes)];
 
     const targetH = Math.max(70, Math.round((h * sizePct) / 100));
     const resized = logos.map((l) => {

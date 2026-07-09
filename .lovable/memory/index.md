@@ -5,7 +5,7 @@ Toda geração de imagem segue o estilo Mayo/Cleveland/Lancet do Prof. Francisco
 Assinatura oficial: "Prof. Francisco Menezes | CROSP 53318" + subtítulo "Cirurgia e Traumatologia Bucomaxilofacial · Odontologia Hospitalar". Em carrossel: só 1ª e última imagens.
 3 níveis de conteúdo: IG Conversão (dor/identificação, stories e feed 9h), IG Autoridade (caso/ciência traduzida, feed 15h e 19h), LinkedIn Científico (Lancet/IJOMS/JOMS + DOI). Cron `gerar-proximo` alterna automaticamente.
 Modelo de imagem padrão: google/gemini-3.1-flash-image-preview. Carrosséis padrão = 6 cards; Estilo X = 3 cards 16:9. Todas em paralelo.
-LOGO oficial = src/assets/logo-planner.png. IA NUNCA desenha — apenas reserva canto superior direito limpo. Overlay real aplicado pelo sistema.
+Logos oficiais no dashboard, nesta ordem: NSP, Anhanguera Santa Bárbara d'Oeste, Prof. Francisco Menezes, Liga, Clínica Escola. IA nunca desenha logo; sistema aplica overlay real.
 CTAs IG/X: "Link na Bio" / "Saiba mais pelo link da bio". CTA LinkedIn: WhatsApp https://wa.me/5511947684004. PROIBIDO: "agende consulta/avaliação", "promoção", "oferta", "desconto", "últimas vagas".
 
 ## Memories
@@ -19,7 +19,7 @@ CTAs IG/X: "Link na Bio" / "Saiba mais pelo link da bio". CTA LinkedIn: WhatsApp
 - [Estilo e dimensões das imagens](mem://design/image-style-and-dimensions) — Dimensões por rede (IG 4:5, Stories 9:16, LinkedIn/Google/X 16:9/4:3), 5 estilos alternados (foto, ilustração, quadrinhos, infográfico, colagem), pouco texto, representação literal do tema, temas de alta busca.
 - [Estilo navy com headline de impacto](mem://design/navy-background-style) — Fundo navy luminoso, headline curto, paleta da logo.
 - [Ilustrações com realismo anatômico](mem://design/anatomical-illustration-style) — Estilo Netter / Gray's Anatomy / render 3D médico. Proibido cartoon, flat, infantil.
-- [Planner Simplificado — Estudantes](mem://features/planner-simplificado-estudantes) — Aba para alunos de graduação: cirurgia bucal básica, enquetes/curiosidades/técnicas, paleta navy+teal das logos, 2 logos no overlay (sem fundo branco).
+- [Planner Simplificado — Estudantes](mem://features/planner-simplificado-estudantes) — Aba para alunos de graduação/Liga: cirurgia bucal básica, eventos e temas sugeridos; logo escolhida no dashboard.
 - [Marca Premium Cirurgia](mem://design/marca-premium-cirurgia) — Diretrizes oficiais: paleta 60/30/10 azul petróleo/branco/ciano, estética documental realista, tom cirúrgico anti-objeção "vou pensar".
 - [Sem valores monetários](mem://constraints/no-prices) — Nunca exibir preços/valores em copy pública.
 - [Paleta LACTBMF Liga](mem://design/paleta-lactbmf) — Posts da Liga (@lactbmf.anhanguerasbo): #FBFBFB / #DD8E3C / #000000 / #2D2C32 / #D6403A. Fundo grafite/preto, destaque âmbar, vermelho só alerta.

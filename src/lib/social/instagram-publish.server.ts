@@ -358,35 +358,8 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     let imageUrls = (await Promise.all(sourceUrls.map((url: string) => createFetchableUrl(supabaseAdmin, url)))).filter(Boolean) as string[];
     if (imageUrls.length === 0) throw new Error("Este post não tem imagem para publicar.");
 
-    // Garantia de marca: re-aplica a logo na hora da publicação para posts antigos
-    // gerados antes do overlay automático (ou sem ele por qualquer motivo).
-    const contaParaLogo = originalContaAlvo || contaAlvo || normalizeInstagramAccount(perfil?.arroba_usuario);
-    if (contaParaLogo === "drfranciscomenezes" || contaParaLogo === "lactbmf.anhanguerasbo") {
-      try {
-        const { fetchImageAsBase64, imageBase64ToJpegBytes, overlayLogo, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
-        imageUrls = await Promise.all(imageUrls.map(async (url) => {
-          const b64 = await fetchImageAsBase64(url);
-          const stamped = contaParaLogo === "lactbmf.anhanguerasbo"
-            ? await overlayAlunoLogos(b64)
-            : await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false });
-          if (stamped === b64) throw new Error("A logo oficial não foi aplicada. Publicação bloqueada.");
-          const fileName = `published/stamped-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-          const bytes = imageBase64ToJpegBytes(stamped);
-          const { error: upErr } = await supabaseAdmin.storage
-            .from("post-images")
-            .upload(fileName, bytes, { contentType: "image/jpeg", cacheControl: "604800", upsert: false });
-          if (upErr) throw new Error(`Falha ao salvar imagem com logo: ${upErr.message}`);
-          const { data: signed, error: signError } = await supabaseAdmin.storage
-            .from("post-images")
-            .createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
-          if (signError || !signed?.signedUrl) throw new Error(`Imagem com logo indisponível para publicação: ${signError?.message || fileName}`);
-          return signed.signedUrl;
-        }));
-      } catch (e) {
-        console.error("[instagram-publish] overlay obrigatório falhou:", e);
-        throw new Error("A publicação foi bloqueada porque a logo oficial não pôde ser aplicada.");
-      }
-    }
+    // As imagens geradas pelo planner já chegam com a logo escolhida pelo usuário.
+    // Não re-aplicar aqui evita trocar a seleção manual ou duplicar a marca no post.
 
 
     const caption = post.legenda_instagram || post.legenda || "";
