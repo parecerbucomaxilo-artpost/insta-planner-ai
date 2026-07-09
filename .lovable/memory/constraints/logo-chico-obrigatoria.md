@@ -4,16 +4,17 @@ description: Toda publicação do Planner Simplificado Chico (@drfranciscomeneze
 type: constraint
 ---
 Arquivos oficiais para seleção/overlay — NÃO trocar por recortes improvisados:
-1. `src/assets/logo-nsp.png` — NSP.
+1. `src/assets/logo-nsp.png.asset.json` — NSP oficial enviado pelo usuário: "Núcleo de Segurança do Paciente — Anhanguera de Santa Bárbara".
 2. `src/assets/logo-anhanguera-sbo.png` — Anhanguera Santa Bárbara d'Oeste.
 3. `src/assets/logo-dr-francisco.png` — Prof. Francisco Menezes (símbolo Σ branco + quadrado ciano #2dd4ff sobre fundo azul petróleo #0c2340).
 4. `src/assets/logo-liga-ctbmf.png` — Liga Acadêmica de CTBMF.
 5. `src/assets/logo-clinica-escola.png` — Clínica Escola / Odontologia Santa Bárbara.
 
 Ordem obrigatória no dashboard e nos planners: NSP → Anhanguera Santa Bárbara d'Oeste → Prof. Francisco Menezes → Liga → Clínica Escola → Sem logo.
+O dashboard deve permitir selecionar uma ou mais logos ao mesmo tempo; quando houver múltiplas, o sistema aplica todas juntas em faixa no rodapé.
 
 Aplicação (não-negociável):
-- Sistema aplica overlay real via `overlayLogo()` em `src/lib/logo-overlay.server.ts` (canto inferior direito, ~10% da largura, com a logo escolhida no dashboard).
+- Sistema aplica overlay real via `overlayLogo()` em `src/lib/logo-overlay.server.ts` (canto inferior direito, ~10% da largura, com a(s) logo(s) escolhida(s) no dashboard).
 - Chamado em 100% das gerações Chico em `src/lib/ai-post.functions.ts` (feed único, carrossel 1º + último card, story, estilo X). Sem exceção.
 - Preview do post também aplica via `previewPostWithLogo` para a conta `drfranciscomenezes`.
 
