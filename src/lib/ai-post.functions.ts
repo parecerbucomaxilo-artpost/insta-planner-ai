@@ -585,9 +585,9 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 // === PLANNER SIMPLIFICADO — AUDIÊNCIA: ESTUDANTES DE GRADUAÇÃO EM ODONTOLOGIA ===
 // Tom didático e simples sobre cirurgia bucal básica; inclui enquetes, curiosidades,
 // dicas de técnica e mitos x verdades. Sem CTA comercial. Cores das logos da
-// Liga (grafite + âmbar), SEM fundo branco. A logo escolhida no dashboard é
-// aplicada como overlay real pelo pipeline — a IA NÃO desenha logos; apenas
-// reserva o canto inferior direito limpo.
+  // Liga (grafite + âmbar), SEM fundo branco. A logo escolhida no dashboard é
+  // aplicada como overlay real pelo pipeline — a IA NÃO desenha logos e NÃO
+  // cria espaço reservado/placeholder para elas.
 function studentCaptionSystem() {
   return `Você é professor universitário de Cirurgia Bucomaxilofacial escrevendo para ALUNOS DE GRADUAÇÃO em Odontologia.
 TOM: didático, claro, simples, instrutivo, próximo do aluno. Como se fosse um post de monitoria.
@@ -629,9 +629,9 @@ function diverseImagePrompt(
     ? `PALETA: fundo grafite #2D2C32 dominante, texto branco #FBFBFB, destaque âmbar #DD8E3C. Sem outras cores fortes.`
     : `PALETA: fundo azul marinho #0c2340 dominante (leve gradiente para ciano #2dd4ff nos cantos), texto branco puro, destaques em ciano #2dd4ff. Sem outras cores fortes.`;
   const logoReserva = brand === "student"
-    ? `\n- LOGO: NÃO desenhe nenhum logo/marca/monograma. Reserve uma FAIXA INFERIOR CENTRAL LIMPA (~14% da altura) para overlay do sistema.`
+    ? `\n- LOGO: NÃO desenhe nenhum logo/marca/monograma e NÃO reserve faixa, canto, bloco vazio, moldura ou placeholder. O sistema aplica apenas a logo real por cima, sem fundo.`
     : brand === "chico"
-      ? `\n- LOGO: NÃO desenhe nenhum logo. Reserve o CANTO INFERIOR DIREITO limpo (~12% da largura) para overlay do sistema.`
+      ? `\n- LOGO: NÃO desenhe nenhum logo e NÃO reserve canto, bloco vazio, moldura ou placeholder. O sistema aplica apenas a logo real por cima, sem fundo.`
       : "";
   return `IMAGEM EDITORIAL PREMIUM sobre o tema "${tema}" — pode estar TOTALMENTE FORA da área médica/odontológica (data comemorativa, evento, curiosidade, hobby, cotidiano, cultura, esporte, natureza, tecnologia, comida, música, etc.).
 - ${dimensoes}
@@ -667,7 +667,7 @@ function studentImagePrompt(tema: string, slide?: { n: number; total: number; pa
 - ANATOMIA CORRETA: estruturas bucomaxilofaciais (mandíbula, maxila, ATM, dentes, nervos, músculos, seios) com proporção, posição, lado (direito/esquerdo) e relação topográfica cientificamente exatas, conforme Terminologia Anatômica oficial (TA2/SBA) e atlas (Netter, Sobotta, Madeira). Instrumental cirúrgico apenas em uso clinicamente correto para o tema (ex.: fórceps nº 18L só em molar inferior esquerdo). Proibido: dentes em posição errada, número de raízes incorreto, nervo cruzando estrutura errada, instrumento aplicado fora da indicação.
 - PALETA RIGOROSA: fundo dominante #2D2C32 grafite OU #000000 preto. Tipografia principal #FBFBFB off-white. Destaque/CTA #DD8E3C âmbar. Acentos ANHANGUERA permitidos apenas em pequenos detalhes (linha de fratura, seta de destaque, contorno do ponto de interesse): vermelho-Anhanguera #CE000C e laranja-Anhanguera #F05A22. Vermelho-alerta #D6403A apenas para alerta/dor. PROIBIDO qualquer outro hex — sem ciano, sem navy, sem azul, sem verde, sem roxo, sem rosa, sem branco puro #FFFFFF.
  - TEXTO NA IMAGEM — REGRA ABSOLUTA: NÃO renderize NENHUMA letra, palavra, número, sigla, símbolo tipográfico, legenda, rótulo, watermark, headline, badge ou cartaz com escrita dentro da imagem. ZERO texto. Nem em primeiro plano, nem em fundo, nem em jalecos, crachás, placas, livros, telas, monitores, radiografias, embalagens, etiquetas, instrumentos, paredes. A composição deve ser PURAMENTE VISUAL (cena clínica/anatômica). Todo e qualquer texto (headline, enquete, dica) será aplicado depois pelo sistema como overlay tipográfico — você NÃO precisa e NÃO deve tentar escrever nada. Se a cena naturalmente teria texto (ex.: tela de tomografia), substitua por formas abstratas, gráficos sem letras ou borrão suave. Qualquer letra renderizada será considerada erro grave.
-- LOGO: NÃO desenhe, redesenhe, parafraseie ou invente logos, marcas, escudos, brasões, monogramas ou siglas. APENAS reserve uma FAIXA INFERIOR CENTRAL LIMPA (largura total, ~14% da altura, sem texto, sem ilustração, sem moldura) — a logo REAL da LACTBMF será sobreposta pelo sistema, sem fundo, centralizada inferiormente.
+- LOGO: NÃO desenhe, redesenhe, parafraseie ou invente logos, marcas, escudos, brasões, monogramas ou siglas. NÃO reserve faixa inferior, canto limpo, bloco vazio, moldura, quadrado ou placeholder. A arte deve ocupar a composição normalmente; a logo REAL da LACTBMF será sobreposta pelo sistema, sem fundo.
 - Iluminação editorial premium, hierarquia limpa, espaço negativo generoso na cor de fundo, sem ruído visual.
 - PROIBIDO: rostos reconhecíveis de pessoas reais, watermark de IA, anatomia errada, mãos com dedos a mais, texto em inglês, palavras inventadas, palavras duplicadas, letras embaralhadas, caracteres tipográficos estranhos, glifos decorativos no meio de palavras, CTA comercial ("agende", "promoção", "desconto"), WhatsApp, visual de banco de imagens, clipart, flat design infantil, gradientes arco-íris, paleta fora do especificado.${slideInfo}
 - Variação obrigatória (seed ${Math.random().toString(36).slice(2, 10)}): ângulo, enquadramento e composição inéditos em relação aos posts anteriores.`;
@@ -843,7 +843,7 @@ function chicoImagePrompt(tema: string, slide?: { n: number; total: number; pape
 - TIPOGRAFIA: sans-serif moderna bold (Montserrat / Inter). Headline curto de 3-8 palavras em PT-BR impecável ("DOR NO SISO?", "ATM TRAVADA AO ACORDAR", "FERIDA QUE NÃO CICATRIZA"). Headline em branco com 1 palavra-chave em ciano ${CHICO_CIANO}. Sem parágrafos, sem listas longas, sem números fictícios.
 - COMPOSIÇÃO: limpa, hierarquia clara, muito espaço negativo navy, linhas finas em ciano como elementos gráficos (separadores, ícones, silhuetas de perfil facial).
 - ROSTOS: se houver pessoa, expressão de ALÍVIO/CONFIANÇA (nunca dor exposta, nunca cena invasiva, nunca procedimento real). Plano fechado, foco em emoção. Sem rostos reconhecíveis de pessoas reais.
-- LOGO DA CLÍNICA: NÃO desenhe, NÃO redesenhe, NÃO invente nenhum logo, monograma, escudo ou marca. Apenas RESERVE o CANTO INFERIOR DIREITO limpo (área ~12% da largura, sem texto, sem ilustração) — o sistema sobrepõe a logo real depois.${ctaForte}${slideInfo}
+- LOGO DA CLÍNICA: NÃO desenhe, NÃO redesenhe, NÃO invente nenhum logo, monograma, escudo ou marca. NÃO reserve canto, área limpa, bloco vazio, moldura, quadrado ou placeholder; componha a arte normalmente. O sistema sobrepõe apenas a logo real depois, sem fundo.${ctaForte}${slideInfo}
 - TEXTO NA IMAGEM — REGRA: o ÚNICO texto permitido é o HEADLINE-GANCHO de 3-6 palavras definido no bloco "TEXTO OBRIGATÓRIO NA IMAGEM" do NEXO acima (capa do carrossel ou imagem única). Renderize-o como tipografia bold sans-serif condensada gigante, BRANCO ou CIANO ${CHICO_CIANO} sobre o navy, centralizado, com acentuação PT-BR perfeita. NENHUM outro texto, número, sigla, parágrafo, lista, watermark, rótulo, marca, telefone ou URL pode aparecer em qualquer lugar da imagem (jaleco, crachá, placa, tela, radiografia, instrumento). Se a cena naturalmente teria texto secundário (tela, livro, radiografia), substitua por formas abstratas/borrão. Em slides intermediários do carrossel (não-capa, não-último) NÃO escreva nenhum texto — só ilustração.
 - PROIBIDO: imagens de procedimentos invasivos, sangue, bisturi cortando, anatomia interna exposta de forma agressiva, watermark de IA, mãos deformadas, dedos a mais, texto em inglês, palavras inventadas, palavras duplicadas, hashtags na imagem, números de telefone, URLs, CTAs comerciais ("agende", "promoção", "desconto"). NÃO MISTURAR ASSUNTOS: a imagem inteira (e todos os slides do carrossel) tratam APENAS do tema "${tema}" — nunca introduzir outra patologia, instrumento ou cena de outro tema.
 - Iluminação editorial premium estilo capa de revista de saúde sofisticada (Harvard Health / Mayo Clinic), atmosfera arejada e luminosa, qualidade 8K.
