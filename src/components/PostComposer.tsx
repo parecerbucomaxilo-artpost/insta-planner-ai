@@ -466,13 +466,20 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     setBusy("week");
     const tid = "local-week";
     toast.loading("Gerador local planejando 7 dias (cronograma fixo)...", { id: tid });
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
-      const out = await genWeek({ data: { especialidade, modelo } });
+      const out = await genWeek({ data: { especialidade, modelo }, signal: ctrl.signal });
       setTemas(out.temas as any);
-      toast.success(`${out.temas.length} slots gerados. Aprove para criar imagem + agendar.`, { id: tid });
+      toast.success(`${out.temas.length} temas gerados. Aprove para criar imagem e agendar.`, { id: tid });
     } catch (e: any) {
-      toast.error(e.message || "Falha no cronograma.", { id: tid });
+      if (ctrl.signal.aborted || e?.name === "AbortError") {
+        toast.dismiss(tid);
+      } else {
+        toast.error(e.message || "Falha no cronograma.", { id: tid });
+      }
     } finally {
+      if (abortRef.current === ctrl) abortRef.current = null;
       setBusy(null);
     }
   };
@@ -482,17 +489,26 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       | "instagram" | "linkedin" | "estilo-x" | "google";
     const tid = `local-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
-      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes } });
+      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes }, signal: ctrl.signal });
       toast.success(t.quando ? "Agendado! Pré-visualize abaixo." : "Gerado! Pré-visualize abaixo.", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
       // Não chama onCreated() — fica pendente até aprovação no preview.
     } catch (e: any) {
-      toast.error(e.message || "Falha", { id: tid });
+      if (ctrl.signal.aborted || e?.name === "AbortError") {
+        toast.dismiss(tid);
+      } else {
+        toast.error(e.message || "Falha", { id: tid });
+      }
+    } finally {
+      if (abortRef.current === ctrl) abortRef.current = null;
     }
   };
+
 
   const approveAll = async () => {
     if (!temas) return;
