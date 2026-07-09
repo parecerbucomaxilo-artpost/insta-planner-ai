@@ -440,19 +440,27 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       temaTrim ? `Gerador local criando ${config.label}...` : `Gerador local escolhendo tema e criando ${config.label}...`,
       { id: tid },
     );
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
-      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede: "instagram", tipo: config.tipo, formato: config.formato, modelo, modeloImagem, ambasRedes: false } });
+      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede: "instagram", tipo: config.tipo, formato: config.formato, modelo, modeloImagem, ambasRedes: false }, signal: ctrl.signal });
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
       // Não chama onCreated() — post fica pendente até aprovação/descarte no preview.
     } catch (e: any) {
-      toast.error(e.message || "Falha na geração.", { id: tid });
+      if (ctrl.signal.aborted || e?.name === "AbortError") {
+        toast.dismiss(tid);
+      } else {
+        toast.error(e.message || "Falha na geração.", { id: tid });
+      }
     } finally {
+      if (abortRef.current === ctrl) abortRef.current = null;
       setBusy(null);
     }
   };
+
 
   const handleWeek = async () => {
     setBusy("week");
