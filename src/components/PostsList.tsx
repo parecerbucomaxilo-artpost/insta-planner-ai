@@ -45,6 +45,29 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [slideIdx, setSlideIdx] = useState<Record<string, number>>({});
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const startEdit = (p: PostRow) => {
+    setEditingId(p.id);
+    setEditingText(String(p.legenda || ""));
+  };
+  const cancelEdit = () => { setEditingId(null); setEditingText(""); };
+  const saveEdit = async (id: string) => {
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase.from("posts").update({ legenda: editingText }).eq("id", id);
+      if (error) throw error;
+      toast.success("Legenda atualizada.");
+      cancelEdit();
+      onChange();
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao salvar legenda.");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     try {
