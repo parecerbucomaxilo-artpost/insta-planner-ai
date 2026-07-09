@@ -143,6 +143,37 @@ function trimAlpha(image: RgbaImage): RgbaImage {
   return { width: nw, height: nh, data: out };
 }
 
+function removeNearWhiteMatte(image: RgbaImage): RgbaImage {
+  const { width: w, height: h, data } = image;
+  const out = new Uint8Array(data);
+  let changed = false;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const r = out[i];
+      const g = out[i + 1];
+      const b = out[i + 2];
+      const a = out[i + 3];
+      if (a <= 8) continue;
+
+      // Remove fundos brancos/quase brancos exportados junto da logo.
+      // Não remove a marca branca do Planner Chico porque o arquivo correto
+      // tem transparência ao redor; este fallback só atua como proteção contra
+      // PNG/JPEG antigos com canvas branco que cortava a arte em quadrado.
+      const nearWhite = r > 242 && g > 242 && b > 242;
+      const lowChroma = Math.max(r, g, b) - Math.min(r, g, b) < 14;
+      const onOuterCanvas = x < w * 0.08 || x > w * 0.92 || y < h * 0.08 || y > h * 0.92;
+      if (nearWhite && lowChroma && onOuterCanvas) {
+        out[i + 3] = 0;
+        changed = true;
+      }
+    }
+  }
+
+  return changed ? trimAlpha({ width: w, height: h, data: out }) : image;
+}
+
 function cropImage(image: RgbaImage, minX: number, minY: number, maxX: number, maxY: number): RgbaImage {
   const { width: w, data } = image;
   const pad = Math.max(2, Math.round(Math.max(maxX - minX + 1, maxY - minY + 1) * 0.025));
@@ -167,7 +198,7 @@ function cropImage(image: RgbaImage, minX: number, minY: number, maxX: number, m
 }
 
 function trimLogoCanvas(image: RgbaImage): RgbaImage {
-  const alphaTrimmed = trimAlpha(image);
+  const alphaTrimmed = removeNearWhiteMatte(trimAlpha(image));
   const { width: w, height: h, data } = alphaTrimmed;
   const corner = (x: number, y: number) => {
     const i = (y * w + x) * 4;
