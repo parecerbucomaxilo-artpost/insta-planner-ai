@@ -1856,7 +1856,9 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
         "Por que pacientes oncológicos precisam de cuidado oral planejado",
         "Como o dentista atua na segurança do paciente crítico",
       ]
-      : TEMAS_GERAIS;
+      : data.especialidade === "Temas Diversos"
+        ? TEMAS_DIVERSOS
+        : TEMAS_GERAIS;
 
     // Anexa metadados + força stories a herdarem o tema do feed do mesmo dia
     const enriquecidos = slots.map((s, i) => {
