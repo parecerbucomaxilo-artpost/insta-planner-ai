@@ -81,6 +81,11 @@ function getStorageObjectRef(value: string | null | undefined) {
   if (!value || value.startsWith("blob:") || value.startsWith("data:")) return null;
   try {
     const url = new URL(value);
+    if (url.pathname.endsWith("/api/public/storage-media")) {
+      const bucket = url.searchParams.get("bucket");
+      const path = url.searchParams.get("path");
+      return bucket && path ? { bucket, path } : null;
+    }
     const parts = url.pathname.split("/").filter(Boolean);
     const objectIndex = parts.findIndex((part) => part === "object");
     const bucket = objectIndex >= 0 ? parts[objectIndex + 2] : null;
