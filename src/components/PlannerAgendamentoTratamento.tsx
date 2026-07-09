@@ -181,7 +181,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       // tratamentos. Só respeitamos legenda 100% manual digitada pelo usuário.
       const legendaPaciente = legendaGerada.trim()
         ? legendaGerada.trim()
-        : buildPatientCaption({ tratamento, telefone, base: "" });
+        : buildPatientCaption({ tratamento, telefone, base: "", assunto });
       await supabase
         .from("posts")
         .update({ instagram_conta: LIGA_ACCOUNT, legenda: legendaPaciente, legenda_instagram: legendaPaciente } as any)
