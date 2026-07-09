@@ -236,9 +236,46 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                   </span>
                 </span>
               </div>
-              <p className="text-sm line-clamp-3 flex-1 leading-relaxed">
-                {legendaExibida || <span className="text-muted-foreground">(sem legenda)</span>}
-              </p>
+              {editingId === p.id ? (
+                <div className="flex flex-col gap-2 flex-1">
+                  <Textarea
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    rows={6}
+                    className="text-sm leading-relaxed"
+                    maxLength={2200}
+                    autoFocus
+                  />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{editingText.length}/2200</span>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={savingEdit}>
+                        <X className="h-3.5 w-3.5 mr-1" /> Cancelar
+                      </Button>
+                      <Button size="sm" onClick={() => saveEdit(p.id)} disabled={savingEdit}>
+                        {savingEdit ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Check className="h-3.5 w-3.5 mr-1" />}
+                        Salvar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex gap-2 items-start group/legenda">
+                  <p className="text-sm line-clamp-3 flex-1 leading-relaxed">
+                    {legendaExibida || <span className="text-muted-foreground">(sem legenda)</span>}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 opacity-60 hover:opacity-100 shrink-0"
+                    onClick={() => startEdit(p)}
+                    aria-label="Editar legenda"
+                    title="Editar legenda"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
               {p.data_agendamento && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <CalIcon className="h-3 w-3" /> {format(new Date(p.data_agendamento), "Pp", { locale: ptBR })}
