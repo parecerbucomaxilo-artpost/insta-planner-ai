@@ -58,6 +58,9 @@ const SingleInput = z.object({
   nivel: NivelEnum.optional().default("auto"),
   // Audiência: "geral" (padrão) ou "estudantes-graduacao" (Planner Simplificado).
   audiencia: z.enum(["geral", "estudantes-graduacao", "chico-drfm"]).optional().default("geral"),
+  // Temas adicionais a evitar (além do histórico dos últimos 200 posts) —
+  // usado pelo agendador para não repetir assunto em dias próximos.
+  temasProibidos: z.array(z.string()).optional().default([]),
 });
 
 
@@ -1399,9 +1402,24 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         .order("created_at", { ascending: false })
         .limit(200);
       const temasUsados = Array.from(
-        new Set((historico ?? []).map((p: any) => (p.prompt_ia || "").trim()).filter(Boolean))
-      ).slice(0, 150);
+        new Set([
+          ...(historico ?? []).map((p: any) => (p.prompt_ia || "").trim()),
+          ...(data.temasProibidos ?? []).map((t) => (t || "").trim()),
+        ].filter(Boolean))
+      ).slice(0, 200);
       tema = chooseLocalTema(data.audiencia, temasUsados, `${data.rede}-${data.formato}-${data.especialidade}`, data.especialidade);
+    } else if (tema && (data.temasProibidos ?? []).length > 0) {
+      // Se veio um tema explícito mas ele colide com um tema proibido (dia adjacente),
+      // descarta e reescolhe um novo.
+      const proibidosNorm = new Set((data.temasProibidos ?? []).map(normalizeTema));
+      if (proibidosNorm.has(normalizeTema(tema))) {
+        tema = chooseLocalTema(
+          data.audiencia,
+          Array.from(proibidosNorm),
+          `${data.rede}-${data.formato}-${data.especialidade}-${Date.now()}`,
+          data.especialidade,
+        );
+      }
     }
 
 

@@ -120,7 +120,38 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
             .not("prompt_ia", "is", null)
             .order("data_agendamento", { ascending: true })
             .limit(1);
-          const temaDoDia = doDia?.[0]?.prompt_ia?.trim();
+          let temaDoDia = doDia?.[0]?.prompt_ia?.trim();
+
+          // NÃO REPETIR ASSUNTO em dias próximos: coleta temas usados nos
+          // 3 dias anteriores e nos 3 dias seguintes (janela ±3 dias).
+          const janelaAntes = new Date(inicioDia); janelaAntes.setDate(janelaAntes.getDate() - 3);
+          const janelaDepois = new Date(fimDia); janelaDepois.setDate(janelaDepois.getDate() + 3);
+          const { data: vizinhos } = await supabaseAdmin
+            .from("posts")
+            .select("prompt_ia,data_agendamento")
+            .gte("data_agendamento", janelaAntes.toISOString())
+            .lte("data_agendamento", janelaDepois.toISOString())
+            .lt("data_agendamento", inicioDia.toISOString()) // só dias diferentes (antes)
+            .not("prompt_ia", "is", null);
+          const { data: vizinhosDepois } = await supabaseAdmin
+            .from("posts")
+            .select("prompt_ia,data_agendamento")
+            .gt("data_agendamento", fimDia.toISOString())
+            .lte("data_agendamento", janelaDepois.toISOString())
+            .not("prompt_ia", "is", null);
+          const temasProibidos = Array.from(
+            new Set(
+              [...(vizinhos ?? []), ...(vizinhosDepois ?? [])]
+                .map((p: any) => (p.prompt_ia || "").trim())
+                .filter(Boolean),
+            ),
+          );
+
+          // Se o "tema do dia" reaproveitado bater com um tema de dia vizinho,
+          // descarta para forçar geração de um novo tema.
+          if (temaDoDia && temasProibidos.some((t) => t.toLowerCase() === temaDoDia!.toLowerCase())) {
+            temaDoDia = undefined;
+          }
 
           const result = await generateSinglePost({
             data: {
@@ -136,6 +167,7 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
               // Aguarda aprovação manual no preview — nunca publica direto.
               status: "PendenteAprovacao",
               nivel,
+              temasProibidos,
             },
           });
 
