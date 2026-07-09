@@ -388,21 +388,21 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       {preview && (
         <Card className="p-5 space-y-3 border-2 border-emerald-300 bg-emerald-50/30">
           <h3 className="font-semibold text-emerald-900 flex items-center gap-2"><Sparkles className="w-4 h-4" /> Pré-visualização</h3>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               {preview.urls.length > 1 ? (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-4">
                   {preview.urls.map((u, i) => (
                     <div key={i} className="rounded-md border bg-white/80 overflow-hidden">
-                      <img src={u} alt={`Slide ${i + 1}`} className="w-full object-cover aspect-[4/5]" />
-                      <Button size="sm" variant="ghost" className="w-full h-7 text-[11px]" onClick={() => window.open(u, "_blank")}>
-                        <Download className="w-3 h-3 mr-1" /> Abrir
+                      <img src={u} alt={`Slide ${i + 1}`} className="w-full object-contain max-h-[85vh] bg-slate-50" />
+                      <Button size="sm" variant="ghost" className="w-full h-8 text-xs" onClick={() => window.open(u, "_blank")}>
+                        <Download className="w-3 h-3 mr-1" /> Abrir slide {i + 1}
                       </Button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <img src={preview.urls[0]} alt="Post" className="w-full rounded-md border object-cover aspect-[4/5]" />
+                <img src={preview.urls[0]} alt="Post" className="w-full rounded-md border object-contain max-h-[85vh] bg-slate-50" />
               )}
             </div>
             <div className="space-y-2">

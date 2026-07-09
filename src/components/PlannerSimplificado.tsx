@@ -748,15 +748,16 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {preview && (
             <Card className="p-5 space-y-3 border-2 border-emerald-200 bg-emerald-50/30">
               <h3 className="font-semibold text-emerald-900">Pré-visualização</h3>
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   {preview.urls.length > 1 ? (
                     <>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-col gap-4">
+
                         {preview.urls.map((u, i) => (
                           <div key={i} className="rounded-md border bg-white/80 overflow-hidden">
                             <div className="relative">
-                              <img src={u} alt={`Slide ${i + 1}`} className="w-full object-cover aspect-[4/5]" />
+                              <img src={u} alt={`Slide ${i + 1}`} className="w-full object-contain max-h-[85vh] bg-slate-50" />
                               <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
                                 {i + 1}/{preview.urls.length}
                               </span>
@@ -779,7 +780,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                       <p className="text-[11px] text-emerald-900/70">Carrossel com {preview.urls.length} slides — todos serão publicados na ordem.</p>
                     </>
                   ) : (
-                    preview.urls[0] && <img src={preview.urls[0]} alt="" className="rounded-md w-full object-cover" />
+                    preview.urls[0] && <img src={preview.urls[0]} alt="" className="rounded-md w-full object-contain max-h-[85vh] bg-slate-50" />
                   )}
                 </div>
                 <Textarea value={preview.legenda} readOnly rows={12} className="text-xs" />
