@@ -1708,11 +1708,13 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       altLegenda ? `ALT TEXT GUIA (a cena PRECISA bater com isso): "${altLegenda}"` : "",
     ].filter(Boolean).join("\n");
     const withVisual = (basePrompt: string, slideIndex?: number) => {
+      const guardaPtBr = `IDIOMA OBRIGATÓRIO — TODO texto renderizado na imagem DEVE ser 100% em PT-BR com acentuação completa e crase correta. PROIBIDO qualquer palavra em inglês/espanhol/latim; PROIBIDO palavras inventadas, duplicadas, sem acento. Se houver dúvida, use sinônimo simples correto em pt-BR.`;
+      // TEMAS DIVERSOS: sem contrato clínico, sem cena médica, sem hook de dor.
+      if (isDiverso) return `${guardaPtBr}\n\nTEMA DO POST: "${tema}" (TOTALMENTE FORA da área da saúde/odontologia). NÃO desenhe cena clínica, hospitalar, consultório, dentes, boca, jaleco, instrumental médico. Ilustre APENAS o tema.\n\n${basePrompt}`;
       const cenaSlide = typeof slideIndex === "number" ? cenasPorSlide[slideIndex] : "";
       const narrativaSlide = typeof slideIndex === "number" ? slideNarratives[slideIndex] : "";
       const cena = cenaSlide || visualSceneForTopic(tema, guiaTema, data.audiencia, slideIndex) || cenaVisualNexo;
       const contrato = clinicalContract(tema, data.audiencia, slideIndex);
-      // CAPA (slide 0) OU imagem única não-story renderiza o HOOK_IMAGEM como tipografia.
       const isCapa = slideIndex === 0 || typeof slideIndex === "undefined";
       const hookBloco = (isCapa && hookImagem)
         ? `TEXTO OBRIGATÓRIO NA IMAGEM (renderize EXATAMENTE esta frase como tipografia gigante bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre o fundo navy luminoso, 3-6 palavras, PT-BR com acentuação perfeita, centralizado na parte superior/central da arte): "${hookImagem}". NÃO altere, NÃO traduza, NÃO adicione outras palavras, NÃO escreva nome de profissional/clínica/marca. É o ÚNICO texto permitido na imagem.`
@@ -1724,11 +1726,11 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         cena ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cena}` : "",
         hookBloco,
       ].filter(Boolean).join("\n");
-      const guardaPtBr = `IDIOMA OBRIGATÓRIO — TODO E QUALQUER texto renderizado na imagem (headline, gancho, CTA, número, rótulo, palavra em placa/tela/jaleco) DEVE ser 100% em Português do Brasil (pt-BR) com acentuação completa (á é í ó ú â ê ô ã õ à ç) e crase correta. PROIBIDO absolutamente qualquer palavra em inglês, espanhol, latim, francês ou italiano; PROIBIDO palavras inventadas, embaralhadas, duplicadas ("dor dor"), com letras faltando/trocadas ou sem acento. Exemplos CORRETOS: "DOR NO SISO?", "ATM TRAVADA?", "PERDEU UM DENTE?", "AVALIAÇÃO", "CIRURGIA". Exemplos PROIBIDOS: "PAIN", "TOOTH", "SURGERY", "SISOO", "AVALIACAO" (sem til), "DÖR". Se tiver QUALQUER dúvida sobre uma palavra, use sinônimo simples e correto em pt-BR. Revise a arte antes de devolver — se houver 1 letra errada em português, refaça.`;
       return blocos
         ? `=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${guardaPtBr}\n${blocos}\nA imagem deve mostrar a CONDUTA/TRATAMENTO quando o slide pedir solução. Se houver conflito com o prompt base, ESTE NEXO vence.\n=== FIM DO NEXO ===\n\n${basePrompt}`
         : `${guardaPtBr}\n\n${basePrompt}`;
     };
+
 
 
     let urlImagem: string;
