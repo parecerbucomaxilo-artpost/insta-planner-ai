@@ -823,6 +823,37 @@ const TEMAS_GERAIS = [
   "Como identificar sinais de disfunção temporomandibular sem pânico",
 ];
 
+// TEMAS DIVERSOS — assuntos leves do dia a dia, curiosidades de saúde bucal,
+// hábitos, prevenção, bem-estar, alimentação, sono, autocuidado — sem foco
+// exclusivo em CTBMF. Usados quando o usuário escolhe "Temas Diversos".
+const TEMAS_DIVERSOS = [
+  "Como a alimentação diária afeta a saúde da sua boca",
+  "Por que dormir bem também é cuidar dos seus dentes",
+  "Curiosidades sobre a saliva: a defesa invisível da boca",
+  "Como o estresse do dia a dia aparece na sua boca",
+  "Hábitos matinais que fazem diferença para a saúde bucal",
+  "Por que beber água ajuda muito mais do que você imagina",
+  "Como escolher a escova e o creme dental certos para você",
+  "O que os dentes revelam sobre a saúde geral do corpo",
+  "Curiosidade: por que sentimos mau hálito ao acordar",
+  "Como cuidar da boca das crianças desde cedo, sem sofrimento",
+  "Por que mascar chiclete pode ser aliado (ou vilão) da sua boca",
+  "Alimentos que naturalmente ajudam a fortalecer os dentes",
+  "Como o cigarro e o álcool impactam a saúde bucal",
+  "Mitos e verdades sobre clareamento dental caseiro",
+  "Por que fio dental é insubstituível — e como usar sem machucar",
+  "Curiosidade: quantas bactérias vivem na boca de um adulto",
+  "Como o esporte pode proteger (ou prejudicar) os dentes",
+  "Sinais silenciosos de que sua boca pede uma avaliação",
+  "Por que gestantes precisam de cuidado bucal especial",
+  "Idosos e saúde bucal: dicas simples para manter qualidade de vida",
+  "Como respirar pela boca afeta face, sono e postura",
+  "Curiosidade: por que o dente do siso ainda existe se quase não usamos",
+  "Café, chá e vinho: como reduzir manchas sem exagerar no clareamento",
+  "Rotina de autocuidado bucal em 3 minutos por dia",
+  "Como identificar aftas comuns e quando elas merecem atenção",
+];
+
 const TEMAS_ESTUDANTES = [
   "Enquete: qual técnica anestésica escolher para exodontia do terceiro molar inferior",
   "Dica de técnica: sequência básica para sutura simples em mucosa oral",
