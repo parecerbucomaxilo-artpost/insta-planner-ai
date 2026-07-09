@@ -170,7 +170,7 @@ export async function overlayLogo(
   imageB64: string,
   origin?: string,
   sizePct = 14,
-  opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean; position?: Pos; smart?: boolean },
+  opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean; position?: Pos; smart?: boolean; logoUrl?: string },
 ): Promise<string> {
   try {
     const base = decodeImage(base64ToBytes(imageB64));
