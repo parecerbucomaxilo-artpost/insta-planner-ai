@@ -1760,7 +1760,7 @@ const CaptionOnlyInput = z.object({
   tema: z.string().min(2, "Informe um tema."),
   rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).default("Post Único"),
-  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
+  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("CTBMF"),
   audiencia: z.enum(["geral", "estudantes-graduacao", "chico-drfm"]).default("chico-drfm"),
   nivel: NivelEnum.optional().default("auto"),
   modelo: ModeloLocalInput,
