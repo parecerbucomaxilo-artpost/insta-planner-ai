@@ -12,7 +12,6 @@ const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 const CACHE_REFRESH_MARGIN_MS = 60 * 60 * 1000;
-const PUBLIC_APP_URL = "https://insta-planner-ai.lovable.app";
 
 function isCacheValid(expiresAt: string | null | undefined) {
   if (!expiresAt) return false;
@@ -82,6 +81,11 @@ function getStorageObjectRef(value: string | null | undefined) {
   if (!value || value.startsWith("blob:") || value.startsWith("data:")) return null;
   try {
     const url = new URL(value);
+    if (url.pathname.endsWith("/api/public/storage-media")) {
+      const bucket = url.searchParams.get("bucket");
+      const path = url.searchParams.get("path");
+      return bucket && path ? { bucket, path } : null;
+    }
     const parts = url.pathname.split("/").filter(Boolean);
     const objectIndex = parts.findIndex((part) => part === "object");
     const bucket = objectIndex >= 0 ? parts[objectIndex + 2] : null;
@@ -90,17 +94,6 @@ function getStorageObjectRef(value: string | null | undefined) {
   } catch {
     return null;
   }
-}
-
-function createStorageProxyUrl(bucket: string, path: string) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return null;
-  const token = createHmac("sha256", secret).update(`${bucket}:${path}`).digest("hex");
-  const url = new URL("/api/public/storage-media", PUBLIC_APP_URL);
-  url.searchParams.set("bucket", bucket);
-  url.searchParams.set("path", path);
-  url.searchParams.set("token", token);
-  return url.toString();
 }
 
 async function createFetchableUrl(supabaseAdmin: any, value: string | null | undefined) {
@@ -113,16 +106,15 @@ async function createFetchableUrl(supabaseAdmin: any, value: string | null | und
       .from("post-images")
       .upload(fileName, parsed.buffer, { contentType: parsed.mimeType, cacheControl: "604800", upsert: false });
     if (error) throw new Error(`Upload da imagem agendada falhou: ${error.message}`);
-    const proxyUrl = createStorageProxyUrl("post-images", fileName);
-    if (proxyUrl) return proxyUrl;
+    // Para publicação via Meta/Make, usar URL assinada direta do Storage: preserva extensão e Content-Type,
+    // evitando 400 de validação de imagem em proxies sem sufixo .jpg/.png.
     const { data, error: signError } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
     if (signError || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${signError?.message || fileName}`);
     return data.signedUrl;
   }
   const ref = getStorageObjectRef(value);
   if (!ref) return value;
-  const proxyUrl = createStorageProxyUrl(ref.bucket, ref.path);
-  if (proxyUrl) return proxyUrl;
+  // A URL pública do bucket privado retorna 400; a assinada é acessível por integradores externos.
   const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
   if (error || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${error?.message || ref.path}`);
   return data.signedUrl;

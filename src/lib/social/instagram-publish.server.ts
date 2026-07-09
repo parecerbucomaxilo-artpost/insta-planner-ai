@@ -1,11 +1,6 @@
-import { createHmac } from "crypto";
-
 const GRAPH_VERSION = "v21.0";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
-// Usar o domínio estável de preview (sempre serve a build mais recente, inclui a rota /api/public/storage-media
-// mesmo antes do publish). O domínio "insta-planner-ai.lovable.app" só recebe a rota após Republicar.
-const PUBLIC_APP_URL = "https://project--221123ce-bfcc-41c2-ad79-e7560d18268d-dev.lovable.app";
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 
 type PublishVia = "meta" | "manual-liga";
@@ -98,29 +93,22 @@ async function uploadDataUrl(supabaseAdmin: any, value: string) {
     .from("post-images")
     .upload(fileName, parsed.buffer, { contentType: parsed.mimeType, cacheControl: "604800", upsert: false });
   if (error) throw new Error(`Upload da imagem para publicação falhou: ${error.message}`);
-  const proxyUrl = createStorageProxyUrl("post-images", fileName);
-  if (proxyUrl) return proxyUrl;
-  // Bucket post-images é privado por política do workspace — usar sempre URL assinada (Instagram aceita).
+  // Meta valida a mídia pelo caminho/Content-Type. A URL assinada mantém o arquivo .jpg/.png no path;
+  // a rota proxy (/api/public/storage-media?...), embora funcione no navegador, pode ser recusada com 400.
   const { data, error: signError } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
   if (signError || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${signError?.message || fileName}`);
   return data.signedUrl;
-}
-
-function createStorageProxyUrl(bucket: string, path: string) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return null;
-  const token = createHmac("sha256", secret).update(`${bucket}:${path}`).digest("hex");
-  const url = new URL("/api/public/storage-media", PUBLIC_APP_URL);
-  url.searchParams.set("bucket", bucket);
-  url.searchParams.set("path", path);
-  url.searchParams.set("token", token);
-  return url.toString();
 }
 
 function getStorageObjectRef(value: string | null | undefined) {
   if (!value || value.startsWith("blob:") || value.startsWith("data:")) return null;
   try {
     const url = new URL(value);
+    if (url.pathname.endsWith("/api/public/storage-media")) {
+      const bucket = url.searchParams.get("bucket");
+      const path = url.searchParams.get("path");
+      return bucket && path ? { bucket, path } : null;
+    }
     const parts = url.pathname.split("/").filter(Boolean);
     const objectIndex = parts.findIndex((part) => part === "object");
     const bucket = objectIndex >= 0 ? parts[objectIndex + 2] : null;
@@ -144,10 +132,8 @@ async function createFetchableUrl(supabaseAdmin: any, value: string | null | und
     }
     return value;
   }
-  // Bucket post-images é privado — sempre assinar (a URL pública retorna 400 e o Instagram rejeita com erro 9004).
-  const proxyUrl = createStorageProxyUrl(ref.bucket, ref.path);
-  if (proxyUrl) return proxyUrl;
-
+  // Bucket post-images é privado: a URL pública retorna 400. Para publicação direta na Meta,
+  // preferimos URL assinada do Storage, não proxy, para preservar extensão real do arquivo.
   const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
   if (error || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${error?.message || ref.path}`);
   return data.signedUrl;
@@ -390,12 +376,11 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
             .from("post-images")
             .upload(fileName, bytes, { contentType: "image/jpeg", cacheControl: "604800", upsert: false });
           if (upErr) throw new Error(`Falha ao salvar imagem com logo: ${upErr.message}`);
-          const proxyUrl = createStorageProxyUrl("post-images", fileName);
-          if (proxyUrl) return proxyUrl;
-          const { data: signed } = await supabaseAdmin.storage
+          const { data: signed, error: signError } = await supabaseAdmin.storage
             .from("post-images")
             .createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
-          return signed?.signedUrl || url;
+          if (signError || !signed?.signedUrl) throw new Error(`Imagem com logo indisponível para publicação: ${signError?.message || fileName}`);
+          return signed.signedUrl;
         }));
       } catch (e) {
         console.error("[instagram-publish] overlay obrigatório falhou:", e);
