@@ -113,16 +113,15 @@ async function createFetchableUrl(supabaseAdmin: any, value: string | null | und
       .from("post-images")
       .upload(fileName, parsed.buffer, { contentType: parsed.mimeType, cacheControl: "604800", upsert: false });
     if (error) throw new Error(`Upload da imagem agendada falhou: ${error.message}`);
-    const proxyUrl = createStorageProxyUrl("post-images", fileName);
-    if (proxyUrl) return proxyUrl;
+    // Para publicação via Meta/Make, usar URL assinada direta do Storage: preserva extensão e Content-Type,
+    // evitando 400 de validação de imagem em proxies sem sufixo .jpg/.png.
     const { data, error: signError } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
     if (signError || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${signError?.message || fileName}`);
     return data.signedUrl;
   }
   const ref = getStorageObjectRef(value);
   if (!ref) return value;
-  const proxyUrl = createStorageProxyUrl(ref.bucket, ref.path);
-  if (proxyUrl) return proxyUrl;
+  // A URL pública do bucket privado retorna 400; a assinada é acessível por integradores externos.
   const { data, error } = await supabaseAdmin.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
   if (error || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${error?.message || ref.path}`);
   return data.signedUrl;
