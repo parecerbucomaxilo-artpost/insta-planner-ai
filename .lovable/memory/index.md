@@ -5,7 +5,7 @@ Toda geração de imagem segue o estilo Mayo/Cleveland/Lancet do Prof. Francisco
 Assinatura oficial: "Prof. Francisco Menezes | CROSP 53318" + subtítulo "Cirurgia e Traumatologia Bucomaxilofacial · Odontologia Hospitalar". Em carrossel: só 1ª e última imagens.
 3 níveis de conteúdo: IG Conversão (dor/identificação, stories e feed 9h), IG Autoridade (caso/ciência traduzida, feed 15h e 19h), LinkedIn Científico (Lancet/IJOMS/JOMS + DOI). Cron `gerar-proximo` alterna automaticamente.
 Modelo de imagem padrão: google/gemini-3.1-flash-image-preview. Carrosséis padrão = 6 cards; Estilo X = 3 cards 16:9. Todas em paralelo.
-Logos oficiais no dashboard, nesta ordem: NSP, Anhanguera Santa Bárbara d'Oeste, Prof. Francisco Menezes, Liga, Clínica Escola. IA nunca desenha logo; sistema aplica overlay real.
+Logos oficiais no dashboard, nesta ordem: NSP, Anhanguera Santa Bárbara d'Oeste, Prof. Francisco Menezes/Planner Chico (Σ branco + quadrado ciano), Liga, Clínica Escola. IA nunca desenha logo; sistema aplica overlay real.
 CTAs IG/X: "Link na Bio" / "Saiba mais pelo link da bio". CTA LinkedIn: WhatsApp https://wa.me/5511947684004. PROIBIDO: "agende consulta/avaliação", "promoção", "oferta", "desconto", "últimas vagas".
 
 ## Memories
@@ -15,7 +15,7 @@ CTAs IG/X: "Link na Bio" / "Saiba mais pelo link da bio". CTA LinkedIn: WhatsApp
 - [Tom de voz e bibliografia](mem://features/tone-and-bibliography) — IG/X linguagem leiga e empática; LinkedIn formal/científico com DOI. Fontes: Lancet, IJOMS, JOMS, OSOMOPOR, BJOMS.
 - [Cronograma de postagens](mem://features/schedule-cadence) — Seg-Sáb: IG feed 9/15/19, stories 8/13/17, LinkedIn 9 e 17:30. Domingo: posts especiais automáticos.
 - [Nunca inventar logo](mem://constraints/no-fake-logo) — IA reserva canto superior direito limpo; logo real é overlay do sistema. Carrossel padrão = 6 cards.
-- [Logo Chico obrigatória](mem://constraints/logo-chico-obrigatoria) — Logo oficial "F" (Σ branco + quadrado ciano sobre navy) obrigatória em 100% dos posts do Planner Simplificado Chico. IA reserva canto inferior direito limpo; overlay real do sistema.
+- [Logo Chico obrigatória](mem://constraints/logo-chico-obrigatoria) — Logo oficial do Planner Chico (Σ branco + quadrado ciano sobre navy) obrigatória em 100% dos posts do Planner Simplificado Chico. Nunca usar selo anatômico circular como logo do Prof. Francisco.
 - [Estilo e dimensões das imagens](mem://design/image-style-and-dimensions) — Dimensões por rede (IG 4:5, Stories 9:16, LinkedIn/Google/X 16:9/4:3), 5 estilos alternados (foto, ilustração, quadrinhos, infográfico, colagem), pouco texto, representação literal do tema, temas de alta busca.
 - [Estilo navy com headline de impacto](mem://design/navy-background-style) — Fundo navy luminoso, headline curto, paleta da logo.
 - [Ilustrações com realismo anatômico](mem://design/anatomical-illustration-style) — Estilo Netter / Gray's Anatomy / render 3D médico. Proibido cartoon, flat, infantil.
