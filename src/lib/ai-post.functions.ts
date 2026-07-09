@@ -1751,7 +1751,14 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         { n: 2, total: 3, papel: `TWEET 2 sobre "${tema}": explicação científica curta. Sem mudar de tema. PT-BR sem erros.` },
         { n: 3, total: 3, papel: `TWEET 3 sobre "${tema}": CTA WhatsApp/Link na Bio + assinatura. PT-BR sem erros.` },
       ];
-      const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
+      const diverseSpec = [
+        { n: 1, total: 5, papel: `CAPA editorial sobre "${tema}" (FORA da saúde): headline curto 2-6 palavras em PT-BR coerente com o tema (ex.: homenagem, data, símbolo). Composição impactante, sem elementos clínicos.` },
+        { n: 2, total: 5, papel: `CONTEXTO/HISTÓRIA de "${tema}": cena/objeto/símbolo representando o tema. Sem texto ou máx. 3 palavras.` },
+        { n: 3, total: 5, papel: `DETALHE/CURIOSIDADE de "${tema}": composição editorial reforçando o assunto. Sem texto.` },
+        { n: 4, total: 5, papel: `MOMENTO EMOCIONAL de "${tema}": reforça a mensagem central do tema. Sem texto.` },
+        { n: 5, total: 5, papel: `FECHAMENTO editorial de "${tema}" com CTA coerente com o tema (ex.: "COMPARTILHE", "LEMBRE-SE"). Sem WhatsApp de consultório, sem menção a saúde.` },
+      ];
+      const slidesSpec = data.rede === "estilo-x" ? xSpec : isDiverso ? diverseSpec : fullSpec;
       // Gera TODAS as imagens em paralelo com retry POR SLIDE — nenhum slide pode faltar.
       const genSlideResilient = async (s: typeof slidesSpec[number], idx: number): Promise<{ publicUrl: string; signedUrl: string }> => {
         const prompt = withVisual(
