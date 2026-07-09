@@ -68,6 +68,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
+  const [logoKey, setLogoKey] = useState<LogoKey | undefined>(undefined);
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");
