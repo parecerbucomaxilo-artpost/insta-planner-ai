@@ -5,40 +5,53 @@ import logoPlanner from "@/assets/logo-planner.png.asset.json";
 import logoAluno1 from "@/assets/logo-aluno-1.png.asset.json";
 import logoAluno2 from "@/assets/logo-aluno-2.png.asset.json";
 import logoLiga from "@/assets/logo-liga-ctbmf.png.asset.json";
+import logoClinica from "@/assets/logo-clinica.png?url";
 
-export type LogoKey = "planner" | "aluno-1" | "aluno-2" | "liga-ctbmf" | "nenhuma";
+export type LogoKey =
+  | "nsp"
+  | "anhanguera"
+  | "planner"
+  | "liga-ctbmf"
+  | "clinica-escola"
+  | "nenhuma";
 
 export interface LogoOption {
   key: LogoKey;
   label: string;
   description: string;
-  url: string; // caminho relativo /__l5e/...
+  url: string;
 }
 
 export const LOGOS_DISPONIVEIS: LogoOption[] = [
   {
-    key: "planner",
-    label: "Prof. Francisco Menezes",
-    description: "Logo institucional oficial (padrão do Planner).",
-    url: logoPlanner.url,
-  },
-  {
-    key: "aluno-1",
-    label: "Anhanguera / Santa Bárbara",
-    description: "Logo do curso (Planner Aluno).",
-    url: logoAluno1.url,
-  },
-  {
-    key: "aluno-2",
-    label: "NSP / Odontologia Hospitalar",
-    description: "Logo institucional (Planner Aluno).",
+    key: "nsp",
+    label: "NSP",
+    description: "Núcleo de Saúde e Pesquisa (Odontologia Hospitalar).",
     url: logoAluno2.url,
   },
   {
+    key: "anhanguera",
+    label: "Anhanguera Santa Bárbara d'Oeste",
+    description: "Logo do curso Anhanguera – Santa Bárbara d'Oeste.",
+    url: logoAluno1.url,
+  },
+  {
+    key: "planner",
+    label: "Prof. Francisco Menezes",
+    description: "Logo institucional oficial do Prof. Francisco Menezes.",
+    url: logoPlanner.url,
+  },
+  {
     key: "liga-ctbmf",
-    label: "LACTBMF",
-    description: "Selo oficial da Liga Acadêmica.",
+    label: "Liga (LACTBMF)",
+    description: "Selo oficial da Liga Acadêmica de CTBMF.",
     url: logoLiga.url,
+  },
+  {
+    key: "clinica-escola",
+    label: "Clínica Escola",
+    description: "Logo institucional da Clínica Escola.",
+    url: logoClinica,
   },
   {
     key: "nenhuma",

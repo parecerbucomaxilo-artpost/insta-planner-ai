@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarClock, Copy, Download, Loader2, Phone, Sparkles, Stethoscope, Trash2, Wand2, Zap } from "lucide-react";
+import { CalendarClock, Copy, Download, Loader2, Phone, Sparkles, Stethoscope, Trash2, Wand2, X, Zap } from "lucide-react";
+import { LOGOS_DISPONIVEIS, type LogoKey } from "@/lib/logos-catalog";
 import {
   generateSinglePost,
   generateCaptionOnly,
@@ -87,6 +88,7 @@ export function PlannerAgendamentoTratamento() {
   const [modeloImagem, setModeloImagem] = useState<(typeof MODELOS_IMAGEM)[number]["id"]>("local/sem-custo");
   const [assunto, setAssunto] = useState("");
   const [legendaGerada, setLegendaGerada] = useState("");
+  const [logoKey, setLogoKey] = useState<LogoKey>("clinica-escola");
   const [gerandoLegenda, setGerandoLegenda] = useState(false);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<PreviewState | null>(null);
@@ -173,6 +175,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           audiencia: "estudantes-graduacao", // ativa paleta e logos da Liga
           modelo,
           modeloImagem,
+          logoKey,
         } as any,
       });
 
@@ -308,6 +311,39 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
         />
       </Card>
 
+
+      <Card className="p-5 space-y-3">
+        <Label className="text-sm font-semibold">Logo do post</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {LOGOS_DISPONIVEIS.map((l) => {
+            const active = logoKey === l.key;
+            return (
+              <button
+                key={l.key}
+                type="button"
+                onClick={() => setLogoKey(l.key)}
+                className={cn(
+                  "flex items-center gap-2 rounded-md border p-2 text-left transition",
+                  active ? "border-amber-500 ring-2 ring-amber-400/30 bg-amber-50" : "border-zinc-200 bg-white/60 hover:bg-amber-50/40",
+                )}
+              >
+                <div className="w-10 h-10 shrink-0 rounded bg-[#0c2340] flex items-center justify-center overflow-hidden">
+                  {l.url ? (
+                    <img src={l.url} alt={l.label} className="max-w-full max-h-full object-contain" />
+                  ) : (
+                    <X className="w-4 h-4 text-white/70" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold truncate">{l.label}</div>
+                  <div className="text-[10px] text-muted-foreground line-clamp-2">{l.description}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-muted-foreground">Escolha qual logo será aplicada como marca d'água no canto inferior direito. "Sem logo" publica a arte pura.</p>
+      </Card>
 
       <Card className="p-5 space-y-3">
         <Label className="text-sm font-semibold">Formato do post</Label>
