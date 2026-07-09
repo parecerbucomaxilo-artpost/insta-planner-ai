@@ -1272,6 +1272,37 @@ function clinicalContract(tema: string, audiencia: z.infer<typeof SingleInput>["
 REGRAS: legenda e imagem devem seguir exatamente este contrato; proibido trocar o assunto, falar só da doença sem conduta, ou criar imagem genérica de odontologia.`;
 }
 
+// === TEMAS DIVERSOS (fora da área da saúde) — sistemas de legenda dedicados ===
+function diverseCaptionSystem(rede: "instagram" | "linkedin" | "estilo-x" | "google", formato: "Carrossel" | "Story" | "Post Único") {
+  const tamanho = rede === "linkedin"
+    ? "800-1400 caracteres, tom editorial/institucional, no máx. 1 emoji sóbrio, 3-5 hashtags coerentes com o TEMA (nunca de saúde)."
+    : rede === "google"
+      ? "60-120 palavras, título em **negrito**, 1 linha 'Palavras-chave: ...' coerentes com o TEMA, 1 linha 'ALT TEXT: ...'."
+      : formato === "Story"
+        ? "60-180 caracteres, direto, 1-2 emojis coerentes com o tema."
+        : "400-700 caracteres, gancho na 1ª linha, 2-4 emojis coerentes com o TEMA, 4-6 hashtags do TEMA (nunca de saúde).";
+  return `Você é copywriter editorial de conteúdo institucional/cultural. PT-BR Brasil impecável, ZERO inglês, sem repetições.
+MODO: TEMAS DIVERSOS — tema TOTALMENTE FORA da saúde (data comemorativa, evento histórico, cultura, esporte, causa social, homenagem, cotidiano, hobby).
+
+REGRAS INEGOCIÁVEIS:
+- PROIBIDO mencionar: saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, ATM, siso, dente, boca, sorriso, dor, jaleco, exame, qualquer profissional/área da saúde.
+- PROIBIDO transformar o tema em conteúdo de saúde (nada de "saúde bucal do trabalhador", "impacto na odontologia", "saúde das vítimas").
+- NÃO force relação com odontologia/medicina. NÃO use CTAs de consultório ("agende", "avaliação", "atendimento"). CTA coerente com o tema ("compartilhe esta homenagem", "marque quem se identifica", "lembre-se de...").
+
+TOM: homenagens = respeitoso/sóbrio; datas comemorativas = festivo/inspirador; causas sociais = consciente/engajado; cultura/esportes = dinâmico. Nunca tom de "profissional de saúde".
+
+FORMATO: ${tamanho}
+Sem assinatura no corpo (entra como overlay). Sem aspas envolvendo o texto.`;
+}
+
+function buildDiverseLocalCaption(tema: string, rede: "instagram" | "linkedin" | "estilo-x" | "google", formato: "Carrossel" | "Story" | "Post Único") {
+  const tag = `#${tema.replace(/[^\p{L}\p{N}]+/gu, "")}`;
+  if (formato === "Story") return `${tema}\n\nCompartilhe com quem se identifica.`;
+  if (rede === "linkedin") return `**${tema}**\n\nRegistro especial sobre ${tema}. Um momento que merece ser lembrado e compartilhado.\n\nCompartilhe com quem também valoriza esta data.\n\n${tag}`;
+  if (rede === "google") return `**${tema}**\n\nRegistro editorial sobre ${tema}. Compartilhe com quem se identifica.\n\nPalavras-chave: ${tema}\nALT TEXT: imagem editorial sobre ${tema}`;
+  return `${tema}\n\nUm registro especial sobre este tema. Compartilhe com quem se identifica.\n\n${tag}`;
+}
+
 function completeCaptionIfNeeded(params: {
   legenda: string;
   tema: string;
@@ -1281,6 +1312,10 @@ function completeCaptionIfNeeded(params: {
   especialidade: string;
 }) {
   const raw = (params.legenda || "").trim();
+  // TEMAS DIVERSOS: nunca preencher com bloco médico.
+  if (params.especialidade === "Temas Diversos") {
+    return raw || buildDiverseLocalCaption(params.tema, params.rede, params.formato);
+  }
   if (!raw) return buildLocalCaption({ tema: params.tema, rede: params.rede, formato: params.formato, especialidade: params.especialidade, nivel: resolveNivel("auto", params.rede), audiencia: params.audiencia });
   const g = topicGuidance(params.tema);
   const norm = normalizeTema(raw);
@@ -1474,16 +1509,33 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     //    depois disso, para evitar arte genérica ou legenda incompleta.
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const isChico = data.audiencia === "chico-drfm";
-    const localCaption = () => buildLocalCaption({
-      tema,
-      rede: data.rede,
-      formato,
-      especialidade: data.especialidade,
-      nivel,
-      audiencia: data.audiencia,
-    });
+    const isDiverso = data.especialidade === "Temas Diversos";
+    const localCaption = () => isDiverso
+      ? buildDiverseLocalCaption(tema, data.rede, formato)
+      : buildLocalCaption({
+          tema,
+          rede: data.rede,
+          formato,
+          especialidade: data.especialidade,
+          nivel,
+          audiencia: data.audiencia,
+        });
     const legendaPromise = (async () => {
       if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") return localCaption();
+      // TEMAS DIVERSOS: prompt totalmente fora da saúde.
+      if (isDiverso) {
+        try {
+          const { generateTextAI } = await import("@/lib/ai-gateway.server");
+          const system = diverseCaptionSystem(data.rede, formato);
+          const prompt = `Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
+          const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : formato === "Carrossel" ? 1100 : 800 });
+          return txt || localCaption();
+        } catch (err) {
+          console.warn("[ai-post] legenda diversa caiu para local:", err instanceof Error ? err.message : err);
+          return localCaption();
+        }
+      }
+
       try {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
         const systemBase = isChico
@@ -1582,8 +1634,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       audiencia: data.audiencia,
       especialidade: data.especialidade,
     });
-    const slideNarratives = formato === "Carrossel" ? buildSlideNarratives(tema, data.audiencia) : [];
-    const legendaResolvida = formato === "Carrossel"
+    const slideNarratives = formato === "Carrossel" && !isDiverso ? buildSlideNarratives(tema, data.audiencia) : [];
+    const legendaResolvida = formato === "Carrossel" && !isDiverso
       ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia)
       : legendaBaseResolvida;
 
@@ -1609,7 +1661,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     let cenaVisualNexo = visualSceneForTopic(tema, guiaTema, data.audiencia);
     let cenasPorSlide: string[] = slideNarratives.map((_, i) => visualSceneForTopic(tema, guiaTema, data.audiencia, i));
     try {
-      if (process.env.LOVABLE_API_KEY && data.modelo !== "local/sem-custo") {
+      if (!isDiverso && process.env.LOVABLE_API_KEY && data.modelo !== "local/sem-custo") {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
         const briefSys = `Você é diretor de arte médico. Use o CONTRATO CLÍNICO como fonte única de verdade e devolva UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente tema + conduta. Sem metáforas vagas, sem texto na imagem, sem cor nomeada, sem pessoa real. Se a legenda estiver genérica, siga o contrato.`;
         const briefPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
@@ -1656,11 +1708,13 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       altLegenda ? `ALT TEXT GUIA (a cena PRECISA bater com isso): "${altLegenda}"` : "",
     ].filter(Boolean).join("\n");
     const withVisual = (basePrompt: string, slideIndex?: number) => {
+      const guardaPtBr = `IDIOMA OBRIGATÓRIO — TODO texto renderizado na imagem DEVE ser 100% em PT-BR com acentuação completa e crase correta. PROIBIDO qualquer palavra em inglês/espanhol/latim; PROIBIDO palavras inventadas, duplicadas, sem acento. Se houver dúvida, use sinônimo simples correto em pt-BR.`;
+      // TEMAS DIVERSOS: sem contrato clínico, sem cena médica, sem hook de dor.
+      if (isDiverso) return `${guardaPtBr}\n\nTEMA DO POST: "${tema}" (TOTALMENTE FORA da área da saúde/odontologia). NÃO desenhe cena clínica, hospitalar, consultório, dentes, boca, jaleco, instrumental médico. Ilustre APENAS o tema.\n\n${basePrompt}`;
       const cenaSlide = typeof slideIndex === "number" ? cenasPorSlide[slideIndex] : "";
       const narrativaSlide = typeof slideIndex === "number" ? slideNarratives[slideIndex] : "";
       const cena = cenaSlide || visualSceneForTopic(tema, guiaTema, data.audiencia, slideIndex) || cenaVisualNexo;
       const contrato = clinicalContract(tema, data.audiencia, slideIndex);
-      // CAPA (slide 0) OU imagem única não-story renderiza o HOOK_IMAGEM como tipografia.
       const isCapa = slideIndex === 0 || typeof slideIndex === "undefined";
       const hookBloco = (isCapa && hookImagem)
         ? `TEXTO OBRIGATÓRIO NA IMAGEM (renderize EXATAMENTE esta frase como tipografia gigante bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre o fundo navy luminoso, 3-6 palavras, PT-BR com acentuação perfeita, centralizado na parte superior/central da arte): "${hookImagem}". NÃO altere, NÃO traduza, NÃO adicione outras palavras, NÃO escreva nome de profissional/clínica/marca. É o ÚNICO texto permitido na imagem.`
@@ -1672,11 +1726,11 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         cena ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cena}` : "",
         hookBloco,
       ].filter(Boolean).join("\n");
-      const guardaPtBr = `IDIOMA OBRIGATÓRIO — TODO E QUALQUER texto renderizado na imagem (headline, gancho, CTA, número, rótulo, palavra em placa/tela/jaleco) DEVE ser 100% em Português do Brasil (pt-BR) com acentuação completa (á é í ó ú â ê ô ã õ à ç) e crase correta. PROIBIDO absolutamente qualquer palavra em inglês, espanhol, latim, francês ou italiano; PROIBIDO palavras inventadas, embaralhadas, duplicadas ("dor dor"), com letras faltando/trocadas ou sem acento. Exemplos CORRETOS: "DOR NO SISO?", "ATM TRAVADA?", "PERDEU UM DENTE?", "AVALIAÇÃO", "CIRURGIA". Exemplos PROIBIDOS: "PAIN", "TOOTH", "SURGERY", "SISOO", "AVALIACAO" (sem til), "DÖR". Se tiver QUALQUER dúvida sobre uma palavra, use sinônimo simples e correto em pt-BR. Revise a arte antes de devolver — se houver 1 letra errada em português, refaça.`;
       return blocos
         ? `=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${guardaPtBr}\n${blocos}\nA imagem deve mostrar a CONDUTA/TRATAMENTO quando o slide pedir solução. Se houver conflito com o prompt base, ESTE NEXO vence.\n=== FIM DO NEXO ===\n\n${basePrompt}`
         : `${guardaPtBr}\n\n${basePrompt}`;
     };
+
 
 
     let urlImagem: string;
@@ -1697,7 +1751,14 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         { n: 2, total: 3, papel: `TWEET 2 sobre "${tema}": explicação científica curta. Sem mudar de tema. PT-BR sem erros.` },
         { n: 3, total: 3, papel: `TWEET 3 sobre "${tema}": CTA WhatsApp/Link na Bio + assinatura. PT-BR sem erros.` },
       ];
-      const slidesSpec = data.rede === "estilo-x" ? xSpec : fullSpec;
+      const diverseSpec = [
+        { n: 1, total: 5, papel: `CAPA editorial sobre "${tema}" (FORA da saúde): headline curto 2-6 palavras em PT-BR coerente com o tema (ex.: homenagem, data, símbolo). Composição impactante, sem elementos clínicos.` },
+        { n: 2, total: 5, papel: `CONTEXTO/HISTÓRIA de "${tema}": cena/objeto/símbolo representando o tema. Sem texto ou máx. 3 palavras.` },
+        { n: 3, total: 5, papel: `DETALHE/CURIOSIDADE de "${tema}": composição editorial reforçando o assunto. Sem texto.` },
+        { n: 4, total: 5, papel: `MOMENTO EMOCIONAL de "${tema}": reforça a mensagem central do tema. Sem texto.` },
+        { n: 5, total: 5, papel: `FECHAMENTO editorial de "${tema}" com CTA coerente com o tema (ex.: "COMPARTILHE", "LEMBRE-SE"). Sem WhatsApp de consultório, sem menção a saúde.` },
+      ];
+      const slidesSpec = data.rede === "estilo-x" ? xSpec : isDiverso ? diverseSpec : fullSpec;
       // Gera TODAS as imagens em paralelo com retry POR SLIDE — nenhum slide pode faltar.
       const genSlideResilient = async (s: typeof slidesSpec[number], idx: number): Promise<{ publicUrl: string; signedUrl: string }> => {
         const prompt = withVisual(
