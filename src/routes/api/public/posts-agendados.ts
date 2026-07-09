@@ -12,7 +12,6 @@ const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 const CACHE_REFRESH_MARGIN_MS = 60 * 60 * 1000;
-const PUBLIC_APP_URL = "https://insta-planner-ai.lovable.app";
 
 function isCacheValid(expiresAt: string | null | undefined) {
   if (!expiresAt) return false;
@@ -90,17 +89,6 @@ function getStorageObjectRef(value: string | null | undefined) {
   } catch {
     return null;
   }
-}
-
-function createStorageProxyUrl(bucket: string, path: string) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return null;
-  const token = createHmac("sha256", secret).update(`${bucket}:${path}`).digest("hex");
-  const url = new URL("/api/public/storage-media", PUBLIC_APP_URL);
-  url.searchParams.set("bucket", bucket);
-  url.searchParams.set("path", path);
-  url.searchParams.set("token", token);
-  return url.toString();
 }
 
 async function createFetchableUrl(supabaseAdmin: any, value: string | null | undefined) {
