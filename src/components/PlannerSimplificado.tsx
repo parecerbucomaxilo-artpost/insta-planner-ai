@@ -748,11 +748,12 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {preview && (
             <Card className="p-5 space-y-3 border-2 border-emerald-200 bg-emerald-50/30">
               <h3 className="font-semibold text-emerald-900">Pré-visualização</h3>
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   {preview.urls.length > 1 ? (
                     <>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-col gap-4">
+
                         {preview.urls.map((u, i) => (
                           <div key={i} className="rounded-md border bg-white/80 overflow-hidden">
                             <div className="relative">
