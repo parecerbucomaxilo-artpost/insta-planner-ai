@@ -257,23 +257,40 @@ export async function overlayAlunoLogos(
     const marginX = Math.round(w * 0.035);
     const marginY = Math.round(h * 0.025);
 
-    // Logo OFICIAL da LACTBMF (Liga Acadêmica de CTBMF) — selo circular oficial.
-    const ligaAsset = (await import("@/assets/logo-liga-ctbmf.png.asset.json")).default;
-    const bytes = await fetchBytes(ligaAsset.url, origin);
-    const full = trimAlpha(decodeImage(bytes));
-    const fw = full.width;
-    const fh = full.height;
-    const targetW = Math.max(120, Math.round((w * sizePct) / 100));
-    const targetH = Math.max(80, Math.round((fh * targetW) / Math.max(1, fw)));
-    const small = resizeRgba(full, targetW, targetH);
-    const x = Math.max(0, w - targetW - marginX);
+    // 3 logos institucionais fixas em toda publicação do Planner Agendamento:
+    // aluno-1 (canto inferior esquerdo), aluno-2 (centro inferior),
+    // LACTBMF (canto inferior direito — selo oficial da Liga).
+    const [ligaAssetMod, aluno1Bytes, aluno2Bytes, ligaBytes] = await Promise.all([
+      import("@/assets/logo-liga-ctbmf.png.asset.json"),
+      fetchBytes(logoAluno1.url, origin),
+      fetchBytes(logoAluno2.url, origin),
+      (async () => fetchBytes((await import("@/assets/logo-liga-ctbmf.png.asset.json")).default.url, origin))(),
+    ]);
+    void ligaAssetMod;
+
+    const decode = (b: Uint8Array) => trimAlpha(decodeImage(b));
+    const logos = [decode(aluno1Bytes), decode(aluno2Bytes), decode(ligaBytes)];
+
+    const targetH = Math.max(70, Math.round((h * sizePct) / 100));
+    const resized = logos.map((l) => {
+      const tw = Math.max(70, Math.round((l.width * targetH) / Math.max(1, l.height)));
+      return resizeRgba(l, tw, targetH);
+    });
+
     const y = Math.max(0, h - targetH - marginY);
-    composite(base, small, x, y);
+    // esquerda
+    composite(base, resized[0], marginX, y);
+    // direita (liga)
+    const xRight = Math.max(0, w - resized[2].width - marginX);
+    composite(base, resized[2], xRight, y);
+    // centro (aluno-2) — centralizado no espaço restante
+    const xCenter = Math.round((w - resized[1].width) / 2);
+    composite(base, resized[1], xCenter, y);
 
     return encodeJpegB64(base, 90);
   } catch (e) {
     console.error("[overlayAlunoLogos] falha — logo não aplicada:", e);
-    throw new Error("Falha ao aplicar a logo oficial da Liga.");
+    throw new Error("Falha ao aplicar as 3 logos institucionais.");
   }
 }
 
