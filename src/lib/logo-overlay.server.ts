@@ -214,7 +214,7 @@ export async function overlayLogo(
     }
 
     if (opts?.withLogo !== false) {
-      const logoBytes = await fetchBytes(logoAsset.url, origin);
+      const logoBytes = await fetchBytes(opts?.logoUrl || logoAsset.url, origin);
       const logoFull = decodeImage(logoBytes);
       const aspect = logoFull.height / Math.max(1, logoFull.width);
       // Faixa horizontal (múltiplas logos institucionais) — fixa no rodapé
