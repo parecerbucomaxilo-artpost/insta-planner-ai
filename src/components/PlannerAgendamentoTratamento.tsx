@@ -172,7 +172,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           formato,
           quando: iso,
           ambasRedes: false,
-          audiencia: "estudantes-graduacao", // ativa paleta e logos da Liga
+          audiencia: "estudantes-graduacao", // ativa paleta institucional da Liga
           modelo,
           modeloImagem,
           logoKey,
