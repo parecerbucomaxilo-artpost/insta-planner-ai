@@ -598,7 +598,48 @@ REGRA DE NOMENCLATURA ANATÔMICA (obrigatória): toda estrutura citada deve usar
 ${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
 }
 
-function studentImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }) {
+// Prompt LIVRE para "Temas Diversos" — tema pode estar totalmente fora da saúde
+// (datas comemorativas, eventos, curiosidades, hobbies, cotidiano). Sem trava médica,
+// sem exigência de cena clínica, sem headline de dor. Mantém qualidade editorial premium.
+function diverseImagePrompt(
+  tema: string,
+  rede: string,
+  opts?: { slide?: { n: number; total: number; papel: string }; isStory?: boolean; brand?: "chico" | "student" | "generico" },
+) {
+  const slide = opts?.slide;
+  const isStory = !!opts?.isStory;
+  const brand = opts?.brand ?? "generico";
+  const dimensoes = rede === "estilo-x"
+    ? "FORMATO horizontal 16:9 (1536x1024)."
+    : rede === "google"
+      ? "FORMATO horizontal 4:3 (1536x1024)."
+      : rede === "linkedin"
+        ? "FORMATO horizontal 1.91:1 (1536x1024)."
+        : isStory
+          ? "FORMATO vertical 9:16 (1024x1536)."
+          : "FORMATO vertical 4:5 (1024x1536).";
+  const slideInfo = slide ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel. Papel: ${slide.papel}.` : "";
+  const brandPalette = brand === "student"
+    ? `PALETA: fundo grafite #2D2C32 dominante, texto branco #FBFBFB, destaque âmbar #DD8E3C. Sem outras cores fortes.`
+    : `PALETA: fundo azul marinho #0c2340 dominante (leve gradiente para ciano #2dd4ff nos cantos), texto branco puro, destaques em ciano #2dd4ff. Sem outras cores fortes.`;
+  const logoReserva = brand === "student"
+    ? `\n- LOGO: NÃO desenhe nenhum logo/marca/monograma. Reserve uma FAIXA INFERIOR CENTRAL LIMPA (~14% da altura) para overlay do sistema.`
+    : brand === "chico"
+      ? `\n- LOGO: NÃO desenhe nenhum logo. Reserve o CANTO INFERIOR DIREITO limpo (~12% da largura) para overlay do sistema.`
+      : "";
+  return `IMAGEM EDITORIAL PREMIUM sobre o tema "${tema}" — pode estar TOTALMENTE FORA da área médica/odontológica (data comemorativa, evento, curiosidade, hobby, cotidiano, cultura, esporte, natureza, tecnologia, comida, música, etc.).
+- ${dimensoes}
+- REPRESENTE LITERALMENTE o tema "${tema}" com uma cena/objeto/símbolo reconhecível (ex.: Dia da Mulher → símbolos femininos elegantes; café → xícara em macro premium; caminhada → tênis em parque; leitura → livro aberto com luz suave; gratidão → mão escrevendo carta; Natal → detalhe minimalista natalino; aniversário da cidade → skyline estilizado).
+- ESTILO: fotografia editorial cinematográfica OU ilustração vetorial minimalista sofisticada OU still life premium. Sem clipart, sem cartoon infantil, sem banco de imagens genérico, sem "cara de IA".
+- ${brandPalette}
+- TIPOGRAFIA: se houver texto, apenas 1 headline curto de 2-6 palavras em PT-BR com acentuação perfeita, bold sans-serif, cor da paleta. Sem parágrafos, sem listas, sem inglês, sem watermark. Em slides intermediários de carrossel: sem texto.
+- COMPOSIÇÃO: hierarquia limpa, muito espaço negativo, iluminação editorial premium, qualidade 8K.${logoReserva}${slideInfo}
+- PROIBIDO: cena clínica/hospitalar/odontológica (o tema NÃO é da área da saúde); rostos reconhecíveis de pessoas reais; mãos deformadas; texto em inglês; palavras duplicadas; cores fora da paleta; CTAs comerciais.
+- Variação (seed ${Math.random().toString(36).slice(2, 10)}): ângulo e composição inéditos.`;
+}
+
+function studentImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }, especialidade?: string) {
+  if (especialidade === "Temas Diversos") return diverseImagePrompt(tema, "instagram", { slide, brand: "student" });
   const slideInfo = slide ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel didático. Papel: ${slide.papel}.` : "";
   const isStory = /story|stories/i.test(slide?.papel ?? "");
   const formato = isStory
