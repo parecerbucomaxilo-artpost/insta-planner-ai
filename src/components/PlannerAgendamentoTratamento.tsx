@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarClock, Copy, Download, Loader2, Phone, Sparkles, Stethoscope, Trash2, Wand2, X, Zap } from "lucide-react";
+import { CalendarClock, Check, Copy, Download, Loader2, Phone, Sparkles, Stethoscope, Trash2, Wand2, X, Zap } from "lucide-react";
 import { LOGOS_DISPONIVEIS, type LogoKey } from "@/lib/logos-catalog";
 import {
   generateSinglePost,
