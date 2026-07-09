@@ -1,11 +1,11 @@
 // Catálogo de logos disponíveis para overlay no post.
 // Fonte única de verdade: usado tanto no dashboard (seleção) quanto no
 // pipeline de geração (aplica overlay real via `overlayLogo`).
-import logoPlanner from "@/assets/logo-planner.png.asset.json";
-import logoAluno1 from "@/assets/logo-aluno-1.png.asset.json";
-import logoAluno2 from "@/assets/logo-aluno-2.png.asset.json";
+import logoNsp from "@/assets/logo-nsp.png?url";
+import logoAnhanguera from "@/assets/logo-anhanguera-sbo.png?url";
+import logoDrFrancisco from "@/assets/logo-dr-francisco.png?url";
 import logoLiga from "@/assets/logo-liga-ctbmf.png.asset.json";
-import logoClinica from "@/assets/logo-clinica.png?url";
+import logoClinicaEscola from "@/assets/logo-clinica-escola.png?url";
 
 export type LogoKey =
   | "nsp"
@@ -27,19 +27,19 @@ export const LOGOS_DISPONIVEIS: LogoOption[] = [
     key: "nsp",
     label: "NSP",
     description: "Núcleo de Saúde e Pesquisa (Odontologia Hospitalar).",
-    url: logoAluno2.url,
+    url: logoNsp,
   },
   {
     key: "anhanguera",
     label: "Anhanguera Santa Bárbara d'Oeste",
     description: "Logo do curso Anhanguera – Santa Bárbara d'Oeste.",
-    url: logoAluno1.url,
+    url: logoAnhanguera,
   },
   {
     key: "planner",
     label: "Prof. Francisco Menezes",
     description: "Logo institucional oficial do Prof. Francisco Menezes.",
-    url: logoPlanner.url,
+    url: logoDrFrancisco,
   },
   {
     key: "liga-ctbmf",
@@ -51,7 +51,7 @@ export const LOGOS_DISPONIVEIS: LogoOption[] = [
     key: "clinica-escola",
     label: "Clínica Escola",
     description: "Logo institucional da Clínica Escola.",
-    url: logoClinica,
+    url: logoClinicaEscola,
   },
   {
     key: "nenhuma",

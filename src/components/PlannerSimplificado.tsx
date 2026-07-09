@@ -68,7 +68,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
-  const [logoKey, setLogoKey] = useState<LogoKey | undefined>(undefined);
+  const defaultLogoKey: LogoKey = audiencia === "estudantes-graduacao" ? "liga-ctbmf" : "planner";
+  const [logoKey, setLogoKey] = useState<LogoKey>(defaultLogoKey);
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");
@@ -330,7 +331,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     const tid = "local-week-simple";
     toast.loading("Gerador local planejando 7 dias...", { id: tid });
     try {
-      const out = await genWeek({ data: { especialidade, modelo } as any });
+      const out = await genWeek({ data: { especialidade, modelo, temaGuia: tema.trim() } as any });
       // Filtra apenas slots do Instagram para a conta simplificada
       const igOnly = (out.temas as any[]).filter((t) => t.rede === "instagram" || t.rede === "estilo-x");
       setTemas(igOnly);
@@ -510,7 +511,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               )}
             >
               🎓 Tipo Liga
-              <div className="text-[11px] font-normal text-zinc-500 mt-0.5">Didático para graduação — paleta navy + teal, 2 logos da faculdade. Publica via @drfranciscomenezes convidando @lactbmf como colaboradora.</div>
+              <div className="text-[11px] font-normal text-zinc-500 mt-0.5">Didático para graduação — identidade da Liga, com seleção manual da logo oficial no dashboard. Publica via @drfranciscomenezes convidando @lactbmf como colaboradora.</div>
             </button>
           </div>
           {usarTipoLiga && (
@@ -620,7 +621,24 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 label="Temas Diversos"
               />
             </div>
-            <p className="text-[11px] text-muted-foreground">Define o foco clínico das legendas e imagens geradas. "Temas Diversos" usa assuntos leves do dia a dia (curiosidades, hábitos, prevenção, bem-estar).</p>
+            <p className="text-[11px] text-muted-foreground">Define o foco das legendas e imagens geradas. "Temas Diversos" respeita datas, eventos, homenagens e assuntos fora da saúde/odontologia.</p>
+          </Card>
+
+          <Card className="p-5 space-y-3 border-2 border-dashed border-primary/20 bg-primary/5">
+            <Label className="text-sm font-semibold">Sugira o tema do post ou da semana</Label>
+            <Textarea
+              value={tema}
+              onChange={(e) => setTema(e.target.value)}
+              placeholder={effectiveAudiencia === "estudantes-graduacao"
+                ? "Ex.: caiu na prova: sutura simples; curiosidade sobre nervo alveolar inferior; evento da Liga."
+                : especialidade === "Temas Diversos"
+                  ? "Ex.: homenagem aos combatentes de 1932; Dia do Trabalho; evento institucional; acontecimento atual."
+                  : "Ex.: dor no siso, ATM travada, bruxismo, odontologia hospitalar, cirurgia sob anestesia geral."
+              }
+              rows={3}
+              className="text-sm"
+            />
+            <p className="text-[11px] text-muted-foreground">Se preencher, esse tema guia a imagem e a legenda. Se deixar vazio, o app escolhe automaticamente sem repetir assuntos próximos.</p>
           </Card>
 
           {/* Seleção de LOGO (overlay aplicado na arte gerada) */}
@@ -628,7 +646,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             <Label className="text-sm font-semibold">Logo do post</Label>
             <div className="grid grid-cols-2 gap-2">
               {LOGOS_DISPONIVEIS.map((l) => {
-                const active = (logoKey ?? "planner") === l.key;
+                const active = logoKey === l.key;
                 return (
                   <button
                     key={l.key}
@@ -654,7 +672,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 );
               })}
             </div>
-            <p className="text-[11px] text-muted-foreground">Escolha qual logo será aplicada como marca d'água no canto inferior direito da imagem. "Sem logo" publica a arte pura.</p>
+            <p className="text-[11px] text-muted-foreground">Ordem correta: NSP, Anhanguera Santa Bárbara d'Oeste, Prof. Francisco Menezes, Liga, Clínica Escola. A logo escolhida é aplicada pelo sistema; a IA não desenha logo.</p>
           </Card>
 
 
@@ -731,10 +749,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             </div>
             {modo !== "semana" ? (
               <>
-                <div className="space-y-1">
-                  <Label className="text-xs">Tema do post (opcional — escreva um tema ou deixe o app escolher)</Label>
-                  <Input value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Ex.: cirurgia de siso, ATM, bruxismo..." />
-                </div>
                 <Button onClick={() => handleGerar()} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
                   Criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} com imagem + legenda {modelo === "local/sem-custo" ? "pelo app" : "pela IA"}

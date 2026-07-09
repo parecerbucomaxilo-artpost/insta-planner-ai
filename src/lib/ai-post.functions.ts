@@ -70,6 +70,7 @@ const SingleInput = z.object({
 const WeekInput = z.object({
   especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("Ambas"),
   modelo: ModeloLocalInput,
+  temaGuia: z.string().optional().default(""),
 });
 
 const WHATSAPP = "https://wa.me/5511947684004";
@@ -583,9 +584,9 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 // === PLANNER SIMPLIFICADO — AUDIÊNCIA: ESTUDANTES DE GRADUAÇÃO EM ODONTOLOGIA ===
 // Tom didático e simples sobre cirurgia bucal básica; inclui enquetes, curiosidades,
 // dicas de técnica e mitos x verdades. Sem CTA comercial. Cores das logos da
-// faculdade (navy escuro + verde-azulado/teal), SEM fundo branco. As 2 logos são
-// aplicadas como overlay real (canto inf. esq. + canto inf. dir.) pelo pipeline —
-// a IA NÃO desenha logos; apenas reserva os cantos inferiores limpos.
+// Liga (grafite + âmbar), SEM fundo branco. A logo escolhida no dashboard é
+// aplicada como overlay real pelo pipeline — a IA NÃO desenha logos; apenas
+// reserva o canto inferior direito limpo.
 function studentCaptionSystem() {
   return `Você é professor universitário de Cirurgia Bucomaxilofacial escrevendo para ALUNOS DE GRADUAÇÃO em Odontologia.
 TOM: didático, claro, simples, instrutivo, próximo do aluno. Como se fosse um post de monitoria.
@@ -1591,18 +1592,9 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
 
     const { ensureJpegB64, overlayAlunoLogos, overlayLogo } = await import("@/lib/logo-overlay.server");
-    // Modo Liga: passa as 2 logos como REFERÊNCIA VISUAL para o modelo amostrar
-    // literalmente as cores reais delas (em vez de descrever hex).
-    const logoRefs: string[] = [];
-    if (isEstudantes) {
-      const origin = process.env.PUBLIC_ORIGIN || "https://insta-planner-ai.lovable.app";
-      const a1 = (await import("@/assets/logo-aluno-1.png.asset.json")).default;
-      const a2 = (await import("@/assets/logo-aluno-2.png.asset.json")).default;
-      logoRefs.push(`${origin}${a1.url}`, `${origin}${a2.url}`);
-    }
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
       try {
-        return await generateImageBase64({ prompt, size, model: data.modeloImagem, referenceImageUrls: logoRefs.length ? logoRefs : undefined });
+        return await generateImageBase64({ prompt, size, model: data.modeloImagem });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message);
@@ -2008,7 +2000,18 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
 
     // Slots reais dos próximos 7 dias
     const slots = buildScheduleSlots(new Date(), 7);
-    const temasBase = data.especialidade === "Odontologia Hospitalar"
+    const temaGuia = (data.temaGuia || "").trim();
+    const temasBase = temaGuia
+      ? [
+        temaGuia,
+        `${temaGuia}: contexto que merece atenção`,
+        `${temaGuia}: mito, verdade e ponto principal`,
+        `${temaGuia}: o que muita gente ainda não percebe`,
+        `${temaGuia}: bastidores, história ou curiosidade`,
+        `${temaGuia}: mensagem para salvar e compartilhar`,
+        `${temaGuia}: fechamento da semana com reflexão prática`,
+      ]
+      : data.especialidade === "Odontologia Hospitalar"
       ? [
         "Como a higiene oral reduz riscos em pacientes internados",
         "Quando a odontologia hospitalar entra no cuidado multiprofissional",

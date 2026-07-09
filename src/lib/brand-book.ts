@@ -46,7 +46,7 @@ export const BRAND_BOOK: Record<BrandKey, BrandSpec> = {
       text: "#0c2340",
       light: "#F5F5F5",
     },
-    logo: { file: "logo-planner.png", position: "bottom_right" },
+    logo: { file: "logo-dr-francisco.png", position: "bottom_right" },
     tipografia: { title: "Sans-serif bold condensada", body: "Sans-serif regular" },
     estilo: "Premium · editorial · minimalista · muito espaço em branco · luxuoso hospitalar.",
     imagens: [
@@ -82,7 +82,7 @@ export const BRAND_BOOK: Record<BrandKey, BrandSpec> = {
       text: "#FBFBFB",
       light: "#FBFBFB",
     },
-    logo: { file: "logo-aluno-1.png", position: "bottom_right" },
+    logo: { file: "logo-liga-ctbmf.png", position: "bottom_right" },
     tipografia: { title: "Sans-serif bold condensada", body: "Sans-serif regular" },
     estilo: "Institucional · universitário · científico · sóbrio.",
     imagens: [
