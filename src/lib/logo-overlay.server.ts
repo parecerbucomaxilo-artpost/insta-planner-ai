@@ -217,12 +217,27 @@ export async function overlayLogo(
       const logoBytes = await fetchBytes(logoAsset.url, origin);
       const logoFull = decodeImage(logoBytes);
       const aspect = logoFull.height / Math.max(1, logoFull.width);
-      const targetW = targetBox;
-      const targetH = Math.max(32, Math.round(targetW * aspect));
+      // Faixa horizontal (múltiplas logos institucionais) — fixa no rodapé
+      // centralizada, com largura proporcional à imagem para manter tamanho
+      // legível e posição consistente em todos os formatos de post.
+      const isWideStrip = aspect < 0.35;
+      let targetW: number;
+      let targetH: number;
+      let logoX: number;
+      let logoY: number;
+      if (isWideStrip) {
+        targetW = Math.round(w * 0.72);
+        targetH = Math.max(40, Math.round(targetW * aspect));
+        logoX = Math.round((w - targetW) / 2);
+        logoY = Math.max(0, h - targetH - margin);
+      } else {
+        targetW = targetBox;
+        targetH = Math.max(32, Math.round(targetW * aspect));
+        logoX = pos === "top-left" || pos === "bottom-left" ? margin : Math.max(0, w - targetW - margin);
+        logoY = pos === "bottom-right" || pos === "bottom-left" ? Math.max(0, h - targetH - margin) : margin;
+      }
       const logoResized = resizeRgba(logoFull, targetW, targetH);
-      const logoX = pos === "top-left" || pos === "bottom-left" ? margin : Math.max(0, w - targetW - margin);
-      const logoY = pos === "bottom-right" || pos === "bottom-left" ? Math.max(0, h - targetH - margin) : margin;
-      composite(base, logoResized, logoX, logoY, alpha);
+      composite(base, logoResized, logoX, logoY, isWideStrip ? 1 : alpha);
     }
 
     if (opts?.withAvatar) {
