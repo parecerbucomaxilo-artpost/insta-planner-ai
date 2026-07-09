@@ -15,6 +15,7 @@ import { getAuthedUserId } from "@/lib/auth-utils";
 import { signPostMediaUrls } from "@/lib/storage-url";
 import { generateSinglePost, generateWeekThemes, generateCaptionOnly, approvePost, discardPost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
 import { cn } from "@/lib/utils";
+import { LOGOS_DISPONIVEIS, type LogoKey } from "@/lib/logos-catalog";
 
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
 type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
@@ -67,6 +68,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
+  const [logoKey, setLogoKey] = useState<LogoKey | undefined>(undefined);
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");
@@ -311,6 +313,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         audiencia: effectiveAudiencia,
         modelo,
         modeloImagem,
+        logoKey,
       } as any });
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, slideLegendas: (out as any).slideLegendas });
@@ -349,6 +352,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         audiencia: effectiveAudiencia,
         modelo,
         modeloImagem,
+        logoKey,
       } as any });
       await marcarConta(out.id);
       await approveFn({ data: { id: out.id, acao: "agendar" } });
@@ -618,6 +622,43 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             </div>
             <p className="text-[11px] text-muted-foreground">Define o foco clínico das legendas e imagens geradas. "Temas Diversos" usa assuntos leves do dia a dia (curiosidades, hábitos, prevenção, bem-estar).</p>
           </Card>
+
+          {/* Seleção de LOGO (overlay aplicado na arte gerada) */}
+          <Card className="p-5 space-y-3">
+            <Label className="text-sm font-semibold">Logo do post</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {LOGOS_DISPONIVEIS.map((l) => {
+                const active = (logoKey ?? "planner") === l.key;
+                return (
+                  <button
+                    key={l.key}
+                    type="button"
+                    onClick={() => setLogoKey(l.key)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md border p-2 text-left transition",
+                      active ? "border-primary ring-2 ring-primary/30 bg-primary/5" : "border-border hover:bg-muted",
+                    )}
+                  >
+                    <div className="w-10 h-10 shrink-0 rounded bg-[#0c2340] flex items-center justify-center overflow-hidden">
+                      {l.url ? (
+                        <img src={l.url} alt={l.label} className="max-w-full max-h-full object-contain" />
+                      ) : (
+                        <X className="w-4 h-4 text-white/70" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold truncate">{l.label}</div>
+                      <div className="text-[10px] text-muted-foreground line-clamp-2">{l.description}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Escolha qual logo será aplicada como marca d'água no canto inferior direito da imagem. "Sem logo" publica a arte pura.</p>
+          </Card>
+
+
+
 
 
 

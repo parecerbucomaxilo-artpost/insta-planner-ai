@@ -170,7 +170,7 @@ export async function overlayLogo(
   imageB64: string,
   origin?: string,
   sizePct = 14,
-  opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean; position?: Pos; smart?: boolean },
+  opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean; position?: Pos; smart?: boolean; logoUrl?: string },
 ): Promise<string> {
   try {
     const base = decodeImage(base64ToBytes(imageB64));
@@ -214,7 +214,7 @@ export async function overlayLogo(
     }
 
     if (opts?.withLogo !== false) {
-      const logoBytes = await fetchBytes(logoAsset.url, origin);
+      const logoBytes = await fetchBytes(opts?.logoUrl || logoAsset.url, origin);
       const logoFull = decodeImage(logoBytes);
       const aspect = logoFull.height / Math.max(1, logoFull.width);
       // Faixa horizontal (múltiplas logos institucionais) — fixa no rodapé
