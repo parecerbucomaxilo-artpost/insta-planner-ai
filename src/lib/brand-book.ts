@@ -121,7 +121,7 @@ EMOÇÕES-ALVO: ${b.emocoes.join(" · ")}
 OBJETIVO: ${b.objetivo}
 PÚBLICO: ${b.publico}
 PALETA (única permitida): primária ${b.paleta.primary} · secundária ${b.paleta.secondary} · apoio ${b.paleta.support} · fundo ${b.paleta.bg} · texto ${b.paleta.text} · neutro ${b.paleta.light}. Nunca usar cor fora desta paleta.
-LOGO: A LOGO É APLICADA PELO SISTEMA COMO OVERLAY REAL NO CANTO INFERIOR DIREITO. A IA NUNCA DEVE DESENHAR, IMITAR, ESCREVER, RECRIAR, RECORTAR, RECOLORIR OU SUGERIR A LOGO NA IMAGEM. RESERVE UMA ÁREA LIMPA (~18% x 18%) NO CANTO INFERIOR DIREITO: sem texto, sem gráficos, sem gradiente forte, sem elementos importantes — apenas fundo neutro da paleta para o overlay do sistema pousar. Qualquer arte que contenha logo desenhada pela IA será REJEITADA.
+LOGO: A LOGO É APLICADA PELO SISTEMA COMO OVERLAY REAL, SEM FUNDO E SEM ÁREA RESERVADA. A IA NUNCA DEVE DESENHAR, IMITAR, ESCREVER, RECRIAR, RECORTAR, RECOLORIR OU SUGERIR A LOGO NA IMAGEM. NÃO crie espaço vazio, bloco, tarja, canto limpo, moldura, quadrado, fundo neutro ou placeholder para a logo; componha a arte normalmente. Qualquer arte que contenha logo desenhada pela IA ou área reservada visível será REJEITADA.
 TIPOGRAFIA: títulos ${b.tipografia.title} · corpo ${b.tipografia.body}. Máximo 2 famílias. Headline curta (≤12 palavras), gigante, alto contraste, leitura em <3s.
 ESTILO: ${b.estilo}
 IMAGENS PERMITIDAS: ${b.imagens.join(" · ")}. A imagem deve comunicar a mensagem MESMO sem legenda; jamais decorativa.

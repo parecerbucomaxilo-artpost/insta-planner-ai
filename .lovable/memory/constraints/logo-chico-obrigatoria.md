@@ -18,7 +18,7 @@ Aplicação (não-negociável):
 - Chamado em 100% das gerações Chico em `src/lib/ai-post.functions.ts` (feed único, carrossel 1º + último card, story, estilo X). Sem exceção.
 - Preview do post também aplica via `previewPostWithLogo` para a conta `drfranciscomenezes`.
 
-Regra para a IA de imagem: **NUNCA desenhar/imitar a logo**. Apenas reservar o canto inferior direito limpo (área ~15% x 15%, sem texto, sem elementos gráficos, sem gradiente forte) para o overlay real do sistema. Se a IA desenhar logo falsa, a arte é rejeitada.
+Regra para a IA de imagem: **NUNCA desenhar/imitar a logo** e **NUNCA reservar espaço para ela**. Não criar canto limpo, faixa, bloco vazio, moldura, quadrado, fundo neutro ou placeholder. A arte deve ser composta normalmente; o sistema aplica somente a logo real como overlay sem fundo. Se a IA desenhar logo falsa ou criar área reservada visível, a arte é rejeitada.
 
 Paleta da arte segue a logo: azul petróleo #0c2340 (fundo dominante), branco puro #ffffff, ciano #2dd4ff (acento). Nenhuma outra cor.
 
