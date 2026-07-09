@@ -116,32 +116,23 @@ export function PlannerAgendamentoTratamento() {
 
   const gerarLegenda = async () => {
     if (!telefone.trim()) return toast.error("Informe o telefone antes de gerar a legenda.");
+    // A IA estava drifitando entre temas e trazendo assuntos que nada tinham
+    // a ver com o tratamento escolhido. Para garantir 100% de aderência ao
+    // tema selecionado, montamos a legenda de forma determinística a partir
+    // do template `buildPatientCaption` (que já usa o tratamento atual).
     setGerandoLegenda(true);
-    const tid = "agend-liga-caption";
-    toast.loading("IA escrevendo a legenda...", { id: tid });
     try {
-      const tratObj = TRATAMENTOS.find((x) => x.id === tratamento)!;
-      const out = await genCaption({
-        data: {
-          tema: temaAtual(),
-          rede: "instagram",
-          formato: modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único",
-          especialidade: "CTBMF",
-          audiencia: "estudantes-graduacao",
-          modelo,
-        } as any,
-      });
-      const base = out.legenda.trim();
-      const tel = telefone.trim() || TELEFONE_PADRAO;
-      const final = `${base}\n\n${SERVICO} — ${INSTITUICAO} (Clínica-Escola)\n📞 Agende avaliação de ${tratObj.label} pelo telefone: ${tel}`;
+      const final = buildPatientCaption({ tratamento, telefone, base: "" });
       setLegendaGerada(final);
-      toast.success(out.via === "ia" ? "Legenda criada pela IA." : "Legenda criada pelo app.", { id: tid });
+      toast.success("Legenda pronta — 100% focada no tratamento escolhido.");
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao criar legenda.", { id: tid });
+      toast.error(e?.message || "Falha ao criar legenda.");
     } finally {
       setGerandoLegenda(false);
     }
   };
+
+
 
   const gerar = async () => {
     if (!telefone.trim()) return toast.error("Informe o telefone de agendamento antes de gerar.");
