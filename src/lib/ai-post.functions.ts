@@ -852,6 +852,32 @@ const TEMAS_DIVERSOS = [
   "Café, chá e vinho: como reduzir manchas sem exagerar no clareamento",
   "Rotina de autocuidado bucal em 3 minutos por dia",
   "Como identificar aftas comuns e quando elas merecem atenção",
+
+  // ─── FORA DA ÁREA PROFISSIONAL — assuntos gerais do dia a dia ───
+  "Como pequenas mudanças na rotina melhoram a produtividade",
+  "Curiosidades sobre o café: origem, variedades e o ritual perfeito",
+  "Por que caminhar 30 minutos por dia transforma corpo e mente",
+  "Como organizar a semana sem cair na armadilha da agenda cheia",
+  "Livros que mudam a forma como enxergamos o tempo",
+  "Curiosidade: por que ouvimos melhor uma música que amamos",
+  "Como o sono profundo influencia memória, humor e criatividade",
+  "Viagens curtas: por que um fim de semana fora renova a cabeça",
+  "Culinária caseira: pratos simples que impressionam qualquer visita",
+  "Como cultivar plantas dentro de casa mesmo sem tempo",
+  "Fotografia com celular: 5 truques que mudam qualquer foto",
+  "Curiosidades sobre o universo que cabem numa conversa de café",
+  "Por que praticar gratidão diariamente muda o cérebro",
+  "Hobbies para adultos: por que voltar a ter um faz tanto bem",
+  "Como escolher um bom filme para uma noite tranquila",
+  "Meditação de 5 minutos: o método mais simples para começar hoje",
+  "Curiosidade: por que rimos e por que rir faz tão bem",
+  "Como economizar sem abrir mão do que traz alegria",
+  "Amizades adultas: como manter vínculos que importam",
+  "Música clássica no dia a dia: por onde começar a ouvir",
+  "Curiosidades sobre os animais domésticos que quase ninguém sabe",
+  "Rotinas de fim de tarde que ajudam a desacelerar",
+  "Como planejar uma viagem em família sem estresse",
+  "Curiosidade: por que o cheiro da chuva desperta boas lembranças",
 ];
 
 const TEMAS_ESTUDANTES = [
