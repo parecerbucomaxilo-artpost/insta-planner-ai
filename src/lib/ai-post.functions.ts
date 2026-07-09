@@ -811,7 +811,8 @@ Quando fizer sentido citar onde o cuidado é oferecido, escreva SEMPRE e SOMENTE
 Encerre com 5-10 hashtags acadêmicas incluindo #Bucomaxilo #CirurgiaBucomaxilofacial #TraumatologiaFacial #LigaAcademica #EstudantesDeOdonto #ClinicaEscola #LACTBMF. Formato: ${formato}.${CONTEUDO_COMPLETO}${pickMetodologiaCopy(tema)}`;
 }
 
-function chicoImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }, isStory = false) {
+function chicoImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }, isStory = false, especialidade?: string) {
+  if (especialidade === "Temas Diversos") return diverseImagePrompt(tema, "instagram", { slide, isStory, brand: "chico" });
   const isUltimo = !!slide && slide.n === slide.total;
   const formato = slide
     ? `FORMATO vertical 4:5 (1024x1280) — Instagram Feed/Carrossel.`
