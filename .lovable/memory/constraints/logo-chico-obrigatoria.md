@@ -3,7 +3,14 @@ name: Logo Chico obrigatória em todo post do Planner Simplificado Chico
 description: Toda publicação do Planner Simplificado Chico (@drfranciscomenezes) DEVE ter a logo "F + Σ + quadrado ciano" aplicada. Arquivo oficial e regra de overlay.
 type: constraint
 ---
-Arquivo oficial para seleção/overlay do Prof. Francisco: `src/assets/logo-dr-francisco.png` (símbolo Σ branco + quadrado ciano #2dd4ff sobre fundo azul petróleo #0c2340), recortado da arte institucional enviada pelo usuário em 08/jul/2026 — NÃO substituir sem novo upload dele.
+Arquivos oficiais para seleção/overlay — NÃO trocar por recortes improvisados:
+1. `src/assets/logo-nsp.png` — NSP.
+2. `src/assets/logo-anhanguera-sbo.png` — Anhanguera Santa Bárbara d'Oeste.
+3. `src/assets/logo-dr-francisco.png` — Prof. Francisco Menezes (símbolo Σ branco + quadrado ciano #2dd4ff sobre fundo azul petróleo #0c2340).
+4. `src/assets/logo-liga-ctbmf.png` — Liga Acadêmica de CTBMF.
+5. `src/assets/logo-clinica-escola.png` — Clínica Escola / Odontologia Santa Bárbara.
+
+Ordem obrigatória no dashboard e nos planners: NSP → Anhanguera Santa Bárbara d'Oeste → Prof. Francisco Menezes → Liga → Clínica Escola → Sem logo.
 
 Aplicação (não-negociável):
 - Sistema aplica overlay real via `overlayLogo()` em `src/lib/logo-overlay.server.ts` (canto inferior direito, ~10% da largura, com a logo escolhida no dashboard).
