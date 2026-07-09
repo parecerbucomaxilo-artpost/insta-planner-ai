@@ -780,7 +780,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                       <p className="text-[11px] text-emerald-900/70">Carrossel com {preview.urls.length} slides — todos serão publicados na ordem.</p>
                     </>
                   ) : (
-                    preview.urls[0] && <img src={preview.urls[0]} alt="" className="rounded-md w-full object-cover" />
+                    preview.urls[0] && <img src={preview.urls[0]} alt="" className="rounded-md w-full object-contain max-h-[85vh] bg-slate-50" />
                   )}
                 </div>
                 <Textarea value={preview.legenda} readOnly rows={12} className="text-xs" />
