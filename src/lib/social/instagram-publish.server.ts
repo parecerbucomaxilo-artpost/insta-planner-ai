@@ -305,11 +305,11 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         contaAlvo,
         "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id",
       );
-      // Liga: se não existe perfil ainda, cria placeholder para receber token via OAuth/secret.
-      if (!perfil && contaAlvo === LIGA_ACCOUNT) {
+      // Liga/Francisco: se não existe perfil ainda, cria placeholder para receber token via OAuth/secret.
+      if (!perfil && (contaAlvo === LIGA_ACCOUNT || contaAlvo === "drfranciscomenezes")) {
         const { data: created, error: createError } = await supabaseAdmin
           .from("perfil_usuario")
-          .insert({ user_id: TEMP_USER_ID, arroba_usuario: LIGA_ACCOUNT, instagram_arroba: LIGA_ACCOUNT })
+          .insert({ user_id: TEMP_USER_ID, arroba_usuario: contaAlvo, instagram_arroba: contaAlvo })
           .select("id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id")
           .maybeSingle();
         if (createError) throw new Error(`DB: ${createError.message}`);
