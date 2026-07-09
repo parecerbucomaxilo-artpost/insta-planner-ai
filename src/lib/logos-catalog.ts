@@ -3,7 +3,7 @@
 // pipeline de geração (aplica overlay real via `overlayLogo`).
 import logoNspAsset from "@/assets/logo-nsp.png.asset.json";
 import logoAnhanguera from "@/assets/logo-anhanguera-sbo.png?url";
-import logoDrFrancisco from "@/assets/logo-dr-francisco.png?url";
+import logoDrFranciscoAsset from "@/assets/logo-dr-francisco.png.asset.json";
 import logoLiga from "@/assets/logo-liga-ctbmf.png?url";
 import logoClinicaEscola from "@/assets/logo-clinica-escola.png?url";
 
@@ -40,8 +40,8 @@ export const LOGOS_DISPONIVEIS: LogoOption[] = [
   {
     key: "planner",
     label: "Prof. Francisco Menezes",
-    description: "Logo institucional oficial do Prof. Francisco Menezes.",
-    url: logoDrFrancisco,
+    description: "Logo oficial Planner Chico — símbolo Σ branco e quadrado ciano.",
+    url: logoDrFranciscoAsset.url,
   },
   {
     key: "liga-ctbmf",

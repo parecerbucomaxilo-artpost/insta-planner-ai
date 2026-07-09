@@ -6,13 +6,14 @@ import * as jpeg from "jpeg-js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — upng-js não expõe types.
 import UPNG from "upng-js";
-import logoDrFrancisco from "@/assets/logo-dr-francisco.png?url";
+import logoDrFranciscoAsset from "@/assets/logo-dr-francisco.png.asset.json";
 import logoAnhanguera from "@/assets/logo-anhanguera-sbo.png?url";
 import logoNspAsset from "@/assets/logo-nsp.png.asset.json";
 import logoLiga from "@/assets/logo-liga-ctbmf.png?url";
 import avatarAsset from "@/assets/avatar-francisco.jpg.asset.json";
 
 const DEFAULT_ORIGIN = "https://insta-planner-ai.lovable.app";
+const logoDrFrancisco = logoDrFranciscoAsset.url;
 const logoNsp = logoNspAsset.url;
 const cache = new Map<string, Uint8Array>();
 
