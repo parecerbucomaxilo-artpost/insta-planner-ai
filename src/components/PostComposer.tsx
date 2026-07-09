@@ -415,6 +415,16 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const discardFn = useServerFn(discardPost);
   const approveFn = useServerFn(approvePost);
   const [approving, setApproving] = useState<null | "arquivar" | "agendar" | "publicar">(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const cancelarGeracao = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    toast.dismiss();
+    toast.info("Criação da postagem cancelada.");
+    setBusy(null);
+  };
+
 
 
   const handleSingle = async (quickFormat: AiQuickFormat = "feed") => {
