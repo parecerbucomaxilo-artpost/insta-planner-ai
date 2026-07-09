@@ -60,6 +60,25 @@ function normalizeCarousel(value: unknown): string[] {
   return [];
 }
 
+function isFutureDate(value: unknown) {
+  if (!value) return false;
+  const time = new Date(String(value)).getTime();
+  return Number.isFinite(time) && time > Date.now() + 60_000;
+}
+
+function chooseFetchableSource(publicUrl: string | null | undefined, cacheUrl: string | null | undefined, cacheExpiresAt: unknown) {
+  const cached = typeof cacheUrl === "string" && cacheUrl.trim() && isFutureDate(cacheExpiresAt)
+    ? cacheUrl.trim()
+    : null;
+  return cached || publicUrl || null;
+}
+
+function pairCarouselSources(publicUrls: unknown, cacheUrls: unknown, cacheExpiresAt: unknown) {
+  const publicList = normalizeCarousel(publicUrls);
+  const cacheList = isFutureDate(cacheExpiresAt) ? normalizeCarousel(cacheUrls) : [];
+  return publicList.map((url, index) => cacheList[index] || url);
+}
+
 function parseDataUrl(value: string) {
   const match = value.match(/^data:([^;,]+)?(;base64)?,(.*)$/s);
   if (!match) return null;
@@ -266,7 +285,7 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
 export async function publishInstagramPostById({ supabaseAdmin, postId, userId }: PublishPostInput) {
   const { data: post, error: postError } = await supabaseAdmin
     .from("posts")
-    .select("id,user_id,tipo_post,formato_midia,legenda,legenda_instagram,postar_instagram,url_imagem,imagens_carrossel,instagram_conta")
+    .select("id,user_id,tipo_post,formato_midia,legenda,legenda_instagram,postar_instagram,url_imagem,url_imagem_cache,url_imagem_cache_expires_at,imagens_carrossel,imagens_carrossel_cache,imagens_carrossel_cache_expires_at,instagram_conta")
     .eq("id", postId)
     .maybeSingle();
 
@@ -337,8 +356,19 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
 
 
-    const carousel = normalizeCarousel(post.imagens_carrossel);
-    const sourceUrls = post.tipo_post === "Carrossel" && carousel.length > 0 ? carousel : [post.url_imagem].filter(Boolean);
+    const carousel = pairCarouselSources(
+      post.imagens_carrossel,
+      (post as any).imagens_carrossel_cache,
+      (post as any).imagens_carrossel_cache_expires_at,
+    );
+    const singleSource = chooseFetchableSource(
+      post.url_imagem,
+      (post as any).url_imagem_cache,
+      (post as any).url_imagem_cache_expires_at,
+    );
+    const sourceUrls = post.tipo_post === "Carrossel" && carousel.length > 0
+      ? carousel
+      : [singleSource].filter((url): url is string => typeof url === "string" && url.length > 0);
     let imageUrls = (await Promise.all(sourceUrls.map((url: string) => createFetchableUrl(supabaseAdmin, url)))).filter(Boolean) as string[];
     if (imageUrls.length === 0) throw new Error("Este post não tem imagem para publicar.");
 
