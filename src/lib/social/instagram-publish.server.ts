@@ -1,11 +1,6 @@
-import { createHmac } from "crypto";
-
 const GRAPH_VERSION = "v21.0";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
-// Usar o domínio estável de preview (sempre serve a build mais recente, inclui a rota /api/public/storage-media
-// mesmo antes do publish). O domínio "insta-planner-ai.lovable.app" só recebe a rota após Republicar.
-const PUBLIC_APP_URL = "https://project--221123ce-bfcc-41c2-ad79-e7560d18268d-dev.lovable.app";
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 
 type PublishVia = "meta" | "manual-liga";
@@ -103,17 +98,6 @@ async function uploadDataUrl(supabaseAdmin: any, value: string) {
   const { data, error: signError } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
   if (signError || !data?.signedUrl) throw new Error(`Imagem indisponível para publicação: ${signError?.message || fileName}`);
   return data.signedUrl;
-}
-
-function createStorageProxyUrl(bucket: string, path: string) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return null;
-  const token = createHmac("sha256", secret).update(`${bucket}:${path}`).digest("hex");
-  const url = new URL("/api/public/storage-media", PUBLIC_APP_URL);
-  url.searchParams.set("bucket", bucket);
-  url.searchParams.set("path", path);
-  url.searchParams.set("token", token);
-  return url.toString();
 }
 
 function getStorageObjectRef(value: string | null | undefined) {
