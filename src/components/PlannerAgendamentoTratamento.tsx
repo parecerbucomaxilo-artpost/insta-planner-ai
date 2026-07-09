@@ -78,7 +78,7 @@ export function PlannerAgendamentoTratamento() {
   const publishIg = useServerFn(publishInstagramNow);
 
   const [telefone, setTelefone] = useState("");
-  const [tratamento, setTratamento] = useState<TratId>("trigemio");
+  const [tratamento, setTratamento] = useState<TratId | null>(null);
   const [modo, setModo] = useState<"feed" | "carrossel" | "stories">("feed");
   const [quando, setQuando] = useState<"agora" | "data">("agora");
   const [data, setData] = useState("");
