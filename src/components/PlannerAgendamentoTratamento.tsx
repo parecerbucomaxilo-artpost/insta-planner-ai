@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarClock, Copy, Download, Loader2, Phone, Sparkles, Stethoscope, Trash2, Wand2, Zap } from "lucide-react";
+import { CalendarClock, Copy, Download, Loader2, Phone, Sparkles, Stethoscope, Trash2, Wand2, X, Zap } from "lucide-react";
+import { LOGOS_DISPONIVEIS, type LogoKey } from "@/lib/logos-catalog";
 import {
   generateSinglePost,
   generateCaptionOnly,
@@ -87,6 +88,7 @@ export function PlannerAgendamentoTratamento() {
   const [modeloImagem, setModeloImagem] = useState<(typeof MODELOS_IMAGEM)[number]["id"]>("local/sem-custo");
   const [assunto, setAssunto] = useState("");
   const [legendaGerada, setLegendaGerada] = useState("");
+  const [logoKey, setLogoKey] = useState<LogoKey>("clinica-escola");
   const [gerandoLegenda, setGerandoLegenda] = useState(false);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<PreviewState | null>(null);
@@ -173,6 +175,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           audiencia: "estudantes-graduacao", // ativa paleta e logos da Liga
           modelo,
           modeloImagem,
+          logoKey,
         } as any,
       });
 
