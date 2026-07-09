@@ -352,6 +352,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         audiencia: effectiveAudiencia,
         modelo,
         modeloImagem,
+        logoKey,
       } as any });
       await marcarConta(out.id);
       await approveFn({ data: { id: out.id, acao: "agendar" } });
