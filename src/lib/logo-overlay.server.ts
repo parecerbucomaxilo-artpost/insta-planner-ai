@@ -267,10 +267,9 @@ export async function overlayLogo(
 }
 
 
-// Overlay inteligente da LOGO ÚNICA da LACTBMF — escolhe canto/centro
-// inferior mais limpo, ajusta tamanho e opacidade para nunca atrapalhar
-// leitura ou se sobrepor a texto/cena principal. Usado pelo "Planner
-// Simplificado Liga" (@lactbmf.anhanguerasbo).
+// Overlay legado com trio institucional da Liga: Anhanguera, NSP e LACTBMF.
+// A seleção manual do dashboard usa `overlayLogo`; esta função fica como
+// fallback para fluxos antigos que não enviem `logoKey`.
 export async function overlayAlunoLogos(
   imageB64: string,
   origin?: string,
