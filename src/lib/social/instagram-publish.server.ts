@@ -366,7 +366,9 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       (post as any).url_imagem_cache,
       (post as any).url_imagem_cache_expires_at,
     );
-    const sourceUrls = post.tipo_post === "Carrossel" && carousel.length > 0 ? carousel : [singleSource].filter(Boolean);
+    const sourceUrls = post.tipo_post === "Carrossel" && carousel.length > 0
+      ? carousel
+      : [singleSource].filter((url): url is string => typeof url === "string" && url.length > 0);
     let imageUrls = (await Promise.all(sourceUrls.map((url: string) => createFetchableUrl(supabaseAdmin, url)))).filter(Boolean) as string[];
     if (imageUrls.length === 0) throw new Error("Este post não tem imagem para publicar.");
 
