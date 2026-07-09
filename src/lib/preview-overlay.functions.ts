@@ -25,7 +25,8 @@ export const previewPostWithLogo = createServerFn({ method: "POST" })
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { fetchImageAsBase64, overlayLogo, overlayAlunoLogos } = await import("@/lib/logo-overlay.server");
+    const { fetchImageAsBase64, overlayLogo } = await import("@/lib/logo-overlay.server");
+    const { getLogoOption } = await import("@/lib/logos-catalog");
 
     const { data: post, error } = await context.supabase
       .from("posts")
@@ -54,7 +55,7 @@ export const previewPostWithLogo = createServerFn({ method: "POST" })
           // já é base64
           const b64 = await fetchImageAsBase64(src);
           const stamped = isLiga
-            ? await overlayAlunoLogos(b64)
+            ? await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false, logoUrl: getLogoOption("liga-ctbmf")?.url })
             : isChico
               ? await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false })
               : b64;
@@ -76,7 +77,7 @@ export const previewPostWithLogo = createServerFn({ method: "POST" })
 
         const b64 = await fetchImageAsBase64(fetchUrl);
         const stamped = isLiga
-          ? await overlayAlunoLogos(b64)
+          ? await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false, logoUrl: getLogoOption("liga-ctbmf")?.url })
           : isChico
             ? await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false })
             : b64;
