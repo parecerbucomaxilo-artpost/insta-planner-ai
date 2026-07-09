@@ -108,7 +108,7 @@ function Dashboard() {
   const handleSignOut = useCallback(async () => {
     await supabase.auth.signOut();
     try { window.localStorage.removeItem(PERFIL_CACHE_KEY); } catch { /* ignore */ }
-    navigate({ to: "/auth", replace: true });
+    navigate({ to: "/auth", search: {}, replace: true });
   }, [navigate]);
 
 
