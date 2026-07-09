@@ -1591,7 +1591,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       return { publicUrl, signedUrl: signed?.signedUrl ?? publicUrl };
     };
 
-    const { ensureJpegB64, overlayAlunoLogos, overlayLogo } = await import("@/lib/logo-overlay.server");
+    const { ensureJpegB64, overlayLogo } = await import("@/lib/logo-overlay.server");
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
       try {
         return await generateImageBase64({ prompt, size, model: data.modeloImagem });
@@ -1606,16 +1606,13 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const applyOverlay = async (b64: string) => {
       // Seleção manual do usuário tem prioridade absoluta.
       if (data.logoKey === "nenhuma") return b64;
-      if (data.logoKey) {
-        const { getLogoOption } = await import("@/lib/logos-catalog");
-        const opt = getLogoOption(data.logoKey);
-        if (opt?.url) {
-          const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false, logoUrl: opt.url });
-          if (stamped === b64) throw new Error("A logo escolhida não foi aplicada. Publicação bloqueada.");
-          return stamped;
-        }
+      const { getLogoOption } = await import("@/lib/logos-catalog");
+      const opt = getLogoOption(data.logoKey || (isEstudantes ? "liga-ctbmf" : "planner"));
+      if (opt?.url) {
+        const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false, logoUrl: opt.url });
+        if (stamped === b64) throw new Error("A logo escolhida não foi aplicada. Publicação bloqueada.");
+        return stamped;
       }
-      if (isEstudantes) return overlayAlunoLogos(b64);
       // Chico/geral: SEMPRE canto inferior direito, sem escolha inteligente.
       const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false });
       if (stamped === b64) throw new Error("A logo oficial não foi aplicada. Publicação bloqueada.");
