@@ -514,6 +514,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             <option>CTBMF</option>
             <option>Odontologia Hospitalar</option>
             <option>Ambas</option>
+            <option>Temas Diversos</option>
           </select>
         </div>
       </div>
