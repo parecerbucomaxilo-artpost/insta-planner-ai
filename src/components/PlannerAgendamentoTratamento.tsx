@@ -120,16 +120,13 @@ export function PlannerAgendamentoTratamento() {
   };
 
   const gerarLegenda = async () => {
+    if (!tratamento) return toast.error("Escolha primeiro o tipo de tratamento.");
     if (!telefone.trim()) return toast.error("Informe o telefone antes de gerar a legenda.");
-    // A IA estava drifitando entre temas e trazendo assuntos que nada tinham
-    // a ver com o tratamento escolhido. Para garantir 100% de aderência ao
-    // tema selecionado, montamos a legenda de forma determinística a partir
-    // do template `buildPatientCaption` (que já usa o tratamento atual).
     setGerandoLegenda(true);
     try {
-      const final = buildPatientCaption({ tratamento, telefone, base: "" });
+      const final = buildPatientCaption({ tratamento, telefone, base: "", assunto });
       setLegendaGerada(final);
-      toast.success("Legenda pronta — 100% focada no tratamento escolhido.");
+      toast.success("Legenda pronta — focada no tratamento e no ângulo escolhido.");
     } catch (e: any) {
       toast.error(e?.message || "Falha ao criar legenda.");
     } finally {
