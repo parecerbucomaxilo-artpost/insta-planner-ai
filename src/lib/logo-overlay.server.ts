@@ -145,6 +145,19 @@ function trimAlpha(image: RgbaImage): RgbaImage {
 
 function removeNearWhiteMatte(image: RgbaImage): RgbaImage {
   const { width: w, height: h, data } = image;
+
+  let transparentPixels = 0;
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] <= 8) transparentPixels++;
+  }
+
+  // A logo oficial do Prof. Francisco é majoritariamente branca, mas tem
+  // transparência real ao redor. Se aplicarmos a remoção de branco nela, a
+  // própria marca fica “cortada”. Só tratamos matte branco em arquivos sem
+  // transparência útil (ex.: PNG/JPEG antigo exportado com fundo branco sólido).
+  const transparentRatio = transparentPixels / Math.max(1, w * h);
+  if (transparentRatio > 0.04) return image;
+
   const out = new Uint8Array(data);
   let changed = false;
 
