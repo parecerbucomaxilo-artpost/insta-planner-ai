@@ -62,7 +62,7 @@ const SingleInput = z.object({
 
 
 const WeekInput = z.object({
-  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("Ambas"),
+  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("Ambas"),
   modelo: ModeloLocalInput,
 });
 
