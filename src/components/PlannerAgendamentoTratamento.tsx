@@ -49,13 +49,18 @@ function buildPatientCaption(params: {
   tratamento: TratId;
   telefone: string;
   base: string;
+  assunto?: string;
 }) {
   const t = TRATAMENTOS.find((x) => x.id === params.tratamento)!;
   const tel = params.telefone.trim() || TELEFONE_PADRAO;
+  const assuntoTxt = (params.assunto || "").trim();
   const abertura = `📢 ${SERVICO} — ${INSTITUICAO}\n\n👉 ${t.label}`;
+  const anguloBloco = assuntoTxt
+    ? `\n\n🎯 Nesta publicação: ${assuntoTxt}`
+    : "";
   const meio = `\n\nAtendimento supervisionado por professores especialistas em Cirurgia e Traumatologia Bucomaxilofacial. Ambiente seguro, humanizado e acolhedor para pacientes de Santa Bárbara d'Oeste e cidades vizinhas.\n\nQuem pode ser atendido:\n• Pessoas com indicação para ${t.label.toLowerCase()};\n• Quem precisa avaliar lesões na boca (manchas, feridas que não cicatrizam, caroços);\n• Encaminhamentos de dentistas parceiros.\n\n💬 Não deixe lesões sem avaliação — quanto antes você procura, mais simples é o tratamento.`;
   const cta = `\n\n📞 Agende sua avaliação: ${tel}\n(Atendimento em horário comercial.)\n\n#CirurgiaBucal #BiopsiaBucal #SaudeBucal #SantaBarbaraDOeste #Anhanguera #ClinicaEscola #Odontologia #Siso #LesaoBucal #SaudeDaBoca`;
-  return `${abertura}${meio}${cta}`;
+  return `${abertura}${anguloBloco}${meio}${cta}`;
 }
 
 interface PreviewState {
