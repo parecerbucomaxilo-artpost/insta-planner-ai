@@ -183,8 +183,12 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
         } as any,
       });
 
-      // Marca a conta da Liga e troca a legenda por copy voltada a pacientes com telefone.
-      const legendaPaciente = legendaGerada.trim() || buildPatientCaption({ tratamento, telefone, base: out.legenda });
+      // Legenda do convite SEMPRE é a template determinística focada em UM único
+      // tratamento — nunca aceitamos texto da IA aqui porque ela drifta entre
+      // tratamentos. Só respeitamos legenda 100% manual digitada pelo usuário.
+      const legendaPaciente = legendaGerada.trim()
+        ? legendaGerada.trim()
+        : buildPatientCaption({ tratamento, telefone, base: "" });
       await supabase
         .from("posts")
         .update({ instagram_conta: LIGA_ACCOUNT, legenda: legendaPaciente, legenda_instagram: legendaPaciente } as any)
