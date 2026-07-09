@@ -1731,10 +1731,10 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     } else {
       const upload = await genAndUpload(withVisual(
         isEstudantes
-          ? studentImagePrompt(tema)
+          ? studentImagePrompt(tema, undefined, data.especialidade)
           : isChico
-            ? chicoImagePrompt(tema, undefined, isStory)
-            : imageSystemPrompt(tema, data.rede, nivel)
+            ? chicoImagePrompt(tema, undefined, isStory, data.especialidade)
+            : imageSystemPrompt(tema, data.rede, nivel, undefined, data.especialidade)
       ));
       urlImagem = upload.publicUrl;
       urlImagemCache = upload.signedUrl;
