@@ -492,7 +492,8 @@ function themeLock(tema: string) {
 === FIM DA TRAVA DE TEMA ===\n`;
 }
 
-function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }) {
+function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }, especialidade?: string) {
+  if (especialidade === "Temas Diversos") return diverseImagePrompt(tema, rede, { slide, isStory: !slide && nivel === "ig-conversao" && rede === "instagram", brand: "generico" });
 
   // === FORMATO ESTILO X (TWEET REAL) — short-circuit ===
   // A imagem PRECISA parecer um print autêntico de um post publicado no X (antigo Twitter),
