@@ -1661,6 +1661,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     let cenaVisualNexo = visualSceneForTopic(tema, guiaTema, data.audiencia);
     let cenasPorSlide: string[] = slideNarratives.map((_, i) => visualSceneForTopic(tema, guiaTema, data.audiencia, i));
     try {
+      if (isDiverso) throw new Error("skip-medical-brief"); // TEMAS DIVERSOS: sem cena médica.
       if (process.env.LOVABLE_API_KEY && data.modelo !== "local/sem-custo") {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
         const briefSys = `Você é diretor de arte médico. Use o CONTRATO CLÍNICO como fonte única de verdade e devolva UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente tema + conduta. Sem metáforas vagas, sem texto na imagem, sem cor nomeada, sem pessoa real. Se a legenda estiver genérica, siga o contrato.`;
