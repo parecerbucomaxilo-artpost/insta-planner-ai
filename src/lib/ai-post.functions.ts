@@ -42,7 +42,7 @@ export type NivelConteudo = z.infer<typeof NivelEnum>;
 const SingleInput = z.object({
   // Se vazio, o gerador local escolhe um tema relevante automaticamente.
   tema: z.string().optional().default(""),
-  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
+  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("CTBMF"),
   rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
