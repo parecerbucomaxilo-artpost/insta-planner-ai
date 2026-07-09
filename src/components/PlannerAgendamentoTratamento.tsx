@@ -49,13 +49,18 @@ function buildPatientCaption(params: {
   tratamento: TratId;
   telefone: string;
   base: string;
+  assunto?: string;
 }) {
   const t = TRATAMENTOS.find((x) => x.id === params.tratamento)!;
   const tel = params.telefone.trim() || TELEFONE_PADRAO;
+  const assuntoTxt = (params.assunto || "").trim();
   const abertura = `📢 ${SERVICO} — ${INSTITUICAO}\n\n👉 ${t.label}`;
+  const anguloBloco = assuntoTxt
+    ? `\n\n🎯 Nesta publicação: ${assuntoTxt}`
+    : "";
   const meio = `\n\nAtendimento supervisionado por professores especialistas em Cirurgia e Traumatologia Bucomaxilofacial. Ambiente seguro, humanizado e acolhedor para pacientes de Santa Bárbara d'Oeste e cidades vizinhas.\n\nQuem pode ser atendido:\n• Pessoas com indicação para ${t.label.toLowerCase()};\n• Quem precisa avaliar lesões na boca (manchas, feridas que não cicatrizam, caroços);\n• Encaminhamentos de dentistas parceiros.\n\n💬 Não deixe lesões sem avaliação — quanto antes você procura, mais simples é o tratamento.`;
   const cta = `\n\n📞 Agende sua avaliação: ${tel}\n(Atendimento em horário comercial.)\n\n#CirurgiaBucal #BiopsiaBucal #SaudeBucal #SantaBarbaraDOeste #Anhanguera #ClinicaEscola #Odontologia #Siso #LesaoBucal #SaudeDaBoca`;
-  return `${abertura}${meio}${cta}`;
+  return `${abertura}${anguloBloco}${meio}${cta}`;
 }
 
 interface PreviewState {
@@ -73,7 +78,7 @@ export function PlannerAgendamentoTratamento() {
   const publishIg = useServerFn(publishInstagramNow);
 
   const [telefone, setTelefone] = useState("");
-  const [tratamento, setTratamento] = useState<TratId>("trigemio");
+  const [tratamento, setTratamento] = useState<TratId | null>(null);
   const [modo, setModo] = useState<"feed" | "carrossel" | "stories">("feed");
   const [quando, setQuando] = useState<"agora" | "data">("agora");
   const [data, setData] = useState("");
@@ -115,16 +120,13 @@ export function PlannerAgendamentoTratamento() {
   };
 
   const gerarLegenda = async () => {
+    if (!tratamento) return toast.error("Escolha primeiro o tipo de tratamento.");
     if (!telefone.trim()) return toast.error("Informe o telefone antes de gerar a legenda.");
-    // A IA estava drifitando entre temas e trazendo assuntos que nada tinham
-    // a ver com o tratamento escolhido. Para garantir 100% de aderência ao
-    // tema selecionado, montamos a legenda de forma determinística a partir
-    // do template `buildPatientCaption` (que já usa o tratamento atual).
     setGerandoLegenda(true);
     try {
-      const final = buildPatientCaption({ tratamento, telefone, base: "" });
+      const final = buildPatientCaption({ tratamento, telefone, base: "", assunto });
       setLegendaGerada(final);
-      toast.success("Legenda pronta — 100% focada no tratamento escolhido.");
+      toast.success("Legenda pronta — focada no tratamento e no ângulo escolhido.");
     } catch (e: any) {
       toast.error(e?.message || "Falha ao criar legenda.");
     } finally {
@@ -135,6 +137,7 @@ export function PlannerAgendamentoTratamento() {
 
 
   const gerar = async () => {
+    if (!tratamento) return toast.error("Escolha primeiro o tipo de tratamento.");
     if (!telefone.trim()) return toast.error("Informe o telefone de agendamento antes de gerar.");
     setBusy(true);
     const tid = "agend-liga";
@@ -178,7 +181,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       // tratamentos. Só respeitamos legenda 100% manual digitada pelo usuário.
       const legendaPaciente = legendaGerada.trim()
         ? legendaGerada.trim()
-        : buildPatientCaption({ tratamento, telefone, base: "" });
+        : buildPatientCaption({ tratamento, telefone, base: "", assunto });
       await supabase
         .from("posts")
         .update({ instagram_conta: LIGA_ACCOUNT, legenda: legendaPaciente, legenda_instagram: legendaPaciente } as any)
