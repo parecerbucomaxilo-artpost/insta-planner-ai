@@ -15,6 +15,7 @@ import { getAuthedUserId } from "@/lib/auth-utils";
 import { signPostMediaUrls } from "@/lib/storage-url";
 import { generateSinglePost, generateWeekThemes, generateCaptionOnly, approvePost, discardPost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
 import { cn } from "@/lib/utils";
+import { LOGOS_DISPONIVEIS, type LogoKey } from "@/lib/logos-catalog";
 
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
 type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
