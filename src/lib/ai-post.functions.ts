@@ -532,7 +532,7 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
     ? `\n- CTA FORTE OBRIGATÓRIO: incluir o ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat, NÃO inventar variações) no canto inferior direito + texto curto "LINK NA BIO" em tipografia bold grande. Pode incluir "+55 11 94768-4004" em corpo menor ao lado do ícone. Hierarquia limpa, sem poluir a composição.`
     : "";
   const assinaturaInfo = isInstagram
-    ? `\n- Reserve um espaço discreto no rodapé (faixa estreita azul petróleo #0c2340 OU canto inferior limpo) para a assinatura textual "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}" em tipografia pequena branca. Não dominar a composição.`
+    ? `\n- Não crie faixa, canto limpo, rodapé vazio ou qualquer espaço reservado para assinatura/logo. Se houver assinatura textual, ela deve entrar de forma discreta sobre a composição normal, sem bloco de fundo e sem placeholder.`
     : `\n- RODAPÉ OBRIGATÓRIO em 2 linhas pequenas, centralizado, tipografia bold sans-serif branca sobre faixa azul petróleo (#0c2340): "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}".`;
   const semMarca = `\n- PROIBIDO desenhar QUALQUER logotipo, marca, monograma, escudo, cruz médica, símbolo de dente, "PC", "FM", "Planner" ou letreiro inventado. Sem áreas reservadas nos cantos para logo. A única identificação textual é a assinatura no rodapé.`;
   const semInvencao = `\n- NÃO INVENTE: proibido desenhar radiografias, tomografias, ressonâncias, anatomia interna detalhada, próteses, implantes, dispositivos com marcas, gráficos com números inventados, percentuais fictícios, citações de estudos, DOIs, nomes de revistas, autores ou datas dentro da imagem.`;
