@@ -42,7 +42,7 @@ export type NivelConteudo = z.infer<typeof NivelEnum>;
 const SingleInput = z.object({
   // Se vazio, o gerador local escolhe um tema relevante automaticamente.
   tema: z.string().optional().default(""),
-  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
+  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("CTBMF"),
   rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
@@ -62,7 +62,7 @@ const SingleInput = z.object({
 
 
 const WeekInput = z.object({
-  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("Ambas"),
+  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("Ambas"),
   modelo: ModeloLocalInput,
 });
 
@@ -823,6 +823,37 @@ const TEMAS_GERAIS = [
   "Como identificar sinais de disfunção temporomandibular sem pânico",
 ];
 
+// TEMAS DIVERSOS — assuntos leves do dia a dia, curiosidades de saúde bucal,
+// hábitos, prevenção, bem-estar, alimentação, sono, autocuidado — sem foco
+// exclusivo em CTBMF. Usados quando o usuário escolhe "Temas Diversos".
+const TEMAS_DIVERSOS = [
+  "Como a alimentação diária afeta a saúde da sua boca",
+  "Por que dormir bem também é cuidar dos seus dentes",
+  "Curiosidades sobre a saliva: a defesa invisível da boca",
+  "Como o estresse do dia a dia aparece na sua boca",
+  "Hábitos matinais que fazem diferença para a saúde bucal",
+  "Por que beber água ajuda muito mais do que você imagina",
+  "Como escolher a escova e o creme dental certos para você",
+  "O que os dentes revelam sobre a saúde geral do corpo",
+  "Curiosidade: por que sentimos mau hálito ao acordar",
+  "Como cuidar da boca das crianças desde cedo, sem sofrimento",
+  "Por que mascar chiclete pode ser aliado (ou vilão) da sua boca",
+  "Alimentos que naturalmente ajudam a fortalecer os dentes",
+  "Como o cigarro e o álcool impactam a saúde bucal",
+  "Mitos e verdades sobre clareamento dental caseiro",
+  "Por que fio dental é insubstituível — e como usar sem machucar",
+  "Curiosidade: quantas bactérias vivem na boca de um adulto",
+  "Como o esporte pode proteger (ou prejudicar) os dentes",
+  "Sinais silenciosos de que sua boca pede uma avaliação",
+  "Por que gestantes precisam de cuidado bucal especial",
+  "Idosos e saúde bucal: dicas simples para manter qualidade de vida",
+  "Como respirar pela boca afeta face, sono e postura",
+  "Curiosidade: por que o dente do siso ainda existe se quase não usamos",
+  "Café, chá e vinho: como reduzir manchas sem exagerar no clareamento",
+  "Rotina de autocuidado bucal em 3 minutos por dia",
+  "Como identificar aftas comuns e quando elas merecem atenção",
+];
+
 const TEMAS_ESTUDANTES = [
   "Enquete: qual técnica anestésica escolher para exodontia do terceiro molar inferior",
   "Dica de técnica: sequência básica para sutura simples em mucosa oral",
@@ -840,8 +871,10 @@ function normalizeTema(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function chooseLocalTema(audiencia: z.infer<typeof SingleInput>["audiencia"], usados: string[], seedText: string) {
-  const list = audiencia === "estudantes-graduacao" ? TEMAS_ESTUDANTES : TEMAS_GERAIS;
+function chooseLocalTema(audiencia: z.infer<typeof SingleInput>["audiencia"], usados: string[], seedText: string, especialidade?: string) {
+  const list = especialidade === "Temas Diversos"
+    ? TEMAS_DIVERSOS
+    : audiencia === "estudantes-graduacao" ? TEMAS_ESTUDANTES : TEMAS_GERAIS;
   const usadosNorm = new Set(usados.map(normalizeTema));
   const start = Math.abs(seedText.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), Date.now())) % list.length;
   for (let i = 0; i < list.length; i++) {
@@ -1342,7 +1375,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const temasUsados = Array.from(
         new Set((historico ?? []).map((p: any) => (p.prompt_ia || "").trim()).filter(Boolean))
       ).slice(0, 150);
-      tema = chooseLocalTema(data.audiencia, temasUsados, `${data.rede}-${data.formato}-${data.especialidade}`);
+      tema = chooseLocalTema(data.audiencia, temasUsados, `${data.rede}-${data.formato}-${data.especialidade}`, data.especialidade);
     }
 
 
@@ -1760,7 +1793,7 @@ const CaptionOnlyInput = z.object({
   tema: z.string().min(2, "Informe um tema."),
   rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).default("Post Único"),
-  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas"]).default("CTBMF"),
+  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("CTBMF"),
   audiencia: z.enum(["geral", "estudantes-graduacao", "chico-drfm"]).default("chico-drfm"),
   nivel: NivelEnum.optional().default("auto"),
   modelo: ModeloLocalInput,
@@ -1823,7 +1856,9 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
         "Por que pacientes oncológicos precisam de cuidado oral planejado",
         "Como o dentista atua na segurança do paciente crítico",
       ]
-      : TEMAS_GERAIS;
+      : data.especialidade === "Temas Diversos"
+        ? TEMAS_DIVERSOS
+        : TEMAS_GERAIS;
 
     // Anexa metadados + força stories a herdarem o tema do feed do mesmo dia
     const enriquecidos = slots.map((s, i) => {

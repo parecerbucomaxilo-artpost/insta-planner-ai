@@ -66,7 +66,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [modo, setModo] = useState<Modo>("feed");
   const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
-  const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
+  const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");
@@ -279,7 +279,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     await supabase.from("posts").update({ instagram_conta: effectiveConta } as any).eq("id", postId);
   };
 
-  const handleGerar = async (opts?: { conjugado?: boolean; forcarEspecialidade?: "CTBMF" | "Odontologia Hospitalar" | "Ambas" }) => {
+  const handleGerar = async (opts?: { conjugado?: boolean; forcarEspecialidade?: "CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos" }) => {
     if (!conta) return toast.error("Selecione uma conta do Instagram.");
     setBusy(true);
     const tid = "local-simple";
@@ -590,7 +590,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {/* Especialidade do post */}
           <Card className="p-5 space-y-3">
             <Label className="text-sm font-semibold">Especialidade</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <QuandoBtn
                 active={especialidade === "CTBMF"}
                 onClick={() => setEspecialidade("CTBMF")}
@@ -609,8 +609,14 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 icon={<Sparkles className="w-4 h-4" />}
                 label="Ambas"
               />
+              <QuandoBtn
+                active={especialidade === "Temas Diversos"}
+                onClick={() => setEspecialidade("Temas Diversos")}
+                icon={<Sparkles className="w-4 h-4" />}
+                label="Temas Diversos"
+              />
             </div>
-            <p className="text-[11px] text-muted-foreground">Define o foco clínico das legendas e imagens geradas.</p>
+            <p className="text-[11px] text-muted-foreground">Define o foco clínico das legendas e imagens geradas. "Temas Diversos" usa assuntos leves do dia a dia (curiosidades, hábitos, prevenção, bem-estar).</p>
           </Card>
 
 

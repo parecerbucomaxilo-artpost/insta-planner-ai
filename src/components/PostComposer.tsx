@@ -399,7 +399,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
 function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [tema, setTema] = useState("");
-  const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas">("CTBMF");
+  const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x" | "google">("instagram");
   const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
@@ -514,6 +514,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             <option>CTBMF</option>
             <option>Odontologia Hospitalar</option>
             <option>Ambas</option>
+            <option>Temas Diversos</option>
           </select>
         </div>
       </div>
