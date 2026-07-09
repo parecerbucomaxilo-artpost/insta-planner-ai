@@ -1272,6 +1272,37 @@ function clinicalContract(tema: string, audiencia: z.infer<typeof SingleInput>["
 REGRAS: legenda e imagem devem seguir exatamente este contrato; proibido trocar o assunto, falar só da doença sem conduta, ou criar imagem genérica de odontologia.`;
 }
 
+// === TEMAS DIVERSOS (fora da área da saúde) — sistemas de legenda dedicados ===
+function diverseCaptionSystem(rede: "instagram" | "linkedin" | "estilo-x" | "google", formato: "Carrossel" | "Story" | "Post Único") {
+  const tamanho = rede === "linkedin"
+    ? "800-1400 caracteres, tom editorial/institucional, no máx. 1 emoji sóbrio, 3-5 hashtags coerentes com o TEMA (nunca de saúde)."
+    : rede === "google"
+      ? "60-120 palavras, título em **negrito**, 1 linha 'Palavras-chave: ...' coerentes com o TEMA, 1 linha 'ALT TEXT: ...'."
+      : formato === "Story"
+        ? "60-180 caracteres, direto, 1-2 emojis coerentes com o tema."
+        : "400-700 caracteres, gancho na 1ª linha, 2-4 emojis coerentes com o TEMA, 4-6 hashtags do TEMA (nunca de saúde).";
+  return `Você é copywriter editorial de conteúdo institucional/cultural. PT-BR Brasil impecável, ZERO inglês, sem repetições.
+MODO: TEMAS DIVERSOS — tema TOTALMENTE FORA da saúde (data comemorativa, evento histórico, cultura, esporte, causa social, homenagem, cotidiano, hobby).
+
+REGRAS INEGOCIÁVEIS:
+- PROIBIDO mencionar: saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, ATM, siso, dente, boca, sorriso, dor, jaleco, exame, qualquer profissional/área da saúde.
+- PROIBIDO transformar o tema em conteúdo de saúde (nada de "saúde bucal do trabalhador", "impacto na odontologia", "saúde das vítimas").
+- NÃO force relação com odontologia/medicina. NÃO use CTAs de consultório ("agende", "avaliação", "atendimento"). CTA coerente com o tema ("compartilhe esta homenagem", "marque quem se identifica", "lembre-se de...").
+
+TOM: homenagens = respeitoso/sóbrio; datas comemorativas = festivo/inspirador; causas sociais = consciente/engajado; cultura/esportes = dinâmico. Nunca tom de "profissional de saúde".
+
+FORMATO: ${tamanho}
+Sem assinatura no corpo (entra como overlay). Sem aspas envolvendo o texto.`;
+}
+
+function buildDiverseLocalCaption(tema: string, rede: "instagram" | "linkedin" | "estilo-x" | "google", formato: "Carrossel" | "Story" | "Post Único") {
+  const tag = `#${tema.replace(/[^\p{L}\p{N}]+/gu, "")}`;
+  if (formato === "Story") return `${tema}\n\nCompartilhe com quem se identifica.`;
+  if (rede === "linkedin") return `**${tema}**\n\nRegistro especial sobre ${tema}. Um momento que merece ser lembrado e compartilhado.\n\nCompartilhe com quem também valoriza esta data.\n\n${tag}`;
+  if (rede === "google") return `**${tema}**\n\nRegistro editorial sobre ${tema}. Compartilhe com quem se identifica.\n\nPalavras-chave: ${tema}\nALT TEXT: imagem editorial sobre ${tema}`;
+  return `${tema}\n\nUm registro especial sobre este tema. Compartilhe com quem se identifica.\n\n${tag}`;
+}
+
 function completeCaptionIfNeeded(params: {
   legenda: string;
   tema: string;
@@ -1281,6 +1312,10 @@ function completeCaptionIfNeeded(params: {
   especialidade: string;
 }) {
   const raw = (params.legenda || "").trim();
+  // TEMAS DIVERSOS: nunca preencher com bloco médico.
+  if (params.especialidade === "Temas Diversos") {
+    return raw || buildDiverseLocalCaption(params.tema, params.rede, params.formato);
+  }
   if (!raw) return buildLocalCaption({ tema: params.tema, rede: params.rede, formato: params.formato, especialidade: params.especialidade, nivel: resolveNivel("auto", params.rede), audiencia: params.audiencia });
   const g = topicGuidance(params.tema);
   const norm = normalizeTema(raw);
