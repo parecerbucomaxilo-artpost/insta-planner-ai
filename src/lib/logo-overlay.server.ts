@@ -9,6 +9,7 @@ import UPNG from "upng-js";
 import logoDrFrancisco from "@/assets/logo-dr-francisco.png?url";
 import logoAnhanguera from "@/assets/logo-anhanguera-sbo.png?url";
 import logoNsp from "@/assets/logo-nsp.png?url";
+import logoLiga from "@/assets/logo-liga-ctbmf.png?url";
 import avatarAsset from "@/assets/avatar-francisco.jpg.asset.json";
 
 const DEFAULT_ORIGIN = "https://insta-planner-ai.lovable.app";
@@ -287,7 +288,7 @@ export async function overlayAlunoLogos(
     const [anhangueraBytes, nspBytes, ligaBytes] = await Promise.all([
       fetchBytes(logoAnhanguera, origin),
       fetchBytes(logoNsp, origin),
-      (async () => fetchBytes((await import("@/assets/logo-liga-ctbmf.png.asset.json")).default.url, origin))(),
+      fetchBytes(logoLiga, origin),
     ]);
 
     const decode = (b: Uint8Array) => trimAlpha(decodeImage(b));

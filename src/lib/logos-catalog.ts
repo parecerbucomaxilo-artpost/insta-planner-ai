@@ -4,7 +4,7 @@
 import logoNsp from "@/assets/logo-nsp.png?url";
 import logoAnhanguera from "@/assets/logo-anhanguera-sbo.png?url";
 import logoDrFrancisco from "@/assets/logo-dr-francisco.png?url";
-import logoLiga from "@/assets/logo-liga-ctbmf.png.asset.json";
+import logoLiga from "@/assets/logo-liga-ctbmf.png?url";
 import logoClinicaEscola from "@/assets/logo-clinica-escola.png?url";
 
 export type LogoKey =
@@ -45,7 +45,7 @@ export const LOGOS_DISPONIVEIS: LogoOption[] = [
     key: "liga-ctbmf",
     label: "Liga (LACTBMF)",
     description: "Selo oficial da Liga Acadêmica de CTBMF.",
-    url: logoLiga.url,
+    url: logoLiga,
   },
   {
     key: "clinica-escola",
