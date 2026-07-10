@@ -91,19 +91,54 @@ function encodeJpegB64(image: RgbaImage, quality = 90): string {
 
 function resizeRgba(source: RgbaImage, targetW: number, targetH: number): RgbaImage {
   const out = new Uint8Array(targetW * targetH * 4);
-  const xRatio = source.width / targetW;
-  const yRatio = source.height / targetH;
+  const sw = source.width;
+  const sh = source.height;
+  const xRatio = sw / targetW;
+  const yRatio = sh / targetH;
 
+  // Bilinear com premultiplied alpha — evita halo escuro/borda serrilhada em
+  // logos com transparência (o problema visual de "logo distorcida").
   for (let y = 0; y < targetH; y++) {
-    const sy = Math.min(source.height - 1, Math.floor((y + 0.5) * yRatio));
+    const fy = (y + 0.5) * yRatio - 0.5;
+    const y0 = Math.max(0, Math.floor(fy));
+    const y1 = Math.min(sh - 1, y0 + 1);
+    const wy = fy - y0;
     for (let x = 0; x < targetW; x++) {
-      const sx = Math.min(source.width - 1, Math.floor((x + 0.5) * xRatio));
-      const src = (sy * source.width + sx) * 4;
+      const fx = (x + 0.5) * xRatio - 0.5;
+      const x0 = Math.max(0, Math.floor(fx));
+      const x1 = Math.min(sw - 1, x0 + 1);
+      const wx = fx - x0;
+
+      const i00 = (y0 * sw + x0) * 4;
+      const i01 = (y0 * sw + x1) * 4;
+      const i10 = (y1 * sw + x0) * 4;
+      const i11 = (y1 * sw + x1) * 4;
+
+      const a00 = source.data[i00 + 3] / 255;
+      const a01 = source.data[i01 + 3] / 255;
+      const a10 = source.data[i10 + 3] / 255;
+      const a11 = source.data[i11 + 3] / 255;
+
+      const w00 = (1 - wx) * (1 - wy);
+      const w01 = wx * (1 - wy);
+      const w10 = (1 - wx) * wy;
+      const w11 = wx * wy;
+
+      const aOut = a00 * w00 + a01 * w01 + a10 * w10 + a11 * w11;
       const dst = (y * targetW + x) * 4;
-      out[dst] = source.data[src];
-      out[dst + 1] = source.data[src + 1];
-      out[dst + 2] = source.data[src + 2];
-      out[dst + 3] = source.data[src + 3];
+      if (aOut <= 0.001) {
+        out[dst] = 0; out[dst + 1] = 0; out[dst + 2] = 0; out[dst + 3] = 0;
+        continue;
+      }
+      for (let c = 0; c < 3; c++) {
+        const v =
+          source.data[i00 + c] * a00 * w00 +
+          source.data[i01 + c] * a01 * w01 +
+          source.data[i10 + c] * a10 * w10 +
+          source.data[i11 + c] * a11 * w11;
+        out[dst + c] = Math.round(v / aOut);
+      }
+      out[dst + 3] = Math.round(aOut * 255);
     }
   }
 
@@ -321,7 +356,7 @@ export async function overlayLogo(
     const base = decodeImage(base64ToBytes(imageB64));
     const w = base.width;
     const h = base.height;
-    sizePct = Math.min(sizePct, 11);
+    sizePct = Math.min(sizePct, 9);
     const margin = Math.round(w * 0.035);
     const requested = opts?.position ?? "bottom-right";
 

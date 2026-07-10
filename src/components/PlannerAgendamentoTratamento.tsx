@@ -21,7 +21,7 @@ import {
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 import { cn } from "@/lib/utils";
 
-const LIGA_ACCOUNT = "drfranciscomenezes";
+const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 const LS_PHONE = "planner_agend_liga_phone_v1";
 const TELEFONE_PADRAO = "(19) 99018-0802";
 const INSTITUICAO = "Faculdade Anhanguera de Santa Bárbara";
@@ -157,8 +157,8 @@ export function PlannerAgendamentoTratamento() {
 • Subtítulo curto em âmbar #DD8E3C: "AGENDA ABERTA — CLÍNICA ESCOLA".
 • Telefone impresso no card em bloco âmbar com número off-white: "📞 ${telefone.trim()}".
 • PROIBIDO desenhar QUALQUER rodapé, texto institucional, nome de faculdade, "Clínica Escola", "Anhanguera", selo ou logotipo. NÃO reservar canto, faixa, bloco vazio, moldura ou placeholder para logo; a arte deve ocupar a composição normalmente. O sistema aplica por cima apenas a logo real escolhida no dashboard, sem fundo.
-• PROIBIDO: fundo branco, azul, ciano, verde, roxo, rosa, gradientes, fotos realistas de pacientes, rostos.
-TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em português-BR claro, linguagem simples para leigo (evite termos técnicos; se usar, explique em 1 linha). Cada slide traz 1 frase-chave curta em destaque + 2 a 4 bullets objetivos. Ícones simples e pictogramas quando ajudarem o entendimento. Mesma paleta grafite/âmbar/off-white, tipografia bold, alto contraste. Não crie espaço reservado para logo em nenhum slide; o overlay real será aplicado pelo sistema.`;
+• PERMITIDO usar cores contextuais coerentes com o tema (ex.: tons de pele naturais em rostos, verde clínico em ambiente hospitalar, vermelho suave para alerta de dor) MISTURANDO à paleta institucional grafite/âmbar/off-white — desde que grafite e âmbar continuem dominantes. NÃO usar fundo branco liso, nem ciano, roxo ou rosa.
+TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em português-BR claro, linguagem simples para leigo (evite termos técnicos; se usar, explique em 1 linha). Cada slide traz 1 frase-chave curta em destaque + 2 a 4 bullets objetivos. Ícones simples e pictogramas quando ajudarem o entendimento. Paleta grafite/âmbar/off-white dominante com toques de cor contextual permitidos, tipografia bold, alto contraste. Não crie espaço reservado para logo em nenhum slide; o overlay real será aplicado pelo sistema.`;
       const assuntoBlock = assuntoTxt ? `\n\nASSUNTO/ÂNGULO ESPECÍFICO desta postagem (priorize sobre o padrão): ${assuntoTxt}` : "";
       const diretriz = `\n\n=== DIRETRIZ MESTRA — ${SERVICO} · ${INSTITUICAO} ===\nPÚBLICO: pacientes leigos da região de Santa Bárbara d'Oeste e cidades vizinhas.\nOBJETIVO: informar que existe a oportunidade de fazer o tratamento na Clínica Escola, quebrar medos/mitos ("dói?", "é perigoso?", "demora?"), estimular o agendamento pelo telefone ${telefone.trim() || TELEFONE_PADRAO}.\nMENSAGENS-CHAVE: "Atendimento supervisionado por professores especialistas" · "Ambiente seguro e humanizado" · "Agende sua avaliação" · "Não deixe lesões sem avaliação".\nTOM: acolhedor, tranquilo, confiável, empático com medos e dúvidas. Linguagem simples, sem termos técnicos desnecessários (se usar, explique em 1 linha).\nEVITAR imagens/palavras que assustem (sangue, instrumentos agressivos, cenas invasivas).\nSEMPRE citar o telefone ${telefone.trim() || TELEFONE_PADRAO} e o nome "${SERVICO} — ${INSTITUICAO}".\nHASHTAGS: #CirurgiaBucal #BiopsiaBucal #SaudeBucal #SantaBarbaraDOeste #Anhanguera #ClinicaEscola #Odontologia #Siso #LesaoBucal #SaudeDaBoca\n=== FIM ===`;
       const tema = `${tratObj.tema}. CONVITE PÚBLICO para pacientes agendarem AVALIAÇÃO pelo telefone ${telefone.trim() || TELEFONE_PADRAO} na ${SERVICO} — ${INSTITUICAO}. Público-alvo: PACIENTES LEIGOS. Tom: acolhedor, seguro, humanizado, LINGUAGEM SIMPLES.${assuntoBlock}${diretriz}\n\n${capaBrief}`;
@@ -214,7 +214,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
         await approveFn({ data: { id: preview.id, acao: "arquivar" } });
         const out = await publishIg({ data: { id: preview.id } });
         if (out && "ok" in out && out.ok === false) throw new Error(("error" in out ? out.error : "Falha ao publicar."));
-        toast.success("Publicado no Instagram @drfranciscomenezes.", { id: tid });
+        toast.success("Publicado no Instagram @lactbmf.anhanguerasbo.", { id: tid });
       } else {
         await approveFn({ data: { id: preview.id, acao } });
         toast.success("Salvo.", { id: tid });
