@@ -4,7 +4,7 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 const INSTAGRAM_CAPTION_LIMIT = 2200;
 
-type PublishVia = "meta" | "manual-liga";
+type PublishVia = "meta";
 
 type PublishPostInput = {
   supabaseAdmin: any;
@@ -308,8 +308,6 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     const originalContaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
     // Liga publica estritamente no @lactbmf.anhanguerasbo.
-    const isLigaPost = originalContaAlvo === LIGA_ACCOUNT;
-    let collaboratorUsername: string | null = null;
     let contaAlvo = originalContaAlvo;
 
     if (!contaAlvo) {
@@ -489,9 +487,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     via = "meta";
     try {
-      if (!collaboratorUsername) {
-        await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
-      }
+      await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
       externalId = await publishViaMeta({
         igBusinessId: perfil.instagram_business_account_id,
         token: perfil.instagram_access_token,
@@ -499,7 +495,6 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         imageUrls,
         isStory,
         isCarousel,
-        collaborators: collaboratorUsername ? [collaboratorUsername] : undefined,
       });
 
     } catch (metaError) {
