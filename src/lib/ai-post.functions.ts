@@ -1628,9 +1628,14 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const { strategyPrompt: strategyImg } = await import("@/lib/strategy-prompt");
     const brandBookImg = `${strategyImg()}\n\n${brandBookPromptImg(data.audiencia)}\n\n${hooksImg()}`;
     const genAndUpload = (prompt: string) => {
-      // Limite do provider (OpenAI gpt-image) = 32000 chars. Trunca com folga.
-      const full = `${brandBookImg}\n\n${prompt}`;
-      const safe = full.length > 30000 ? full.slice(0, 30000) : full;
+      // Limite do provider (OpenAI gpt-image) = 32000 chars.
+      // O TEMA (prompt) precisa entrar INTEIRO — se truncarmos ele, a imagem
+      // fica sem contexto. Truncamos o brand book, não o prompt.
+      const MAX = 30000;
+      const promptSafe = prompt.length > MAX ? prompt.slice(0, MAX) : prompt;
+      const budget = Math.max(0, MAX - promptSafe.length - 4); // "\n\n" separador
+      const brandSafe = brandBookImg.length > budget ? brandBookImg.slice(0, budget) : brandBookImg;
+      const safe = brandSafe ? `${brandSafe}\n\n${promptSafe}` : promptSafe;
       return generateImageWithRetry(safe)
         .then((b64) => ensureJpegB64(b64))
         .then(applyOverlay)
