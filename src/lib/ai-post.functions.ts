@@ -1930,7 +1930,7 @@ export const approvePost = createServerFn({ method: "POST" })
         await supabaseAdmin.from("posts").update({ status: "Erro", user_id: publishUserId }).eq("id", data.id);
         results.status = "Erro";
       } else {
-        const nextStatus = results.instagram?.via === "manual-liga" && !results.linkedin ? "Rascunho" : "Publicado";
+        const nextStatus = "Publicado";
         await supabaseAdmin.from("posts").update({ status: nextStatus, user_id: publishUserId }).eq("id", data.id);
         results.status = nextStatus;
       }
@@ -1947,7 +1947,7 @@ export const approvePost = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     const contaMeta = String((postMeta as any)?.instagram_conta || "").trim().replace(/^@+/, "").toLowerCase();
-    const status = data.acao === "agendar" && contaMeta !== "lactbmf.anhanguerasbo" ? "Agendado" : "Rascunho";
+    const status = data.acao === "agendar" ? "Agendado" : "Rascunho";
     const patch: any = { status };
     const { error } = await supabaseAdmin.from("posts").update(patch).eq("id", data.id);
     if (error) throw new Error(`DB: ${error.message}`);
