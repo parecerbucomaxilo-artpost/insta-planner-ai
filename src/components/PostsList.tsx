@@ -89,7 +89,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
         throw new Error("error" in out ? out.error : "Falha ao publicar no Instagram.");
       }
       const isLiga = normalizeInstagramAccount(p.instagram_conta) === LIGA_ACCOUNT;
-      toast.success(isLiga ? "Publicado via @drfranciscomenezes com convite à Liga!" : "Publicado no Instagram pela Meta!");
+      toast.success(isLiga ? "Publicado no Instagram @lactbmf.anhanguerasbo!" : "Publicado no Instagram pela Meta!");
       onChange();
     } catch (e: any) {
       toast.error(e.message || "Falha ao publicar");
@@ -296,7 +296,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                   ) : alreadyPublished ? (
                     <><Send className="h-4 w-4 mr-1.5" /> Republicar Agora</>
                   ) : isLigaPost ? (
-                    <><Send className="h-4 w-4 mr-1.5" /> Publicar + Convidar Liga</>
+                    <><Send className="h-4 w-4 mr-1.5" /> Publicar na Liga</>
                   ) : (
                     <><Send className="h-4 w-4 mr-1.5" /> Postar Agora</>
                   )}

@@ -2,8 +2,9 @@ const GRAPH_VERSION = "v21.0";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
+const INSTAGRAM_CAPTION_LIMIT = 2200;
 
-type PublishVia = "meta" | "manual-liga";
+type PublishVia = "meta";
 
 type PublishPostInput = {
   supabaseAdmin: any;
@@ -18,6 +19,28 @@ function normalizeInstagramAccount(value: string | null | undefined) {
 
 function isInvalidMetaTokenMessage(message: string) {
   return /access token|OAuthException|Cannot parse|token.*inválid|token.*expirad|Session has expired|Error validating access token/i.test(message);
+}
+
+function countChars(value: string) {
+  return Array.from(value).length;
+}
+
+function trimChars(value: string, limit: number) {
+  return Array.from(value).slice(0, Math.max(0, limit)).join("").trimEnd();
+}
+
+function fitInstagramCaption(value: string) {
+  const text = String(value || "").replace(/\r\n/g, "\n").trim();
+  if (countChars(text) <= INSTAGRAM_CAPTION_LIMIT) return text;
+
+  const hashtags = Array.from(text.matchAll(/#[\p{L}\p{N}_]+/gu))
+    .map((match) => match[0])
+    .filter((tag, index, arr) => arr.indexOf(tag) === index)
+    .slice(0, 12)
+    .join(" ");
+  const suffix = hashtags ? `\n\n…\n\n${hashtags}` : "\n\n…";
+  const budget = INSTAGRAM_CAPTION_LIMIT - countChars(suffix);
+  return `${trimChars(text, budget)}${suffix}`;
 }
 
 async function findInstagramProfileByAccount(supabaseAdmin: any, conta: string, columns: string) {
@@ -284,22 +307,12 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     
 
     const originalContaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
-    // Liga agora tenta publicar diretamente no @lactbmf.anhanguerasbo quando houver token Meta.
-    // Se ainda não houver conexão válida da Liga, mantemos fallback prático: publicar via
-    // @drfranciscomenezes com convite de colaboração para a Liga.
-    const isLigaPost = originalContaAlvo === LIGA_ACCOUNT;
-    let collaboratorUsername: string | null = null;
+    // Liga publica estritamente no @lactbmf.anhanguerasbo.
     let contaAlvo = originalContaAlvo;
 
     if (!contaAlvo) {
-      throw new Error(
-        `Publicação bloqueada: este post não tem instagram_conta definida. ` +
-        `Defina @drfranciscomenezes ou @${LIGA_ACCOUNT} antes de publicar.`,
-      );
+      throw new Error(`Publicação bloqueada: este post não tem instagram_conta definida. Defina @${LIGA_ACCOUNT} antes de publicar.`);
     }
-
-
-    // Publicação no @drfranciscomenezes reativada.
 
     let perfil: any = null;
 
@@ -310,8 +323,8 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         contaAlvo,
         "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id",
       );
-      // Liga/Francisco: se não existe perfil ainda, cria placeholder para receber token via OAuth/secret.
-      if (!perfil && (contaAlvo === LIGA_ACCOUNT || contaAlvo === "drfranciscomenezes")) {
+      // Liga: se não existe perfil ainda, cria placeholder para receber token via OAuth/secret.
+      if (!perfil && contaAlvo === LIGA_ACCOUNT) {
         const { data: created, error: createError } = await supabaseAdmin
           .from("perfil_usuario")
           .insert({ user_id: TEMP_USER_ID, arroba_usuario: contaAlvo, instagram_arroba: contaAlvo })
@@ -326,22 +339,6 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         );
       }
     }
-
-    if (isLigaPost && (!perfil?.instagram_access_token || !perfil?.instagram_business_account_id)) {
-      const franciscoPerfil = await findInstagramProfileByAccount(
-        supabaseAdmin,
-        "drfranciscomenezes",
-        "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id",
-      );
-      if (franciscoPerfil?.instagram_access_token && franciscoPerfil?.instagram_business_account_id) {
-        perfil = franciscoPerfil;
-        contaAlvo = "drfranciscomenezes";
-        collaboratorUsername = LIGA_ACCOUNT;
-      }
-    }
-
-
-
     const carousel = pairCarouselSources(
       post.imagens_carrossel,
       (post as any).imagens_carrossel_cache,
@@ -362,7 +359,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     // Não re-aplicar aqui evita trocar a seleção manual ou duplicar a marca no post.
 
 
-    const caption = post.legenda_instagram || post.legenda || "";
+    const caption = fitInstagramCaption(post.legenda_instagram || post.legenda || "");
     const isStory = /stor/i.test(post.formato_midia || "");
     const isCarousel = post.tipo_post === "Carrossel" && imageUrls.length > 1;
     let via: PublishVia = "meta";
@@ -490,9 +487,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     via = "meta";
     try {
-      if (!collaboratorUsername) {
-        await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
-      }
+      await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
       externalId = await publishViaMeta({
         igBusinessId: perfil.instagram_business_account_id,
         token: perfil.instagram_access_token,
@@ -500,7 +495,6 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         imageUrls,
         isStory,
         isCarousel,
-        collaborators: collaboratorUsername ? [collaboratorUsername] : undefined,
       });
 
     } catch (metaError) {
