@@ -1623,19 +1623,21 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       return stamped;
     };
 
-    const { brandBookPrompt: brandBookPromptImg } = await import("@/lib/brand-book");
-    const { hooksLibraryPrompt: hooksImg } = await import("@/lib/hooks-library");
-    const { strategyPrompt: strategyImg } = await import("@/lib/strategy-prompt");
-    const brandBookImg = `${strategyImg()}\n\n${brandBookPromptImg(data.audiencia)}\n\n${hooksImg()}`;
+    // IMPORTANTE: para geração de IMAGEM, NÃO enviamos o brand book/estratégia
+    // gigantes — eles diluem o TEMA e a IA desenha algo genérico "sobre a marca"
+    // em vez do assunto pedido. Enviamos apenas o prompt visual (que já contém
+    // paleta, estilo, cena e o tema) com uma linha curta de marca.
+    const { pickBrand: pickBrandImg, BRAND_BOOK: BRAND_BOOK_IMG } = await import("@/lib/brand-book");
+    const brandKeyImg = pickBrandImg(data.audiencia);
+    const b = BRAND_BOOK_IMG[brandKeyImg];
+    const brandOneLiner = `MARCA (${b.instagram}): paleta ${b.paleta.primary} · ${b.paleta.secondary} · ${b.paleta.bg} · ${b.paleta.text}. Estilo: ${b.estilo} Nunca desenhar/imitar logo — o sistema aplica overlay real.`;
     const genAndUpload = (prompt: string) => {
-      // Limite do provider (OpenAI gpt-image) = 32000 chars.
-      // O TEMA (prompt) precisa entrar INTEIRO — se truncarmos ele, a imagem
-      // fica sem contexto. Truncamos o brand book, não o prompt.
       const MAX = 30000;
+      // TEMA (prompt) primeiro e inteiro; marca só como rodapé curto.
       const promptSafe = prompt.length > MAX ? prompt.slice(0, MAX) : prompt;
-      const budget = Math.max(0, MAX - promptSafe.length - 4); // "\n\n" separador
-      const brandSafe = brandBookImg.length > budget ? brandBookImg.slice(0, budget) : brandBookImg;
-      const safe = brandSafe ? `${brandSafe}\n\n${promptSafe}` : promptSafe;
+      const budget = Math.max(0, MAX - promptSafe.length - 4);
+      const brandSafe = brandOneLiner.length > budget ? brandOneLiner.slice(0, budget) : brandOneLiner;
+      const safe = brandSafe ? `${promptSafe}\n\n${brandSafe}` : promptSafe;
       return generateImageWithRetry(safe)
         .then((b64) => ensureJpegB64(b64))
         .then(applyOverlay)
