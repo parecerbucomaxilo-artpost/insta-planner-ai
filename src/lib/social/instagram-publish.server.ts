@@ -2,6 +2,7 @@ const GRAPH_VERSION = "v21.0";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
+const INSTAGRAM_CAPTION_LIMIT = 2200;
 
 type PublishVia = "meta" | "manual-liga";
 
@@ -18,6 +19,28 @@ function normalizeInstagramAccount(value: string | null | undefined) {
 
 function isInvalidMetaTokenMessage(message: string) {
   return /access token|OAuthException|Cannot parse|token.*inválid|token.*expirad|Session has expired|Error validating access token/i.test(message);
+}
+
+function countChars(value: string) {
+  return Array.from(value).length;
+}
+
+function trimChars(value: string, limit: number) {
+  return Array.from(value).slice(0, Math.max(0, limit)).join("").trimEnd();
+}
+
+function fitInstagramCaption(value: string) {
+  const text = String(value || "").replace(/\r\n/g, "\n").trim();
+  if (countChars(text) <= INSTAGRAM_CAPTION_LIMIT) return text;
+
+  const hashtags = Array.from(text.matchAll(/#[\p{L}\p{N}_]+/gu))
+    .map((match) => match[0])
+    .filter((tag, index, arr) => arr.indexOf(tag) === index)
+    .slice(0, 12)
+    .join(" ");
+  const suffix = hashtags ? `\n\n…\n\n${hashtags}` : "\n\n…";
+  const budget = INSTAGRAM_CAPTION_LIMIT - countChars(suffix);
+  return `${trimChars(text, budget)}${suffix}`;
 }
 
 async function findInstagramProfileByAccount(supabaseAdmin: any, conta: string, columns: string) {
@@ -362,7 +385,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     // Não re-aplicar aqui evita trocar a seleção manual ou duplicar a marca no post.
 
 
-    const caption = post.legenda_instagram || post.legenda || "";
+    const caption = fitInstagramCaption(post.legenda_instagram || post.legenda || "");
     const isStory = /stor/i.test(post.formato_midia || "");
     const isCarousel = post.tipo_post === "Carrossel" && imageUrls.length > 1;
     let via: PublishVia = "meta";
