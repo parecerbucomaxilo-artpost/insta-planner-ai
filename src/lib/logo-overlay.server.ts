@@ -259,6 +259,41 @@ function composite(base: RgbaImage, stamp: RgbaImage, x0: number, y0: number, al
   }
 }
 
+// Chip/plate arredondado semi-transparente atrás da logo — evita a
+// sensação de "logo colada por cima" e garante legibilidade sobre
+// fundos ocupados ou coloridos.
+function drawRoundedPlate(
+  base: RgbaImage,
+  x0: number,
+  y0: number,
+  w: number,
+  h: number,
+  radius: number,
+  rgb: [number, number, number],
+  alpha: number,
+): void {
+  const r = Math.min(radius, Math.floor(Math.min(w, h) / 2));
+  for (let y = 0; y < h; y++) {
+    const by = y0 + y;
+    if (by < 0 || by >= base.height) continue;
+    for (let x = 0; x < w; x++) {
+      const bx = x0 + x;
+      if (bx < 0 || bx >= base.width) continue;
+      // corta cantos arredondados
+      const dx = x < r ? r - x : x >= w - r ? x - (w - r - 1) : 0;
+      const dy = y < r ? r - y : y >= h - r ? y - (h - r - 1) : 0;
+      if (dx * dx + dy * dy > r * r) continue;
+      const di = (by * base.width + bx) * 4;
+      const inv = 1 - alpha;
+      base.data[di] = Math.round(rgb[0] * alpha + base.data[di] * inv);
+      base.data[di + 1] = Math.round(rgb[1] * alpha + base.data[di + 1] * inv);
+      base.data[di + 2] = Math.round(rgb[2] * alpha + base.data[di + 2] * inv);
+      base.data[di + 3] = 255;
+    }
+  }
+}
+
+
 function statsRegion(image: RgbaImage, x0: number, y0: number, size: number): { mean: number; std: number } {
   const x1 = Math.min(image.width, x0 + size);
   const y1 = Math.min(image.height, y0 + size);
