@@ -1627,11 +1627,16 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const { hooksLibraryPrompt: hooksImg } = await import("@/lib/hooks-library");
     const { strategyPrompt: strategyImg } = await import("@/lib/strategy-prompt");
     const brandBookImg = `${strategyImg()}\n\n${brandBookPromptImg(data.audiencia)}\n\n${hooksImg()}`;
-    const genAndUpload = (prompt: string) =>
-      generateImageWithRetry(`${brandBookImg}\n\n${prompt}`)
+    const genAndUpload = (prompt: string) => {
+      // Limite do provider (OpenAI gpt-image) = 32000 chars. Trunca com folga.
+      const full = `${brandBookImg}\n\n${prompt}`;
+      const safe = full.length > 30000 ? full.slice(0, 30000) : full;
+      return generateImageWithRetry(safe)
         .then((b64) => ensureJpegB64(b64))
         .then(applyOverlay)
         .then(uploadOne);
+    };
+
 
     const legendaBaseResolvida = completeCaptionIfNeeded({
       legenda: await legendaPromise,
