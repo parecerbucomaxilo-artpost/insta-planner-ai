@@ -214,7 +214,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
         await approveFn({ data: { id: preview.id, acao: "arquivar" } });
         const out = await publishIg({ data: { id: preview.id } });
         if (out && "ok" in out && out.ok === false) throw new Error(("error" in out ? out.error : "Falha ao publicar."));
-        toast.success("Publicado no Instagram @drfranciscomenezes.", { id: tid });
+        toast.success("Publicado no Instagram @lactbmf.anhanguerasbo.", { id: tid });
       } else {
         await approveFn({ data: { id: preview.id, acao } });
         toast.success("Salvo.", { id: tid });
