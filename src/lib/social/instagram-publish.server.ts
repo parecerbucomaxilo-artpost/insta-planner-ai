@@ -307,22 +307,14 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
     
 
     const originalContaAlvo = normalizeInstagramAccount((post as any).instagram_conta);
-    // Liga agora tenta publicar diretamente no @lactbmf.anhanguerasbo quando houver token Meta.
-    // Se ainda não houver conexão válida da Liga, mantemos fallback prático: publicar via
-    // @drfranciscomenezes com convite de colaboração para a Liga.
+    // Liga publica estritamente no @lactbmf.anhanguerasbo.
     const isLigaPost = originalContaAlvo === LIGA_ACCOUNT;
     let collaboratorUsername: string | null = null;
     let contaAlvo = originalContaAlvo;
 
     if (!contaAlvo) {
-      throw new Error(
-        `Publicação bloqueada: este post não tem instagram_conta definida. ` +
-        `Defina @drfranciscomenezes ou @${LIGA_ACCOUNT} antes de publicar.`,
-      );
+      throw new Error(`Publicação bloqueada: este post não tem instagram_conta definida. Defina @${LIGA_ACCOUNT} antes de publicar.`);
     }
-
-
-    // Publicação no @drfranciscomenezes reativada.
 
     let perfil: any = null;
 
@@ -333,8 +325,8 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         contaAlvo,
         "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id",
       );
-      // Liga/Francisco: se não existe perfil ainda, cria placeholder para receber token via OAuth/secret.
-      if (!perfil && (contaAlvo === LIGA_ACCOUNT || contaAlvo === "drfranciscomenezes")) {
+      // Liga: se não existe perfil ainda, cria placeholder para receber token via OAuth/secret.
+      if (!perfil && contaAlvo === LIGA_ACCOUNT) {
         const { data: created, error: createError } = await supabaseAdmin
           .from("perfil_usuario")
           .insert({ user_id: TEMP_USER_ID, arroba_usuario: contaAlvo, instagram_arroba: contaAlvo })
@@ -349,22 +341,6 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         );
       }
     }
-
-    if (isLigaPost && (!perfil?.instagram_access_token || !perfil?.instagram_business_account_id)) {
-      const franciscoPerfil = await findInstagramProfileByAccount(
-        supabaseAdmin,
-        "drfranciscomenezes",
-        "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id",
-      );
-      if (franciscoPerfil?.instagram_access_token && franciscoPerfil?.instagram_business_account_id) {
-        perfil = franciscoPerfil;
-        contaAlvo = "drfranciscomenezes";
-        collaboratorUsername = LIGA_ACCOUNT;
-      }
-    }
-
-
-
     const carousel = pairCarouselSources(
       post.imagens_carrossel,
       (post as any).imagens_carrossel_cache,
