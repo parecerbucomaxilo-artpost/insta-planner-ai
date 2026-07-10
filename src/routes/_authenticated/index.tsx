@@ -64,7 +64,7 @@ function Dashboard() {
       .from("posts")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(100); // Limite para evitar timeout em tabelas grandes
+      .limit(1000);
 
     if (error) {
       console.error("[Reset] Erro ao carregar posts:", error);
