@@ -21,7 +21,7 @@ import {
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 import { cn } from "@/lib/utils";
 
-const LIGA_ACCOUNT = "drfranciscomenezes";
+const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 const LS_PHONE = "planner_agend_liga_phone_v1";
 const TELEFONE_PADRAO = "(19) 99018-0802";
 const INSTITUICAO = "Faculdade Anhanguera de Santa Bárbara";
