@@ -426,7 +426,7 @@ export async function overlayLogo(
       }
     }
 
-    }
+
 
     if (opts?.withAvatar) {
       const avUrl = opts.avatarUrl || avatarAsset.url;
