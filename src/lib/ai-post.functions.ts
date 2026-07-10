@@ -1593,12 +1593,23 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
 
     const { ensureJpegB64, overlayLogo } = await import("@/lib/logo-overlay.server");
+    // Hard cap abaixo do limite do gateway (32k). Deixa folga para segurança.
+    const GATEWAY_PROMPT_HARDCAP = 28000;
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
+      const safePrompt = prompt.length > GATEWAY_PROMPT_HARDCAP ? prompt.slice(0, GATEWAY_PROMPT_HARDCAP) : prompt;
       try {
-        return await generateImageBase64({ prompt, size, model: data.modeloImagem });
+        return await generateImageBase64({ prompt: safePrompt, size, model: data.modeloImagem });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message);
+        // Prompt inválido/tamanho/safety → não adianta re-tentar; usa fallback local
+        // para NÃO derrubar o post inteiro (usuário fica sem rascunho salvo).
+        const nonRetryable400 = /400|string too long|invalid.?prompt|safety|moderation|content_policy/i.test(message);
+        if (nonRetryable400) {
+          console.warn("[ai-post] imagem 400/safety → fallback local para não perder rascunho:", message.slice(0, 200));
+          const { generateImageBase64: gen } = await import("@/lib/ai-gateway.server");
+          return gen({ prompt: safePrompt.slice(0, 4000), size, model: "local/sem-custo" });
+        }
         if (!retryable || attempt >= 4) throw error;
         await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
         return generateImageWithRetry(prompt, attempt + 1);
