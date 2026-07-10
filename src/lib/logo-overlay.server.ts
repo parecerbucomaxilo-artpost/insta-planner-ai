@@ -319,9 +319,12 @@ export async function overlayLogo(
 ): Promise<string> {
   try {
     const base = decodeImage(base64ToBytes(imageB64));
+    const w = base.width;
+    const h = base.height;
     sizePct = Math.min(sizePct, 11);
     const margin = Math.round(w * 0.035);
     const requested = opts?.position ?? "bottom-right";
+
 
 
     // Smart placement: escolhe canto mais limpo, ajusta tamanho e opacidade.
