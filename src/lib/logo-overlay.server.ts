@@ -367,10 +367,18 @@ export async function overlayLogo(
         logoUrls.map(async (url) => trimLogoCanvas(decodeImage(await fetchBytes(url, origin)))),
       );
 
+      // Amostra a região sob a logo para decidir cor do chip (branco em imagens escuras, navy em imagens claras)
+      const plateColorFor = (px: number, py: number, pw: number, ph: number): { rgb: [number, number, number]; alpha: number } => {
+        const { mean } = statsRegion(base, px, py, Math.max(pw, ph));
+        return mean > 150
+          ? { rgb: [12, 35, 64], alpha: 0.88 }   // navy #0c2340 em fundos claros
+          : { rgb: [255, 255, 255], alpha: 0.92 }; // branco em fundos escuros
+      };
+
       if (logoImages.length > 1) {
         const gap = Math.round(w * 0.018);
-        const maxW = Math.round(w * 0.88);
-        let targetH = Math.max(42, Math.round(targetBox * 0.68));
+        const maxW = Math.round(w * 0.82);
+        let targetH = Math.max(42, Math.round(targetBox * 0.62));
         let resized = logoImages.map((logo) => resizeRgba(logo, Math.max(34, Math.round((logo.width * targetH) / Math.max(1, logo.height))), targetH));
         let totalW = resized.reduce((sum, logo) => sum + logo.width, 0) + gap * (resized.length - 1);
         if (totalW > maxW) {
@@ -379,34 +387,45 @@ export async function overlayLogo(
           resized = logoImages.map((logo) => resizeRgba(logo, Math.max(28, Math.round((logo.width * targetH) / Math.max(1, logo.height))), targetH));
           totalW = resized.reduce((sum, logo) => sum + logo.width, 0) + gap * (resized.length - 1);
         }
-        let cursorX = Math.round((w - totalW) / 2);
-        const y = Math.max(0, h - targetH - margin);
+        const padX = Math.round(targetH * 0.55);
+        const padY = Math.round(targetH * 0.32);
+        const plateW = totalW + padX * 2;
+        const plateH = targetH + padY * 2;
+        const plateX = Math.round((w - plateW) / 2);
+        const plateY = Math.max(0, h - plateH - margin);
+        const { rgb, alpha: pa } = plateColorFor(plateX, plateY, plateW, plateH);
+        drawRoundedPlate(base, plateX, plateY, plateW, plateH, Math.round(plateH * 0.28), rgb, pa);
+        let cursorX = plateX + padX;
+        const y = plateY + padY;
         for (const logo of resized) {
-          composite(base, logo, cursorX, y, alpha);
+          composite(base, logo, cursorX, y, 1);
           cursorX += logo.width + gap;
         }
       } else if (logoImages[0]) {
         const logoFull = logoImages[0];
         const aspect = logoFull.height / Math.max(1, logoFull.width);
         const isWideStrip = aspect < 0.35;
-        let targetW: number;
-        let targetH: number;
-        let logoX: number;
-        let logoY: number;
-        if (isWideStrip) {
-          targetW = Math.round(w * 0.72);
-          targetH = Math.max(40, Math.round(targetW * aspect));
-          logoX = Math.round((w - targetW) / 2);
-          logoY = Math.max(0, h - targetH - margin);
-        } else {
-          targetW = targetBox;
-          targetH = Math.max(32, Math.round(targetW * aspect));
-          logoX = pos === "top-left" || pos === "bottom-left" ? margin : Math.max(0, w - targetW - margin);
-          logoY = pos === "bottom-right" || pos === "bottom-left" ? Math.max(0, h - targetH - margin) : margin;
-        }
+        const targetW = isWideStrip ? Math.round(w * 0.62) : targetBox;
+        const targetH = Math.max(32, Math.round(targetW * aspect));
+        const padX = Math.round(Math.max(targetW, targetH) * 0.18);
+        const padY = Math.round(Math.max(targetW, targetH) * 0.18);
+        const plateW = targetW + padX * 2;
+        const plateH = targetH + padY * 2;
+        const plateX = isWideStrip
+          ? Math.round((w - plateW) / 2)
+          : pos === "top-left" || pos === "bottom-left"
+            ? margin
+            : Math.max(0, w - plateW - margin);
+        const plateY = isWideStrip || pos === "bottom-right" || pos === "bottom-left"
+          ? Math.max(0, h - plateH - margin)
+          : margin;
+        const { rgb, alpha: pa } = plateColorFor(plateX, plateY, plateW, plateH);
+        drawRoundedPlate(base, plateX, plateY, plateW, plateH, Math.round(plateH * 0.24), rgb, pa);
         const logoResized = resizeRgba(logoFull, targetW, targetH);
-        composite(base, logoResized, logoX, logoY, isWideStrip ? 1 : alpha);
+        composite(base, logoResized, plateX + padX, plateY + padY, 1);
       }
+    }
+
     }
 
     if (opts?.withAvatar) {
