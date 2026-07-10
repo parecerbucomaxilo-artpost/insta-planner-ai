@@ -356,7 +356,7 @@ export async function overlayLogo(
     const base = decodeImage(base64ToBytes(imageB64));
     const w = base.width;
     const h = base.height;
-    sizePct = Math.min(sizePct, 11);
+    sizePct = Math.min(sizePct, 9);
     const margin = Math.round(w * 0.035);
     const requested = opts?.position ?? "bottom-right";
 
