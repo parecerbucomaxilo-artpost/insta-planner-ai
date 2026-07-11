@@ -834,7 +834,15 @@ function chicoImagePrompt(tema: string, slide?: { n: number; total: number; pape
   return themeLock(tema) + `IMAGEM PREMIUM para o Instagram @drfranciscomenezes — Cirurgião Bucomaxilofacial.
 - ${formato}
 - TEMA LITERAL "${tema}": represente a cena/sintoma de forma reconhecível (siso → região posterior; ATM → mão pré-auricular; trauma → cena clínica plausível; patologia → close de mucosa saudável; ortognática → perfil facial elegante).
-- ESTILO: fotografia editorial sóbria OU ilustração anatômica realista limpa (estilo Netter contemporâneo). Sem clipart, sem flat design infantil, sem cartoon, sem banco de imagens.
+- REALISMO CLÍNICO OBRIGATÓRIO (não-negociável): a imagem deve REPRESENTAR A REALIDADE CLÍNICA do tema. Priorize um destes registros verossímeis (escolha o mais adequado ao tema, varie entre posts para evitar repetição visual):
+  (a) RADIOGRAFIA PANORÂMICA odontológica em escala de cinza autêntica (fundo preto, ossos brancos, dentes com contornos anatomicamente corretos, numeração ausente) — ideal para siso, cistos, tumores, fraturas, implantes;
+  (b) TOMOGRAFIA COMPUTADORIZADA DE FEIXE CÔNICO (TCFC/CBCT) — cortes axial/sagital/coronal em tons de cinza médicos, com aspecto de software Dolphin/InVivo — ideal para trauma, ortognática, planejamento;
+  (c) RECONSTRUÇÃO 3D DE TC craniofacial (crânio cinza claro, sombreamento anatômico realista, aspecto de estação de radiologia);
+  (d) FOTOGRAFIA CLÍNICA MACRO real (mucosa oral, perfil facial, retração de lábio com afastador) — proporções anatômicas exatas, iluminação clínica fria, sem exagero, sem "beleza artificial";
+  (e) ILUSTRAÇÃO ANATÔMICA HIPER-REALISTA estilo Netter/Sobotta — mandíbula/maxila/ATM/nervo alveolar com precisão de atlas médico.
+  PROIBIDO absolutamente: cenas fictícias, personagens estilizados, próteses cartunizadas, "dente feliz", pacientes sorrindo genéricos de banco de imagens, dentes desenhados sem raízes, radiografias inventadas que não parecem radiografias reais, mandíbulas com formato errado, TC que parece pintura.
+- CRIATIVIDADE OBRIGATÓRIA (jamais repetir composição): a cada post escolha ALEATORIAMENTE um ângulo/registro diferente — [radiografia panorâmica em close] · [TC corte sagital] · [reconstrução 3D vista oblíqua] · [foto clínica intraoral com afastador] · [perfil facial em silhueta] · [close macro de instrumental cirúrgico esterilizado sobre campo azul] · [mão do cirurgião com luva segurando radiografia negatoscopiada] · [ilustração anatômica em corte com transparência] · [comparativo antes/depois em imagem de exame]. Nunca repita o mesmo ângulo do post anterior do mesmo tema.
+- ESTILO EDITORIAL: fotografia editorial médica sóbria OU imagem de exame real OU ilustração anatômica realista limpa. Sem clipart, sem flat design, sem cartoon, sem 3D infantil, sem banco de imagens genérico, sem "dente com olhos".
 - PALETA RIGOROSA — APENAS estas 3 cores (descumprir = rejeitado):
   • FUNDO DOMINANTE: AZUL MARINHO ESCURO ${CHICO_NAVY} (cobertura ~70-85% da composição, podendo ter leve gradiente sutil).
   • TEXTO PRINCIPAL: BRANCO #FFFFFF puro.
