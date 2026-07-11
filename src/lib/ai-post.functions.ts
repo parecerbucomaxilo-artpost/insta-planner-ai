@@ -834,7 +834,15 @@ function chicoImagePrompt(tema: string, slide?: { n: number; total: number; pape
   return themeLock(tema) + `IMAGEM PREMIUM para o Instagram @drfranciscomenezes — Cirurgião Bucomaxilofacial.
 - ${formato}
 - TEMA LITERAL "${tema}": represente a cena/sintoma de forma reconhecível (siso → região posterior; ATM → mão pré-auricular; trauma → cena clínica plausível; patologia → close de mucosa saudável; ortognática → perfil facial elegante).
-- ESTILO: fotografia editorial sóbria OU ilustração anatômica realista limpa (estilo Netter contemporâneo). Sem clipart, sem flat design infantil, sem cartoon, sem banco de imagens.
+- REALISMO CLÍNICO OBRIGATÓRIO (não-negociável): a imagem deve REPRESENTAR A REALIDADE CLÍNICA do tema. Priorize um destes registros verossímeis (escolha o mais adequado ao tema, varie entre posts para evitar repetição visual):
+  (a) RADIOGRAFIA PANORÂMICA odontológica em escala de cinza autêntica (fundo preto, ossos brancos, dentes com contornos anatomicamente corretos, numeração ausente) — ideal para siso, cistos, tumores, fraturas, implantes;
+  (b) TOMOGRAFIA COMPUTADORIZADA DE FEIXE CÔNICO (TCFC/CBCT) — cortes axial/sagital/coronal em tons de cinza médicos, com aspecto de software Dolphin/InVivo — ideal para trauma, ortognática, planejamento;
+  (c) RECONSTRUÇÃO 3D DE TC craniofacial (crânio cinza claro, sombreamento anatômico realista, aspecto de estação de radiologia);
+  (d) FOTOGRAFIA CLÍNICA MACRO real (mucosa oral, perfil facial, retração de lábio com afastador) — proporções anatômicas exatas, iluminação clínica fria, sem exagero, sem "beleza artificial";
+  (e) ILUSTRAÇÃO ANATÔMICA HIPER-REALISTA estilo Netter/Sobotta — mandíbula/maxila/ATM/nervo alveolar com precisão de atlas médico.
+  PROIBIDO absolutamente: cenas fictícias, personagens estilizados, próteses cartunizadas, "dente feliz", pacientes sorrindo genéricos de banco de imagens, dentes desenhados sem raízes, radiografias inventadas que não parecem radiografias reais, mandíbulas com formato errado, TC que parece pintura.
+- CRIATIVIDADE OBRIGATÓRIA (jamais repetir composição): a cada post escolha ALEATORIAMENTE um ângulo/registro diferente — [radiografia panorâmica em close] · [TC corte sagital] · [reconstrução 3D vista oblíqua] · [foto clínica intraoral com afastador] · [perfil facial em silhueta] · [close macro de instrumental cirúrgico esterilizado sobre campo azul] · [mão do cirurgião com luva segurando radiografia negatoscopiada] · [ilustração anatômica em corte com transparência] · [comparativo antes/depois em imagem de exame]. Nunca repita o mesmo ângulo do post anterior do mesmo tema.
+- ESTILO EDITORIAL: fotografia editorial médica sóbria OU imagem de exame real OU ilustração anatômica realista limpa. Sem clipart, sem flat design, sem cartoon, sem 3D infantil, sem banco de imagens genérico, sem "dente com olhos".
 - PALETA RIGOROSA — APENAS estas 3 cores (descumprir = rejeitado):
   • FUNDO DOMINANTE: AZUL MARINHO ESCURO ${CHICO_NAVY} (cobertura ~70-85% da composição, podendo ter leve gradiente sutil).
   • TEXTO PRINCIPAL: BRANCO #FFFFFF puro.
@@ -872,7 +880,73 @@ const TEMAS_GERAIS = [
   "Quando a perda óssea exige cuidado antes de procedimentos dentários",
   "Por que a higiene oral na UTI reduz riscos ao paciente internado",
   "Como identificar sinais de disfunção temporomandibular sem pânico",
+
+  // ─── Ampliação para reduzir repetição de temas ao longo dos meses ───
+  "Cistos odontogênicos: quando um achado radiográfico vira cirurgia",
+  "Tumores benignos da mandíbula: por que a biópsia muda tudo",
+  "Fratura de mandíbula: sinais que ninguém pode ignorar",
+  "Fratura de zigoma: quando o afundamento facial é urgência",
+  "Fratura de órbita: quando a visão dupla acende o alerta",
+  "Trauma dentoalveolar no esporte: o que fazer nos primeiros minutos",
+  "Reimplante dentário após avulsão: a janela de ouro de 60 minutos",
+  "Sinusite maxilar de origem odontogênica: quando o dente é o culpado",
+  "Comunicação bucossinusal após extração: como identificar e tratar",
+  "Osteonecrose dos maxilares por bisfosfonatos: quem precisa avisar o dentista",
+  "Enxerto ósseo antes do implante: o que muda no planejamento",
+  "Elevação de seio maxilar: como funciona e quando é indicada",
+  "Implante zigomático: solução para maxila severamente reabsorvida",
+  "Cirurgia guiada por computador: previsibilidade em implantes complexos",
+  "Distração osteogênica em deformidades craniofaciais",
+  "Fissuras labiopalatinas: da equipe multidisciplinar à cirurgia primária",
+  "Anquiloglossia no adulto: quando a frenectomia lingual muda a fala",
+  "Paralisia facial pós-cirúrgica: prevenção durante a parotidectomia",
+  "Neuralgia do trigêmeo: quando a dor facial não é dentária",
+  "Síndrome de Eagle: por que o processo estiloide alongado dói",
+  "Osteomielite dos maxilares: infecção que exige internação",
+  "Angina de Ludwig: emergência de vias aéreas em infecção odontogênica",
+  "Câncer de boca: os 5 sinais que exigem biópsia imediata",
+  "Leucoplasia e eritroplasia: lesões brancas e vermelhas suspeitas",
+  "Líquen plano oral: diagnóstico diferencial e acompanhamento",
+  "Mucocele e rânula: cistos das glândulas salivares menores",
+  "Sialolitíase: pedra na glândula salivar e crise dolorosa às refeições",
+  "Xerostomia: causas, impacto bucal e conduta clínica",
+  "Osteoartrose da ATM: quando o desgaste articular pede intervenção",
+  "Luxação recidivante da ATM: quando a mandíbula sai fora do lugar",
+  "Deslocamento anterior de disco articular: clique, travamento e conduta",
+  "Cirurgia ortognática Classe II: retrognatismo mandibular e apneia",
+  "Cirurgia ortognática Classe III: prognatismo e planejamento facial",
+  "MARPE: expansão maxilar assistida por miniparafusos no adulto",
+  "Miniparafusos ortodônticos: ancoragem esquelética na prática",
+  "Reabilitação com All-on-4: quando é indicado e quando não é",
+  "Cirurgia pré-protética: preparo ósseo para prótese estável",
+  "Manejo do paciente cardiopata no consultório odontológico",
+  "Manejo do paciente diabético em cirurgia bucal",
+  "Anticoagulados: como conduzir extrações com segurança",
+  "Gestantes e cirurgia bucal: o que pode e o que espera",
+  "Odontologia hospitalar em UTI: prevenção da pneumonia associada à ventilação",
+  "Higiene oral no paciente oncológico em radioterapia de cabeça e pescoço",
+  "Mucosite oral quimioinduzida: prevenção e alívio",
+  "Osteorradionecrose: por que extrair antes da radioterapia",
+  "Bruxismo do sono: da polissonografia ao dispositivo intraoral",
+  "Cefaleia de origem miofascial: quando o masseter é o vilão",
+  "Trismo pós-operatório: causas, prevenção e fisioterapia",
+  "Parestesia do nervo alveolar inferior: causas e prognóstico",
+  "Terceiro molar em posição de risco: quando a coronectomia é opção",
+  "Dentes supranumerários: quando remover e quando acompanhar",
+  "Odontoma: o tumor mais comum dos maxilares e seu manejo",
+  "Ameloblastoma: por que exige margem cirúrgica ampla",
+  "Queratocisto odontogênico: recidiva e planejamento cirúrgico",
+  "Displasia fibrosa dos maxilares: acompanhamento e cirurgia estética",
+  "Toxina botulínica em hipertrofia de masseter: indicação técnica correta",
+  "Preenchedores faciais e complicações vasculares: o papel do bucomaxilofacial",
+  "Ronco versus apneia obstrutiva do sono: quando o bucomaxilo entra",
+  "Avanço maxilomandibular na apneia grave: cirurgia que salva vida",
+  "Reabsorção condilar idiopática: quando a mordida muda sozinha",
 ];
+
+
+
+
 
 // TEMAS DIVERSOS — assuntos leves do dia a dia, curiosidades de saúde bucal,
 // hábitos, prevenção, bem-estar, alimentação, sono, autocuidado — sem foco

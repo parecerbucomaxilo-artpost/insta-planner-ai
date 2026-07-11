@@ -26,6 +26,9 @@ export const MODELOS_IMAGEM = [
   { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana (imagem)" },
   { id: "openai/gpt-image-2", label: "GPT Image 2 (imagem)" },
   { id: "openai/gpt-image-1-mini", label: "GPT image 1 mini (imagem)" },
+  { id: "pollinations/flux", label: "Pollinations Flux (grátis, sem custo)" },
+  { id: "pollinations/flux-realism", label: "Pollinations Flux Realism (grátis)" },
+  { id: "pollinations/turbo", label: "Pollinations Turbo (grátis, rápido)" },
 ] as const;
 export type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 
@@ -232,7 +235,24 @@ async function generateImageLocal(opts: { prompt: string; size?: "1024x1024" | "
   return Buffer.from(out).toString("base64");
 }
 
-// ---------------- API pública: tenta gateway, faz fallback local ----------------
+// Pollinations.ai — geração de imagens 100% gratuita, sem chave, sem custo.
+// Boa qualidade (Flux) e ótimo fallback quando o Lovable Gateway retorna 402/429.
+async function generateImagePollinations(opts: {
+  prompt: string;
+  size: "1024x1024" | "1024x1536" | "1536x1024";
+  model?: string; // "flux" | "flux-realism" | "turbo"
+}): Promise<string> {
+  const { width, height } = sizeToWH(opts.size);
+  const model = (opts.model || "flux").replace(/^pollinations\//, "");
+  const url =
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(opts.prompt)}` +
+    `?width=${width}&height=${height}&model=${encodeURIComponent(model)}` +
+    `&nologo=true&enhance=true&seed=${Math.floor(Math.random() * 1_000_000)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Pollinations ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  return buf.toString("base64");
+}
 
 export async function generateImageBase64(opts: {
   apiKey?: string;
@@ -245,28 +265,44 @@ export async function generateImageBase64(opts: {
   const size = opts.size ?? "1024x1024";
   const model = (opts.model as string) || DEFAULT_IMAGE_MODEL;
 
+  // Pollinations é gratuito e não precisa de chave.
+  if (model.startsWith("pollinations/")) {
+    try {
+      return await generateImagePollinations({ prompt: opts.prompt, size, model });
+    } catch (err) {
+      console.warn("[ai-gateway] Pollinations falhou, caindo para local:", err);
+      return generateImageLocal({ prompt: opts.prompt, size });
+    }
+  }
+
   if (apiKey && model !== "local/sem-custo") {
     try {
       return await generateImageGateway({ apiKey, prompt: opts.prompt, model, size, referenceImageUrls: opts.referenceImageUrls });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      // Bloqueio de segurança da OpenAI → reage com Gemini (política mais permissiva p/ contexto médico).
       const safetyBlock = /safety system|rejected|moderation|content_policy|image_generation_user_error/i.test(msg);
       if (safetyBlock && model.startsWith("openai/")) {
         console.warn("[ai-gateway] OpenAI bloqueou por safety, tentando Gemini:", msg.slice(0, 160));
         try {
           return await generateImageGateway({ apiKey, prompt: opts.prompt, model: "google/gemini-3.1-flash-image", size, referenceImageUrls: opts.referenceImageUrls });
         } catch (err2) {
-          const msg2 = err2 instanceof Error ? err2.message : String(err2);
-          console.warn("[ai-gateway] Gemini também falhou, caindo para local:", msg2.slice(0, 160));
+          console.warn("[ai-gateway] Gemini falhou, tentando Pollinations grátis:", err2);
+          try { return await generateImagePollinations({ prompt: opts.prompt, size, model: "flux-realism" }); } catch {}
           return generateImageLocal({ prompt: opts.prompt, size });
         }
       }
-      // 402 (sem créditos) ou 429 (rate-limit) → cai pro local sem quebrar a UI
-      if (!/402|429|payment|credit|rate|insufficient|sem imagem|sem b64|resposta sem/i.test(msg)) throw err;
+      // 402 (sem créditos) ou 429 (rate-limit) → tenta Pollinations grátis antes do local
+      if (/402|429|payment|credit|rate|insufficient/i.test(msg)) {
+        console.warn("[ai-gateway] Gateway sem créditos/rate-limit, tentando Pollinations grátis");
+        try { return await generateImagePollinations({ prompt: opts.prompt, size, model: "flux-realism" }); } catch {}
+        return generateImageLocal({ prompt: opts.prompt, size });
+      }
+      if (!/sem imagem|sem b64|resposta sem/i.test(msg)) throw err;
       console.warn("[ai-gateway] imagem caiu para gerador local:", msg);
     }
   }
 
+  // Sem API key → tenta Pollinations gratuito antes de cair pro local procedural.
+  try { return await generateImagePollinations({ prompt: opts.prompt, size, model: "flux-realism" }); } catch {}
   return generateImageLocal({ prompt: opts.prompt, size });
 }
