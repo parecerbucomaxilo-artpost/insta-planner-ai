@@ -26,6 +26,9 @@ export const MODELOS_IMAGEM = [
   { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana (imagem)" },
   { id: "openai/gpt-image-2", label: "GPT Image 2 (imagem)" },
   { id: "openai/gpt-image-1-mini", label: "GPT image 1 mini (imagem)" },
+  { id: "pollinations/flux", label: "Pollinations Flux (grátis, sem custo)" },
+  { id: "pollinations/flux-realism", label: "Pollinations Flux Realism (grátis)" },
+  { id: "pollinations/turbo", label: "Pollinations Turbo (grátis, rápido)" },
 ] as const;
 export type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
 
