@@ -936,8 +936,8 @@ const TEMAS_GERAIS = [
   "Reabsorção condilar idiopática: quando a mordida muda sozinha",
 ];
 
-// TEMAS DIVERSOS — assuntos leves do dia a dia
-const _TEMAS_GERAIS_END = true; void _TEMAS_GERAIS_END;
+
+
 
 
 // TEMAS DIVERSOS — assuntos leves do dia a dia, curiosidades de saúde bucal,
