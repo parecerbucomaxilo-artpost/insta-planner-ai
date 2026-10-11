@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { Agendamento } from "@/integrations/supabase/types"n
+import type { Agendamento } from "@/components/planner-clinica-escola/types";
+
 interface StatusBadgeProps {
  status: Agendamento["status"];
 }

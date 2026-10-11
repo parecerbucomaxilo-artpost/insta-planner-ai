@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/planner-clinica-escola/StatusBadge";
-import type { Agendamento } from "@/integrations/supabase/types"n
+import type { Agendamento } from "@/components/planner-clinica-escola/types";
+
 interface SchedulerCellProps {
  agendamento?: Agendamento;
  onClick: () => void;

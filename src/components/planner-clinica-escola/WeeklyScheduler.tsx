@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { SchedulerTable } from "@/components/planner-clinica-escola/SchedulerTable";
 import { BookingDialog } from "@/components/planner-clinica-escola/BookingDialog";
-import type { Agendamento } from "@/integrations/supabase/types"n
+import type { Agendamento } from "@/components/planner-clinica-escola/types";
+
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] as const;
 const HORARIOS = ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"] as const;
 
