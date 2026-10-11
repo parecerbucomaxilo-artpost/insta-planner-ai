@@ -93,7 +93,7 @@ export function BookingForm({ formData, onChange, onSubmit }: BookingFormProps) 
  <Label htmlFor="status">Situação</Label>
  <Select
  value={formData.status}
- onValueChange={(v) => handleChange("status", v)}
+ onValueChange={(v) => handleChange("status", v as Campos["status"])}
  >
  <SelectTrigger id="status" aria-label="Selecionar a situação do agendamento">
  <SelectValue placeholder="Selecione" />
