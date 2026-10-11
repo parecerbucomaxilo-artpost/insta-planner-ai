@@ -9,38 +9,28 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
-import { Route as ParecerRouteImport } from './routes/parecer'
-import { Route as MetaConnectRouteImport } from './routes/meta-connect'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as MetaConnectRouteImport } from './routes/meta-connect'
+import { Route as ParecerRouteImport } from './routes/parecer'
+import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedPlannerClinicaEscolaRouteImport } from './routes/_authenticated/planner-clinica-escola'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as ApiPublicStorageMediaRouteImport } from './routes/api/public/storage-media'
-import { Route as ApiPublicPublicarAgendadosRouteImport } from './routes/api/public/publicar-agendados'
-import { Route as ApiPublicPostsAgendadosRouteImport } from './routes/api/public/posts-agendados'
-import { Route as ApiPublicGerarProximoRouteImport } from './routes/api/public/gerar-proximo'
-import { Route as ApiPublicDispatchLigaRouteImport } from './routes/api/public/dispatch-liga'
-import { Route as ApiPublicDispatchGbpRouteImport } from './routes/api/public/dispatch-gbp'
-import { Route as ApiPublicConfirmarPublicadoRouteImport } from './routes/api/public/confirmar-publicado'
 import { Route as ApiPublicBackfillImagesRouteImport } from './routes/api/public/backfill-images'
-import { Route as ApiPublicMetaOauthStartRouteImport } from './routes/api/public/meta-oauth.start'
-import { Route as ApiPublicMetaOauthCallbackRouteImport } from './routes/api/public/meta-oauth.callback'
+import { Route as ApiPublicConfirmarPublicadoRouteImport } from './routes/api/public/confirmar-publicado'
+import { Route as ApiPublicDispatchGbpRouteImport } from './routes/api/public/dispatch-gbp'
+import { Route as ApiPublicDispatchLigaRouteImport } from './routes/api/public/dispatch-liga'
+import { Route as ApiPublicGerarProximoRouteImport } from './routes/api/public/gerar-proximo'
+import { Route as ApiPublicPostsAgendadosRouteImport } from './routes/api/public/posts-agendados'
+import { Route as ApiPublicPublicarAgendadosRouteImport } from './routes/api/public/publicar-agendados'
+import { Route as ApiPublicStorageMediaRouteImport } from './routes/api/public/storage-media'
 import { Route as ApiPublicInstagramOauthCallbackRouteImport } from './routes/api/public/instagram-oauth.callback'
+import { Route as ApiPublicMetaOauthCallbackRouteImport } from './routes/api/public/meta-oauth.callback'
+import { Route as ApiPublicMetaOauthStartRouteImport } from './routes/api/public/meta-oauth.start'
 
-const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
-  id: '/politica-de-privacidade',
-  path: '/politica-de-privacidade',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ParecerRoute = ParecerRouteImport.update({
-  id: '/parecer',
-  path: '/parecer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MetaConnectRoute = MetaConnectRouteImport.update({
-  id: '/meta-connect',
-  path: '/meta-connect',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -48,8 +38,19 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const MetaConnectRoute = MetaConnectRouteImport.update({
+  id: '/meta-connect',
+  path: '/meta-connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParecerRoute = ParecerRouteImport.update({
+  id: '/parecer',
+  path: '/parecer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
+  id: '/politica-de-privacidade',
+  path: '/politica-de-privacidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -57,40 +58,20 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPlannerClinicaEscolaRoute =
+  AuthenticatedPlannerClinicaEscolaRouteImport.update({
+    id: '/planner-clinica-escola',
+    path: '/planner-clinica-escola',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ApiPublicStorageMediaRoute = ApiPublicStorageMediaRouteImport.update({
-  id: '/api/public/storage-media',
-  path: '/api/public/storage-media',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicPublicarAgendadosRoute =
-  ApiPublicPublicarAgendadosRouteImport.update({
-    id: '/api/public/publicar-agendados',
-    path: '/api/public/publicar-agendados',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicPostsAgendadosRoute = ApiPublicPostsAgendadosRouteImport.update({
-  id: '/api/public/posts-agendados',
-  path: '/api/public/posts-agendados',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicGerarProximoRoute = ApiPublicGerarProximoRouteImport.update({
-  id: '/api/public/gerar-proximo',
-  path: '/api/public/gerar-proximo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicDispatchLigaRoute = ApiPublicDispatchLigaRouteImport.update({
-  id: '/api/public/dispatch-liga',
-  path: '/api/public/dispatch-liga',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicDispatchGbpRoute = ApiPublicDispatchGbpRouteImport.update({
-  id: '/api/public/dispatch-gbp',
-  path: '/api/public/dispatch-gbp',
+const ApiPublicBackfillImagesRoute = ApiPublicBackfillImagesRouteImport.update({
+  id: '/api/public/backfill-images',
+  path: '/api/public/backfill-images',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicConfirmarPublicadoRoute =
@@ -99,28 +80,54 @@ const ApiPublicConfirmarPublicadoRoute =
     path: '/api/public/confirmar-publicado',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicBackfillImagesRoute = ApiPublicBackfillImagesRouteImport.update({
-  id: '/api/public/backfill-images',
-  path: '/api/public/backfill-images',
+const ApiPublicDispatchGbpRoute = ApiPublicDispatchGbpRouteImport.update({
+  id: '/api/public/dispatch-gbp',
+  path: '/api/public/dispatch-gbp',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicMetaOauthStartRoute = ApiPublicMetaOauthStartRouteImport.update({
-  id: '/api/public/meta-oauth/start',
-  path: '/api/public/meta-oauth/start',
+const ApiPublicDispatchLigaRoute = ApiPublicDispatchLigaRouteImport.update({
+  id: '/api/public/dispatch-liga',
+  path: '/api/public/dispatch-liga',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicMetaOauthCallbackRoute =
-  ApiPublicMetaOauthCallbackRouteImport.update({
-    id: '/api/public/meta-oauth/callback',
-    path: '/api/public/meta-oauth/callback',
+const ApiPublicGerarProximoRoute = ApiPublicGerarProximoRouteImport.update({
+  id: '/api/public/gerar-proximo',
+  path: '/api/public/gerar-proximo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPostsAgendadosRoute = ApiPublicPostsAgendadosRouteImport.update({
+  id: '/api/public/posts-agendados',
+  path: '/api/public/posts-agendados',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPublicarAgendadosRoute =
+  ApiPublicPublicarAgendadosRouteImport.update({
+    id: '/api/public/publicar-agendados',
+    path: '/api/public/publicar-agendados',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicStorageMediaRoute = ApiPublicStorageMediaRouteImport.update({
+  id: '/api/public/storage-media',
+  path: '/api/public/storage-media',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicInstagramOauthCallbackRoute =
   ApiPublicInstagramOauthCallbackRouteImport.update({
     id: '/api/public/instagram-oauth/callback',
     path: '/api/public/instagram-oauth/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMetaOauthCallbackRoute =
+  ApiPublicMetaOauthCallbackRouteImport.update({
+    id: '/api/public/meta-oauth/callback',
+    path: '/api/public/meta-oauth/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMetaOauthStartRoute = ApiPublicMetaOauthStartRouteImport.update({
+  id: '/api/public/meta-oauth/start',
+  path: '/api/public/meta-oauth/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/meta-connect': typeof MetaConnectRoute
   '/parecer': typeof ParecerRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/planner-clinica-escola': typeof AuthenticatedPlannerClinicaEscolaRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
   '/api/public/confirmar-publicado': typeof ApiPublicConfirmarPublicadoRoute
@@ -146,6 +154,7 @@ export interface FileRoutesByTo {
   '/meta-connect': typeof MetaConnectRoute
   '/parecer': typeof ParecerRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/planner-clinica-escola': typeof AuthenticatedPlannerClinicaEscolaRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
@@ -167,6 +176,7 @@ export interface FileRoutesById {
   '/meta-connect': typeof MetaConnectRoute
   '/parecer': typeof ParecerRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/_authenticated/planner-clinica-escola': typeof AuthenticatedPlannerClinicaEscolaRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/backfill-images': typeof ApiPublicBackfillImagesRoute
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/meta-connect'
     | '/parecer'
     | '/politica-de-privacidade'
+    | '/planner-clinica-escola'
     | '/settings'
     | '/api/public/backfill-images'
     | '/api/public/confirmar-publicado'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/meta-connect'
     | '/parecer'
     | '/politica-de-privacidade'
+    | '/planner-clinica-escola'
     | '/settings'
     | '/'
     | '/api/public/backfill-images'
@@ -227,6 +239,7 @@ export interface FileRouteTypes {
     | '/meta-connect'
     | '/parecer'
     | '/politica-de-privacidade'
+    | '/_authenticated/planner-clinica-escola'
     | '/_authenticated/settings'
     | '/_authenticated/'
     | '/api/public/backfill-images'
@@ -263,25 +276,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/politica-de-privacidade': {
-      id: '/politica-de-privacidade'
-      path: '/politica-de-privacidade'
-      fullPath: '/politica-de-privacidade'
-      preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/parecer': {
-      id: '/parecer'
-      path: '/parecer'
-      fullPath: '/parecer'
-      preLoaderRoute: typeof ParecerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/meta-connect': {
-      id: '/meta-connect'
-      path: '/meta-connect'
-      fullPath: '/meta-connect'
-      preLoaderRoute: typeof MetaConnectRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -291,11 +290,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+    '/meta-connect': {
+      id: '/meta-connect'
+      path: '/meta-connect'
+      fullPath: '/meta-connect'
+      preLoaderRoute: typeof MetaConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parecer': {
+      id: '/parecer'
+      path: '/parecer'
+      fullPath: '/parecer'
+      preLoaderRoute: typeof ParecerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-privacidade': {
+      id: '/politica-de-privacidade'
+      path: '/politica-de-privacidade'
+      fullPath: '/politica-de-privacidade'
+      preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -305,6 +318,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/planner-clinica-escola': {
+      id: '/_authenticated/planner-clinica-escola'
+      path: '/planner-clinica-escola'
+      fullPath: '/planner-clinica-escola'
+      preLoaderRoute: typeof AuthenticatedPlannerClinicaEscolaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -312,46 +332,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/storage-media': {
-      id: '/api/public/storage-media'
-      path: '/api/public/storage-media'
-      fullPath: '/api/public/storage-media'
-      preLoaderRoute: typeof ApiPublicStorageMediaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/publicar-agendados': {
-      id: '/api/public/publicar-agendados'
-      path: '/api/public/publicar-agendados'
-      fullPath: '/api/public/publicar-agendados'
-      preLoaderRoute: typeof ApiPublicPublicarAgendadosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/posts-agendados': {
-      id: '/api/public/posts-agendados'
-      path: '/api/public/posts-agendados'
-      fullPath: '/api/public/posts-agendados'
-      preLoaderRoute: typeof ApiPublicPostsAgendadosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/gerar-proximo': {
-      id: '/api/public/gerar-proximo'
-      path: '/api/public/gerar-proximo'
-      fullPath: '/api/public/gerar-proximo'
-      preLoaderRoute: typeof ApiPublicGerarProximoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/dispatch-liga': {
-      id: '/api/public/dispatch-liga'
-      path: '/api/public/dispatch-liga'
-      fullPath: '/api/public/dispatch-liga'
-      preLoaderRoute: typeof ApiPublicDispatchLigaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/dispatch-gbp': {
-      id: '/api/public/dispatch-gbp'
-      path: '/api/public/dispatch-gbp'
-      fullPath: '/api/public/dispatch-gbp'
-      preLoaderRoute: typeof ApiPublicDispatchGbpRouteImport
+    '/api/public/backfill-images': {
+      id: '/api/public/backfill-images'
+      path: '/api/public/backfill-images'
+      fullPath: '/api/public/backfill-images'
+      preLoaderRoute: typeof ApiPublicBackfillImagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/confirmar-publicado': {
@@ -361,25 +346,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicConfirmarPublicadoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/backfill-images': {
-      id: '/api/public/backfill-images'
-      path: '/api/public/backfill-images'
-      fullPath: '/api/public/backfill-images'
-      preLoaderRoute: typeof ApiPublicBackfillImagesRouteImport
+    '/api/public/dispatch-gbp': {
+      id: '/api/public/dispatch-gbp'
+      path: '/api/public/dispatch-gbp'
+      fullPath: '/api/public/dispatch-gbp'
+      preLoaderRoute: typeof ApiPublicDispatchGbpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/meta-oauth/start': {
-      id: '/api/public/meta-oauth/start'
-      path: '/api/public/meta-oauth/start'
-      fullPath: '/api/public/meta-oauth/start'
-      preLoaderRoute: typeof ApiPublicMetaOauthStartRouteImport
+    '/api/public/dispatch-liga': {
+      id: '/api/public/dispatch-liga'
+      path: '/api/public/dispatch-liga'
+      fullPath: '/api/public/dispatch-liga'
+      preLoaderRoute: typeof ApiPublicDispatchLigaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/meta-oauth/callback': {
-      id: '/api/public/meta-oauth/callback'
-      path: '/api/public/meta-oauth/callback'
-      fullPath: '/api/public/meta-oauth/callback'
-      preLoaderRoute: typeof ApiPublicMetaOauthCallbackRouteImport
+    '/api/public/gerar-proximo': {
+      id: '/api/public/gerar-proximo'
+      path: '/api/public/gerar-proximo'
+      fullPath: '/api/public/gerar-proximo'
+      preLoaderRoute: typeof ApiPublicGerarProximoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/posts-agendados': {
+      id: '/api/public/posts-agendados'
+      path: '/api/public/posts-agendados'
+      fullPath: '/api/public/posts-agendados'
+      preLoaderRoute: typeof ApiPublicPostsAgendadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/publicar-agendados': {
+      id: '/api/public/publicar-agendados'
+      path: '/api/public/publicar-agendados'
+      fullPath: '/api/public/publicar-agendados'
+      preLoaderRoute: typeof ApiPublicPublicarAgendadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/storage-media': {
+      id: '/api/public/storage-media'
+      path: '/api/public/storage-media'
+      fullPath: '/api/public/storage-media'
+      preLoaderRoute: typeof ApiPublicStorageMediaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/instagram-oauth/callback': {
@@ -389,15 +395,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicInstagramOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/meta-oauth/callback': {
+      id: '/api/public/meta-oauth/callback'
+      path: '/api/public/meta-oauth/callback'
+      fullPath: '/api/public/meta-oauth/callback'
+      preLoaderRoute: typeof ApiPublicMetaOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/meta-oauth/start': {
+      id: '/api/public/meta-oauth/start'
+      path: '/api/public/meta-oauth/start'
+      fullPath: '/api/public/meta-oauth/start'
+      preLoaderRoute: typeof ApiPublicMetaOauthStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedPlannerClinicaEscolaRoute: typeof AuthenticatedPlannerClinicaEscolaRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedPlannerClinicaEscolaRoute:
+    AuthenticatedPlannerClinicaEscolaRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
