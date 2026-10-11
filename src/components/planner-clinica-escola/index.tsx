@@ -7,14 +7,14 @@ export { BookingDialog } from "@/components/planner-clinica-escola/BookingDialog
 export { BookingForm } from "@/components/planner-clinica-escola/BookingForm";
 export { StatusBadge } from "@/components/planner-clinica-escola/StatusBadge";
 export { EmptyState } from "@/components/planner-clinica-escola/EmptyState";
-export type { Agendamento } from "@/integrations/supabase/types";
+export type { Agendamento } from "@/components/planner-clinica-escola/types";
 
 import { useState, useCallback } from "react";
 import { PlannerHeader } from "@/components/planner-clinica-escola/PlannerHeader";
 import { PlannerStats } from "@/components/planner-clinica-escola/PlannerStats";
 import { WeeklyScheduler } from "@/components/planner-clinica-escola/WeeklyScheduler";
 import { EmptyState } from "@/components/planner-clinica-escola/EmptyState";
-import type { Agendamento } from "@/integrations/supabase/types";
+import type { Agendamento } from "@/components/planner-clinica-escola/types";
 
 const STORAGE_KEY = "planner_clinica_escola_agendamentos_v1";
 

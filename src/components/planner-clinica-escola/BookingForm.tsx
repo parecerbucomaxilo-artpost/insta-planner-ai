@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Agendamento } from "@/integrations/supabase/types"n
+import type { Agendamento } from "@/components/planner-clinica-escola/types";
+
 interface BookingFormProps {
  formData: Omit<Agendamento, "id">;
  onChange: (data: Omit<Agendamento, "id">) => void;

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BookingForm } from "@/components/planner-clinica-escola/BookingForm";
-import type { Agendamento } from "@/integrations/supabase/types"n
+import type { Agendamento } from "@/components/planner-clinica-escola/types";
+
 interface BookingDialogProps {
  open: boolean;
  onOpenChange: (open: boolean) => void;

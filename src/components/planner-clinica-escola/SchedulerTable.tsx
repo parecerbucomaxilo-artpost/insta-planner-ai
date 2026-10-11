@@ -1,5 +1,6 @@
 import { SchedulerCell } from "@/components/planner-clinica-escola/SchedulerCell";
-import type { Agendamento } from "@/integrations/supabase/types"n
+import type { Agendamento } from "@/components/planner-clinica-escola/types";
+
 interface SchedulerTableProps {
  dias: readonly string[];
  horarios: readonly string[];
