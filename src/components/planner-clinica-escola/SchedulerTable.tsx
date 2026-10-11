@@ -1,5 +1,5 @@
 import { SchedulerCell } from "@/components/planner-clinica-escola/SchedulerCell";
-import type { Agendamento } from "@/components/planner-clinica-escola/types";
+import type { Agendamento } from "@/integrations/supabase/types";
 
 interface SchedulerTableProps {
  dias: readonly string[];
@@ -17,13 +17,16 @@ export function SchedulerTable({
  onRemove,
 }: SchedulerTableProps) {
  return (
- <div className="overflow-x-auto">
- <table className="w-full border-collapse">
+ <div className="overflow-x-auto rounded-lg border">
+ <table className="w-full border-collapse text-sm">
+ <caption className="sr-only">Grade semanal de horários da clínica escola</caption>
  <thead>
- <tr>
- <th className="p-2 text-xs font-medium text-muted-foreground border">Horário</th>
- {dias.map((dia) => (
- <th key={dia} className="p-2 text-xs font-medium text-muted-foreground border">
+ <tr className="bg-muted/50">
+ <th scope="col" className="p-2 text-xs font-semibold text-muted-foreground border-b text-left">
+ Horário
+ </th>
+ {dias.map((dia, idx) => (
+ <th key={`${dia}-${idx}`} scope="col" className="p-2 text-xs font-semibold text-muted-foreground border-b text-center">
  {dia}
  </th>
  ))}
@@ -31,17 +34,19 @@ export function SchedulerTable({
  </thead>
  <tbody>
  {horarios.map((horario) => (
- <tr key={horario}>
- <td className="p-2 text-xs font-medium text-muted-foreground border whitespace-nowrap">
+ <tr key={horario} className="odd:bg-background even:bg-muted/20">
+ <th scope="row" className="p-2 text-xs font-semibold text-muted-foreground border-b whitespace-nowrap text-left">
  {horario}
- </td>
+ </th>
  {dias.map((_, diaIdx) => {
  const agendamentos = agendamentosPorDia[diaIdx] || [];
  const agendamento = agendamentos.find((a) => a.horario === horario);
  return (
- <td key={`${diaIdx}-${horario}`} className="p-1 border">
+ <td key={`${diaIdx}-${horario}`} className="p-1 border-b">
  <SchedulerCell
  agendamento={agendamento}
+ dia={dias[diaIdx]}
+ horario={horario}
  onClick={() => onCellClick(diaIdx, horario)}
  onRemove={onRemove}
  />
