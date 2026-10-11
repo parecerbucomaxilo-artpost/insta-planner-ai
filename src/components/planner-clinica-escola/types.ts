@@ -6,4 +6,5 @@ export interface Agendamento {
  data: string;
  horario: string;
  status: "pendente" | "confirmado" | "cancelado";
+ observacoes?: string;
 }

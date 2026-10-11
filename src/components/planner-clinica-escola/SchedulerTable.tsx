@@ -1,5 +1,5 @@
 import { SchedulerCell } from "@/components/planner-clinica-escola/SchedulerCell";
-import type { Agendamento } from "@/integrations/supabase/types";
+import type { Agendamento } from "@/components/planner-clinica-escola/types";
 
 interface SchedulerTableProps {
  dias: readonly string[];
@@ -45,8 +45,6 @@ export function SchedulerTable({
  <td key={`${diaIdx}-${horario}`} className="p-1 border-b">
  <SchedulerCell
  agendamento={agendamento}
- dia={dias[diaIdx]}
- horario={horario}
  onClick={() => onCellClick(diaIdx, horario)}
  onRemove={onRemove}
  />

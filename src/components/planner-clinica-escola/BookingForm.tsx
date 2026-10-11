@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Agendamento } from "@/integrations/supabase/types";
+import type { Agendamento } from "@/components/planner-clinica-escola/types";
 
 type Campos = Omit<Agendamento, "id">;
 
@@ -93,7 +93,7 @@ export function BookingForm({ formData, onChange, onSubmit }: BookingFormProps) 
  <Label htmlFor="status">Situação</Label>
  <Select
  value={formData.status}
- onValueChange={(v) => handleChange("status", v)}
+ onValueChange={(v) => handleChange("status", v as Campos["status"])}
  >
  <SelectTrigger id="status" aria-label="Selecionar a situação do agendamento">
  <SelectValue placeholder="Selecione" />
