@@ -24,19 +24,69 @@ export const NIVEL_LABEL: Record<NivelCusto, string> = {
 };
 
 export const MODELOS_IA = [
-  { id: "auto/gratis", label: "Automático grátis (Gemini → Groq → Pollinations)", nivel: "chave-gratis", nota: "Tenta os provedores gratuitos configurados, em ordem, uma vez cada. Sem nenhuma chave, usa o texto pronto do app." },
-  { id: "gemini/gemini-3.8-flash", label: "Gemini 3.8 Flash (Google AI Studio)", nivel: "chave-gratis", nota: "Chave GEMINI_API_KEY. Camada gratuita com limite diário de pedidos definido pelo Google." },
-  { id: "groq/openai/gpt-oss-120b", label: "GPT-OSS 120B (Groq)", nivel: "chave-gratis", nota: "Chave GROQ_API_KEY. Plano gratuito com limites por minuto e por dia." },
-  { id: "pollinations/openai", label: "GPT-5.4 nano (Pollinations)", nivel: "chave-gratis", nota: "Chave POLLINATIONS_API_KEY. Cota gratuita limitada." },
-  { id: "local/sem-custo", label: "Texto pronto do app", nivel: "sem-ia", nota: "Modelo de legenda pré-escrito, sem IA." },
+  {
+    id: "auto/gratis",
+    label: "Automático grátis (Gemini → Groq → Pollinations)",
+    nivel: "chave-gratis",
+    nota: "Tenta os provedores gratuitos configurados, em ordem, uma vez cada. Sem nenhuma chave, usa o texto pronto do app.",
+  },
+  {
+    id: "gemini/gemini-3.8-flash",
+    label: "Gemini 3.8 Flash (Google AI Studio)",
+    nivel: "chave-gratis",
+    nota: "Chave GEMINI_API_KEY. Camada gratuita com limite diário de pedidos definido pelo Google.",
+  },
+  {
+    id: "groq/openai/gpt-oss-120b",
+    label: "GPT-OSS 120B (Groq)",
+    nivel: "chave-gratis",
+    nota: "Chave GROQ_API_KEY. Plano gratuito com limites por minuto e por dia.",
+  },
+  {
+    id: "pollinations/openai",
+    label: "GPT-5.4 nano (Pollinations)",
+    nivel: "chave-gratis",
+    nota: "Chave POLLINATIONS_API_KEY. Cota gratuita limitada.",
+  },
+  {
+    id: "local/sem-custo",
+    label: "Texto pronto do app",
+    nivel: "sem-ia",
+    nota: "Modelo de legenda pré-escrito, sem IA.",
+  },
 ] as const satisfies readonly ModeloInfo[];
 
 export const MODELOS_IMAGEM = [
-  { id: "auto/gratis", label: "Automático grátis (Pollinations Flux)", nivel: "gratis", nota: "Sem chave: 1 imagem a cada 45 s por IP (carrosséis podem falhar). Com POLLINATIONS_API_KEY gratuita: mais cota." },
-  { id: "pollinations/flux", label: "Flux Schnell (Pollinations)", nivel: "gratis", nota: "Sem chave: 1 imagem/45 s por IP." },
-  { id: "pollinations/zimage", label: "Z-Image Turbo (Pollinations)", nivel: "gratis", nota: "Sem chave: 1 imagem/45 s por IP." },
-  { id: "pollinations/flux-klein", label: "FLUX.2 Klein (Pollinations)", nivel: "chave-gratis", nota: "Chave POLLINATIONS_API_KEY." },
-  { id: "local/sem-custo", label: "Fundo liso do app", nivel: "sem-ia", nota: "Apenas fundo em degradê da marca, sem IA." },
+  {
+    id: "auto/gratis",
+    label: "Automático grátis (Pollinations Flux)",
+    nivel: "gratis",
+    nota: "Sem chave: 1 imagem a cada 45 s por IP (carrosséis podem falhar). Com POLLINATIONS_API_KEY gratuita: mais cota.",
+  },
+  {
+    id: "pollinations/flux",
+    label: "Flux Schnell (Pollinations)",
+    nivel: "gratis",
+    nota: "Sem chave: 1 imagem/45 s por IP.",
+  },
+  {
+    id: "pollinations/zimage",
+    label: "Z-Image Turbo (Pollinations)",
+    nivel: "gratis",
+    nota: "Sem chave: 1 imagem/45 s por IP.",
+  },
+  {
+    id: "pollinations/flux-klein",
+    label: "FLUX.2 Klein (Pollinations)",
+    nivel: "chave-gratis",
+    nota: "Chave POLLINATIONS_API_KEY.",
+  },
+  {
+    id: "local/sem-custo",
+    label: "Fundo liso do app",
+    nivel: "sem-ia",
+    nota: "Apenas fundo em degradê da marca, sem IA.",
+  },
 ] as const satisfies readonly ModeloInfo[];
 
 export type ModeloTexto = (typeof MODELOS_IA)[number]["id"];

@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { normalizeTextModel, normalizeImageModel, DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL, MODELOS_IA, MODELOS_IMAGEM } from "./ai-models";
+import {
+  normalizeTextModel,
+  normalizeImageModel,
+  DEFAULT_TEXT_MODEL,
+  DEFAULT_IMAGE_MODEL,
+  MODELOS_IA,
+  MODELOS_IMAGEM,
+} from "./ai-models";
 
 describe("catálogo de modelos", () => {
   it("padrão de texto e imagem é a opção grátis", () => {
