@@ -73,6 +73,14 @@ export function PostReviewActions({
   const [mediaError, setMediaError] = useState(false);
   const [platform, setPlatform] = useState<PreviewPlatform | null>(null);
   const [editing, setEditing] = useState(false);
+  const [visto, setVisto] = useState(() => foiVisto(id));
+  const [ignorado, setIgnorado] = useState(false);
+  useEffect(() => {
+    setVisto(foiVisto(id));
+    const on = (e: Event) => { if ((e as CustomEvent<{ id: string }>).detail?.id === id) setVisto(true); };
+    window.addEventListener(PREVIEW_SEEN, on);
+    return () => window.removeEventListener(PREVIEW_SEEN, on);
+  }, [id]);
   const [draft, setDraft] = useState({ legenda: "", legenda_instagram: "", legenda_linkedin: "" });
   useEffect(() => {
     setCurrentStatus(status);
@@ -117,6 +125,9 @@ export function PostReviewActions({
     try {
       const data = await carregarPrevia();
       setPlatform(previewPlatforms(data.post)[0] ?? null);
+      setIgnorado(false);
+      marcarVisto(id);
+      setVisto(true);
     } catch (error) {
       setPreview(null);
       setLoadError(error instanceof Error ? error.message : "Não foi possível abrir o post.");
@@ -152,8 +163,14 @@ export function PostReviewActions({
     }
   };
 
+  const aprovavel = !!preview && podeAprovar({ visto, problemas: preview ? problemasPrevia(preview) : [], ignorado });
+
   const decidir = async (decision: ReviewDecision) => {
     if (lock.current || !canReview(currentStatus)) return;
+    if (decision === "aceitar" && !(preview && aprovavel)) {
+      toast.error("Abra a pré-visualização e confira o post antes de aprovar.");
+      return;
+    }
     lock.current = true;
     setBusy(decision);
     try {
@@ -189,6 +206,7 @@ export function PostReviewActions({
   };
 
   const blocked = disabled || busy !== null;
+  const problemas = preview ? problemasPrevia(preview) : [];
   const images = preview?.media ?? [];
   const slideFalhou = preview?.mediaFalhas.includes(slide) ?? false;
   const slideAusente = preview?.mediaAusente.includes(slide) ?? false;
@@ -211,13 +229,14 @@ export function PostReviewActions({
           ) : (
             <Eye className="h-4 w-4 mr-1" />
           )}
-          Visualizar post
+          Pré-visualizar
         </Button>
         <Button
           size="sm"
-          className="min-h-11 flex-1 px-3 text-sm font-semibold order-first"
+          className="min-h-11 flex-1 px-3 text-sm font-semibold"
           disabled={blocked || !canReview(currentStatus)}
-          onClick={() => decidir("aceitar")}
+          title={aprovavel ? undefined : "Abre a pré-visualização: confira antes de aprovar"}
+          onClick={() => (aprovavel ? decidir("aceitar") : visualizar())}
         >
           {busy === "aceitar" ? (
             <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -291,7 +310,7 @@ export function PostReviewActions({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Visualizar post completo</DialogTitle>
+            <DialogTitle>Pré-visualização do post</DialogTitle>
             <DialogDescription>
               {!post && (loadError ? "Erro ao carregar" : "Carregando dados reais do post…")}
               {post && `${post.tipo_post} · ${post.formato_midia}`}
@@ -321,7 +340,7 @@ export function PostReviewActions({
               Editar
             </Button>
             <Button
-              disabled={blocked || editing || !canReview(currentStatus)}
+              disabled={blocked || editing || !canReview(currentStatus) || !aprovavel}
               onClick={() => decidir("aceitar")}
             >
               {busy === "aceitar" ? (
@@ -339,6 +358,16 @@ export function PostReviewActions({
               <X className="h-4 w-4" />
               Negar
             </Button>
+            {problemas.length > 0 && canReview(currentStatus) && (
+              <div className="w-full rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs" role="alert">
+                <p className="font-semibold text-destructive">Aprovação bloqueada até você decidir:</p>
+                <ul className="list-disc pl-4">{problemas.map((p) => <li key={p}>{PROBLEMA_LABEL[p]}</li>)}</ul>
+                <label className="mt-1 flex items-center gap-2">
+                  <input type="checkbox" checked={ignorado} onChange={(e) => setIgnorado(e.target.checked)} />
+                  Estou ciente e quero aprovar mesmo assim (ou use Editar/Negar)
+                </label>
+              </div>
+            )}
             <span className="w-full text-xs text-muted-foreground" role="status">
               {currentStatus === "PendenteAprovacao"
                 ? "Aguardando aprovação"

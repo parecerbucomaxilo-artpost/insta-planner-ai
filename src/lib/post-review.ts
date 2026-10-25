@@ -1,3 +1,5 @@
+import type { PreviewData } from "./post-preview";
+import { conflitosNoLote, titleOf } from "./dedup";
 import type { PostRow } from "./posts-types";
 
 export type ReviewDecision = "aceitar" | "negar";
@@ -15,9 +17,6 @@ export function canReview(status: PostRow["status"]): boolean {
 export const POST_REVIEW_CHANGED = "planner-post-review-changed";
 
 // ── Prévia obrigatória antes da aprovação ───────────────────────────────────
-import type { PreviewData } from "./post-preview";
-import { conflitosNoLote } from "./dedup";
-import { titleOf } from "./dedup";
 
 export type ProblemaPrevia = "sem-texto" | "midia-ausente" | "midia-falhou" | "duplicado";
 
