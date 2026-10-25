@@ -400,6 +400,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 }
 
 function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
+  const bloqueado = useModeloBloqueado();
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x" | "google">("instagram");
