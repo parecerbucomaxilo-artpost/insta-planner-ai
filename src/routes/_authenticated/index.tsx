@@ -32,7 +32,6 @@ import { AutomationKeys } from "@/components/AutomationKeys";
 import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar";
 import { NotificationsBell } from "@/components/NotificationsBell";
-import { uploadedImages } from "@/assets/uploadedImages";
 import logoAsset from "@/assets/logo-planner.png.asset.json";
 import type { PostRow } from "@/lib/posts-types";
 import { signPostMediaUrls } from "@/lib/storage-url";
@@ -50,8 +49,6 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 const PERFIL_CACHE_KEY = "planner_perfil_cache_v1";
-
-const BANNER_URL = uploadedImages["IMG_3896.jpeg"] || Object.values(uploadedImages)[0] || logoAsset.url;
 
 function readPerfilCache(): Perfil | null {
  if (typeof window === "undefined") return null;
@@ -181,18 +178,9 @@ function Dashboard() {
  </div>
  </header>
 
- {/* Anúncios dos planners com a imagem enviada */}
- <section
- className="relative w-full overflow-hidden border-b planner-banner"
- style={{
- backgroundImage: `url(${BANNER_URL})`,
- backgroundSize: "cover",
- backgroundPosition: "center",
- }}
- aria-labelledby="planner-anuncios-titulo"
- >
- <div className="absolute inset-0 bg-background/25" aria-hidden="true" />
- <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-7">
+ {/* Anúncios dos planners */}
+ <section className="border-b" aria-labelledby="planner-anuncios-titulo">
+ <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-7">
  <h2 id="planner-anuncios-titulo" className="sr-only">Anúncios dos planners</h2>
  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
  <article className="planner-card">
