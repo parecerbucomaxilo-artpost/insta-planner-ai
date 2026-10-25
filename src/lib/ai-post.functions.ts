@@ -2365,6 +2365,8 @@ export const getWeekTopics = createServerFn({ method: "POST" })
       especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("Ambas"),
       temaGuia: z.string().optional().default(""),
       quantidade: z.number().int().min(1).max(28).default(7),
+      // Início (ISO) da semana planejada — assuntos usados perto dessas datas ficam bloqueados.
+      inicioSemana: z.string().datetime().optional(),
     }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -2381,20 +2383,36 @@ export const getWeekTopics = createServerFn({ method: "POST" })
     }
     // Exclui temas do histórico real (60 dias) e do plano semanal já salvo; cada item ganha ângulo próprio.
     let historico: string[] = [];
+    const assuntosBloqueados: string[] = [];
     let historicoOk = true;
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const desde = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
-      const { data: rec, error } = await supabaseAdmin.from("posts").select("prompt_ia").eq("user_id", TEMP_USER_ID).neq("status", "Erro").or(`created_at.gte.${desde},data_agendamento.gte.${new Date().toISOString()}`).not("prompt_ia", "is", null).limit(300);
+      const desdeAgenda = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: rec, error } = await supabaseAdmin.from("posts").select("prompt_ia, created_at, data_agendamento, status").eq("user_id", TEMP_USER_ID).neq("status", "Erro").or(`created_at.gte.${desde},data_agendamento.gte.${desdeAgenda}`).not("prompt_ia", "is", null).limit(400);
       if (error) throw error;
       historico = (rec ?? []).map((r: any) => r.prompt_ia as string);
+      // Mesmo assunto-raiz não pode cair a menos de JANELA_ASSUNTO_DIAS de um post já existente
+      // (negados/arquivados liberam o assunto). Mesma regra que generateSinglePost aplica por slot.
+      const inicio = new Date(data.inicioSemana ?? Date.now()).getTime();
+      const dia = 24 * 60 * 60 * 1000;
+      const de = inicio - JANELA_ASSUNTO_DIAS * dia;
+      const ate = inicio + (7 + JANELA_ASSUNTO_DIAS) * dia;
+      for (const r of rec ?? []) {
+        if ((r as any).status === "Arquivado") continue;
+        const quando = new Date((r as any).data_agendamento || (r as any).created_at).getTime();
+        if (quando >= de && quando <= ate) assuntosBloqueados.push(assuntoPrincipal((r as any).prompt_ia));
+      }
     } catch (e) {
       historicoOk = false;
       console.warn("[dedup] getWeekTopics sem histórico:", e instanceof Error ? e.message : e);
     }
-    const temas = guia ? lista.filter((t) => !findDuplicate(t, historico)).slice(0, data.quantidade) : planDistinctTopics(lista, historico, data.quantidade);
+    // Tema guiado: o usuário escolheu o assunto da semana — ângulos distintos, mesmo assunto.
+    const temas = guia
+      ? lista.filter((t) => !findDuplicate(t, historico)).slice(0, data.quantidade)
+      : planDistinctTopics(lista, historico, data.quantidade, ANGULOS_EDITORIAIS, { assuntosBloqueados });
     const aviso = temas.length < data.quantidade
-      ? `Só ${temas.length} temas inéditos disponíveis; os demais ficaram em branco para você preencher.`
+      ? `Só ${temas.length} assuntos realmente diferentes estão livres nesta semana (cada post precisa de um assunto próprio e sem repetir posts próximos). Os demais horários ficaram em branco para você escrever um tema novo.`
       : historicoOk ? undefined : "Histórico indisponível: a verificação contra posts antigos será feita na geração.";
     while (temas.length < data.quantidade) temas.push("");
     return { temas, aviso };
