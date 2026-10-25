@@ -14,7 +14,7 @@ CTAs IG/X: "Link na Bio" / "Saiba mais pelo link da bio". CTA LinkedIn: WhatsApp
 - [Todas as redes](mem://constraints/all-networks.md) — Dizer "todas as redes"; regras valem para toda plataforma.
 - [X é estilo, não rede](mem://constraints/x-twitter-style) — Botão X = formato tweet publicado em IG/LinkedIn.
 - [Tom de voz e bibliografia](mem://features/tone-and-bibliography) — IG/X linguagem leiga e empática; LinkedIn formal/científico com DOI. Fontes: Lancet, IJOMS, JOMS, OSOMOPOR, BJOMS.
-- [Cronograma de postagens](mem://features/schedule-cadence) — Seg-Sáb: IG feed 09:00/14:00/18:00/21:00 (fuso local), stories 8/13/17, LinkedIn 9 e 17:30. Domingo: posts especiais automáticos.
+- [Cronograma de postagens](mem://features/schedule-cadence) — Seg-sáb IG 09h story/14h feed/18h story/21h feed (carrossel 5 slides); Google 10h/15h; LinkedIn 09h/13h. Domingo especial.
 - [Nunca inventar logo](mem://constraints/no-fake-logo) — IA nunca desenha logo e nunca reserva espaço/placeholder; sistema aplica só overlay real sem fundo.
 - [Logo Chico obrigatória](mem://constraints/logo-chico-obrigatoria) — Logo oficial do Planner Chico (Σ branco + quadrado ciano sobre navy) obrigatória em 100% dos posts do Planner Simplificado Chico. Nunca usar selo anatômico circular como logo do Prof. Francisco.
 - [Estilo e dimensões das imagens](mem://design/image-style-and-dimensions) — Dimensões por rede (IG 4:5, Stories 9:16, LinkedIn/Google/X 16:9/4:3), 5 estilos alternados (foto, ilustração, quadrinhos, infográfico, colagem), pouco texto, representação literal do tema, temas de alta busca.
