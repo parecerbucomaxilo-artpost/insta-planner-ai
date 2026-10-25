@@ -30,7 +30,11 @@ export function proximaSegunda(agora: Date = new Date()): Date {
 }
 
 /** Monta 7 dias × postsPorDia (1–4), seg→dom. Um item por slot; temas não se repetem (vazios ficam vazios). */
-export function montarSemana(temas: string[], postsPorDia = 1, agora: Date = new Date()): ItemSemana[] {
+export function montarSemana(
+  temas: string[],
+  postsPorDia = 1,
+  agora: Date = new Date(),
+): ItemSemana[] {
   const horarios = horariosDoDia(postsPorDia);
   const inicio = proximaSegunda(agora);
   const itens: ItemSemana[] = [];
@@ -63,7 +67,11 @@ export function montarSemana(temas: string[], postsPorDia = 1, agora: Date = new
 }
 
 /** Executa tarefas com concorrência limitada (evita estourar limite do provedor de imagem). */
-export async function emParalelo<T>(itens: T[], limite: number, fn: (item: T, i: number) => Promise<void>) {
+export async function emParalelo<T>(
+  itens: T[],
+  limite: number,
+  fn: (item: T, i: number) => Promise<void>,
+) {
   let prox = 0;
   const worker = async () => {
     while (prox < itens.length) {

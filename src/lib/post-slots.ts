@@ -26,15 +26,35 @@ export function parseHorario(h: string): { hora: number; minuto: number } {
 /** Deslocamento (minutos) do fuso `tz` em relação ao UTC no instante `d`. */
 function offsetMinutes(d: Date, tz: string): number {
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+    timeZone: tz,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   }).formatToParts(d);
   const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
-  const asUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+  const asUtc = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour"),
+    get("minute"),
+    get("second"),
+  );
   return Math.round((asUtc - d.getTime()) / 60000);
 }
 
 /** Instante UTC correspondente a ano/mês/dia + "HH:MM" no fuso `tz` (sem depender do fuso do servidor). */
-export function horarioNoFuso(ano: number, mes0: number, dia: number, horario: string, tz = FUSO_PADRAO): Date {
+export function horarioNoFuso(
+  ano: number,
+  mes0: number,
+  dia: number,
+  horario: string,
+  tz = FUSO_PADRAO,
+): Date {
   const { hora, minuto } = parseHorario(horario);
   const guess = new Date(Date.UTC(ano, mes0, dia, hora, minuto));
   const off = offsetMinutes(guess, tz);
@@ -44,9 +64,23 @@ export function horarioNoFuso(ano: number, mes0: number, dia: number, horario: s
 }
 
 /** Ano/mês/dia de um instante visto no fuso `tz`. */
-export function diaNoFuso(d: Date, tz = FUSO_PADRAO): { ano: number; mes0: number; dia: number; dow: number } {
-  const parts = new Intl.DateTimeFormat("en-US", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", weekday: "short" }).formatToParts(d);
+export function diaNoFuso(
+  d: Date,
+  tz = FUSO_PADRAO,
+): { ano: number; mes0: number; dia: number; dow: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  }).formatToParts(d);
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
   const dows = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return { ano: Number(get("year")), mes0: Number(get("month")) - 1, dia: Number(get("day")), dow: dows.indexOf(get("weekday")) };
+  return {
+    ano: Number(get("year")),
+    mes0: Number(get("month")) - 1,
+    dia: Number(get("day")),
+    dow: dows.indexOf(get("weekday")),
+  };
 }

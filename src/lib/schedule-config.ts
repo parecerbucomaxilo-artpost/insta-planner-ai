@@ -50,7 +50,9 @@ export function buildScheduleSlots(startDate: Date, dias = 7, tz = FUSO_PADRAO) 
   const hoje = diaNoFuso(startDate, tz);
   for (let i = 0; i < dias; i++) {
     const base = new Date(Date.UTC(hoje.ano, hoje.mes0, hoje.dia + i, 12));
-    const ano = base.getUTCFullYear(), mes0 = base.getUTCMonth(), dia = base.getUTCDate();
+    const ano = base.getUTCFullYear(),
+      mes0 = base.getUTCMonth(),
+      dia = base.getUTCDate();
     const dow = base.getUTCDay(); // 0=domingo
     const slots = dow === 0 ? SLOTS_DOMINGO : SLOTS_SEMANA;
     for (const s of slots) {

@@ -183,6 +183,13 @@ export function chaveIdempotencia(
   formato: string,
   data: { operacaoId?: string; slotKey?: string; rede: string; quando?: string },
 ) {
-  if (data.operacaoId && data.slotKey) return contentKey([userId, "op", data.operacaoId, data.slotKey, data.rede, formato]);
-  return contentKey([userId, tema, formato, data.rede, (data.quando ?? new Date().toISOString()).slice(0, 10)]);
+  if (data.operacaoId && data.slotKey)
+    return contentKey([userId, "op", data.operacaoId, data.slotKey, data.rede, formato]);
+  return contentKey([
+    userId,
+    tema,
+    formato,
+    data.rede,
+    (data.quando ?? new Date().toISOString()).slice(0, 10),
+  ]);
 }
