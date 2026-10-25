@@ -1597,31 +1597,43 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       }
     }
 
-    // DEDUP com histórico REAL (últimos 60 dias, 300 posts, sem Erro). Falha de consulta não
-    // libera duplicatas silenciosamente: segue só com o lote/agendador e registra aviso.
+    // DEDUP com histórico REAL: posts criados nos últimos 60 dias OU agendados a partir de
+    // 7 dias atrás (inclui itens já salvos do mesmo lote semanal, que roda em sequência).
+    // Compara tema + assunto-raiz + ângulo + intenção + título + corpo (dedup.ts).
+    // Falha de consulta não libera duplicatas silenciosamente: registra aviso e segue só com o lote.
+    const historicoSig: AssinaturaPost[] = (data.temasProibidos ?? [])
+      .filter(Boolean)
+      .map((t) => ({ tema: t, quando: data.quando ?? null }));
     const historicoTemas: string[] = [...(data.temasProibidos ?? [])];
-    const historicoTitulos: string[] = [];
-    const historicoCorpos: string[] = [];
     try {
-      const desdeDedup = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const agora = Date.now();
+      const desdeDedup = new Date(agora - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const desdeAgenda = new Date(agora - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data: recentes, error: recErr } = await supabaseAdmin
         .from("posts")
-        .select("prompt_ia, legenda")
+        .select("prompt_ia, legenda, created_at, data_agendamento, status")
         .eq("user_id", context.userId)
         .neq("status", "Erro")
-        .gte("created_at", desdeDedup)
+        .or(`created_at.gte.${desdeDedup},data_agendamento.gte.${desdeAgenda}`)
         .order("created_at", { ascending: false })
-        .limit(300);
+        .limit(400);
       if (recErr) throw recErr;
       for (const r of recentes ?? []) {
         if (r.prompt_ia) historicoTemas.push(r.prompt_ia);
-        if (r.legenda) { historicoTitulos.push(titleOf(r.legenda)); historicoCorpos.push(r.legenda.slice(0, 600)); }
+        historicoSig.push({
+          tema: r.prompt_ia || "",
+          titulo: r.legenda ? titleOf(r.legenda) : "",
+          corpo: (r.legenda || "").slice(0, 1500),
+          quando: r.data_agendamento || r.created_at,
+          status: r.status,
+        });
       }
     } catch (e) {
       console.warn("[dedup] histórico indisponível; usando só temas do lote:", e instanceof Error ? e.message : e);
     }
-    const temaBase = (s: string) => s.split(" — ")[0];
-    const temaDup = (t: string) => findDuplicate(t, historicoTemas) || findDuplicate(temaBase(t), historicoTemas.map(temaBase), 0.95);
+    const quandoRef = data.quando ?? new Date().toISOString();
+    const optsConflito = { janelaDias: JANELA_ASSUNTO_DIAS, assuntoGuiado: data.assuntoGuiado };
+    const temaDup = (t: string) => acharConflito({ tema: t, quando: quandoRef, objetivo: data.objetivo }, historicoSig, optsConflito);
     {
       const chaveInicial = chaveIdempotencia(context.userId, tema, formato, data);
       const { data: jaExiste } = await supabaseAdmin.from("posts").select("id, legenda, url_imagem, url_imagem_cache, imagens_carrossel_cache").eq("user_id", context.userId).eq("content_key", chaveInicial).maybeSingle();
@@ -1633,21 +1645,28 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         return { id: jaExiste.id, url: u, legenda: jaExiste.legenda, slides: urls.length, urls, slideLegendas: [] as string[], reaproveitado: true };
       }
     }
-    if (temaDup(tema)) {
-      if (!(data.tema ?? "").trim()) {
-        // Tema automático: pede nova ideia, no máximo 3 vezes.
-        const r = await retryDistinct(
-          async (i) => chooseLocalTema(data.audiencia, historicoTemas, `${data.rede}-${formato}-${i}-${Date.now()}`, data.especialidade),
-          (t) => t, historicoTemas, 3,
-        );
-        if (!r) throw new Error("Não foi possível garantir um tema inédito. Informe um tema manualmente.");
-        tema = r.valor;
-      } else {
-        throw new Error(`Tema repetido: "${tema.slice(0, 80)}" já foi usado recentemente. Edite o tema para um assunto ou ângulo novo.`);
+    {
+      const conflito = temaDup(tema);
+      if (conflito) {
+        if (!(data.tema ?? "").trim()) {
+          // Tema automático: pede nova ideia (assunto diferente), no máximo 3 vezes.
+          let novo: string | null = null;
+          for (let i = 0; i < 3 && !novo; i++) {
+            const cand = chooseLocalTema(data.audiencia, historicoTemas, `${data.rede}-${formato}-${i}-${Date.now()}`, data.especialidade);
+            if (!temaDup(cand)) novo = cand;
+            else historicoTemas.push(cand);
+          }
+          if (!novo) throw new Error("Não foi possível garantir um tema inédito. Informe um tema manualmente.");
+          tema = novo;
+        } else {
+          throw new Error(`${mensagemConflito(conflito)} Nada foi salvo — edite o tema deste horário.`);
+        }
       }
     }
+    console.info("[dedup] tema aprovado", { postId, assunto: assuntoPrincipal(tema), slot: data.slotKey ?? null });
     // Idempotência: mesmo usuário + tema + formato + rede + dia = mesmo post.
     const chaveConteudo = chaveIdempotencia(context.userId, tema, formato, data);
+
 
     // 1. Resolve nível editorial
     const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
