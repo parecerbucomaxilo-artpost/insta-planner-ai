@@ -2058,15 +2058,16 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // outra aba ou item concorrente) também contam. Nunca salva duplicata silenciosamente.
     try {
       const desdeRecente = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      const { data: recem } = await supabaseAdmin.from("posts").select("id, prompt_ia, legenda").eq("user_id", context.userId).neq("status", "Erro").gte("created_at", desdeRecente).limit(100);
-      const corpo = legenda.slice(0, 600);
-      const colisao = (recem ?? []).find((r: any) =>
-        (r.prompt_ia && similarity(r.prompt_ia, tema) >= 0.85)
-        || (r.legenda && similarity(r.legenda.slice(0, 600), corpo) >= 0.6)
-        || (r.legenda && titleOf(r.legenda) && similarity(titleOf(r.legenda), titleOf(legenda)) >= 0.8));
+      const { data: recem } = await supabaseAdmin.from("posts").select("id, prompt_ia, legenda, created_at, data_agendamento, status").eq("user_id", context.userId).neq("status", "Erro").gte("created_at", desdeRecente).limit(100);
+      const assinaturaNova: AssinaturaPost = { tema, titulo: titleOf(legenda), corpo: legenda.slice(0, 1500), quando: quandoRef, objetivo: data.objetivo };
+      const colisao = acharConflito(
+        assinaturaNova,
+        (recem ?? []).map((r: any) => ({ tema: r.prompt_ia || "", titulo: r.legenda ? titleOf(r.legenda) : "", corpo: (r.legenda || "").slice(0, 1500), quando: r.data_agendamento || r.created_at, status: r.status })),
+        optsConflito,
+      );
       if (colisao) {
-        console.warn("[dedup] colisão com post salvo durante a geração", { postId, existente: (colisao as any).id });
-        throw new Error("Outro post com o mesmo assunto/texto foi salvo enquanto este era gerado. Nada foi duplicado — edite o tema e tente novamente.");
+        console.warn("[dedup] colisão com post salvo durante a geração", { postId, motivo: colisao.motivo });
+        throw new Error(`Outro post salvo durante esta geração tem o mesmo assunto/texto. ${mensagemConflito(colisao)} Nada foi duplicado.`);
       }
     } catch (e) {
       if (e instanceof Error && e.message.startsWith("Outro post")) throw e;
