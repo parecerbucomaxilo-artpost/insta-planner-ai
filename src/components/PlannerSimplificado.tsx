@@ -80,7 +80,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [hora, setHora] = useState<string>("09:00");
   const [busy, setBusy] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  const [retryGeneration, setRetryGeneration] = useState<(() => void) | null>(null);
+  const [retryGeneration, setRetryGeneration] = useState<{ conjugado?: boolean; forcarEspecialidade?: "CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos" } | null>(null);
   const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[]; slideLegendas?: string[] } | null>(null);
   const [temas, setTemas] = useState<Array<{ rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
 
@@ -337,7 +337,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       toast.success("Pré-visualize abaixo.", { id: tid });
     } catch (e: any) {
       setGenerationError(e.message || "A geração contextual falhou; nenhuma imagem substituta foi salva.");
-      setRetryGeneration(() => () => { void handleGerar(opts); });
+      setRetryGeneration(opts ?? {});
       toast.error(e.message || "Falha na geração.", { id: tid });
     } finally { setBusy(false); }
   };
@@ -799,7 +799,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 {generationError && (
                   <div role="alert" className="space-y-2 text-sm text-destructive">
                     <p>{generationError}</p>
-                    <Button variant="outline" disabled={busy} onClick={() => retryGeneration?.()}>
+                    <Button variant="outline" disabled={busy} onClick={() => { void handleGerar(retryGeneration ?? undefined); }}>
                       <RotateCcw className="mr-2 h-4 w-4" /> Tentar gerar novamente
                     </Button>
                   </div>
