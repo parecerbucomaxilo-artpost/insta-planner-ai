@@ -2310,7 +2310,7 @@ export const getWeekTopics = createServerFn({ method: "POST" })
       historicoOk = false;
       console.warn("[dedup] getWeekTopics sem histórico:", e instanceof Error ? e.message : e);
     }
-    const temas = guia ? planDistinctTopics(lista, [], data.quantidade) : planDistinctTopics(lista, historico, data.quantidade);
+    const temas = guia ? lista.filter((t) => !findDuplicate(t, historico)).slice(0, data.quantidade) : planDistinctTopics(lista, historico, data.quantidade);
     const aviso = temas.length < data.quantidade
       ? `Só ${temas.length} temas inéditos disponíveis; os demais ficaram em branco para você preencher.`
       : historicoOk ? undefined : "Histórico indisponível: a verificação contra posts antigos será feita na geração.";
