@@ -1581,6 +1581,46 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       }
     }
 
+    // DEDUP com histórico REAL (últimos 60 dias, 300 posts, sem Erro). Falha de consulta não
+    // libera duplicatas silenciosamente: segue só com o lote/agendador e registra aviso.
+    const historicoTemas: string[] = [...(data.temasProibidos ?? [])];
+    const historicoTitulos: string[] = [];
+    const historicoCorpos: string[] = [];
+    try {
+      const desdeDedup = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: recentes, error: recErr } = await supabaseAdmin
+        .from("posts")
+        .select("prompt_ia, legenda")
+        .eq("user_id", context.userId)
+        .neq("status", "Erro")
+        .gte("created_at", desdeDedup)
+        .order("created_at", { ascending: false })
+        .limit(300);
+      if (recErr) throw recErr;
+      for (const r of recentes ?? []) {
+        if (r.prompt_ia) historicoTemas.push(r.prompt_ia);
+        if (r.legenda) { historicoTitulos.push(titleOf(r.legenda)); historicoCorpos.push(r.legenda.slice(0, 600)); }
+      }
+    } catch (e) {
+      console.warn("[dedup] histórico indisponível; usando só temas do lote:", e instanceof Error ? e.message : e);
+    }
+    const temaBase = (s: string) => s.split(" — ")[0];
+    const temaDup = (t: string) => findDuplicate(t, historicoTemas) || findDuplicate(temaBase(t), historicoTemas.map(temaBase), 0.95);
+    if (temaDup(tema)) {
+      if (!(data.tema ?? "").trim()) {
+        // Tema automático: pede nova ideia, no máximo 3 vezes.
+        const r = await retryDistinct(
+          async (i) => chooseLocalTema(data.audiencia, historicoTemas, `${data.rede}-${formato}-${i}-${Date.now()}`, data.especialidade),
+          (t) => t, historicoTemas, 3,
+        );
+        if (!r) throw new Error("Não foi possível garantir um tema inédito. Informe um tema manualmente.");
+        tema = r.valor;
+      } else {
+        throw new Error(`Tema repetido: "${tema.slice(0, 80)}" já foi usado recentemente. Edite o tema para um assunto ou ângulo novo.`);
+      }
+    }
+    // Idempotência: mesmo usuário + tema + formato + rede + dia = mesmo post.
+    const chaveConteudo = contentKey([context.userId, tema, formato, data.rede, (data.quando ?? new Date().toISOString()).slice(0, 10)]);
 
     // 1. Resolve nível editorial
     const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
@@ -1756,6 +1796,17 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // remove a linha HOOK_IMAGEM da legenda exibida/publicada
     let legendaSemHook = (legendaResolvida || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "").trim();
     if (!isChico) legendaSemHook = enforceHookCoherence(legendaSemHook, hookImagem, tema);
+    // Dedup do TEXTO antes de gerar imagens/salvar: título/gancho e corpo comparados ao histórico real.
+    {
+      const tituloNovo = titleOf(legendaSemHook);
+      const corpoNovo = legendaSemHook.slice(0, 600);
+      const dupTitulo = tituloNovo ? findDuplicate(tituloNovo, historicoTitulos, 0.8) : null;
+      const dupCorpo = historicoCorpos.find((c) => similarity(corpoNovo, c) >= 0.6) ?? null;
+      if (dupTitulo || dupCorpo) {
+        console.warn("[dedup] texto repetido bloqueado", { postId, tema: tema.slice(0, 80) });
+        throw new Error(`Texto muito parecido com um post recente${dupTitulo ? ` ("${dupTitulo.slice(0, 70)}")` : ""}. Nada foi salvo — edite o tema ou tente novamente para um novo ângulo.`);
+      }
+    }
     const headlineLegenda = extractHeadline(legendaSemHook) || hookImagem;
     const altLegenda = extractAlt(legendaSemHook);
     const guiaTema = topicGuidance(tema);
@@ -1965,10 +2016,20 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         data_agendamento: data.quando ?? null,
         prompt_ia: tema,
         instagram_conta: instagramConta,
+        content_key: chaveConteudo,
       } as any)
 
       .select()
       .single();
+    if (insErr && (insErr as any).code === "23505") {
+      // Duplo clique/retry concorrente: outro pedido idêntico já salvou. Não duplica.
+      const { data: existente } = await supabaseAdmin.from("posts").select("id, legenda, url_imagem, url_imagem_cache").eq("user_id", context.userId).eq("content_key", chaveConteudo).maybeSingle();
+      if (existente) {
+        console.info("[dedup] insert idempotente: post já existia", { postId: existente.id });
+        const u = (existente as any).url_imagem_cache || (existente as any).url_imagem;
+        return { id: existente.id, url: u, legenda: existente.legenda, slides: 1, urls: [u].filter(Boolean), slideLegendas: [] as string[], reaproveitado: true };
+      }
+    }
     if (insErr) throw new Error(`DB: ${insErr.message}`);
 
     console.info("[contextual-image-saved]", { postId, slideCount, model: data.modeloImagem, origin: "fresh-provider-image" });
