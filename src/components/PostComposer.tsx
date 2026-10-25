@@ -582,10 +582,10 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           {MODELOS_IA.map((m) => (
             <button
               key={m.id}
-              type="button"
+              type="button" disabled={bloqueado(m)}
               onClick={() => setModelo(m.id)}
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
+                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
                 modelo === m.id
                   ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
                   : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
@@ -606,10 +606,10 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           {MODELOS_IMAGEM.map((m) => (
             <button
               key={m.id}
-              type="button"
+              type="button" disabled={bloqueado(m)}
               onClick={() => setModeloImagem(m.id)}
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
+                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
                 modeloImagem === m.id
                   ? "bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm"
                   : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",

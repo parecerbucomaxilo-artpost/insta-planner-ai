@@ -409,8 +409,8 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
             <Label className="text-xs">Texto</Label>
             <div className="flex flex-wrap gap-1.5">
               {MODELOS_IA.map((m) => (
-                <button key={m.id} type="button" onClick={() => setModelo(m.id)}
-                  className={cn("px-2 py-1 rounded text-[11px] font-semibold border", modelo === m.id ? "bg-amber-600 text-white border-amber-600" : "bg-white border-zinc-200 text-zinc-600")}><ModelLabel m={m} /></button>
+                <button key={m.id} type="button" disabled={bloqueado(m)} onClick={() => setModelo(m.id)}
+                  className={cn("px-2 py-1 rounded text-[11px] font-semibold border disabled:opacity-40 disabled:cursor-not-allowed", modelo === m.id ? "bg-amber-600 text-white border-amber-600" : "bg-white border-zinc-200 text-zinc-600")}><ModelLabel m={m} /></button>
               ))}
             </div>
           </div>
@@ -418,8 +418,8 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
             <Label className="text-xs">Imagem</Label>
             <div className="flex flex-wrap gap-1.5">
               {MODELOS_IMAGEM.map((m) => (
-                <button key={m.id} type="button" onClick={() => setModeloImagem(m.id)}
-                  className={cn("px-2 py-1 rounded text-[11px] font-semibold border", modeloImagem === m.id ? "bg-fuchsia-600 text-white border-fuchsia-600" : "bg-white border-zinc-200 text-zinc-600")}><ModelLabel m={m} /></button>
+                <button key={m.id} type="button" disabled={bloqueado(m)} onClick={() => setModeloImagem(m.id)}
+                  className={cn("px-2 py-1 rounded text-[11px] font-semibold border disabled:opacity-40 disabled:cursor-not-allowed", modeloImagem === m.id ? "bg-fuchsia-600 text-white border-fuchsia-600" : "bg-white border-zinc-200 text-zinc-600")}><ModelLabel m={m} /></button>
               ))}
             </div>
           </div>
