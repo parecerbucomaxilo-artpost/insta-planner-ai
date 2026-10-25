@@ -1638,7 +1638,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           tema: r.prompt_ia || "",
           titulo: r.legenda ? titleOf(r.legenda) : "",
           corpo: (r.legenda || "").slice(0, 1500),
-          quando: r.data_agendamento || r.created_at,
+          quando: r.data_agendamento ?? null,
           status: r.status,
         });
       }
@@ -2076,7 +2076,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const assinaturaNova: AssinaturaPost = { tema, titulo: titleOf(legenda), corpo: legenda.slice(0, 1500), quando: quandoRef, objetivo: data.objetivo };
       const colisao = acharConflito(
         assinaturaNova,
-        (recem ?? []).map((r: any) => ({ tema: r.prompt_ia || "", titulo: r.legenda ? titleOf(r.legenda) : "", corpo: (r.legenda || "").slice(0, 1500), quando: r.data_agendamento || r.created_at, status: r.status })),
+        (recem ?? []).map((r: any) => ({ tema: r.prompt_ia || "", titulo: r.legenda ? titleOf(r.legenda) : "", corpo: (r.legenda || "").slice(0, 1500), quando: r.data_agendamento ?? null, status: r.status })),
         optsConflito,
       );
       if (colisao) {
@@ -2399,8 +2399,8 @@ export const getWeekTopics = createServerFn({ method: "POST" })
       const de = inicio - JANELA_ASSUNTO_DIAS * dia;
       const ate = inicio + (7 + JANELA_ASSUNTO_DIAS) * dia;
       for (const r of rec ?? []) {
-        if ((r as any).status === "Arquivado") continue;
-        const quando = new Date((r as any).data_agendamento || (r as any).created_at).getTime();
+        if ((r as any).status === "Arquivado" || !(r as any).data_agendamento) continue;
+        const quando = new Date((r as any).data_agendamento).getTime();
         if (quando >= de && quando <= ate) assuntosBloqueados.push(assuntoPrincipal((r as any).prompt_ia));
       }
     } catch (e) {

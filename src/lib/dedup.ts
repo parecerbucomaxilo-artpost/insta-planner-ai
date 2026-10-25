@@ -293,7 +293,7 @@ export type AssinaturaPost = {
   titulo?: string;
   corpo?: string;
   objetivo?: string;
-  /** ISO da data agendada (ou da criação, se não houver data). */
+  /** ISO da data agendada (null = sem data; não entra na regra de janela). */
   quando?: string | null;
   status?: string | null;
 };
@@ -313,7 +313,8 @@ export type OpcoesConflito = {
 export const JANELA_ASSUNTO_DIAS = 6;
 
 function dentroDaJanela(a?: string | null, b?: string | null, dias = JANELA_ASSUNTO_DIAS) {
-  if (!a || !b) return true; // sem data: trata como mesmo lote (mais seguro)
+  // Post sem data agendada não ocupa posição no feed: só as regras de tema/ângulo/texto valem.
+  if (!a || !b) return false;
   const da = new Date(a).getTime();
   const db = new Date(b).getTime();
   if (!Number.isFinite(da) || !Number.isFinite(db)) return true;
