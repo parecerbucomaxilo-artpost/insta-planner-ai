@@ -5,6 +5,8 @@ export const Route = createFileRoute("/parecer")({
   head: () => ({
     meta: [
       { title: "Parecer Cirúrgico · Prof. Francisco Menezes CTBMF" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:

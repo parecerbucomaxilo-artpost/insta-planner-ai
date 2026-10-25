@@ -28,6 +28,14 @@ function safeFacebookLogin(value: unknown) {
 }
 
 export const Route = createFileRoute("/meta-connect")({
+  head: () => ({ meta: [
+    { title: "Conectar Instagram — Planner Chico" },
+    { name: "description", content: "Conecte a conta profissional do Instagram ao Planner Chico." },
+    { property: "og:title", content: "Conectar Instagram — Planner Chico" },
+    { property: "og:description", content: "Conexão da conta profissional para publicação de conteúdo." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   ssr: false,
   validateSearch: (search) => ({
     next: safeNext(search.next),
