@@ -596,7 +596,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Selecione Local para o app escrever; selecione GPT/Gemini para a IA escrever.
+          Padrão: grátis. "Requer chave gratuita" só funciona com a chave cadastrada em Configurações → IA; "Pago" consome créditos.
         </p>
       </div>
 
@@ -620,7 +620,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Selecione Local para imagem do app; selecione Gemini/GPT Image para imagem por IA.
+          Padrão: grátis (Pollinations, com limite). Se a IA falhar, o app avisa e usa fundo liso da marca.
         </p>
       </div>
 
