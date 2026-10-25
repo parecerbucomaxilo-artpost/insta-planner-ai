@@ -2311,53 +2311,17 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
         ? TEMAS_DIVERSOS
         : TEMAS_GERAIS;
 
-    // Anexa metadados + força stories a herdarem o tema do feed do mesmo dia
-    const enriquecidos = slots.map((s, i) => {
-        const temaBase = s.diaSemana === 0
-          ? "Cuidar da saúde da boca também é cuidar do bem-estar"
-          : temasBase[i % temasBase.length];
-        const gancho = s.tipo === "stories"
-          ? `Teaser rápido: ${temaBase}`
-          : `Gancho: ${temaBase}`;
-        return {
-          dia: i + 1,
-          rede: s.rede,
-          tipo: s.tipo,
-          quando: s.quando.toISOString(),
-          dataKey: s.quando.toISOString().slice(0, 10),
-          hora: s.hora,
-          formato: (s.rede === "instagram" && s.tipo === "feed"
-            ? "Carrossel"
-            : s.tipo === "stories"
-              ? "Story"
-              : "Post Único") as "Carrossel" | "Story" | "Post Único",
-          tema: temaBase,
-          gancho,
-        };
-      });
-
-    // Para cada story, copia o tema/gancho do feed IG mais próximo (mesmo dia)
-    const feedsIgPorDia = new Map<string, typeof enriquecidos>();
-    for (const e of enriquecidos) {
-      if (e.rede === "instagram" && e.tipo === "feed") {
-        const arr = feedsIgPorDia.get(e.dataKey) ?? [];
-        arr.push(e);
-        feedsIgPorDia.set(e.dataKey, arr);
-      }
+    // Um tema inédito por slot (todas as redes); stories NÃO herdam o tema do feed.
+    const { distribuirTemas } = await import("@/lib/week-themes");
+    let historico: string[] = [];
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: rec } = await supabaseAdmin.from("posts").select("prompt_ia").eq("user_id", TEMP_USER_ID).neq("status", "Erro").or(filtroHistorico()).limit(400);
+      historico = (rec ?? []).map((r: { prompt_ia: string | null }) => r.prompt_ia || "").filter(Boolean);
+    } catch (e) {
+      console.warn("[week-themes] histórico indisponível:", e instanceof Error ? e.message : e);
     }
-    for (const e of enriquecidos) {
-      if (e.rede === "instagram" && e.tipo === "stories") {
-        const feeds = feedsIgPorDia.get(e.dataKey) ?? [];
-        if (feeds.length === 0) continue;
-        const mais = feeds.reduce((best, f) =>
-          Math.abs(f.hora - e.hora) < Math.abs(best.hora - e.hora) ? f : best,
-        );
-        e.tema = mais.tema;
-        e.gancho = `Teaser do feed ${String(mais.hora).padStart(2, "0")}h: ${mais.gancho}`;
-      }
-    }
-
-    const temas = enriquecidos.map(({ dataKey, hora, ...rest }) => rest);
+    const temas = distribuirTemas(slots, temasBase, historico).map((t, i) => ({ dia: i + 1, ...t }));
     return { temas };
   });
 
