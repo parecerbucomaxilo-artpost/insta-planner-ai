@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
-import { ANGULOS_EDITORIAIS, chaveIdempotencia, findDuplicate, planDistinctTopics, retryDistinct, similarity, titleOf } from "./dedup";
+import { ANGULOS_EDITORIAIS, JANELA_ASSUNTO_DIAS, acharConflito, assuntoPrincipal, chaveIdempotencia, findDuplicate, mensagemConflito, planDistinctTopics, titleOf, type AssinaturaPost } from "./dedup";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
 export const MODELOS_IA = [
@@ -67,6 +67,10 @@ const SingleInput = z.object({
   // (duplo clique, retry, cron concorrente).
   operacaoId: z.string().min(1).max(80).optional(),
   slotKey: z.string().min(1).max(120).optional(),
+  // Intenção editorial do slot (Educar, Prevenir…) — entra no texto e na assinatura de dedup.
+  objetivo: z.string().max(60).optional(),
+  // Semana guiada por um tema escolhido pelo usuário: mesmo assunto permitido, com ângulos distintos.
+  assuntoGuiado: z.boolean().optional().default(false),
   // Logo(s) a serem aplicadas como overlay. `logoKey` é legado; `logoKeys`
   // permite escolher mais de uma logo no dashboard.
   logoKey: z.enum(["nsp", "anhanguera", "planner", "liga-ctbmf", "clinica-escola", "nenhuma"]).optional(),
