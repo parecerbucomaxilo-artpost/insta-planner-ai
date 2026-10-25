@@ -1,3 +1,4 @@
+import { Posts7Dias } from "@/components/Posts7Dias";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -138,17 +139,18 @@ export function PlannerAgendamentoTratamento() {
 
 
 
-  const gerar = async () => {
-    if (!tratamento) return toast.error("Escolha primeiro o tipo de tratamento.");
-    if (!telefone.trim()) return toast.error("Informe o telefone de agendamento antes de gerar.");
-    setBusy(true);
-    const tid = "agend-liga";
-    toast.loading(`Criando convite: ${tratamentoLabel(tratamento)}...`, { id: tid });
+  const gerar = async (override?: { trat: TratId; iso: string; formato?: string }): Promise<{ id: string; urls: string[]; legenda: string } | undefined> => {
+    const tratSel = override?.trat ?? tratamento;
+    if (!tratSel) { toast.error("Escolha primeiro o tipo de tratamento."); return; }
+    if (!telefone.trim()) { toast.error("Informe o telefone de agendamento antes de gerar."); return; }
+    if (!override) setBusy(true);
+    const tid = override ? `agend-liga-${override.iso}` : "agend-liga";
+    if (!override) toast.loading(`Criando convite: ${tratamentoLabel(tratSel)}...`, { id: tid });
     try {
-      const iso = buildIso();
-      const tratObj = TRATAMENTOS.find((t) => t.id === tratamento)!;
-      const tipo = modo === "stories" ? "stories" : "feed";
-      const formato = modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único";
+      const iso = override ? override.iso : buildIso();
+      const tratObj = TRATAMENTOS.find((t) => t.id === tratSel)!;
+      const formato = override?.formato ?? (modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único");
+      const tipo = formato === "Story" ? "stories" : "feed";
       const assuntoTxt = assunto.trim();
       const capaBrief = `CAPA (1º slide) — IDENTIDADE FIXA OBRIGATÓRIA da Liga LACTBMF:
 • Fundo sólido GRAFITE #2D2C32 (sem gradiente, sem textura).
@@ -182,20 +184,22 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       // Legenda do convite SEMPRE é a template determinística focada em UM único
       // tratamento — nunca aceitamos texto da IA aqui porque ela drifta entre
       // tratamentos. Só respeitamos legenda 100% manual digitada pelo usuário.
-      const legendaPaciente = legendaGerada.trim()
+      const legendaPaciente = !override && legendaGerada.trim()
         ? legendaGerada.trim()
-        : buildPatientCaption({ tratamento, telefone, base: "", assunto });
+        : buildPatientCaption({ tratamento: tratSel, telefone, base: "", assunto });
       await supabase
         .from("posts")
         .update({ instagram_conta: LIGA_ACCOUNT, legenda: legendaPaciente, legenda_instagram: legendaPaciente } as any)
         .eq("id", out.id);
 
+      if (override) return { id: out.id, urls: out.urls, legenda: legendaPaciente };
       setPreview({ id: out.id, legenda: legendaPaciente, urls: out.urls, slideLegendas: (out as any).slideLegendas });
       toast.success("Convite gerado. Revise abaixo.", { id: tid });
     } catch (e: any) {
+      if (override) throw e;
       toast.error(e.message || "Falha ao gerar.", { id: tid });
     } finally {
-      setBusy(false);
+      if (!override) setBusy(false);
     }
   };
 
@@ -293,6 +297,18 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           ))}
         </div>
       </Card>
+
+      <Posts7Dias
+        temasFixos={TRATAMENTOS.map((t) => t.label)}
+        formatos={["Post Único", "Carrossel", "Story"]}
+        gerar={async (item, formato) => {
+          const trat = TRATAMENTOS.find((t) => t.label === item.tema.trim())?.id;
+          if (!trat) throw new Error(`Tratamento não reconhecido: "${item.tema}". Use um dos tratamentos da lista.`);
+          const r = await gerar({ trat, iso: item.quando, formato });
+          if (!r) throw new Error("Preencha o telefone de agendamento.");
+          return r;
+        }}
+      />
 
       <Card className="p-5 space-y-2">
         <Label className="text-sm font-semibold">Assunto / ângulo específico (opcional)</Label>
@@ -423,7 +439,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           </div>
         </div>
 
-        <Button onClick={gerar} disabled={busy} className="w-full bg-amber-600 hover:bg-amber-700">
+        <Button onClick={() => gerar()} disabled={busy} className="w-full bg-amber-600 hover:bg-amber-700">
           {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
           Gerar convite de agendamento
         </Button>

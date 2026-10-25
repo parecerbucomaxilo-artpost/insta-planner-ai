@@ -1,3 +1,4 @@
+import { Posts7Dias } from "@/components/Posts7Dias";
 import { startGenerationProgress } from "@/lib/generation-progress";
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -723,6 +724,20 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 Gerar post completo — {modo === "feed" ? "Post de Feed" : modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Stories" : "Programação 7 dias"}
               </h3>
             </div>
+
+            <Posts7Dias
+              especialidade={especialidade}
+              temaGuia={tema}
+              gerar={async (item, formato) => {
+                const out = await genSingle({ data: {
+                  tema: item.tema, especialidade, rede: "instagram",
+                  tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando,
+                  ambasRedes: false, audiencia: effectiveAudiencia, modelo, modeloImagem, logoKeys,
+                } as any });
+                await marcarConta(out.id);
+                return { id: out.id, urls: out.urls, legenda: out.legenda };
+              }}
+            />
 
             <div className="space-y-1.5">
               <Label className="text-xs">Gerador de texto</Label>
