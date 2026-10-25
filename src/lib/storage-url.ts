@@ -130,3 +130,18 @@ export async function signPostMediaUrls<T extends {
     imagens_carrossel: imagensCarrossel.filter((url): url is string => Boolean(url)),
   };
 }
+/**
+ * Assinatura estrita para a prévia: nunca devolve a URL pública de um bucket privado
+ * (que sempre falha com 400). Falhou ao assinar → null, para a prévia mostrar o erro do slide.
+ */
+export async function signPostMediaStrict(value: string | null | undefined): Promise<string | null> {
+  if (!value) return null;
+  const ref = getPostStorageObjectRef(value);
+  if (!ref) return value;
+  const { data, error } = await supabase.storage.from(ref.bucket).createSignedUrl(ref.path, SIGNED_URL_TTL_SECONDS);
+  if (error || !data?.signedUrl) {
+    console.warn("[preview] mídia sem acesso:", ref.bucket, ref.path.split("/")[0], error?.message ?? "sem URL");
+    return null;
+  }
+  return data.signedUrl;
+}
