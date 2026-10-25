@@ -125,13 +125,13 @@ export function Posts7Dias(props: {
                 {st?.status === "erro" && <p className="text-destructive">{st.erro}</p>}
                 {st?.res && (
                   <>
-                  <div className="flex gap-2">
+                   <PostReviewActions key={st.res.id} id={st.res.id} />
+                   <div className="flex flex-wrap gap-2 min-w-0">
                     <div className="flex gap-1 shrink-0">
                       {st.res.urls.slice(0, 5).map((u) => <img key={u} src={u} alt={`Imagem do post de ${item.diaSemana}`} className="h-16 w-12 object-cover rounded" />)}
                     </div>
                     <p className="text-muted-foreground line-clamp-3 whitespace-pre-line">{st.res.legenda}</p>
                   </div>
-                  <PostReviewActions key={st.res.id} id={st.res.id} disabled={busy} />
                   </>
                 )}
               </li>
