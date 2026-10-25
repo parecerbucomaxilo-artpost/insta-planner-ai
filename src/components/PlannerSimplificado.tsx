@@ -756,6 +756,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             <Posts7Dias
               especialidade={especialidade}
               temaGuia={tema}
+              escritorLocal={modelo === "local/sem-custo"}
               gerar={async (item, formato, ctx) => {
                 const out = await genSingle({ data: {
                   operacaoId: ctx.operacaoId, slotKey: ctx.slotKey, objetivo: ctx.objetivo, assuntoGuiado: ctx.assuntoGuiado,
