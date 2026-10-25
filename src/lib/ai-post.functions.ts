@@ -2196,3 +2196,30 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
     const temas = enriquecidos.map(({ dataKey, hora, ...rest }) => rest);
     return { temas };
   });
+
+// "Posts 7 dias": devolve temas distintos para a semana (sem chamar IA — a IA é usada
+// depois, uma vez por post, para legenda e imagens).
+export const getWeekTopics = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("Ambas"),
+      temaGuia: z.string().optional().default(""),
+      quantidade: z.number().int().min(1).max(21).default(7),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const guia = data.temaGuia.trim();
+    const angulos = ["visão geral", "sinais de alerta", "mito e verdade", "como é o tratamento", "cuidados e prevenção", "dúvidas frequentes", "quando procurar ajuda"];
+    const lista = guia
+      ? angulos.map((a) => `${guia}: ${a}`)
+      : [...(data.especialidade === "Temas Diversos" ? TEMAS_DIVERSOS : TEMAS_GERAIS)];
+    if (!guia) {
+      for (let i = lista.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [lista[i], lista[j]] = [lista[j], lista[i]];
+      }
+    }
+    const temas: string[] = [];
+    for (let i = 0; i < data.quantidade; i++) temas.push(lista[i % lista.length]);
+    return { temas };
+  });
