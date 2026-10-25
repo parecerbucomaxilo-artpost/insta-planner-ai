@@ -3,7 +3,7 @@
 ## Core
 Toda geração de imagem segue o estilo Mayo/Cleveland/Lancet do Prof. Francisco Menezes (CTBMF + Odontologia Hospitalar) com FUNDO AZUL NAVY LUMINOSO #14366b (com leve gradiente para ciano #2dd4ff) dominando a imagem — criativos CLAROS e arejados, NUNCA escuros/low-key/preto, NUNCA branco. Paleta restrita às cores da logo: navy luminoso #14366b / ciano #2dd4ff / branco. Vermelho só para dor. Headline curto 3-6 palavras tipo manchete ("DOR NO SISO?"), bold sans-serif, branco ou ciano. Texto longo só na legenda. PT-BR Brasil impecável.
 Assinatura oficial: "Prof. Francisco Menezes | CROSP 53318" + subtítulo "Cirurgia e Traumatologia Bucomaxilofacial · Odontologia Hospitalar". Em carrossel: só 1ª e última imagens.
-3 níveis de conteúdo: IG Conversão (dor/identificação, stories e feed 09:00), IG Autoridade (caso/ciência traduzida, feed 14:00/18:00/21:00), LinkedIn Científico (Lancet/IJOMS/JOMS + DOI). Cron `gerar-proximo` alterna automaticamente.
+3 níveis de conteúdo: IG Conversão (dor/identificação, stories 09h e 18h), IG Autoridade (caso/ciência traduzida, feed carrossel 14h e 21h), LinkedIn Científico (Lancet/IJOMS/JOMS + DOI). Cron `gerar-proximo` alterna automaticamente.
 Modelo de imagem padrão: google/gemini-3.1-flash-image-preview. Carrosséis padrão = 6 cards; Estilo X = 3 cards 16:9. Todas em paralelo.
 Logos oficiais no dashboard, nesta ordem: NSP, Anhanguera Santa Bárbara d'Oeste, Prof. Francisco Menezes/Planner Chico (Σ branco + quadrado ciano), Liga, Clínica Escola. IA nunca desenha logo; sistema aplica overlay real.
 CTAs IG/X: "Link na Bio" / "Saiba mais pelo link da bio". CTA LinkedIn: WhatsApp https://wa.me/5511947684004. PROIBIDO: "agende consulta/avaliação", "promoção", "oferta", "desconto", "últimas vagas".
