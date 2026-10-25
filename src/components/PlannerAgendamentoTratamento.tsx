@@ -140,7 +140,7 @@ export function PlannerAgendamentoTratamento() {
 
 
 
-  const gerar = async (override?: { trat: TratId; iso: string; formato?: string }): Promise<{ id: string; urls: string[]; legenda: string } | undefined> => {
+  const gerar = async (override?: { trat: TratId; iso: string; formato?: string; operacaoId?: string; slotKey?: string }): Promise<{ id: string; urls: string[]; legenda: string } | undefined> => {
     const tratSel = override?.trat ?? tratamento;
     if (!tratSel) { toast.error("Escolha primeiro o tipo de tratamento."); return; }
     if (!telefone.trim()) { toast.error("Informe o telefone de agendamento antes de gerar."); return; }
@@ -179,6 +179,8 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           modelo,
           modeloImagem,
           logoKeys,
+          operacaoId: override?.operacaoId,
+          slotKey: override?.slotKey,
         } as any,
       });
 
@@ -302,10 +304,10 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       <Posts7Dias
         temasFixos={TRATAMENTOS.map((t) => t.label)}
         formatos={["Post Único", "Carrossel", "Story"]}
-        gerar={async (item, formato) => {
+        gerar={async (item, formato, ctx) => {
           const trat = TRATAMENTOS.find((t) => t.label === item.tema.trim())?.id;
           if (!trat) throw new Error(`Tratamento não reconhecido: "${item.tema}". Use um dos tratamentos da lista.`);
-          const r = await gerar({ trat, iso: item.quando, formato });
+          const r = await gerar({ trat, iso: item.quando, formato, ...ctx });
           if (!r) throw new Error("Preencha o telefone de agendamento.");
           return r;
         }}

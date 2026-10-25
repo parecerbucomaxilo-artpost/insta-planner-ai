@@ -11,11 +11,15 @@ export interface Slot {
   minuto: number; // 0-59
 }
 
+import { FUSO_PADRAO, diaNoFuso, horarioNoFuso } from "./post-slots";
+
 // Seg-Sáb (dia da semana 1..6 em getDay())
 export const SLOTS_SEMANA: Slot[] = [
-  // Instagram FEED (Carrossel) — 2/dia
+  // Instagram FEED — horários padrão 09:00, 14:00, 18:00, 21:00 (4/dia, um conteúdo distinto por slot)
   { rede: "instagram", tipo: "feed", hora: 9, minuto: 0 },
-  { rede: "instagram", tipo: "feed", hora: 19, minuto: 0 },
+  { rede: "instagram", tipo: "feed", hora: 14, minuto: 0 },
+  { rede: "instagram", tipo: "feed", hora: 18, minuto: 0 },
+  { rede: "instagram", tipo: "feed", hora: 21, minuto: 0 },
   // Instagram STORIES — 3/dia
   { rede: "instagram", tipo: "stories", hora: 8, minuto: 0 },
   { rede: "instagram", tipo: "stories", hora: 13, minuto: 0 },
@@ -40,24 +44,27 @@ export const SLOTS_DOMINGO: Slot[] = [
  * Gera todos os slots de postagem dos próximos N dias começando em `startDate`.
  * Retorna em ordem cronológica.
  */
-export function buildScheduleSlots(startDate: Date, dias = 7) {
+export function buildScheduleSlots(startDate: Date, dias = 7, tz = FUSO_PADRAO) {
+  // Horários são do fuso do projeto (não do servidor, que roda em UTC): 09:00 = 09:00 em São Paulo.
   const out: Array<Slot & { quando: Date; diaSemana: number }> = [];
+  const hoje = diaNoFuso(startDate, tz);
   for (let i = 0; i < dias; i++) {
-    const d = new Date(startDate);
-    d.setDate(d.getDate() + i);
-    const dow = d.getDay(); // 0=domingo
+    const base = new Date(Date.UTC(hoje.ano, hoje.mes0, hoje.dia + i, 12));
+    const ano = base.getUTCFullYear(),
+      mes0 = base.getUTCMonth(),
+      dia = base.getUTCDate();
+    const dow = base.getUTCDay(); // 0=domingo
     const slots = dow === 0 ? SLOTS_DOMINGO : SLOTS_SEMANA;
     for (const s of slots) {
-      const quando = new Date(d);
-      quando.setHours(s.hora, s.minuto, 0, 0);
-      out.push({ ...s, quando, diaSemana: dow });
+      const hhmm = `${String(s.hora).padStart(2, "0")}:${String(s.minuto).padStart(2, "0")}`;
+      out.push({ ...s, quando: horarioNoFuso(ano, mes0, dia, hhmm, tz), diaSemana: dow });
     }
   }
   return out.sort((a, b) => a.quando.getTime() - b.quando.getTime());
 }
 
 export const HORARIOS_RESUMO = {
-  instagramFeed: "09h, 15h e 19h (seg-sáb)",
+  instagramFeed: "09:00, 14:00, 18:00 e 21:00 (seg-sáb)",
   instagramStories: "08h, 13h e 17h (seg-sáb)",
   linkedin: "09h e 17h30 (seg-sáb)",
   domingo: "Mensagem de domingo (IG 10h + story 9h, LinkedIn 11h)",

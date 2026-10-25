@@ -2,7 +2,7 @@ import { Posts7Dias } from "@/components/Posts7Dias";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import { POST_REVIEW_CHANGED, GENERATED_POST_STATUS } from "@/lib/post-review";
 import { startGenerationProgress } from "@/lib/generation-progress";
-import { useState, useEffect, useCallback, type ChangeEvent } from "react";
+import { useState, useEffect, useCallback, type ChangeEvent , useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
@@ -361,7 +361,15 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     } finally { setBusy(false); }
   };
 
+  const temasEmGeracao = useRef(new Set<string>());
   const aprovarTema = async (t: { rede: string; tipo?: string; formato?: string; quando?: string; tema: string }) => {
+    // Duplo clique no mesmo tema não dispara uma 2ª geração (o backend também é idempotente).
+    const chaveTema = `${t.tema}|${t.quando ?? ""}|${t.rede}`;
+    if (temasEmGeracao.current.has(chaveTema)) return;
+    temasEmGeracao.current.add(chaveTema);
+    try { await aprovarTemaInterno(t); } finally { temasEmGeracao.current.delete(chaveTema); }
+  };
+  const aprovarTemaInterno = async (t: { rede: string; tipo?: string; formato?: string; quando?: string; tema: string }) => {
     const tid = `aprov-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
@@ -748,8 +756,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             <Posts7Dias
               especialidade={especialidade}
               temaGuia={tema}
-              gerar={async (item, formato) => {
+              gerar={async (item, formato, ctx) => {
                 const out = await genSingle({ data: {
+                  operacaoId: ctx.operacaoId, slotKey: ctx.slotKey,
                   tema: item.tema, especialidade, rede: "instagram", status: GENERATED_POST_STATUS,
                   tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando,
                   ambasRedes: false, audiencia: effectiveAudiencia, modelo, modeloImagem, logoKeys,
