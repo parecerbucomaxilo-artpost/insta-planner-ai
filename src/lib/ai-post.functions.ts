@@ -1817,14 +1817,31 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
 
 
-    const legendaBaseResolvida = completeCaptionIfNeeded({
-      legenda: await legendaPromise,
+    const completar = (legenda: string) => completeCaptionIfNeeded({
+      legenda,
       tema,
       rede: data.rede,
       formato,
       audiencia: data.audiencia,
       especialidade: data.especialidade,
     });
+    // Dedup do TEXTO antes de gerar imagens/salvar: título e corpo editorial (sem assinatura,
+    // CTA e hashtags) comparados ao histórico real, inclusive frases reaproveitadas.
+    // Duplicata → reescreve SÓ este post com nova abordagem (máx. 2 vezes); depois, erro visível.
+    const conflitoTexto = (legenda: string) => {
+      const limpo = (legenda || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/im, "").trim();
+      return acharConflito({ tema: "", titulo: titleOf(limpo), corpo: limpo.slice(0, 1500), quando: quandoRef }, historicoSig, optsConflito);
+    };
+    let legendaBaseResolvida = completar(await legendaPromise);
+    for (let tentativa = 1; ; tentativa++) {
+      const conflito = conflitoTexto(legendaBaseResolvida);
+      if (!conflito) break;
+      console.warn("[dedup] texto repetido", { postId, tentativa, motivo: conflito.motivo });
+      if (usaEscritorLocal || tentativa > 2) {
+        throw new Error(`${mensagemConflito(conflito)} ${usaEscritorLocal ? "O escritor local não consegue variar este texto" : `Tentamos ${tentativa} abordagens diferentes`}. Nada foi salvo — revise o tema deste horário.`);
+      }
+      legendaBaseResolvida = completar(await escreverLegenda(`\n\nNOVA ABORDAGEM OBRIGATÓRIA (tentativa ${tentativa + 1}): a versão anterior ficou parecida demais com um post já existente ("${conflito.com.slice(0, 90)}"). Use outro gancho, outro título, outra estrutura e outros exemplos concretos. Não reutilize frases daquele post.`));
+    }
     const slideCount = formato === "Carrossel" ? (data.rede === "estilo-x" ? 3 : 5) : 1;
     // Chico: texto final completo, sem trocar/truncar blocos por narrativas genéricas.
     const slideNarratives = formato === "Carrossel"
@@ -1850,17 +1867,6 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // remove a linha HOOK_IMAGEM da legenda exibida/publicada
     let legendaSemHook = (legendaResolvida || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "").trim();
     if (!isChico) legendaSemHook = enforceHookCoherence(legendaSemHook, hookImagem, tema);
-    // Dedup do TEXTO antes de gerar imagens/salvar: título/gancho e corpo comparados ao histórico real.
-    {
-      const tituloNovo = titleOf(legendaSemHook);
-      const corpoNovo = legendaSemHook.slice(0, 600);
-      const dupTitulo = tituloNovo ? findDuplicate(tituloNovo, historicoTitulos, 0.8) : null;
-      const dupCorpo = historicoCorpos.find((c) => similarity(corpoNovo, c) >= 0.6) ?? null;
-      if (dupTitulo || dupCorpo) {
-        console.warn("[dedup] texto repetido bloqueado", { postId, tema: tema.slice(0, 80) });
-        throw new Error(`Texto muito parecido com um post recente${dupTitulo ? ` ("${dupTitulo.slice(0, 70)}")` : ""}. Nada foi salvo — edite o tema ou tente novamente para um novo ângulo.`);
-      }
-    }
     const headlineLegenda = extractHeadline(legendaSemHook) || hookImagem;
     const altLegenda = extractAlt(legendaSemHook);
     const guiaTema = topicGuidance(tema);
