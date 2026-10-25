@@ -488,7 +488,15 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     }
   };
 
+  const temasEmGeracao = useRef(new Set<string>());
   const approveTheme = async (t: { rede: string; tipo?: string; formato?: string; quando?: string; tema: string }) => {
+    // Duplo clique no mesmo tema não dispara uma 2ª geração (o backend também é idempotente).
+    const chaveTema = `${t.tema}|${t.quando ?? ""}|${t.rede}`;
+    if (temasEmGeracao.current.has(chaveTema)) return;
+    temasEmGeracao.current.add(chaveTema);
+    try { await approveThemeInterno(t); } finally { temasEmGeracao.current.delete(chaveTema); }
+  };
+  const approveThemeInterno = async (t: { rede: string; tipo?: string; formato?: string; quando?: string; tema: string }) => {
     const r = (t.rede === "linkedin" ? "linkedin" : t.rede === "estilo-x" ? "estilo-x" : t.rede === "google" ? "google" : "instagram") as
       | "instagram" | "linkedin" | "estilo-x" | "google";
     const tid = `local-approve-${t.tema}`;

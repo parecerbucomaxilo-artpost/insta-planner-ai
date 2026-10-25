@@ -17,6 +17,7 @@ import { DirectReplyCard } from "./DirectReplyCard";
 import brandLogo from "@/assets/logo-clinica.png";
 import { useServerFn } from "@tanstack/react-start";
 import { generateSinglePost } from "@/lib/ai-post.functions";
+import { horariosDoDia, parseHorario } from "@/lib/post-slots";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import type { PostRow } from "@/lib/posts-types";
 // import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
@@ -212,62 +213,73 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
     return `${fmtDate(weekStart)} – ${fmtDate(end)}`;
   }, [weekStart]);
 
+  const gerandoRef = useRef(false);
   const handleGerar = async () => {
-    if (loading) return;
+    // Trava síncrona: `loading` só muda no próximo render; duplo clique/efeito duplo disparava 2 lotes.
+    if (loading || gerandoRef.current) return;
+    gerandoRef.current = true;
     setLoading(true);
     const especialidade = "CTBMF" as const;
-    // 2 publicações por dia x 7 dias = 14 slots
-    const slots: { quando: Date; tipo: "feed" | "stories" }[] = [];
+    const operacaoId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `op-${Date.now()}`;
+    // 2 publicações por dia x 7 dias = 14 slots, nos horários padrão (09:00 e 18:00, fuso local)
+    const slots: { quando: Date; tipo: "feed" | "stories"; key: string }[] = [];
     for (let d = 0; d < 7; d++) {
-      const dia = new Date(weekStart);
-      dia.setDate(dia.getDate() + d);
-      const manha = new Date(dia); manha.setHours(9, 0, 0, 0);
-      const tarde = new Date(dia); tarde.setHours(15, 0, 0, 0);
-      slots.push({ quando: manha, tipo: "feed" });
-      slots.push({ quando: tarde, tipo: "feed" });
+      for (const h of horariosDoDia(2)) {
+        const { hora, minuto } = parseHorario(h);
+        const q = new Date(weekStart);
+        q.setDate(q.getDate() + d);
+        q.setHours(hora, minuto, 0, 0);
+        slots.push({ quando: q, tipo: "feed", key: `${q.toDateString()}T${h}` });
+      }
     }
 
     toast.info(`Gerando ${slots.length} publicações para os próximos 7 dias…`);
     let ok = 0; let fail = 0;
-    // Em paralelo, com pequeno escalonamento para manter a interface responsiva.
-    await Promise.all(slots.map(async (s, i) => {
-      try {
-        await new Promise((r) => setTimeout(r, i * 400));
-        const result = await gerarPostFn({
-          data: {
-            tema: "",
-            especialidade,
-            rede: "instagram",
-            tipo: s.tipo,
-            quando: s.quando.toISOString(),
-            status: "PendenteAprovacao",
-            nivel: "auto",
-            audiencia: "geral",
-            ambasRedes: false,
-          },
-        });
-        setPosts((items) => items.map((item, index) => index === i ? {
-          ...item,
-          postId: result.id,
-          reviewStatus: "PendenteAprovacao",
-          date: s.quando,
-          horaAgendamento: s.quando.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-          legenda: result.legenda,
-          titulo: result.legenda.split("\n")[0],
-          imagem: result.urls[0] ?? null,
-          imagens: result.urls,
-          status: "pronto",
-        } : item));
-        ok++;
-      } catch (e) {
-        console.error("[WeeklyCalendar] gerar falhou", e);
-        fail++;
+    try {
+      // SEQUENCIAL: antes eram 14 gerações em paralelo com tema vazio; todas liam o mesmo histórico
+      // antes de qualquer uma salvar e escolhiam o mesmo tema → posts duplicados/triplicados.
+      for (let i = 0; i < slots.length; i++) {
+        const s = slots[i];
+        try {
+          const result = await gerarPostFn({
+            data: {
+              tema: "",
+              especialidade,
+              rede: "instagram",
+              tipo: s.tipo,
+              quando: s.quando.toISOString(),
+              status: "PendenteAprovacao",
+              nivel: "auto",
+              audiencia: "geral",
+              ambasRedes: false,
+              operacaoId,
+              slotKey: s.key,
+            },
+          });
+          setPosts((items) => items.map((item, index) => index === i ? {
+            ...item,
+            postId: result.id,
+            reviewStatus: "PendenteAprovacao",
+            date: s.quando,
+            horaAgendamento: s.quando.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+            legenda: result.legenda,
+            titulo: result.legenda.split("\n")[0],
+            imagem: result.urls[0] ?? null,
+            imagens: result.urls,
+            status: "pronto",
+          } : item));
+          ok++;
+        } catch (e) {
+          console.error("[WeeklyCalendar] gerar falhou", e);
+          fail++;
+        }
       }
-    }));
-
-    setLoading(false);
+    } finally {
+      gerandoRef.current = false;
+      setLoading(false);
+    }
     if (ok > 0) toast.success(`${ok} publicações geradas para revisão. Ainda não estão agendadas.`);
-    if (fail > 0) toast.error(`${fail} falharam — tente novamente.`);
+    if (fail > 0) toast.error(`${fail} não foram geradas (falha ou conteúdo repetido) — nada duplicado foi salvo.`);
     onCreated();
   };
 
