@@ -1,39 +1,24 @@
-// Lovable AI Gateway: GPT-5-mini (texto) + Gemini 3.1 Flash Image / Nano Banana (imagem).
-// Mantém um gerador local de fallback caso o gateway retorne 402 (créditos) ou 429 (rate-limit).
+// Geração de texto/imagem com estratégia free-first.
+// Catálogo único de modelos em src/lib/ai-models.ts (também usado pela interface).
+// Provedores: Gemini API (chave gratuita), Groq (chave gratuita), Pollinations
+// (grátis com limites / chave gratuita) e Lovable AI Gateway (pago, créditos).
+// Chaves ficam SOMENTE em segredos do servidor; nunca são registradas em logs.
 import * as jpeg from "jpeg-js";
+import {
+  MODELOS_IA,
+  MODELOS_IMAGEM,
+  DEFAULT_TEXT_MODEL,
+  DEFAULT_IMAGE_MODEL,
+  normalizeTextModel,
+  normalizeImageModel,
+  type ModeloTexto,
+  type ModeloImagem,
+} from "@/lib/ai-models";
+
+export { MODELOS_IA, MODELOS_IMAGEM };
+export type { ModeloTexto, ModeloImagem };
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
-
-export const MODELOS_IA = [
-  { id: "openai/gpt-5-mini", label: "GPT-5 mini (texto)" },
-  { id: "openai/gpt-5-nano", label: "GPT-5 nano (texto)" },
-  { id: "openai/gpt-5", label: "GPT-5 (texto)" },
-  { id: "openai/gpt-5.4-mini", label: "GPT-5.4 mini (texto)" },
-  { id: "openai/gpt-5.4", label: "GPT-5.4 (texto)" },
-  { id: "openai/gpt-5.5", label: "GPT-5.5 (texto)" },
-  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (texto)" },
-  { id: "google/gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (texto)" },
-  { id: "google/gemini-3.5-flash", label: "Gemini 3.5 Flash (texto)" },
-  { id: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro (texto)" },
-  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (texto)" },
-  { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro (texto)" },
-] as const;
-export type ModeloTexto = (typeof MODELOS_IA)[number]["id"];
-
-export const MODELOS_IMAGEM = [
-  { id: "google/gemini-3.1-flash-image", label: "Gemini Nano Banana 2 (imagem)" },
-  { id: "google/gemini-3-pro-image", label: "Gemini 3 Pro Image (imagem)" },
-  { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana (imagem)" },
-  { id: "openai/gpt-image-2", label: "GPT Image 2 (imagem)" },
-  { id: "openai/gpt-image-1-mini", label: "GPT image 1 mini (imagem)" },
-  { id: "pollinations/flux", label: "Pollinations Flux (grátis, sem custo)" },
-  { id: "pollinations/flux-realism", label: "Pollinations Flux Realism (grátis)" },
-  { id: "pollinations/turbo", label: "Pollinations Turbo (grátis, rápido)" },
-] as const;
-export type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
-
-const DEFAULT_TEXT_MODEL: ModeloTexto = "openai/gpt-5-mini";
-const DEFAULT_IMAGE_MODEL: ModeloImagem = "google/gemini-3.1-flash-image";
 
 function sizeToWH(size?: string): { width: number; height: number } {
   if (size === "1536x1024") return { width: 1536, height: 1024 };
@@ -41,7 +26,74 @@ function sizeToWH(size?: string): { width: number; height: number } {
   return { width: 1024, height: 1024 };
 }
 
-// ---------------- Texto: GPT-5 mini via Lovable Gateway ----------------
+/** Quais provedores gratuitos têm chave configurada (somente booleanos). */
+export function freeProvidersStatus() {
+  return {
+    gemini: !!process.env.GEMINI_API_KEY,
+    groq: !!process.env.GROQ_API_KEY,
+    pollinations: !!process.env.POLLINATIONS_API_KEY,
+    lovable: !!process.env.LOVABLE_API_KEY,
+  };
+}
+
+/** True quando o modelo de texto escolhido pode, de fato, chamar alguma IA. */
+export function textModelUsesAI(model?: string): boolean {
+  const id = normalizeTextModel(model);
+  const s = freeProvidersStatus();
+  if (id === "local/sem-custo") return false;
+  if (id === "auto/gratis") return s.gemini || s.groq || s.pollinations;
+  if (id.startsWith("gemini/")) return s.gemini;
+  if (id.startsWith("groq/")) return s.groq;
+  if (id.startsWith("pollinations/")) return s.pollinations;
+  return s.lovable;
+}
+
+async function openAICompatChat(opts: {
+  url: string;
+  apiKey: string;
+  model: string;
+  system?: string;
+  prompt: string;
+  label: string;
+}): Promise<string> {
+  const res = await fetch(opts.url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${opts.apiKey}` },
+    body: JSON.stringify({
+      model: opts.model,
+      messages: [
+        ...(opts.system ? [{ role: "system", content: opts.system }] : []),
+        { role: "user", content: opts.prompt },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`${opts.label} texto ${res.status}: ${body.slice(0, 200)}`);
+  }
+  const json: any = await res.json();
+  const txt = json?.choices?.[0]?.message?.content?.toString().trim() || "";
+  if (!txt) throw new Error(`${opts.label}: resposta vazia`);
+  return txt;
+}
+
+async function generateTextFree(provider: "gemini" | "groq" | "pollinations", model: string, system: string | undefined, prompt: string) {
+  if (provider === "gemini") {
+    const k = process.env.GEMINI_API_KEY;
+    if (!k) throw new Error("GEMINI_API_KEY não configurada");
+    return openAICompatChat({ url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", apiKey: k, model, system, prompt, label: "Gemini" });
+  }
+  if (provider === "groq") {
+    const k = process.env.GROQ_API_KEY;
+    if (!k) throw new Error("GROQ_API_KEY não configurada");
+    return openAICompatChat({ url: "https://api.groq.com/openai/v1/chat/completions", apiKey: k, model, system, prompt, label: "Groq" });
+  }
+  const k = process.env.POLLINATIONS_API_KEY;
+  if (!k) throw new Error("POLLINATIONS_API_KEY não configurada");
+  return openAICompatChat({ url: "https://gen.pollinations.ai/v1/chat/completions", apiKey: k, model, system, prompt, label: "Pollinations" });
+}
+
+// ---------------- Texto ----------------
 
 export async function generateTextAI(opts: {
   apiKey?: string;
@@ -50,9 +102,34 @@ export async function generateTextAI(opts: {
   model?: ModeloTexto | string;
   maxTokens?: number;
 }): Promise<string> {
+  const model = normalizeTextModel((opts.model as string) || DEFAULT_TEXT_MODEL);
+  if (model === "local/sem-custo") throw new Error("Modelo sem IA selecionado");
+
+  if (model === "auto/gratis") {
+    // Cada provedor é tentado UMA vez (sem loops). Ordem: Gemini → Groq → Pollinations.
+    const s = freeProvidersStatus();
+    const chain: Array<["gemini" | "groq" | "pollinations", string]> = [];
+    if (s.gemini) chain.push(["gemini", "gemini-3.8-flash"]);
+    if (s.groq) chain.push(["groq", "openai/gpt-oss-120b"]);
+    if (s.pollinations) chain.push(["pollinations", "openai"]);
+    if (!chain.length) throw new Error("Nenhuma chave gratuita de texto configurada");
+    const erros: string[] = [];
+    for (const [p, m] of chain) {
+      try {
+        return await generateTextFree(p, m, opts.system, opts.prompt);
+      } catch (err) {
+        erros.push(err instanceof Error ? err.message : String(err));
+      }
+    }
+    throw new Error(`Provedores gratuitos falharam: ${erros.join(" | ").slice(0, 400)}`);
+  }
+  if (model.startsWith("gemini/")) return generateTextFree("gemini", model.slice(7), opts.system, opts.prompt);
+  if (model.startsWith("groq/")) return generateTextFree("groq", model.slice(5), opts.system, opts.prompt);
+  if (model.startsWith("pollinations/")) return generateTextFree("pollinations", model.slice(13), opts.system, opts.prompt);
+
+  // Lovable AI Gateway (pago)
   const apiKey = opts.apiKey || process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
-  const model = (opts.model as string) || DEFAULT_TEXT_MODEL;
 
   const res = await fetch(`${GATEWAY_URL}/chat/completions`, {
     method: "POST",
