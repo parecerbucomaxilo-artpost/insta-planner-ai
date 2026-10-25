@@ -4,7 +4,12 @@ import type { PostRow } from "./posts-types";
 
 describe("conteúdo real da prévia", () => {
   it("ne masque pas une image de carrossel absente par la couverture", () => {
-    const post = { tipo_post: "Carrossel", legenda: "Slide 1: ATM\nSlide 2: Dor", imagens_carrossel: ["slide-real"], url_imagem: "capa" } as PostRow;
+    const post = {
+      tipo_post: "Carrossel",
+      legenda: "Slide 1: ATM\nSlide 2: Dor",
+      imagens_carrossel: ["slide-real"],
+      url_imagem: "capa",
+    } as PostRow;
     expect(previewMedia(post)).toEqual(["slide-real", null]);
   });
   it("associa o texto ao número do slide, sem substituto quando ausente", () => {
