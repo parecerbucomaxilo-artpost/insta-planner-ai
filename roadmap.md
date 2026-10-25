@@ -1,0 +1,3 @@
+- [ ] Implementar revisão compartilhada nas listagens e prévias dos planners.
+- [ ] Verificar persistência, confirmação de recusa e ausência de publicação ao aceitar.
+- [ ] Executar testes e conferir a interface.

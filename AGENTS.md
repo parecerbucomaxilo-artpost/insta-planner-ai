@@ -1,0 +1,2 @@
+# Architecture rules
+- Generated-post review uses the shared PostReviewActions component and existing posts statuses through the authenticated browser client, so RLS applies and internal approval never invokes publishing.
