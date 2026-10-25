@@ -1,0 +1,4 @@
+- [x] Implementar revisão compartilhada nas listagens e prévias dos planners.
+- [x] Verificar por testes os estados de revisão sem publicação e conferir confirmação/cancelamento no navegador.
+- [x] Executar seis testes, lint dos novos arquivos e conferir compilação automática.
+- [ ] Verificar aprovação/recusa e leitura de retorno com um post real: depende de o usuário entrar na prévia; não foi possível obter sessão da conta solicitante.

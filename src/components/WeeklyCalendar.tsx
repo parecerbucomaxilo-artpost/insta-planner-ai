@@ -17,9 +17,13 @@ import { DirectReplyCard } from "./DirectReplyCard";
 import brandLogo from "@/assets/logo-clinica.png";
 import { useServerFn } from "@tanstack/react-start";
 import { generateSinglePost } from "@/lib/ai-post.functions";
+import { PostReviewActions } from "@/components/PostReviewActions";
+import type { PostRow } from "@/lib/posts-types";
 // import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
 
 type PostPlano = {
+  postId?: string;
+  reviewStatus?: PostRow["status"];
   date: Date;
   label: string;
   titulo: string;
@@ -229,19 +233,31 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
     await Promise.all(slots.map(async (s, i) => {
       try {
         await new Promise((r) => setTimeout(r, i * 400));
-        await gerarPostFn({
+        const result = await gerarPostFn({
           data: {
             tema: "",
             especialidade,
             rede: "instagram",
             tipo: s.tipo,
             quando: s.quando.toISOString(),
-            status: "Agendado",
+            status: "PendenteAprovacao",
             nivel: "auto",
             audiencia: "geral",
             ambasRedes: false,
           },
         });
+        setPosts((items) => items.map((item, index) => index === i ? {
+          ...item,
+          postId: result.id,
+          reviewStatus: "PendenteAprovacao",
+          date: s.quando,
+          horaAgendamento: s.quando.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+          legenda: result.legenda,
+          titulo: result.legenda.split("\n")[0],
+          imagem: result.urls[0] ?? null,
+          imagens: result.urls,
+          status: "pronto",
+        } : item));
         ok++;
       } catch (e) {
         console.error("[WeeklyCalendar] gerar falhou", e);
@@ -250,7 +266,7 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
     }));
 
     setLoading(false);
-    if (ok > 0) toast.success(`${ok} publicações geradas e agendadas.`);
+    if (ok > 0) toast.success(`${ok} publicações geradas para revisão. Ainda não estão agendadas.`);
     if (fail > 0) toast.error(`${fail} falharam — tente novamente.`);
     onCreated();
   };
@@ -263,6 +279,20 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
     data.setHours(h || 10, m || 0, 0, 0);
     let uid: string;
     try { uid = await getAuthedUserId(); } catch (e) { return toast.error(e instanceof Error ? e.message : "Sessão expirada"); }
+    if (p.postId) {
+      const { error } = await supabase.from("posts").update({
+        legenda: p.legenda,
+        legenda_instagram: p.legenda,
+        data_agendamento: agendar ? data.toISOString() : null,
+        status: agendar ? "Agendado" : "Rascunho",
+      }).eq("id", p.postId).select("id").single();
+      if (error) return toast.error(error.message);
+      setPosts((items) => items.map((item, index) => index === i ? { ...item, reviewStatus: agendar ? "Agendado" : "Rascunho" } : item));
+      toast.success(agendar ? "Post agendado." : "Rascunho atualizado.");
+      onCreated();
+      setOpenIdx(null);
+      return;
+    }
     const { error } = await supabase.from("posts").insert({
       user_id: uid,
       tipo_post: p.formato === "Carrossel" ? "Carrossel" : "Post Único",
@@ -438,6 +468,10 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
                           </p>
                         </Card>
                       </button>
+                      {p.postId && <div className="mt-2"><PostReviewActions id={p.postId} status={p.reviewStatus} disabled={loading} onChange={(status) => {
+                        setPosts((items) => items.map((item, index) => index === globalIdx ? { ...item, reviewStatus: status } : item));
+                        onCreated();
+                      }} /></div>}
                       
                       {p.status === "pronto" && (
                         <button
@@ -487,6 +521,10 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
                   setPosts((arr: any) => arr.map((x: any, j: number) => (j === openIdx ? { ...x, mensagemDirect: v } : x)))
                 }
               />
+              {ativo.postId && <PostReviewActions id={ativo.postId} status={ativo.reviewStatus} onChange={(status) => {
+                setPosts((items) => items.map((item, index) => index === openIdx ? { ...item, reviewStatus: status } : item));
+                onCreated();
+              }} />}
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => salvarDia(openIdx, false)}>
                   Salvar Rascunho

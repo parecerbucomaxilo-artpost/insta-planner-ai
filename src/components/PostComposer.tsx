@@ -1,4 +1,5 @@
 import { Posts7Dias } from "@/components/Posts7Dias";
+import { PostReviewActions } from "@/components/PostReviewActions";
 import { startGenerationProgress } from "@/lib/generation-progress";
 import { useState, useCallback, useRef, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -874,6 +875,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
               </div>
             );
           })()}
+          {preview && <PostReviewActions key={preview.id} id={preview.id} disabled={discarding || approving !== null} onChange={() => { setPreview(null); onCreated(); }} />}
           <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
             <Button
               variant="destructive"

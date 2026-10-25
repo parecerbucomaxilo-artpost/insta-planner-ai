@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import type { PostRow } from "@/lib/posts-types";
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 import { LogoPreviewDialog } from "@/components/LogoPreviewDialog";
+import { PostReviewActions } from "@/components/PostReviewActions";
 
 const statusColor: Record<string, string> = {
   Rascunho: "bg-[var(--status-draft)]",
@@ -19,10 +20,14 @@ const statusColor: Record<string, string> = {
   EnviadoMake: "bg-[var(--status-sent)]",
   Publicado: "bg-[var(--status-published)]",
   Erro: "bg-[var(--status-error)]",
+  PendenteAprovacao: "bg-[var(--status-draft)]",
+  Arquivado: "bg-[var(--status-error)]",
 };
 
 const statusLabel: Record<string, string> = {
   EnviadoMake: "Pendente Meta",
+  PendenteAprovacao: "Aguardando revisão",
+  Arquivado: "Negado / arquivado",
 };
 
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
@@ -282,6 +287,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                 </p>
               )}
 
+              <PostReviewActions id={p.id} status={p.status} disabled={isPublishing || savingEdit} onChange={() => onChange()} />
               <div className="flex items-center gap-2 pt-1">
                 <Button
                   size="sm"

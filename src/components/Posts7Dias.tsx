@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { getWeekTopics } from "@/lib/ai-post.functions";
 import { montarSemana, emParalelo, type ItemSemana } from "@/lib/week-plan";
 import { cn } from "@/lib/utils";
+import { PostReviewActions } from "@/components/PostReviewActions";
 
 export type FormatoSemana = "Post Único" | "Carrossel" | "Story";
 export type ResultadoPost = { id: string; urls: string[]; legenda: string };
@@ -116,19 +117,22 @@ export function Posts7Dias(props: {
                 <div className="flex items-center gap-2">
                   <span className="font-semibold w-28 shrink-0">{item.diaSemana} {item.dataLabel}</span>
                   <Input value={item.tema} disabled={busy || st?.status === "ok"} className="h-8 text-xs"
-                    onChange={(e) => setPlano((p) => p!.map((x, i) => (i === idx ? { ...x, tema: e.target.value } : x)))} />
+                    onChange={(e) => setPlano((p) => p?.map((x, i) => (i === idx ? { ...x, tema: e.target.value } : x)) ?? null)} />
                   {st?.status === "gerando" && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
                   {st?.status === "ok" && <Check className="h-4 w-4 text-primary shrink-0" />}
                   {st?.status === "erro" && <X className="h-4 w-4 text-destructive shrink-0" />}
                 </div>
                 {st?.status === "erro" && <p className="text-destructive">{st.erro}</p>}
                 {st?.res && (
+                  <>
                   <div className="flex gap-2">
                     <div className="flex gap-1 shrink-0">
                       {st.res.urls.slice(0, 5).map((u) => <img key={u} src={u} alt={`Imagem do post de ${item.diaSemana}`} className="h-16 w-12 object-cover rounded" />)}
                     </div>
                     <p className="text-muted-foreground line-clamp-3 whitespace-pre-line">{st.res.legenda}</p>
                   </div>
+                  <PostReviewActions key={st.res.id} id={st.res.id} disabled={busy} />
+                  </>
                 )}
               </li>
             );

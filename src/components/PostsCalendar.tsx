@@ -6,6 +6,7 @@ import { Film } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { PostRow } from "@/lib/posts-types";
+import { PostReviewActions } from "@/components/PostReviewActions";
 
 const statusColor: Record<string, string> = {
   Rascunho: "bg-[var(--status-draft)]",
@@ -13,13 +14,17 @@ const statusColor: Record<string, string> = {
   EnviadoMake: "bg-[var(--status-sent)]",
   Publicado: "bg-[var(--status-published)]",
   Erro: "bg-[var(--status-error)]",
+  PendenteAprovacao: "bg-[var(--status-draft)]",
+  Arquivado: "bg-[var(--status-error)]",
 };
 
 const statusLabel: Record<string, string> = {
   EnviadoMake: "Pendente Meta",
+  PendenteAprovacao: "Aguardando revisão",
+  Arquivado: "Negado / arquivado",
 };
 
-export function PostsCalendar({ posts }: { posts: PostRow[] }) {
+export function PostsCalendar({ posts, onChange }: { posts: PostRow[]; onChange?: () => void }) {
   const [selected, setSelected] = useState<Date | undefined>(new Date());
 
   const postsByDay = useMemo(() => {
@@ -122,6 +127,7 @@ export function PostsCalendar({ posts }: { posts: PostRow[] }) {
                     <p className="text-xs text-muted-foreground mt-1">
                       {p.data_agendamento && format(new Date(p.data_agendamento), "HH:mm")}
                     </p>
+                    <div className="mt-2"><PostReviewActions id={p.id} status={p.status} onChange={() => onChange?.()} /></div>
                   </div>
                 </li>
               );
