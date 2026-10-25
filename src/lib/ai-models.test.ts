@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { normalizeTextModel, normalizeImageModel, DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "./ai-models";
+import {
+  normalizeTextModel,
+  normalizeImageModel,
+  DEFAULT_TEXT_MODEL,
+  DEFAULT_IMAGE_MODEL,
+  MODELOS_IA,
+  MODELOS_IMAGEM,
+} from "./ai-models";
 
 describe("catálogo de modelos", () => {
   it("padrão de texto e imagem é a opção grátis", () => {
@@ -7,13 +14,20 @@ describe("catálogo de modelos", () => {
     expect(DEFAULT_IMAGE_MODEL).toBe("auto/gratis");
   });
   it("modelo escolhido válido é respeitado", () => {
-    expect(normalizeTextModel("openai/gpt-5.5")).toBe("openai/gpt-5.5");
-    expect(normalizeImageModel("openai/gpt-image-2")).toBe("openai/gpt-image-2");
+    expect(normalizeTextModel("groq/openai/gpt-oss-120b")).toBe("groq/openai/gpt-oss-120b");
+    expect(normalizeImageModel("pollinations/zimage")).toBe("pollinations/zimage");
     expect(normalizeTextModel("local/sem-custo")).toBe("local/sem-custo");
   });
   it("modelos Pollinations que não existem mais são trocados", () => {
     expect(normalizeImageModel("pollinations/flux-realism")).toBe("pollinations/flux");
     expect(normalizeImageModel("pollinations/turbo")).toBe("pollinations/zimage");
+  });
+  it("modelos pagos antigos não são mais aceitos e viram o padrão grátis", () => {
+    expect(normalizeTextModel("openai/gpt-5.5")).toBe("auto/gratis");
+    expect(normalizeImageModel("openai/gpt-image-2")).toBe("auto/gratis");
+  });
+  it("catálogo não contém modelos pagos", () => {
+    for (const m of [...MODELOS_IA, ...MODELOS_IMAGEM]) expect(m.nivel).not.toBe("pago");
   });
   it("id desconhecido vira o padrão grátis", () => {
     expect(normalizeTextModel("xyz/inexistente")).toBe("auto/gratis");

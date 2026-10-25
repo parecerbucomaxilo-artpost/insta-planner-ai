@@ -1663,7 +1663,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         // Falha definitiva: salva o rascunho com fundo liso da marca, mas AVISA o usuário.
         console.warn("[ai-post] imagem IA falhou → fundo liso (com aviso):", message.slice(0, 200));
         const motivo = /FREE_LIMIT|Free limit/i.test(message)
-          ? "o limite gratuito do Pollinations sem chave (1 imagem a cada 45 s) foi atingido — adicione POLLINATIONS_API_KEY ou escolha um modelo pago"
+          ? "o limite gratuito do Pollinations sem chave (1 imagem a cada 45 s) foi atingido — adicione POLLINATIONS_API_KEY ou tente de novo em alguns minutos"
           : message.slice(0, 160);
         const aviso = `Imagem substituída por fundo liso da marca (sem IA): ${motivo}.`;
         if (!avisos.includes(aviso)) avisos.push(aviso);
