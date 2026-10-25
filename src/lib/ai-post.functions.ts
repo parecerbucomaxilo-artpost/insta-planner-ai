@@ -1687,8 +1687,15 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           nivel,
           audiencia: data.audiencia,
         });
-    const legendaPromise = (async () => {
-      if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") {
+    const usaEscritorLocal = !process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo";
+    // O escritor local (sem IA) só tem conteúdo próprio para temas com guia clínico específico.
+    // Para os demais ele produziria o MESMO corpo genérico em todo post — isso não é inédito.
+    if (usaEscritorLocal && !isDiverso && !isEstudantes && isGenericGuidance(topicGuidance(tema))) {
+      throw new Error(`O escritor local não tem texto próprio para "${tema.slice(0, 70)}" e repetiria o mesmo conteúdo de outros posts. Escolha um gerador de texto (GPT/Gemini) ou outro tema. Nada foi salvo.`);
+    }
+    const objetivoLinha = data.objetivo ? `\nObjetivo editorial deste post: ${data.objetivo}` : "";
+    const escreverLegenda = async (novaAbordagem = ""): Promise<string> => {
+      if (usaEscritorLocal) {
         if (isChico && isDiverso && formato === "Carrossel") throw new Error("Finalize os textos individuais com um modelo de texto antes de gerar este carrossel editorial.");
         return localCaption();
       }
@@ -1697,7 +1704,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         try {
           const { generateTextAI } = await import("@/lib/ai-gateway.server");
           const system = diverseCaptionSystem(data.rede, formato);
-          const prompt = `${isChico && formato === "Carrossel" ? `Inclua ${data.rede === "estilo-x" ? 3 : 5} blocos distintos completos marcados Slide 1, Slide 2 etc. Cada bloco contém título e texto final específico.\n` : ""}Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
+          const prompt = `${isChico && formato === "Carrossel" ? `Inclua ${data.rede === "estilo-x" ? 3 : 5} blocos distintos completos marcados Slide 1, Slide 2 etc. Cada bloco contém título e texto final específico.\n` : ""}Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}${objetivoLinha}${novaAbordagem}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
           const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : formato === "Carrossel" ? 1100 : 800 });
           return txt || localCaption();
         } catch (err) {
@@ -1721,14 +1728,15 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         const roteiroCarrossel = formato === "Carrossel"
           ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter ${data.rede === "estilo-x" ? 3 : 5} blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
           : "";
-        const prompt = `${contrato}\n\nTema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${roteiroCarrossel}\n\nTAREFA: escreva a legenda final pronta para publicação. Ela só será aceita se mencionar explicitamente O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA. Não termine antes da conduta/tratamento.\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
+        const prompt = `${contrato}\n\nTema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${objetivoLinha}${roteiroCarrossel}${novaAbordagem}\n\nTAREFA: escreva a legenda final pronta para publicação. Ela só será aceita se mencionar explicitamente O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA. Não termine antes da conduta/tratamento.\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
         const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1700 : formato === "Carrossel" ? 1200 : 950 });
         return txt || localCaption();
       } catch (err) {
         console.warn("[ai-post] legenda caiu para local:", err instanceof Error ? err.message : err);
         return localCaption();
       }
-    })();
+    };
+    const legendaPromise = escreverLegenda();
 
     // Tamanho ideal por plataforma (gateway suporta 1024x1024, 1024x1536, 1536x1024):
     // - IG Feed/Carrossel: vertical 4:5  → 1024x1536
