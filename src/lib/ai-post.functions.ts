@@ -1659,21 +1659,26 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         return { id: jaExiste.id, url: u, legenda: jaExiste.legenda, slides: urls.length, urls, slideLegendas: [] as string[], reaproveitado: true };
       }
     }
+    // Escritor local só escreve texto próprio para temas com guia clínico específico.
+    const escritorLocalSemGuia = (t: string) =>
+      (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo")
+      && data.especialidade !== "Temas Diversos" && data.audiencia !== "estudantes-graduacao"
+      && isGenericGuidance(topicGuidance(t));
     {
       const conflito = temaDup(tema);
-      if (conflito) {
+      if (conflito || (!(data.tema ?? "").trim() && escritorLocalSemGuia(tema))) {
         if (!(data.tema ?? "").trim()) {
           // Tema automático: pede nova ideia (assunto diferente), no máximo 40 candidatos (sem custo de IA).
           let novo: string | null = null;
           for (let i = 0; i < 40 && !novo; i++) {
             const cand = chooseLocalTema(data.audiencia, historicoTemas, `${data.rede}-${formato}-${i}-${Date.now()}`, data.especialidade);
-            if (!temaDup(cand)) novo = cand;
+            if (!temaDup(cand) && !escritorLocalSemGuia(cand)) novo = cand;
             else historicoTemas.push(cand);
           }
           if (!novo) throw new Error("Não foi possível garantir um tema inédito. Informe um tema manualmente.");
           tema = novo;
         } else {
-          throw new Error(`${mensagemConflito(conflito)} Nada foi salvo — edite o tema deste horário.`);
+          throw new Error(`${mensagemConflito(conflito!)} Nada foi salvo — edite o tema deste horário.`);
         }
       }
     }
@@ -2367,6 +2372,8 @@ export const getWeekTopics = createServerFn({ method: "POST" })
       quantidade: z.number().int().min(1).max(28).default(7),
       // Início (ISO) da semana planejada — assuntos usados perto dessas datas ficam bloqueados.
       inicioSemana: z.string().datetime().optional(),
+      // Planner usando o escritor local (sem IA): só temas com roteiro clínico próprio.
+      escritorLocal: z.boolean().optional().default(false),
     }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -2375,6 +2382,10 @@ export const getWeekTopics = createServerFn({ method: "POST" })
     const lista = guia
       ? [...angulos, ...ANGULOS_EDITORIAIS].map((a) => `${guia}: ${a}`)
       : [...(data.especialidade === "Temas Diversos" ? TEMAS_DIVERSOS : TEMAS_GERAIS)];
+    if (!guia && data.escritorLocal && data.especialidade !== "Temas Diversos") {
+      const comGuia = lista.filter((t) => !isGenericGuidance(topicGuidance(t)));
+      lista.splice(0, lista.length, ...comGuia);
+    }
     if (!guia) {
       for (let i = lista.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));

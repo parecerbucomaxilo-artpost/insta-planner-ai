@@ -37,6 +37,8 @@ export function Posts7Dias(props: {
   /** Temas próprios do planner (ex.: tratamentos). Se ausente, usa o banco de temas do app. */
   temasFixos?: string[];
   formatos?: FormatoSemana[];
+  /** O planner está usando o escritor local (sem IA): planejar só temas que ele escreve com conteúdo próprio. */
+  escritorLocal?: boolean;
 }) {
   const fetchTopics = useServerFn(getWeekTopics);
   const formatos = props.formatos ?? ["Post Único", "Carrossel", "Story"];
@@ -59,7 +61,7 @@ export function Posts7Dias(props: {
       let temas: string[];
       if (props.temasFixos?.length) temas = props.temasFixos;
       else {
-        const r = await fetchTopics({ data: { especialidade: props.especialidade ?? "Ambas", temaGuia: props.temaGuia ?? "", quantidade: qtd, inicioSemana: proximaSegunda().toISOString() } });
+        const r = await fetchTopics({ data: { especialidade: props.especialidade ?? "Ambas", temaGuia: props.temaGuia ?? "", quantidade: qtd, inicioSemana: proximaSegunda().toISOString(), escritorLocal: Boolean(props.escritorLocal) } });
         temas = r.temas;
         if (r.aviso) toast.warning(r.aviso);
       }
