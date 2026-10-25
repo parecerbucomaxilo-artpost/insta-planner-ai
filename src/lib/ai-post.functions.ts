@@ -1680,9 +1680,12 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         // para NÃO derrubar o post inteiro (usuário fica sem rascunho salvo).
         const nonRetryable400 = /400|string too long|invalid.?prompt|safety|moderation|content_policy/i.test(message);
         if (nonRetryable400) {
-          console.warn("[ai-post] imagem 400/safety → fallback local para não perder rascunho:", message.slice(0, 200));
-          const { generateImageBase64: gen } = await import("@/lib/ai-gateway.server");
-          return gen({ prompt: safePrompt.slice(0, 4000), size, model: "local/sem-custo" });
+          // Corrige o prompt (versão compacta, tema primeiro) e tenta UMA vez; sem fundo genérico silencioso.
+          if (attempt === 1 && safePrompt.length > 6000) {
+            console.warn("[ai-post] imagem 400 → tentando prompt compacto:", message.slice(0, 200));
+            return generateImageWithRetry(safePrompt.slice(0, 6000), 4);
+          }
+          throw new Error(`Imagem recusada pelo gerador: ${message.slice(0, 200)}`);
         }
         if (!retryable || attempt >= 4) throw error;
         await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
@@ -1738,7 +1741,18 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       audiencia: data.audiencia,
       especialidade: data.especialidade,
     });
-    const slideNarratives = formato === "Carrossel" && !isDiverso ? buildSlideNarratives(tema, data.audiencia) : [];
+    const slideNarrativesBase = formato === "Carrossel" && !isDiverso ? buildSlideNarratives(tema, data.audiencia) : [];
+    // Coerência: cada imagem segue o texto DEFINITIVO do seu slide na legenda (blocos "Slide N").
+    const extractSlideBlocks = (txt: string, n: number): string[] => {
+      const out: string[] = [];
+      for (let i = 1; i <= n; i++) {
+        const m = (txt || "").match(new RegExp(`Slide\\s*${i}\\s*[:\\-–—.)]?\\s*([\\s\\S]*?)(?=\\n?\\s*\\**Slide\\s*${i + 1}\\b|$)`, "i"));
+        out.push(m ? m[1].replace(/\*+/g, "").trim().slice(0, 400) : "");
+      }
+      return out;
+    };
+    const blocosLegenda = slideNarrativesBase.length ? extractSlideBlocks(legendaBaseResolvida, slideNarrativesBase.length) : [];
+    const slideNarratives = slideNarrativesBase.map((base, i) => (blocosLegenda[i] && blocosLegenda[i].length > 20 ? blocosLegenda[i] : base));
     const legendaResolvida = formato === "Carrossel" && !isDiverso
       ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia)
       : legendaBaseResolvida;
@@ -1769,7 +1783,11 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
         const briefSys = `Você é diretor de arte médico. Use o CONTRATO CLÍNICO como fonte única de verdade e devolva UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente tema + conduta. Sem metáforas vagas, sem texto na imagem, sem cor nomeada, sem pessoa real. Se a legenda estiver genérica, siga o contrato.`;
         const briefPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
-        const cenaIA = (await generateTextAI({ system: briefSys, prompt: briefPrompt, model: data.modelo, maxTokens: 140 }) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
+        // Cena única e cenas por slide são independentes → rodam em PARALELO.
+        const cenaPromise = formato === "Carrossel"
+          ? Promise.resolve("")
+          : generateTextAI({ system: briefSys, prompt: briefPrompt, model: data.modelo, maxTokens: 140 }).catch(() => "");
+        const cenaIA = ((await cenaPromise) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
         const cenaIANorm = normalizeTema(cenaIA);
         const palavrasTema = normalizeTema(tema).split(" ").filter((p) => p.length > 4);
         const palavrasContrato = normalizeTema(`${guiaTema.oQue} ${guiaTema.conduta}`).split(" ").filter((p) => p.length > 5);
@@ -1796,7 +1814,13 @@ export const generateSinglePost = createServerFn({ method: "POST" })
               const arr = JSON.parse(jsonMatch[0]);
                 if (Array.isArray(arr) && arr.length >= cenasPorSlide.length) {
                   const parsed = arr.map((s) => String(s || "").trim()).filter(Boolean);
-                  cenasPorSlide = cenasPorSlide.map((fallback, i) => parsed[i] || fallback);
+                  // Validação de coerência: cena precisa citar o tema/contrato ou o texto do slide.
+                  const ancoraSlide = (cena: string, i: number) => {
+                    const n = normalizeTema(cena);
+                    const pal = normalizeTema(`${tema} ${guiaTema.oQue} ${guiaTema.conduta} ${slideNarratives[i] || ""}`).split(" ").filter((p) => p.length > 5);
+                    return pal.some((p) => n.includes(p));
+                  };
+                  cenasPorSlide = cenasPorSlide.map((fallback, i) => (parsed[i] && ancoraSlide(parsed[i], i) ? parsed[i] : fallback));
                 }
             }
           } catch (err) {
@@ -1874,7 +1898,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           idx,
         );
         let lastErr: unknown;
-        for (let tentativa = 1; tentativa <= 3; tentativa++) {
+        for (let tentativa = 1; tentativa <= 2; tentativa++) {
           try {
             return await genAndUpload(prompt);
           } catch (err) {
@@ -1883,7 +1907,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
             await new Promise((r) => setTimeout(r, 1500 * tentativa));
           }
         }
-        throw new Error(`Slide ${idx + 1} do carrossel falhou após 3 tentativas: ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`);
+        throw new Error(`Slide ${idx + 1} do carrossel falhou após 2 tentativas: ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`);
       };
       const uploads = await Promise.all(slidesSpec.map((s, idx) => genSlideResilient(s, idx)));
       if (uploads.length !== slidesSpec.length || uploads.some((u) => !u?.publicUrl)) {
