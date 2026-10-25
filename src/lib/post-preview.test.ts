@@ -10,7 +10,11 @@ describe("conteúdo real da prévia", () => {
     expect(savedSlideText(caption, 2)).toBe("Cuidados com a articulação");
   });
   it("preserva a legenda da plataforma e sua ausência explícita", () => {
-    const post = { legenda: "Texto comum", legenda_instagram: "#ATM", legenda_linkedin: "" } as PostRow;
+    const post = {
+      legenda: "Texto comum",
+      legenda_instagram: "#ATM",
+      legenda_linkedin: "",
+    } as PostRow;
     expect(previewCaption(post, "instagram")).toBe("#ATM");
     expect(previewCaption(post, "linkedin")).toBe("");
     expect(previewCaption({ ...post, legenda_linkedin: null }, "linkedin")).toBe("Texto comum");
