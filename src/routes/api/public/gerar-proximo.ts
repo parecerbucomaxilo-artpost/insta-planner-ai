@@ -137,8 +137,7 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
             .not("prompt_ia", "is", null);
           const temasProibidos = Array.from(
             new Set(
-              [...(vizinhos ?? []), ...(vizinhosDepois ?? [])]
-                .concat(doDia ?? [])
+              [...(vizinhos ?? []), ...(vizinhosDepois ?? []), ...(doDia ?? [])] as Array<{ prompt_ia: string | null }>
                 .map((p: any) => (p.prompt_ia || "").trim())
                 .filter(Boolean),
             ),
