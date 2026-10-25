@@ -1622,8 +1622,6 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const historicoTemas: string[] = [...(data.temasProibidos ?? [])];
     try {
       const agora = Date.now();
-      const desdeDedup = new Date(agora - 60 * 24 * 60 * 60 * 1000).toISOString();
-      const desdeAgenda = new Date(agora - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data: recentes, error: recErr } = await supabaseAdmin
         .from("posts")
         .select("prompt_ia, legenda, created_at, data_agendamento, status")
