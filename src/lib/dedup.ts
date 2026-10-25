@@ -214,7 +214,7 @@ export const ASSUNTOS_RAIZ: Array<{ id: string; re: RegExp }> = [
   { id: "ortognatica-deformidades", re: /\b(ortognatic|prognatismo|retrognatismo|mordida|deformidade|distracao osteogenica|assimetria|harmonia facial)/ },
   { id: "apneia-ronco", re: /\b(apneia|ronco|avanco maxilomandibular)/ },
   { id: "infeccao-odontogenica", re: /\b(infecc|ludwig|osteomielite|abscesso)/ },
-  { id: "trauma-facial", re: /\b(trauma facia|traumas facia|fratura|zigoma\\b|orbita)/ },
+  { id: "trauma-facial", re: /\b(trauma facia|traumas facia|fratura|zigoma\b|orbita)/ },
   { id: "trauma-dental", re: /\b(avulsao|reimplante|dentoalveolar)/ },
   { id: "seio-maxilar", re: /\b(seio maxilar|sinusite|bucossinusal)/ },
   { id: "implantes-enxertos", re: /\b(implante|enxerto|all on 4|pre protetica|perda ossea|cirurgia guiada)/ },

@@ -24,6 +24,8 @@ describe("dedup semântico — assunto-raiz", () => {
   it("títulos diferentes sobre o mesmo assunto caem no mesmo assunto-raiz", () => {
     expect(new Set(ORTO.map(assuntoPrincipal))).toEqual(new Set(["ortognatica-deformidades"]));
     expect(new Set(MASSETER.map(assuntoPrincipal))).toEqual(new Set(["bruxismo-masseter"]));
+    expect(assuntoPrincipal("Implante zigomático: maxila reabsorvida")).toBe("implantes-enxertos");
+    expect(assuntoPrincipal("Fratura de zigoma: afundamento facial")).toBe("trauma-facial");
     expect(assuntoPrincipal("Odontoma: o tumor mais comum dos maxilares")).not.toBe(
       assuntoPrincipal("Sialolitíase: pedra na glândula salivar"),
     );
