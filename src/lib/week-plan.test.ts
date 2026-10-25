@@ -94,9 +94,9 @@ describe("Fuso do agendador automático", () => {
     expect(horarioNoFuso(2026, 9, 26, "21:00").toISOString()).toBe("2026-10-27T00:00:00.000Z");
   });
 
-  it("feed do Instagram (seg-sáb) usa 09:00, 14:00, 18:00 e 21:00 no fuso do projeto", () => {
+  it("Instagram (seg-sáb) usa 09:00, 14:00, 18:00 e 21:00 no fuso do projeto", () => {
     const slots = buildScheduleSlots(new Date("2026-10-26T03:30:00Z"), 1) // segunda 00:30 em SP
-      .filter((s) => s.rede === "instagram" && s.tipo === "feed");
+      .filter((s) => s.rede === "instagram");
     expect(slots.map((s) => s.quando.toISOString())).toEqual([
       "2026-10-26T12:00:00.000Z",
       "2026-10-26T17:00:00.000Z",
