@@ -43,7 +43,10 @@ describe("carregamento real da prévia", () => {
     id: "p1",
     tipo_post: "Carrossel",
     legenda: "Slide 1: ATM\nSlide 2: Dor\nSlide 3: Conduta",
-    imagens_carrossel: ["https://x.supabase.co/storage/v1/object/public/post-images/p1/slide-1.jpg", "https://x.supabase.co/storage/v1/object/public/post-images/p1/slide-2.jpg"],
+    imagens_carrossel: [
+      "https://x.supabase.co/storage/v1/object/public/post-images/p1/slide-1.jpg",
+      "https://x.supabase.co/storage/v1/object/public/post-images/p1/slide-2.jpg",
+    ],
     url_imagem: null,
     status: "PendenteAprovacao",
   } as unknown as PostRow;
@@ -66,7 +69,10 @@ describe("carregamento real da prévia", () => {
   it("erro de permissão/sessão vira mensagem clara (não abre prévia vazia)", async () => {
     await expect(
       loadPostPreview("p1", {
-        fetchPost: async () => ({ data: null, error: { message: "JWT expired", code: "PGRST301" } }),
+        fetchPost: async () => ({
+          data: null,
+          error: { message: "JWT expired", code: "PGRST301" },
+        }),
         signOne: async (u) => u,
       }),
     ).rejects.toThrow(/sessão expirou/);
@@ -74,13 +80,20 @@ describe("carregamento real da prévia", () => {
 
   it("post inexistente ou sem acesso gera erro explícito", async () => {
     await expect(
-      loadPostPreview("p404", { fetchPost: async () => ({ data: null, error: null }), signOne: async (u) => u }),
+      loadPostPreview("p404", {
+        fetchPost: async () => ({ data: null, error: null }),
+        signOne: async (u) => u,
+      }),
     ).rejects.toBeInstanceOf(PreviewLoadError);
   });
 
   it("mostra data/horário no fuso de Brasília, não no do navegador", () => {
-    expect(formatPreviewDate("2026-11-01T12:00:00.000Z")).toBe("01/11/2026 09:00 (horário de Brasília)");
-    expect(formatPreviewDate("2026-10-27T00:00:00.000Z")).toBe("26/10/2026 21:00 (horário de Brasília)");
+    expect(formatPreviewDate("2026-11-01T12:00:00.000Z")).toBe(
+      "01/11/2026 09:00 (horário de Brasília)",
+    );
+    expect(formatPreviewDate("2026-10-27T00:00:00.000Z")).toBe(
+      "26/10/2026 21:00 (horário de Brasília)",
+    );
     expect(formatPreviewDate(null)).toBe("Sem data/horário");
   });
 });

@@ -1,5 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, X, Eye, Loader2, ChevronLeft, ChevronRight, Pencil, Save, AlertTriangle, RefreshCw } from "lucide-react";
+import {
+  Check,
+  X,
+  Eye,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Save,
+  AlertTriangle,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -81,7 +92,11 @@ export function PostReviewActions({
   const carregarPrevia = async () => {
     const data = await loadPostPreview(id, {
       fetchPost: async (postId) => {
-        const { data, error } = await supabase.from("posts").select("*").eq("id", postId).maybeSingle();
+        const { data, error } = await supabase
+          .from("posts")
+          .select("*")
+          .eq("id", postId)
+          .maybeSingle();
         return { data: data as unknown as PostRow | null, error };
       },
       signOne: signPostMediaStrict,
@@ -280,7 +295,8 @@ export function PostReviewActions({
             <DialogDescription>
               {!post && (loadError ? "Erro ao carregar" : "Carregando dados reais do post…")}
               {post && `${post.tipo_post} · ${post.formato_midia}`}
-              {post && ` · ${platforms.map((p) => (p === "instagram" ? "Instagram" : "LinkedIn")).join(" / ") || "Plataforma não definida"}`}
+              {post &&
+                ` · ${platforms.map((p) => (p === "instagram" ? "Instagram" : "LinkedIn")).join(" / ") || "Plataforma não definida"}`}
               {post && ` · ${formatPreviewDate(post.data_agendamento)}`}
             </DialogDescription>
           </DialogHeader>
@@ -373,12 +389,18 @@ export function PostReviewActions({
             </section>
           )}
           {busy === "visualizar" && !post && (
-            <div role="status" className="flex items-center gap-2 py-10 justify-center text-muted-foreground">
+            <div
+              role="status"
+              className="flex items-center gap-2 py-10 justify-center text-muted-foreground"
+            >
               <Loader2 className="h-5 w-5 animate-spin" /> Carregando imagem e textos salvos…
             </div>
           )}
           {loadError && (
-            <div role="alert" className="space-y-3 rounded-md border border-destructive/40 bg-destructive/5 p-4">
+            <div
+              role="alert"
+              className="space-y-3 rounded-md border border-destructive/40 bg-destructive/5 p-4"
+            >
               <p className="flex items-start gap-2 text-sm text-destructive">
                 <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                 {loadError}
@@ -395,97 +417,104 @@ export function PostReviewActions({
                 : `Imagem não carregada no(s) slide(s) ${preview!.mediaFalhas.map((i) => i + 1).join(", ")}.`}
             </p>
           )}
-          {post && <div className="space-y-4">
-            {platforms.length > 1 && (
-              <div className="flex gap-2" aria-label="Plataforma da prévia">
-                {platforms.map((p) => (
-                  <Button
-                    key={p}
-                    variant={platform === p ? "default" : "outline"}
-                    aria-pressed={platform === p}
-                    onClick={() => setPlatform(p)}
-                  >
-                    {p === "instagram" ? "Instagram" : "LinkedIn"}
-                  </Button>
-                ))}
-              </div>
-            )}
-            <div className="bg-muted flex justify-center min-h-24">
-              {slideFalhou ? (
-                <p role="alert" className="p-4 text-destructive">
-                  A imagem deste slide existe, mas não pôde ser carregada (sem permissão ou arquivo removido).
-                </p>
-              ) : slideAusente ? (
-                <p role="alert" className="p-4 text-destructive">
-                  Este slide não tem imagem salva.
-                </p>
-              ) : mediaError ? (
-                <p role="alert" className="p-4 text-destructive">
-                  Não foi possível exibir a mídia. Use "Tentar novamente" abaixo.
-                  <Button variant="link" className="px-1" onClick={visualizar}>Tentar novamente</Button>
-                </p>
-              ) : images[slide] ? (
-                post?.formato_midia === "Vídeo/Reels" ? (
-                  <video
-                    src={images[slide]}
-                    controls
-                    playsInline
-                    className="w-full max-h-[55vh] object-contain"
-                    onError={() => setMediaError(true)}
-                  />
-                ) : (
-                  <img
-                    src={images[slide]}
-                    alt={`Imagem ${slide + 1} de ${images.length}`}
-                    className="w-full max-h-[55vh] object-contain"
-                    onError={() => setMediaError(true)}
-                  />
-                )
-              ) : (
-                <p role="alert" className="p-4 text-destructive">Este post não tem imagem salva.</p>
+          {post && (
+            <div className="space-y-4">
+              {platforms.length > 1 && (
+                <div className="flex gap-2" aria-label="Plataforma da prévia">
+                  {platforms.map((p) => (
+                    <Button
+                      key={p}
+                      variant={platform === p ? "default" : "outline"}
+                      aria-pressed={platform === p}
+                      onClick={() => setPlatform(p)}
+                    >
+                      {p === "instagram" ? "Instagram" : "LinkedIn"}
+                    </Button>
+                  ))}
+                </div>
               )}
-            </div>
-            {images.length > 1 && (
-              <div className="flex justify-center items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Slide anterior"
-                  onClick={() => setSlide((i) => (i - 1 + images.length) % images.length)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span role="status">
-                  {slide + 1} / {images.length}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Próximo slide"
-                  onClick={() => setSlide((i) => (i + 1) % images.length)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+              <div className="bg-muted flex justify-center min-h-24">
+                {slideFalhou ? (
+                  <p role="alert" className="p-4 text-destructive">
+                    A imagem deste slide existe, mas não pôde ser carregada (sem permissão ou
+                    arquivo removido).
+                  </p>
+                ) : slideAusente ? (
+                  <p role="alert" className="p-4 text-destructive">
+                    Este slide não tem imagem salva.
+                  </p>
+                ) : mediaError ? (
+                  <p role="alert" className="p-4 text-destructive">
+                    Não foi possível exibir a mídia. Use "Tentar novamente" abaixo.
+                    <Button variant="link" className="px-1" onClick={visualizar}>
+                      Tentar novamente
+                    </Button>
+                  </p>
+                ) : images[slide] ? (
+                  post?.formato_midia === "Vídeo/Reels" ? (
+                    <video
+                      src={images[slide]}
+                      controls
+                      playsInline
+                      className="w-full max-h-[55vh] object-contain"
+                      onError={() => setMediaError(true)}
+                    />
+                  ) : (
+                    <img
+                      src={images[slide]}
+                      alt={`Imagem ${slide + 1} de ${images.length}`}
+                      className="w-full max-h-[55vh] object-contain"
+                      onError={() => setMediaError(true)}
+                    />
+                  )
+                ) : (
+                  <p role="alert" className="p-4 text-destructive">
+                    Este post não tem imagem salva.
+                  </p>
+                )}
               </div>
-            )}
-            {post?.tipo_post === "Carrossel" && (
-              <section aria-live="polite">
-                <h3 className="font-semibold">Texto do slide {slide + 1}</h3>
+              {images.length > 1 && (
+                <div className="flex justify-center items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Slide anterior"
+                    onClick={() => setSlide((i) => (i - 1 + images.length) % images.length)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span role="status">
+                    {slide + 1} / {images.length}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Próximo slide"
+                    onClick={() => setSlide((i) => (i + 1) % images.length)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              {post?.tipo_post === "Carrossel" && (
+                <section aria-live="polite">
+                  <h3 className="font-semibold">Texto do slide {slide + 1}</h3>
+                  <p className="text-sm whitespace-pre-wrap break-words">
+                    {slideText || "Texto deste slide não está identificado na legenda salva."}
+                  </p>
+                </section>
+              )}
+              <section>
+                <h3 className="font-semibold">
+                  Legenda e hashtags
+                  {platform ? ` — ${platform === "instagram" ? "Instagram" : "LinkedIn"}` : ""}
+                </h3>
                 <p className="text-sm whitespace-pre-wrap break-words">
-                  {slideText || "Texto deste slide não está identificado na legenda salva."}
+                  {caption || "Sem legenda disponível."}
                 </p>
               </section>
-            )}
-            <section>
-              <h3 className="font-semibold">
-                Legenda e hashtags
-                {platform ? ` — ${platform === "instagram" ? "Instagram" : "LinkedIn"}` : ""}
-              </h3>
-              <p className="text-sm whitespace-pre-wrap break-words">
-                {caption || "Sem legenda disponível."}
-              </p>
-            </section>
-          </div>}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

@@ -52,36 +52,63 @@ describe("dedup semântico — assunto-raiz", () => {
     );
     expect(acharConflito({ tema: ORTO[2], quando: "2026-11-10T12:00:00.000Z" }, hist)).toBeNull();
     expect(
-      acharConflito({ tema: ORTO[2], quando: "2026-10-30T12:00:00.000Z" }, [{ ...hist[0], status: "Arquivado" }]),
+      acharConflito({ tema: ORTO[2], quando: "2026-10-30T12:00:00.000Z" }, [
+        { ...hist[0], status: "Arquivado" },
+      ]),
     ).toBeNull();
   });
 
   it("mesmo assunto + mesmo ângulo é repetição em qualquer data recente", () => {
     const hist = [{ tema: "Siso incluso — mito ou verdade", quando: "2026-09-01T12:00:00.000Z" }];
     expect(
-      acharConflito({ tema: "Coronectomia do terceiro molar — mito ou verdade", quando: "2026-10-30T12:00:00.000Z" }, hist)
-        ?.motivo,
+      acharConflito(
+        {
+          tema: "Coronectomia do terceiro molar — mito ou verdade",
+          quando: "2026-10-30T12:00:00.000Z",
+        },
+        hist,
+      )?.motivo,
     ).toBe("assunto-e-angulo");
   });
 
   it("detecta corpo essencialmente igual com título diferente, ignorando assinatura/CTA/hashtags", () => {
     const corpo =
       "Isso acontece porque dor, inflamação, sobrecarga muscular, posição dos dentes e alterações anatômicas podem produzir sintomas parecidos. O caminho seguro é avaliação clínica, exame de imagem quando necessário e plano individual com orientação e tratamento específico.";
-    const a = { tema: "", titulo: "Ameloblastoma exige margem", corpo: `Ameloblastoma exige margem\n\n${corpo}\n\nSaiba mais pelo link da bio.\n#cirurgia` };
-    const b = { tema: "", titulo: "Odontoma é comum", corpo: `Odontoma é comum\n\n${corpo}\n\nAtendimento em São Paulo.` };
+    const a = {
+      tema: "",
+      titulo: "Ameloblastoma exige margem",
+      corpo: `Ameloblastoma exige margem\n\n${corpo}\n\nSaiba mais pelo link da bio.\n#cirurgia`,
+    };
+    const b = {
+      tema: "",
+      titulo: "Odontoma é comum",
+      corpo: `Odontoma é comum\n\n${corpo}\n\nAtendimento em São Paulo.`,
+    };
     expect(acharConflito(a, [b])?.motivo).toBe("corpo");
   });
 
   it("textos diferentes que só compartilham assinatura e hashtags NÃO são duplicata", () => {
-    const fim = "\n\nSaiba mais pelo link da bio.\nAtendimento em São Paulo, Santa Bárbara d'Oeste e Americana.\n#drfranciscomenezes #bucomaxilofacial";
-    const a = { tema: "", titulo: "Odontoma", corpo: `O odontoma é o tumor odontogênico benigno mais frequente dos ossos maxilares, formado por tecidos dentários organizados de maneira desordenada, e costuma impedir a erupção do dente vizinho.${fim}` };
-    const b = { tema: "", titulo: "Sialolitíase", corpo: `Sentir a mandíbula inchar e doer bem na hora da refeição costuma ser sinal de sialolitíase, a formação de pequenos cálculos que obstruem o ducto da glândula salivar.${fim}` };
+    const fim =
+      "\n\nSaiba mais pelo link da bio.\nAtendimento em São Paulo, Santa Bárbara d'Oeste e Americana.\n#drfranciscomenezes #bucomaxilofacial";
+    const a = {
+      tema: "",
+      titulo: "Odontoma",
+      corpo: `O odontoma é o tumor odontogênico benigno mais frequente dos ossos maxilares, formado por tecidos dentários organizados de maneira desordenada, e costuma impedir a erupção do dente vizinho.${fim}`,
+    };
+    const b = {
+      tema: "",
+      titulo: "Sialolitíase",
+      corpo: `Sentir a mandíbula inchar e doer bem na hora da refeição costuma ser sinal de sialolitíase, a formação de pequenos cálculos que obstruem o ducto da glândula salivar.${fim}`,
+    };
     expect(corpoEditorial(a.corpo)).not.toMatch(/link da bio|#/);
     expect(acharConflito(a, [b])).toBeNull();
   });
 
   it("semana guiada pelo usuário aceita o mesmo assunto com ângulos diferentes, mas não o mesmo ângulo", () => {
-    const lote = ["ATM: visão geral", "ATM: sinais de alerta", "ATM: visão geral"].map((tema) => ({ tema, quando: null }));
+    const lote = ["ATM: visão geral", "ATM: sinais de alerta", "ATM: visão geral"].map((tema) => ({
+      tema,
+      quando: null,
+    }));
     expect(conflitosNoLote(lote, { assuntoGuiado: true })).toEqual([2]);
   });
 });
@@ -112,7 +139,9 @@ describe("3 posts por dia = 3 assuntos distintos", () => {
     expect(conflitosNoLote(plano.map((tema) => ({ tema, quando: null })))).toEqual([]);
   });
   it("não usa assuntos bloqueados pelo histórico próximo e devolve menos itens em vez de repetir", () => {
-    const plano = planDistinctTopics(BANCO, [], 50, undefined, { assuntosBloqueados: ["ortognatica-deformidades"] });
+    const plano = planDistinctTopics(BANCO, [], 50, undefined, {
+      assuntosBloqueados: ["ortognatica-deformidades"],
+    });
     expect(plano.some((t) => assuntoPrincipal(t) === "ortognatica-deformidades")).toBe(false);
     expect(plano.length).toBeLessThan(50);
     expect(new Set(plano.map(assuntoPrincipal)).size).toBe(plano.length);
@@ -122,7 +151,9 @@ describe("3 posts por dia = 3 assuntos distintos", () => {
 describe("idempotência de double-click/retry", () => {
   it("mesma operação + mesmo slot → mesma chave, independente do tema reescolhido", () => {
     const ctx = { rede: "instagram", operacaoId: "op-1", slotKey: "2026-10-26T14:00" };
-    expect(chaveIdempotencia("u", "Tema A", "Post Único", ctx)).toBe(chaveIdempotencia("u", "Tema B", "Post Único", ctx));
+    expect(chaveIdempotencia("u", "Tema A", "Post Único", ctx)).toBe(
+      chaveIdempotencia("u", "Tema B", "Post Único", ctx),
+    );
     expect(chaveIdempotencia("u", "Tema A", "Post Único", ctx)).not.toBe(
       chaveIdempotencia("u", "Tema A", "Post Único", { ...ctx, slotKey: "2026-10-26T18:00" }),
     );

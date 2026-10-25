@@ -46,7 +46,9 @@ function carousel(value: unknown): string[] {
 export function previewMedia(post: PostRow): (string | null)[] {
   if (post.tipo_post !== "Carrossel") return post.url_imagem ? [post.url_imagem] : [];
   const imgs = carousel(post.imagens_carrossel);
-  const numbers = [...(post.legenda || "").matchAll(/^\s*\**Slide\s*(\d+)\b/gim)].map((m) => Number(m[1]));
+  const numbers = [...(post.legenda || "").matchAll(/^\s*\**Slide\s*(\d+)\b/gim)].map((m) =>
+    Number(m[1]),
+  );
   const total = Math.max(imgs.length, ...numbers, 0);
   return Array.from({ length: total }, (_, i) => imgs[i] || null);
 }
@@ -73,7 +75,9 @@ export function formatPreviewDate(iso: string | null | undefined, tz = FUSO_PADR
 }
 
 export type PreviewDeps = {
-  fetchPost: (id: string) => Promise<{ data: PostRow | null; error: { message: string; code?: string } | null }>;
+  fetchPost: (
+    id: string,
+  ) => Promise<{ data: PostRow | null; error: { message: string; code?: string } | null }>;
   /** Devolve URL exibível ou null se a mídia não puder ser acessada. */
   signOne: (url: string) => Promise<string | null>;
 };
@@ -102,7 +106,9 @@ export async function loadPostPreview(id: string, deps: PreviewDeps): Promise<Pr
     );
   }
   if (res.error) {
-    const auth = /jwt|auth|permission|401|403|rls/i.test(`${res.error.code ?? ""} ${res.error.message}`);
+    const auth = /jwt|auth|permission|401|403|rls/i.test(
+      `${res.error.code ?? ""} ${res.error.message}`,
+    );
     throw new PreviewLoadError(
       auth
         ? "Sua sessão expirou ou você não tem permissão para ver este post. Entre novamente."
@@ -110,7 +116,9 @@ export async function loadPostPreview(id: string, deps: PreviewDeps): Promise<Pr
     );
   }
   if (!res.data) {
-    throw new PreviewLoadError("Post não encontrado (pode ter sido excluído) ou sem permissão de acesso.");
+    throw new PreviewLoadError(
+      "Post não encontrado (pode ter sido excluído) ou sem permissão de acesso.",
+    );
   }
   const post = res.data;
   const raw = previewMedia(post);
@@ -127,5 +135,10 @@ export async function loadPostPreview(id: string, deps: PreviewDeps): Promise<Pr
       return signed;
     }),
   );
-  return { post, media, mediaFalhas: mediaFalhas.sort((a, b) => a - b), mediaAusente: mediaAusente.sort((a, b) => a - b) };
+  return {
+    post,
+    media,
+    mediaFalhas: mediaFalhas.sort((a, b) => a - b),
+    mediaAusente: mediaAusente.sort((a, b) => a - b),
+  };
 }
