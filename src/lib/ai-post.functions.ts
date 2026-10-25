@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
+import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
 export const MODELOS_IA = [
   { id: "local/sem-custo", label: "Local sem custo (texto)" },
@@ -1512,6 +1513,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SingleInput.parse(d))
   .handler(async ({ data }) => {
     const context = { userId: TEMP_USER_ID };
+    const postId = crypto.randomUUID();
 
     const { generateImageBase64 } = await import("@/lib/ai-gateway.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -1600,13 +1602,16 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           audiencia: data.audiencia,
         });
     const legendaPromise = (async () => {
-      if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") return localCaption();
+      if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") {
+        if (isChico && isDiverso && formato === "Carrossel") throw new Error("Finalize os textos individuais com um modelo de texto antes de gerar este carrossel editorial.");
+        return localCaption();
+      }
       // TEMAS DIVERSOS: prompt totalmente fora da saúde.
       if (isDiverso) {
         try {
           const { generateTextAI } = await import("@/lib/ai-gateway.server");
           const system = diverseCaptionSystem(data.rede, formato);
-          const prompt = `Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
+          const prompt = `${isChico && formato === "Carrossel" ? `Inclua ${data.rede === "estilo-x" ? 3 : 5} blocos distintos completos marcados Slide 1, Slide 2 etc. Cada bloco contém título e texto final específico.\n` : ""}Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
           const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : formato === "Carrossel" ? 1100 : 800 });
           return txt || localCaption();
         } catch (err) {
@@ -1628,7 +1633,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}`;
         const contrato = clinicalContract(tema, data.audiencia);
         const roteiroCarrossel = formato === "Carrossel"
-          ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter 5 blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
+          ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter ${data.rede === "estilo-x" ? 3 : 5} blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
           : "";
         const prompt = `${contrato}\n\nTema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${roteiroCarrossel}\n\nTAREFA: escreva a legenda final pronta para publicação. Ela só será aceita se mencionar explicitamente O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA. Não termine antes da conduta/tratamento.\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
         const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1700 : formato === "Carrossel" ? 1200 : 950 });
@@ -1654,45 +1659,35 @@ export const generateSinglePost = createServerFn({ method: "POST" })
 
     // Upload faz parte do pipeline; cada imagem é enviada assim que sai do modelo,
     // em vez de esperar todas terminarem.
-    const uploadOne = async (b64: string) => {
+    const uploadOne = async (b64: string, slideIndex = 0) => {
       const buf = Buffer.from(b64, "base64");
-      const fileName = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const fileName = `${postId}/slide-${slideIndex + 1}-${crypto.randomUUID()}.jpg`;
       const { error } = await supabaseAdmin.storage
         .from("post-images")
         .upload(fileName, buf, { contentType: "image/jpeg", upsert: false, cacheControl: "604800" });
       if (error) throw new Error(`Upload: ${error.message}`);
       const publicUrl = supabaseAdmin.storage.from("post-images").getPublicUrl(fileName).data.publicUrl;
       const { data: signed } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, 60 * 60 * 24 * 7);
-      return { publicUrl, signedUrl: signed?.signedUrl ?? publicUrl };
+      return { postId, slideIndex, publicUrl, signedUrl: signed?.signedUrl ?? publicUrl };
     };
 
     const { ensureJpegB64, overlayLogo } = await import("@/lib/logo-overlay.server");
-    // Hard cap abaixo do limite do gateway (32k). Deixa folga para segurança.
-    const GATEWAY_PROMPT_HARDCAP = 28000;
+    // Uma única camada de repetição, somente HTTP 429/5xx. Nunca compactar/reformular uma recusa.
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
-      const safePrompt = prompt.length > GATEWAY_PROMPT_HARDCAP ? prompt.slice(0, GATEWAY_PROMPT_HARDCAP) : prompt;
+      if (prompt.length > 28000) throw new Error("Brief muito extenso; nenhuma instrução foi truncada.");
       try {
-        return await generateImageBase64({ prompt: safePrompt, size, model: data.modeloImagem });
+        return await generateImageBase64({ prompt, size, model: data.modeloImagem });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message);
-        // Prompt inválido/tamanho/safety → não adianta re-tentar; usa fallback local
-        // para NÃO derrubar o post inteiro (usuário fica sem rascunho salvo).
-        const nonRetryable400 = /400|string too long|invalid.?prompt|safety|moderation|content_policy/i.test(message);
-        if (nonRetryable400) {
-          // Corrige o prompt (versão compacta, tema primeiro) e tenta UMA vez; sem fundo genérico silencioso.
-          if (attempt === 1 && safePrompt.length > 6000) {
-            console.warn("[ai-post] imagem 400 → tentando prompt compacto:", message.slice(0, 200));
-            return generateImageWithRetry(safePrompt.slice(0, 6000), 4);
-          }
-          throw new Error(`Imagem recusada pelo gerador: ${message.slice(0, 200)}`);
-        }
-        if (!retryable || attempt >= 4) throw error;
-        await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
+        const status = Number(message.match(/(?:imagem|Pollinations)\s+(\d{3})\b/)?.[1]);
+        const terminal = /account|configuration|billing|permission|denied|refus|recus|not.available|unavailable/i.test(message);
+        if (terminal || !(status === 429 || status >= 500 && status <= 599) || attempt >= 2) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 1800 * attempt + Math.random() * 500));
         return generateImageWithRetry(prompt, attempt + 1);
       }
     };
     const applyOverlay = async (b64: string) => {
+      const logoPosition = isChico ? "top-right" : "bottom-right";
       // Seleção manual do usuário tem prioridade absoluta.
       const selectedLogoKeys = data.logoKeys?.length
         ? data.logoKeys
@@ -1701,12 +1696,12 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const { getLogoOptions } = await import("@/lib/logos-catalog");
       const opts = getLogoOptions(selectedLogoKeys);
       if (opts.length) {
-        const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false, logoUrls: opts.map((opt) => opt.url) });
+        const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: logoPosition, smart: false, logoUrls: opts.map((opt) => opt.url) });
         if (stamped === b64) throw new Error("A logo escolhida não foi aplicada. Publicação bloqueada.");
         return stamped;
       }
       // Chico/geral: SEMPRE canto inferior direito, sem escolha inteligente.
-      const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: "bottom-right", smart: false });
+      const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: logoPosition, smart: false });
       if (stamped === b64) throw new Error("A logo oficial não foi aplicada. Publicação bloqueada.");
       return stamped;
     };
@@ -1719,17 +1714,12 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const brandKeyImg = pickBrandImg(data.audiencia);
     const b = BRAND_BOOK_IMG[brandKeyImg];
     const brandOneLiner = `MARCA (${b.instagram}): paleta ${b.paleta.primary} · ${b.paleta.secondary} · ${b.paleta.bg} · ${b.paleta.text}. Estilo: ${b.estilo} Nunca desenhar/imitar logo — o sistema aplica overlay real.`;
-    const genAndUpload = (prompt: string) => {
-      const MAX = 30000;
-      // TEMA (prompt) primeiro e inteiro; marca só como rodapé curto.
-      const promptSafe = prompt.length > MAX ? prompt.slice(0, MAX) : prompt;
-      const budget = Math.max(0, MAX - promptSafe.length - 4);
-      const brandSafe = brandOneLiner.length > budget ? brandOneLiner.slice(0, budget) : brandOneLiner;
-      const safe = brandSafe ? `${promptSafe}\n\n${brandSafe}` : promptSafe;
+    const genAndUpload = (prompt: string, slideIndex = 0) => {
+      const safe = `${prompt}\n\n${brandOneLiner}`;
       return generateImageWithRetry(safe)
         .then((b64) => ensureJpegB64(b64))
         .then(applyOverlay)
-        .then(uploadOne);
+        .then((b64) => uploadOne(b64, slideIndex));
     };
 
 
@@ -1741,21 +1731,14 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       audiencia: data.audiencia,
       especialidade: data.especialidade,
     });
-    const slideNarrativesBase = formato === "Carrossel" && !isDiverso ? buildSlideNarratives(tema, data.audiencia) : [];
-    // Coerência: cada imagem segue o texto DEFINITIVO do seu slide na legenda (blocos "Slide N").
-    const extractSlideBlocks = (txt: string, n: number): string[] => {
-      const out: string[] = [];
-      for (let i = 1; i <= n; i++) {
-        const m = (txt || "").match(new RegExp(`Slide\\s*${i}\\s*[:\\-–—.)]?\\s*([\\s\\S]*?)(?=\\n?\\s*\\**Slide\\s*${i + 1}\\b|$)`, "i"));
-        out.push(m ? m[1].replace(/\*+/g, "").trim().slice(0, 400) : "");
-      }
-      return out;
-    };
-    const blocosLegenda = slideNarrativesBase.length ? extractSlideBlocks(legendaBaseResolvida, slideNarrativesBase.length) : [];
-    const slideNarratives = slideNarrativesBase.map((base, i) => (blocosLegenda[i] && blocosLegenda[i].length > 20 ? blocosLegenda[i] : base));
-    const legendaResolvida = formato === "Carrossel" && !isDiverso
-      ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia)
-      : legendaBaseResolvida;
+    const slideCount = formato === "Carrossel" ? (data.rede === "estilo-x" ? 3 : 5) : 1;
+    // Chico: texto final completo, sem trocar/truncar blocos por narrativas genéricas.
+    const slideNarratives = formato === "Carrossel"
+      ? isChico ? extractFinalSlides(legendaBaseResolvida, slideCount)
+        : buildSlideNarratives(tema, data.audiencia)
+      : [];
+    const legendaResolvida = isChico ? legendaBaseResolvida
+      : formato === "Carrossel" && !isDiverso ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia) : legendaBaseResolvida;
 
     // === NEXO LEGENDA ↔ IMAGEM ===
     // Extrai HEADLINE (1ª linha não-vazia) + ALT TEXT da legenda e, quando possível,
@@ -1772,14 +1755,14 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const hookImagem = extractHookImagem(legendaResolvida) || pickHookForTopic(tema);
     // remove a linha HOOK_IMAGEM da legenda exibida/publicada
     let legendaSemHook = (legendaResolvida || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "").trim();
-    legendaSemHook = enforceHookCoherence(legendaSemHook, hookImagem, tema);
+    if (!isChico) legendaSemHook = enforceHookCoherence(legendaSemHook, hookImagem, tema);
     const headlineLegenda = extractHeadline(legendaSemHook) || hookImagem;
     const altLegenda = extractAlt(legendaSemHook);
     const guiaTema = topicGuidance(tema);
     let cenaVisualNexo = visualSceneForTopic(tema, guiaTema, data.audiencia);
     let cenasPorSlide: string[] = slideNarratives.map((_, i) => visualSceneForTopic(tema, guiaTema, data.audiencia, i));
     try {
-      if (!isDiverso && process.env.LOVABLE_API_KEY && data.modelo !== "local/sem-custo") {
+      if (!isChico && !isDiverso && process.env.LOVABLE_API_KEY && data.modelo !== "local/sem-custo") {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
         const briefSys = `Você é diretor de arte médico. Use o CONTRATO CLÍNICO como fonte única de verdade e devolva UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente tema + conduta. Sem metáforas vagas, sem texto na imagem, sem cor nomeada, sem pessoa real. Se a legenda estiver genérica, siga o contrato.`;
         const briefPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
@@ -1866,7 +1849,37 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     let urlImagemCache: string | null = null;
     let imagensCarrosselCache: string[] = [];
 
-    if (formato === "Carrossel") {
+    if (isChico) {
+      const texts = formato === "Carrossel" ? slideNarratives : [legendaSemHook];
+      const uploads = await Promise.all(texts.map((texto, slideIndex) => {
+        const brief = {
+          postId, slideIndex, total: texts.length, tema,
+          titulo: (formato === "Carrossel" ? texto : headlineLegenda).split(/\r?\n/)[0].replace(/\*+/g, "").trim(),
+          texto, objetivo: isDiverso ? "Informar sobre o tema editorial" : nivel === "ig-conversao" ? "Educar e favorecer identificação sem prometer resultados" : "Explicar com precisão e orientar cuidado seguro",
+          publico: data.rede === "linkedin" ? "Profissionais de saúde" : "Público leigo brasileiro",
+          contexto: `${data.especialidade}; ${data.rede}; ${formato}. ${isDiverso ? "Tema não clínico: não incluir elementos médicos." : "CTBMF e Odontologia Hospitalar; anatomia correta, sem diagnóstico individual ou procedimentos invasivos."}`,
+          identidade: brandOneLiner + " Fotografia plausível ou anatomia editorial realista; azul petróleo, ciano, branco e preto. Vermelho apenas para dor. Sans-serif bold, padrão hospitalar premium.",
+        };
+        return generateBoundImage(brief, async (prompt) => {
+          const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(prompt));
+          const briefHash = Array.from(new Uint8Array(digest)).map((n) => n.toString(16).padStart(2, "0")).join("");
+          console.info("[contextual-image-request]", { postId, slideIndex, provider: data.modeloImagem.split("/")[0], model: data.modeloImagem, briefHash, briefSummary: { objetivo: brief.objetivo, textLength: texto.length, promptLength: prompt.length }, semanticVerification: "not-performed" });
+          return generateImageWithRetry(prompt);
+        }, async (b64, expectedPostId, expectedSlide) => {
+          if (expectedPostId !== postId) throw new Error("Post incorreto no upload.");
+          const result = await uploadOne(await applyOverlay(await ensureJpegB64(b64)), expectedSlide);
+          console.info("[contextual-image-upload]", { postId, slideIndex: expectedSlide, origin: "fresh-provider-image", storageObject: new URL(result.publicUrl).pathname.split("/").slice(-2).join("/") });
+          return result;
+        });
+      }));
+      const bound = validateImageBindings(postId, texts.length, uploads);
+      urlImagem = bound[0].publicUrl;
+      urlImagemCache = bound[0].signedUrl;
+      if (formato === "Carrossel") {
+        imagensCarrossel = bound.map((r) => r.publicUrl);
+        imagensCarrosselCache = bound.map((r) => r.signedUrl);
+      }
+    } else     if (formato === "Carrossel") {
       const fullSpec = [
         { n: 1, total: 5, papel: `CAPA sobre o TEMA "${tema}": GANCHO ULTRA FORTE de conversão obrigatório em tipografia gigante (3-6 palavras, bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre navy luminoso) — pergunta direta de dor real, dado de impacto ou frase-choque relacionada EXCLUSIVAMENTE ao tema "${tema}" (ex.: 'DOR NO SISO?', 'SEU MAXILAR TRAVA?', 'RONCO PODE MATAR', 'ESSE CHEIRO NÃO É NORMAL', 'PERDEU UM DENTE?'). PT-BR impecável, acentuação correta, SEM palavras duplicadas, SEM inglês, SEM texto inventado. O gancho fala DIRETO ao paciente sobre o TEMA — NÃO menciona '@drfranciscomenezes', nome do profissional, marca, clínica ou consultório (a assinatura entra como overlay do sistema). Layout impactante de capa de revista médica, hierarquia visual brutal, ZERO bibliografia, ZERO logo desenhada.` },
         { n: 2, total: 5, papel: `PROBLEMA do TEMA "${tema}": aprofunda a dor em linguagem leiga, faz a pessoa se identificar. SEM anatomia clínica interna. NÃO mude de assunto — permaneça em "${tema}". PT-BR sem erros.` },
@@ -1897,17 +1910,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
               : imageSystemPrompt(tema, data.rede, nivel, s, data.especialidade),
           idx,
         );
-        let lastErr: unknown;
-        for (let tentativa = 1; tentativa <= 2; tentativa++) {
-          try {
-            return await genAndUpload(prompt);
-          } catch (err) {
-            lastErr = err;
-            console.warn(`[carrossel] slide ${idx + 1} falhou (tentativa ${tentativa}):`, err instanceof Error ? err.message : err);
-            await new Promise((r) => setTimeout(r, 1500 * tentativa));
-          }
-        }
-        throw new Error(`Slide ${idx + 1} do carrossel falhou após 2 tentativas: ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`);
+        return genAndUpload(prompt, idx);
       };
       const uploads = await Promise.all(slidesSpec.map((s, idx) => genSlideResilient(s, idx)));
       if (uploads.length !== slidesSpec.length || uploads.some((u) => !u?.publicUrl)) {
@@ -1943,6 +1946,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const { data: inserted, error: insErr } = await supabaseAdmin
       .from("posts")
       .insert({
+        id: postId,
         user_id: context.userId,
         tipo_post: tipoPost,
         estilo_layout: data.rede === "estilo-x" ? "Estilo X" : data.rede === "google" ? "Google Business" : "Padrão",
@@ -1967,7 +1971,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       .single();
     if (insErr) throw new Error(`DB: ${insErr.message}`);
 
-    // Para preview usamos URLs assinadas (cache) porque o bucket é privado;
+    console.info("[contextual-image-saved]", { postId, slideCount, model: data.modeloImagem, origin: "fresh-provider-image" });
+    // URLs públicas e assinadas apontam para o mesmo objeto recém-gerado.
     // fallback para a URL pública caso a assinada não exista.
     const urls = imagensCarrosselCache.length
       ? imagensCarrosselCache

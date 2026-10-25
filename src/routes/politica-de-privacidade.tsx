@@ -4,6 +4,8 @@ export const Route = createFileRoute("/politica-de-privacidade")({
   head: () => ({
     meta: [
       { title: "Política de Privacidade — Planner Chico" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:

@@ -12,6 +12,14 @@ function normalizeRedirect(value: unknown) {
 }
 
 export const Route = createFileRoute("/auth")({
+  head: () => ({ meta: [
+    { title: "Entrar — Planner Chico" },
+    { name: "description", content: "Acesse o Planner Chico para planejar conteúdo profissional." },
+    { property: "og:title", content: "Entrar — Planner Chico" },
+    { property: "og:description", content: "Acesso ao planejamento de conteúdo do Planner Chico." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   ssr: false,
   validateSearch: (search) => ({
     redirect: normalizeRedirect(search.redirect),

@@ -90,7 +90,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Planner Chico" },
       { property: "og:description", content: "Planner Chico — agendamento de posts para Odontologia (CTBMF e Odontologia Hospitalar)." },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: logoAsset.url },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

@@ -1,4 +1,7 @@
 - [x] Implementar revisão compartilhada nas listagens e prévias dos planners.
+- [x] Corrigir briefs específicos do Chico, transmissão ao provedor e vínculo post/slide, sem imagens substitutas.
+- [x] Executar 22 testes, lint dos arquivos novos e geração real de post/carrossel no modelo original, sem publicar.
+- [ ] Confirmar leitura autenticada dos exemplos após recarregar: falta sessão da conta solicitante; geração e prévia imediata verificadas.
 - [x] Verificar por testes os estados de revisão sem publicação e conferir confirmação/cancelamento no navegador.
 - [x] Executar seis testes, lint dos novos arquivos e conferir compilação automática.
 - [ ] Verificar aprovação/recusa e leitura de retorno com um post real: depende de o usuário entrar na prévia; não foi possível obter sessão da conta solicitante.
