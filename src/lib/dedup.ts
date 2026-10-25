@@ -110,23 +110,29 @@ export const ANGULOS_EDITORIAIS = [
 
 /**
  * Seleciona `quantidade` temas sem repetir o histórico nem o próprio lote. Cada tema
- * recebe um ângulo editorial diferente. Quando a lista base acaba, combina tema+ângulo
- * inéditos; se nada inédito couber, retorna menos itens (o chamador avisa o usuário).
+ * recebe um ângulo editorial diferente E um assunto-raiz diferente (3 posts/dia = 3 assuntos,
+ * não 3 variações do mesmo). `assuntosBloqueados` = assuntos já usados perto destas datas.
+ * Se nada inédito couber, retorna menos itens (o chamador avisa o usuário).
  */
 export function planDistinctTopics(
   base: string[],
   historico: string[],
   quantidade: number,
   angulos = ANGULOS_EDITORIAIS,
+  opts: { assuntosBloqueados?: Iterable<string> } = {},
 ): string[] {
   const escolhidos: string[] = [];
   const bloqueados = [...historico];
+  const assuntosUsados = new Set<string>(opts.assuntosBloqueados ?? []);
   let a = 0;
   const tentar = (t: string) => {
     if (escolhidos.length >= quantidade) return;
+    const assunto = assuntoPrincipal(t);
+    if (assunto && assuntosUsados.has(assunto)) return;
     if (findDuplicate(t, bloqueados)) return;
     escolhidos.push(t);
     bloqueados.push(t);
+    if (assunto) assuntosUsados.add(assunto);
   };
   for (const t of base) {
     if (escolhidos.length >= quantidade) break;
@@ -134,13 +140,12 @@ export function planDistinctTopics(
     if (!raw || findDuplicate(raw, bloqueados)) continue;
     tentar(`${raw} — ${angulos[a++ % angulos.length]}`);
   }
-  // Segunda passada: mesmo assunto, ângulo novo (só se o assunto não repetir no lote).
+  // Segunda passada: tema já visto no histórico, mas com ângulo novo e assunto livre no lote.
   for (let ang = 0; escolhidos.length < quantidade && ang < angulos.length; ang++) {
     for (const t of base) {
       if (escolhidos.length >= quantidade) break;
-      const cand = `${t.trim()} — ${angulos[(ang + 5) % angulos.length]}`;
-      const assuntoUsadoNoLote = escolhidos.some((e) => similarity(e.split(" — ")[0], t) >= 0.95);
-      if (!assuntoUsadoNoLote) tentar(cand);
+      if (!t.trim()) continue;
+      tentar(`${t.trim()} — ${angulos[(ang + 5) % angulos.length]}`);
     }
   }
   return escolhidos;
