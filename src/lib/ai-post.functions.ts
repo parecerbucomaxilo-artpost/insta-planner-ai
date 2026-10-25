@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
+import { contentKey, findDuplicate, planDistinctTopics, retryDistinct, similarity, titleOf } from "./dedup";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
 export const MODELOS_IA = [
@@ -1581,6 +1582,57 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       }
     }
 
+    // DEDUP com histórico REAL (últimos 60 dias, 300 posts, sem Erro). Falha de consulta não
+    // libera duplicatas silenciosamente: segue só com o lote/agendador e registra aviso.
+    const historicoTemas: string[] = [...(data.temasProibidos ?? [])];
+    const historicoTitulos: string[] = [];
+    const historicoCorpos: string[] = [];
+    try {
+      const desdeDedup = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: recentes, error: recErr } = await supabaseAdmin
+        .from("posts")
+        .select("prompt_ia, legenda")
+        .eq("user_id", context.userId)
+        .neq("status", "Erro")
+        .gte("created_at", desdeDedup)
+        .order("created_at", { ascending: false })
+        .limit(300);
+      if (recErr) throw recErr;
+      for (const r of recentes ?? []) {
+        if (r.prompt_ia) historicoTemas.push(r.prompt_ia);
+        if (r.legenda) { historicoTitulos.push(titleOf(r.legenda)); historicoCorpos.push(r.legenda.slice(0, 600)); }
+      }
+    } catch (e) {
+      console.warn("[dedup] histórico indisponível; usando só temas do lote:", e instanceof Error ? e.message : e);
+    }
+    const temaBase = (s: string) => s.split(" — ")[0];
+    const temaDup = (t: string) => findDuplicate(t, historicoTemas) || findDuplicate(temaBase(t), historicoTemas.map(temaBase), 0.95);
+    {
+      const chaveInicial = contentKey([context.userId, tema, formato, data.rede, (data.quando ?? new Date().toISOString()).slice(0, 10)]);
+      const { data: jaExiste } = await supabaseAdmin.from("posts").select("id, legenda, url_imagem, url_imagem_cache, imagens_carrossel_cache").eq("user_id", context.userId).eq("content_key", chaveInicial).maybeSingle();
+      if (jaExiste) {
+        console.info("[dedup] pedido repetido (duplo clique/retry): devolvendo post existente", { postId: jaExiste.id });
+        const carr = Array.isArray((jaExiste as any).imagens_carrossel_cache) ? (jaExiste as any).imagens_carrossel_cache as string[] : [];
+        const u = (jaExiste as any).url_imagem_cache || (jaExiste as any).url_imagem;
+        const urls = carr.length ? carr : [u].filter(Boolean);
+        return { id: jaExiste.id, url: u, legenda: jaExiste.legenda, slides: urls.length, urls, slideLegendas: [] as string[], reaproveitado: true };
+      }
+    }
+    if (temaDup(tema)) {
+      if (!(data.tema ?? "").trim()) {
+        // Tema automático: pede nova ideia, no máximo 3 vezes.
+        const r = await retryDistinct(
+          async (i) => chooseLocalTema(data.audiencia, historicoTemas, `${data.rede}-${formato}-${i}-${Date.now()}`, data.especialidade),
+          (t) => t, historicoTemas, 3,
+        );
+        if (!r) throw new Error("Não foi possível garantir um tema inédito. Informe um tema manualmente.");
+        tema = r.valor;
+      } else {
+        throw new Error(`Tema repetido: "${tema.slice(0, 80)}" já foi usado recentemente. Edite o tema para um assunto ou ângulo novo.`);
+      }
+    }
+    // Idempotência: mesmo usuário + tema + formato + rede + dia = mesmo post.
+    const chaveConteudo = contentKey([context.userId, tema, formato, data.rede, (data.quando ?? new Date().toISOString()).slice(0, 10)]);
 
     // 1. Resolve nível editorial
     const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
@@ -1756,6 +1808,17 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // remove a linha HOOK_IMAGEM da legenda exibida/publicada
     let legendaSemHook = (legendaResolvida || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "").trim();
     if (!isChico) legendaSemHook = enforceHookCoherence(legendaSemHook, hookImagem, tema);
+    // Dedup do TEXTO antes de gerar imagens/salvar: título/gancho e corpo comparados ao histórico real.
+    {
+      const tituloNovo = titleOf(legendaSemHook);
+      const corpoNovo = legendaSemHook.slice(0, 600);
+      const dupTitulo = tituloNovo ? findDuplicate(tituloNovo, historicoTitulos, 0.8) : null;
+      const dupCorpo = historicoCorpos.find((c) => similarity(corpoNovo, c) >= 0.6) ?? null;
+      if (dupTitulo || dupCorpo) {
+        console.warn("[dedup] texto repetido bloqueado", { postId, tema: tema.slice(0, 80) });
+        throw new Error(`Texto muito parecido com um post recente${dupTitulo ? ` ("${dupTitulo.slice(0, 70)}")` : ""}. Nada foi salvo — edite o tema ou tente novamente para um novo ângulo.`);
+      }
+    }
     const headlineLegenda = extractHeadline(legendaSemHook) || hookImagem;
     const altLegenda = extractAlt(legendaSemHook);
     const guiaTema = topicGuidance(tema);
@@ -1965,10 +2028,20 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         data_agendamento: data.quando ?? null,
         prompt_ia: tema,
         instagram_conta: instagramConta,
+        content_key: chaveConteudo,
       } as any)
 
       .select()
       .single();
+    if (insErr && (insErr as any).code === "23505") {
+      // Duplo clique/retry concorrente: outro pedido idêntico já salvou. Não duplica.
+      const { data: existente } = await supabaseAdmin.from("posts").select("id, legenda, url_imagem, url_imagem_cache").eq("user_id", context.userId).eq("content_key", chaveConteudo).maybeSingle();
+      if (existente) {
+        console.info("[dedup] insert idempotente: post já existia", { postId: existente.id });
+        const u = (existente as any).url_imagem_cache || (existente as any).url_imagem;
+        return { id: existente.id, url: u, legenda: existente.legenda, slides: 1, urls: [u].filter(Boolean), slideLegendas: [] as string[], reaproveitado: true };
+      }
+    }
     if (insErr) throw new Error(`DB: ${insErr.message}`);
 
     console.info("[contextual-image-saved]", { postId, slideCount, model: data.modeloImagem, origin: "fresh-provider-image" });
@@ -2224,7 +2297,23 @@ export const getWeekTopics = createServerFn({ method: "POST" })
         [lista[i], lista[j]] = [lista[j], lista[i]];
       }
     }
-    const temas: string[] = [];
-    for (let i = 0; i < data.quantidade; i++) temas.push(lista[i % lista.length]);
-    return { temas };
+    // Exclui temas do histórico real (60 dias) e do plano semanal já salvo; cada item ganha ângulo próprio.
+    let historico: string[] = [];
+    let historicoOk = true;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const desde = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: rec, error } = await supabaseAdmin.from("posts").select("prompt_ia").eq("user_id", TEMP_USER_ID).neq("status", "Erro").or(`created_at.gte.${desde},data_agendamento.gte.${new Date().toISOString()}`).not("prompt_ia", "is", null).limit(300);
+      if (error) throw error;
+      historico = (rec ?? []).map((r: any) => r.prompt_ia as string);
+    } catch (e) {
+      historicoOk = false;
+      console.warn("[dedup] getWeekTopics sem histórico:", e instanceof Error ? e.message : e);
+    }
+    const temas = guia ? lista.filter((t) => !findDuplicate(t, historico)).slice(0, data.quantidade) : planDistinctTopics(lista, historico, data.quantidade);
+    const aviso = temas.length < data.quantidade
+      ? `Só ${temas.length} temas inéditos disponíveis; os demais ficaram em branco para você preencher.`
+      : historicoOk ? undefined : "Histórico indisponível: a verificação contra posts antigos será feita na geração.";
+    while (temas.length < data.quantidade) temas.push("");
+    return { temas, aviso };
   });

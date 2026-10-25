@@ -134,6 +134,7 @@ export type Database = {
       posts: {
         Row: {
           aviso_500_atingido: boolean
+          content_key: string | null
           created_at: string
           data_agendamento: string | null
           estilo_layout: string
@@ -163,6 +164,7 @@ export type Database = {
         }
         Insert: {
           aviso_500_atingido?: boolean
+          content_key?: string | null
           created_at?: string
           data_agendamento?: string | null
           estilo_layout?: string
@@ -192,6 +194,7 @@ export type Database = {
         }
         Update: {
           aviso_500_atingido?: boolean
+          content_key?: string | null
           created_at?: string
           data_agendamento?: string | null
           estilo_layout?: string

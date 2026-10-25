@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getWeekTopics } from "@/lib/ai-post.functions";
 import { montarSemana, emParalelo, type ItemSemana } from "@/lib/week-plan";
+import { batchDuplicates } from "@/lib/dedup";
 import { cn } from "@/lib/utils";
 import { PostReviewActions } from "@/components/PostReviewActions";
 
@@ -41,10 +42,16 @@ export function Posts7Dias(props: {
     setBusy(true);
     try {
       const qtd = 7 * porDia;
-      const temas = props.temasFixos?.length
-        ? props.temasFixos
-        : (await fetchTopics({ data: { especialidade: props.especialidade ?? "Ambas", temaGuia: props.temaGuia ?? "", quantidade: qtd } })).temas;
-      setPlano(montarSemana(temas, porDia));
+      let temas: string[];
+      if (props.temasFixos?.length) temas = props.temasFixos;
+      else {
+        const r = await fetchTopics({ data: { especialidade: props.especialidade ?? "Ambas", temaGuia: props.temaGuia ?? "", quantidade: qtd } });
+        temas = r.temas;
+        if (r.aviso) toast.warning(r.aviso);
+      }
+      // montarSemana descarta vazios; mantemos o slot vazio para o usuário preencher.
+      const semana = montarSemana(temas.map((t) => t || "\u0000"), porDia).map((i) => ({ ...i, tema: i.tema === "\u0000" ? "" : i.tema }));
+      setPlano(semana);
       setEstados({});
     } catch (e: any) {
       toast.error(e?.message || "Falha ao planejar a semana.");
@@ -56,8 +63,17 @@ export function Posts7Dias(props: {
   const gerarSemana = async () => {
     if (!plano) return;
     setBusy(true);
-    const pendentes = plano.filter((i) => estados[i.key]?.status !== "ok");
-    setEstados((s) => Object.fromEntries([...Object.entries(s), ...pendentes.map((i) => [i.key, { status: "fila" } as Estado])]));
+    // Dedup dentro do lote (normalizado + semântico) ANTES de gerar: repetidos/vazios ficam pendentes para edição.
+    const dupIdx = new Set(batchDuplicates(plano.map((i) => i.tema)));
+    const bloqueados: Record<string, Estado> = {};
+    plano.forEach((i, idx) => {
+      if (estados[i.key]?.status === "ok") return;
+      if (!i.tema.trim()) bloqueados[i.key] = { status: "erro", erro: "Sem tema inédito — escreva um tema para este dia." };
+      else if (dupIdx.has(idx)) bloqueados[i.key] = { status: "erro", erro: "Tema repetido nesta semana — edite para um assunto ou ângulo diferente." };
+    });
+    if (Object.keys(bloqueados).length) toast.warning(`${Object.keys(bloqueados).length} item(ns) repetido(s) ou vazio(s) não foram gerados. Edite e gere de novo.`);
+    const pendentes = plano.filter((i) => estados[i.key]?.status !== "ok" && !bloqueados[i.key]);
+    setEstados((s) => Object.fromEntries([...Object.entries(s), ...Object.entries(bloqueados), ...pendentes.map((i) => [i.key, { status: "fila" } as Estado])]));
     const tid = "posts-7-dias";
     let feitos = 0;
     toast.loading(`Posts 7 dias: 0/${pendentes.length} prontos…`, { id: tid });
