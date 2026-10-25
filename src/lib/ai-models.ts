@@ -5,10 +5,10 @@
 // Níveis:
 //  - "gratis":       funciona sem chave, mas com limites fortes do provedor.
 //  - "chave-gratis": exige cadastro e chave gratuita (camada gratuita com cota do provedor).
-//  - "pago":         consome créditos do workspace (Lovable AI).
+//  Modelos pagos (Lovable AI Gateway) foram REMOVIDOS: o app não gera cobrança de IA.
 //  - "sem-ia":       conteúdo pronto do próprio app, sem IA.
 
-export type NivelCusto = "gratis" | "chave-gratis" | "pago" | "sem-ia";
+export type NivelCusto = "gratis" | "chave-gratis" | "sem-ia";
 
 export type ModeloInfo = {
   id: string;
@@ -20,7 +20,6 @@ export type ModeloInfo = {
 export const NIVEL_LABEL: Record<NivelCusto, string> = {
   gratis: "Grátis (com limites)",
   "chave-gratis": "Requer chave gratuita",
-  pago: "Pago",
   "sem-ia": "Sem IA",
 };
 
@@ -29,18 +28,6 @@ export const MODELOS_IA = [
   { id: "gemini/gemini-3.8-flash", label: "Gemini 3.8 Flash (Google AI Studio)", nivel: "chave-gratis", nota: "Chave GEMINI_API_KEY. Camada gratuita com limite diário de pedidos definido pelo Google." },
   { id: "groq/openai/gpt-oss-120b", label: "GPT-OSS 120B (Groq)", nivel: "chave-gratis", nota: "Chave GROQ_API_KEY. Plano gratuito com limites por minuto e por dia." },
   { id: "pollinations/openai", label: "GPT-5.4 nano (Pollinations)", nivel: "chave-gratis", nota: "Chave POLLINATIONS_API_KEY. Cota gratuita limitada." },
-  { id: "openai/gpt-5-mini", label: "GPT-5 mini", nivel: "pago" },
-  { id: "openai/gpt-5-nano", label: "GPT-5 nano", nivel: "pago" },
-  { id: "openai/gpt-5", label: "GPT-5", nivel: "pago" },
-  { id: "openai/gpt-5.4-mini", label: "GPT-5.4 mini", nivel: "pago" },
-  { id: "openai/gpt-5.4", label: "GPT-5.4", nivel: "pago" },
-  { id: "openai/gpt-5.5", label: "GPT-5.5", nivel: "pago" },
-  { id: "google/gemini-3.8-flash", label: "Gemini 3.8 Flash", nivel: "pago" },
-  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash", nivel: "pago" },
-  { id: "google/gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite", nivel: "pago" },
-  { id: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", nivel: "pago" },
-  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash", nivel: "pago" },
-  { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro", nivel: "pago" },
   { id: "local/sem-custo", label: "Texto pronto do app", nivel: "sem-ia", nota: "Modelo de legenda pré-escrito, sem IA." },
 ] as const satisfies readonly ModeloInfo[];
 
@@ -49,11 +36,6 @@ export const MODELOS_IMAGEM = [
   { id: "pollinations/flux", label: "Flux Schnell (Pollinations)", nivel: "gratis", nota: "Sem chave: 1 imagem/45 s por IP." },
   { id: "pollinations/zimage", label: "Z-Image Turbo (Pollinations)", nivel: "gratis", nota: "Sem chave: 1 imagem/45 s por IP." },
   { id: "pollinations/flux-klein", label: "FLUX.2 Klein (Pollinations)", nivel: "chave-gratis", nota: "Chave POLLINATIONS_API_KEY." },
-  { id: "google/gemini-3.1-flash-image", label: "Nano Banana 2 (Gemini)", nivel: "pago" },
-  { id: "google/gemini-3-pro-image", label: "Gemini 3 Pro Image", nivel: "pago" },
-  { id: "google/gemini-2.5-flash-image", label: "Nano Banana (Gemini)", nivel: "pago" },
-  { id: "openai/gpt-image-2", label: "GPT Image 2", nivel: "pago" },
-  { id: "openai/gpt-image-1-mini", label: "GPT Image 1 mini", nivel: "pago" },
   { id: "local/sem-custo", label: "Fundo liso do app", nivel: "sem-ia", nota: "Apenas fundo em degradê da marca, sem IA." },
 ] as const satisfies readonly ModeloInfo[];
 
@@ -64,7 +46,7 @@ export const DEFAULT_TEXT_MODEL: ModeloTexto = "auto/gratis";
 export const DEFAULT_IMAGE_MODEL: ModeloImagem = "auto/gratis";
 
 const ALIASES: Record<string, string> = {
-  "google/gemini-3.5-flash": "google/gemini-3.8-flash", // descontinuado pelo Google
+  // IDs pagos antigos (openai/*, google/*) caem no padrão grátis via normalize.
   "pollinations/flux-realism": "pollinations/flux", // não existe mais no Pollinations
   "pollinations/turbo": "pollinations/zimage", // não existe mais no Pollinations
 };

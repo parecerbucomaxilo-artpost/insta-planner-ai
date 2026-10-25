@@ -12,7 +12,6 @@ const PROVEDORES = [
   { key: "gemini", secret: "GEMINI_API_KEY", nome: "Google Gemini API", onde: "aistudio.google.com → Get API key", nivel: "Requer chave gratuita — limite diário de pedidos definido pelo Google" },
   { key: "groq", secret: "GROQ_API_KEY", nome: "Groq", onde: "console.groq.com → API Keys", nivel: "Requer chave gratuita — limites por minuto e por dia" },
   { key: "pollinations", secret: "POLLINATIONS_API_KEY", nome: "Pollinations (texto e imagem)", onde: "enter.pollinations.ai → Keys", nivel: "Imagem funciona sem chave (1 imagem a cada 45 s); com chave gratuita há mais cota" },
-  { key: "lovable", secret: "LOVABLE_API_KEY", nome: "Lovable AI (modelos pagos)", onde: "já gerenciada pelo projeto", nivel: "Pago — consome créditos do workspace" },
 ] as const;
 
 export function AnthropicKeySettings() {
@@ -29,7 +28,7 @@ export function AnthropicKeySettings() {
       <div>
         <h2 className="text-xl font-bold">Configurações de IA</h2>
         <p className="text-sm text-muted-foreground">
-          O app usa primeiro as opções gratuitas. As chaves ficam guardadas com segurança no servidor:
+          O app usa SOMENTE IAs gratuitas (nenhum modelo pago, nenhuma cobrança de créditos de IA). As chaves ficam guardadas com segurança no servidor:
           adicione-as em Configurações do projeto → Secrets, com o nome indicado abaixo.
         </p>
       </div>

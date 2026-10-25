@@ -596,7 +596,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Padrão: grátis. "Requer chave gratuita" só funciona com a chave cadastrada em Configurações → IA; "Pago" consome créditos.
+          Somente IAs gratuitas. "Requer chave gratuita" só funciona com a chave cadastrada em Configurações → IA.
         </p>
       </div>
 
@@ -620,7 +620,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Padrão: grátis (Pollinations, com limite). Se a IA falhar, o app avisa e usa fundo liso da marca.
+          Padrão: grátis (Pollinations, com limite). Se a IA falhar, o app mostra um aviso e o motivo — o fundo liso NÃO é imagem de IA.
         </p>
       </div>
 
