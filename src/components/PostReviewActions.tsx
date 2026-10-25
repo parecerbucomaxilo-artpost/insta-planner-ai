@@ -83,7 +83,7 @@ export function PostReviewActions({ id, status = "PendenteAprovacao", disabled =
         </Button>
       </div>
       <p className="text-xs text-muted-foreground" role="status">
-        {currentStatus === "PendenteAprovacao" ? "Aguardando revisão" : currentStatus === "Arquivado" ? "Negado / arquivado" : currentStatus === "Rascunho" ? "Aceito / rascunho — não publicado" : currentStatus}
+        {currentStatus === "PendenteAprovacao" ? "Aguardando revisão" : currentStatus === "Arquivado" ? "Negado / arquivado" : currentStatus === "Rascunho" ? "Rascunho — não publicado" : currentStatus}
       </p>
       <AlertDialog open={confirm} onOpenChange={(value) => { if (!busy) setConfirm(value); }}>
         <AlertDialogContent>
