@@ -14,11 +14,24 @@ export function useModeloBloqueado() {
   return (m: ModeloInfo) => !modeloLiberado(m, s);
 }
 
+/** Aviso exibido ao escolher um modelo pago ainda bloqueado (pode ser selecionado, mas não gera). */
+export function avisarSeBloqueado(m: ModeloInfo, bloqueado: boolean) {
+  if (!bloqueado) return;
+  const nome = m.id.startsWith("openai/") ? "ChatGPT (API oficial da OpenAI)" : m.label;
+  const segredo = m.id.startsWith("openai/") ? "OPENAI_API_KEY e OPENAI_ACEITO_COBRANCA=sim" : "GEMINI_API_KEY e GEMINI_ACEITO_COBRANCA=sim";
+  toast.warning(
+    `${nome} selecionado, mas bloqueado: cadastre ${segredo} em Configurações do projeto → Secrets. A assinatura não libera a API e o uso pode ser cobrado.`,
+    { duration: 12000 },
+  );
+}
+
 /** Rótulo do modelo com a indicação de custo (Grátis com limites / Requer chave gratuita / Pago / Sem IA). */
 export function ModelLabel({ m }: { m: ModeloInfo }) {
   return (
     <span title={m.nota ?? NIVEL_LABEL[m.nivel]}>
-      {m.label} <span className="opacity-70 font-normal">· {NIVEL_LABEL[m.nivel]}</span>
+      {m.label}
+      {m.subtitulo ? <span className="block text-[10px] font-normal opacity-80">{m.subtitulo}</span> : " "}
+      <span className="opacity-70 font-normal">· {NIVEL_LABEL[m.nivel]}</span>
     </span>
   );
 }

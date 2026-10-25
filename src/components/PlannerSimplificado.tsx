@@ -1,4 +1,4 @@
-import { ModelLabel, showAvisos, useModeloBloqueado } from "@/components/ModelLabel";
+import { ModelLabel, showAvisos, useModeloBloqueado, avisarSeBloqueado } from "@/components/ModelLabel";
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -731,8 +731,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 {MODELOS_IA.map((m) => (
                   <button
                     key={m.id}
-                    type="button" disabled={bloqueado(m)}
-                    onClick={() => setModelo(m.id)}
+                    type="button"
+                    onClick={() => { setModelo(m.id); avisarSeBloqueado(m, bloqueado(m)); }}
                     className={cn(
                       "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
                       modelo === m.id
@@ -740,7 +740,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
                     )}
                   >
-                    <ModelLabel m={m} />
+                    <ModelLabel m={m} />{bloqueado(m) ? " 🔒" : ""}
                   </button>
                 ))}
               </div>
@@ -752,8 +752,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 {MODELOS_IMAGEM.map((m) => (
                   <button
                     key={m.id}
-                    type="button" disabled={bloqueado(m)}
-                    onClick={() => setModeloImagem(m.id)}
+                    type="button"
+                    onClick={() => { setModeloImagem(m.id); avisarSeBloqueado(m, bloqueado(m)); }}
                     className={cn(
                       "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
                       modeloImagem === m.id
@@ -761,7 +761,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
                     )}
                   >
-                    <ModelLabel m={m} />
+                    <ModelLabel m={m} />{bloqueado(m) ? " 🔒" : ""}
                   </button>
                 ))}
               </div>

@@ -23,6 +23,7 @@ export type ModeloInfo = {
   label: string;
   nivel: NivelCusto;
   nota?: string;
+  subtitulo?: string;
 };
 
 export const NIVEL_LABEL: Record<NivelCusto, string> = {
@@ -59,7 +60,8 @@ export const MODELOS_IA = [
   },
   {
     id: "openai/gpt-5-mini",
-    label: "ChatGPT / OpenAI API — GPT-5 mini",
+    label: "ChatGPT",
+    subtitulo: "API oficial da OpenAI · GPT-5 mini",
     nivel: "pago-opt-in",
     nota: "API oficial da OpenAI (platform.openai.com), cobrada por token. Exige OPENAI_API_KEY e OPENAI_ACEITO_COBRANCA=sim. A assinatura ChatGPT não inclui API.",
   },
@@ -98,13 +100,15 @@ export const MODELOS_IMAGEM = [
   },
   {
     id: "gemini/gemini-3.1-flash-image",
-    label: "Gemini API — Nano Banana 2 (imagem)",
+    label: "Gemini",
+    subtitulo: "API oficial do Google · Nano Banana 2",
     nivel: "pago-opt-in",
     nota: "Modelos de imagem do Gemini não têm camada gratuita na API. Exige GEMINI_API_KEY e GEMINI_ACEITO_COBRANCA=sim (conta com faturamento ativo).",
   },
   {
     id: "openai/gpt-image-2",
-    label: "ChatGPT / OpenAI API — GPT Image (imagem)",
+    label: "ChatGPT",
+    subtitulo: "API oficial da OpenAI · GPT Image",
     nivel: "pago-opt-in",
     nota: "API oficial da OpenAI, cobrada por imagem/token. Exige OPENAI_API_KEY e OPENAI_ACEITO_COBRANCA=sim.",
   },
