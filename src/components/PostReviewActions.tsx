@@ -26,6 +26,14 @@ export function PostReviewActions({ id, status = "PendenteAprovacao", disabled =
   const [slide, setSlide] = useState(0);
   const [mediaError, setMediaError] = useState(false);
   useEffect(() => { setCurrentStatus(status); }, [status, id]);
+  useEffect(() => {
+    const sync = (event: Event) => {
+      const detail = (event as CustomEvent<{ id: string; status: PostRow["status"] }>).detail;
+      if (detail?.id === id) setCurrentStatus(detail.status);
+    };
+    window.addEventListener(POST_REVIEW_CHANGED, sync);
+    return () => window.removeEventListener(POST_REVIEW_CHANGED, sync);
+  }, [id]);
   useEffect(() => { setMediaError(false); }, [slide, post]);
 
   const visualizar = async () => {
@@ -58,7 +66,7 @@ export function PostReviewActions({ id, status = "PendenteAprovacao", disabled =
       setCurrentStatus(next);
       setConfirm(false);
       toast.success(decision === "aceitar" ? "Post aceito e salvo como rascunho. Não foi publicado." : "Post negado e arquivado.");
-      window.dispatchEvent(new Event(POST_REVIEW_CHANGED));
+      window.dispatchEvent(new CustomEvent(POST_REVIEW_CHANGED, { detail: { id, status: next } }));
       onChange?.(next);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Falha ao salvar a revisão.");
