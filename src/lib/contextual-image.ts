@@ -12,19 +12,26 @@ export interface VisualBrief {
 }
 
 export function extractFinalSlides(caption: string, total: number): string[] {
-  const matches = [...caption.matchAll(/^\s*\**Slide\s*(\d+)\s*\**\s*[:\-–—.)]?\s*([\s\S]*?)(?=^\s*\**Slide\s*\d+\b|(?![\s\S]))/gim)];
+  const matches = [
+    ...caption.matchAll(
+      /^\s*\**Slide\s*(\d+)\s*\**\s*[:\-–—.)]?\s*([\s\S]*?)(?=^\s*\**Slide\s*\d+\b|(?![\s\S]))/gim,
+    ),
+  ];
   const slides = Array.from({ length: total }, (_, i) => {
     const match = matches.find((m) => Number(m[1]) === i + 1);
     return match?.[2]?.replace(/\*+/g, "").trim() || "";
   });
   if (slides.some((text) => text.length < 10) || new Set(slides).size !== total) {
-    throw new Error(`O texto final deve conter ${total} slides distintos e completos antes de gerar imagens.`);
+    throw new Error(
+      `O texto final deve conter ${total} slides distintos e completos antes de gerar imagens.`,
+    );
   }
   return slides;
 }
 
 export function buildVisualBrief(b: VisualBrief): string {
-  if (!b.tema.trim() || !b.texto.trim()) throw new Error("Tema e texto final são obrigatórios para gerar a imagem.");
+  if (!b.tema.trim() || !b.texto.trim())
+    throw new Error("Tema e texto final são obrigatórios para gerar a imagem.");
   return `BRIEF VISUAL EXCLUSIVO — SLIDE ${b.slideIndex + 1}/${b.total}
 TEMA EXATO: ${b.tema}
 TÍTULO DESTE SLIDE: ${b.titulo}
@@ -41,17 +48,33 @@ TEXTO NA ARTE: português brasileiro correto. ${b.slideIndex === 0 ? `Renderizar
 Não inventar credenciais, informações clínicas, dados científicos ou símbolos de marca.`;
 }
 
-export interface BoundImage { postId: string; slideIndex: number; publicUrl: string; signedUrl: string }
+export interface BoundImage {
+  postId: string;
+  slideIndex: number;
+  publicUrl: string;
+  signedUrl: string;
+}
 
-export function validateImageBindings(postId: string, total: number, results: BoundImage[]): BoundImage[] {
-  if (results.length !== total) throw new Error("Carrossel incompleto; nenhuma imagem substituta será salva.");
+export function validateImageBindings(
+  postId: string,
+  total: number,
+  results: BoundImage[],
+): BoundImage[] {
+  if (results.length !== total)
+    throw new Error("Carrossel incompleto; nenhuma imagem substituta será salva.");
   const ordered = [...results].sort((a, b) => a.slideIndex - b.slideIndex);
   ordered.forEach((image, i) => {
-    if (image.postId !== postId || image.slideIndex !== i || !image.publicUrl.startsWith("https://") || !image.signedUrl.startsWith("https://")) {
+    if (
+      image.postId !== postId ||
+      image.slideIndex !== i ||
+      !image.publicUrl.startsWith("https://") ||
+      !image.signedUrl.startsWith("https://")
+    ) {
       throw new Error("Imagem vinculada ao post/slide incorreto; salvamento bloqueado.");
     }
   });
-  if (new Set(ordered.map((r) => r.publicUrl)).size !== total) throw new Error("URL repetida entre slides; salvamento bloqueado.");
+  if (new Set(ordered.map((r) => r.publicUrl)).size !== total)
+    throw new Error("URL repetida entre slides; salvamento bloqueado.");
   return ordered;
 }
 
@@ -61,10 +84,14 @@ export async function generateBoundImage(
   save: (base64: string, postId: string, slideIndex: number) => Promise<BoundImage>,
 ): Promise<BoundImage> {
   const prompt = buildVisualBrief(brief);
-  if (prompt.length > 28000) throw new Error("Brief muito extenso; reduza o conteúdo antes de tentar novamente. Nada foi truncado.");
+  if (prompt.length > 28000)
+    throw new Error(
+      "Brief muito extenso; reduza o conteúdo antes de tentar novamente. Nada foi truncado.",
+    );
   const base64 = await generate(prompt);
   if (!base64.trim()) throw new Error("O gerador não retornou imagem contextual. Tente novamente.");
   const result = await save(base64, brief.postId, brief.slideIndex);
-  if (result.postId !== brief.postId || result.slideIndex !== brief.slideIndex) throw new Error("Resultado associado ao slide incorreto.");
+  if (result.postId !== brief.postId || result.slideIndex !== brief.slideIndex)
+    throw new Error("Resultado associado ao slide incorreto.");
   return result;
 }
