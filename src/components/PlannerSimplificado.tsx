@@ -1,3 +1,4 @@
+import { ModelLabel, showAvisos } from "@/components/ModelLabel";
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -65,8 +66,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   // Geração local sem IA paga
   const [modo, setModo] = useState<Modo>("feed");
-  const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
-  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
+  const [modelo, setModelo] = useState<ModeloIA>("auto/gratis");
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("auto/gratis");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
   const defaultLogoKey: LogoKey = audiencia === "estudantes-graduacao" ? "liga-ctbmf" : "planner";
   const [logoKeys, setLogoKeys] = useState<LogoKey[]>([defaultLogoKey]);
@@ -316,6 +317,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modeloImagem,
         logoKeys,
       } as any });
+      showAvisos(out);
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, slideLegendas: (out as any).slideLegendas });
       setTema("");
@@ -355,6 +357,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modeloImagem,
         logoKeys,
       } as any });
+      showAvisos(out);
       await marcarConta(out.id);
       await approveFn({ data: { id: out.id, acao: "agendar" } });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
@@ -736,7 +739,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
                     )}
                   >
-                    {m.label}
+                    <ModelLabel m={m} />
                   </button>
                 ))}
               </div>
@@ -757,7 +760,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                         : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
                     )}
                   >
-                    {m.label}
+                    <ModelLabel m={m} />
                   </button>
                 ))}
               </div>

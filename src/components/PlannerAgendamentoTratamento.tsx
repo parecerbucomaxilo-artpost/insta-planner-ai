@@ -1,3 +1,4 @@
+import { ModelLabel, showAvisos } from "@/components/ModelLabel";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -84,8 +85,8 @@ export function PlannerAgendamentoTratamento() {
   const [quando, setQuando] = useState<"agora" | "data">("agora");
   const [data, setData] = useState("");
   const [hora, setHora] = useState("09:00");
-  const [modelo, setModelo] = useState<(typeof MODELOS_IA)[number]["id"]>("local/sem-custo");
-  const [modeloImagem, setModeloImagem] = useState<(typeof MODELOS_IMAGEM)[number]["id"]>("local/sem-custo");
+  const [modelo, setModelo] = useState<(typeof MODELOS_IA)[number]["id"]>("auto/gratis");
+  const [modeloImagem, setModeloImagem] = useState<(typeof MODELOS_IMAGEM)[number]["id"]>("auto/gratis");
   const [assunto, setAssunto] = useState("");
   const [legendaGerada, setLegendaGerada] = useState("");
   const [logoKeys, setLogoKeys] = useState<LogoKey[]>(["clinica-escola"]);
@@ -178,6 +179,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           logoKeys,
         } as any,
       });
+      showAvisos(out);
 
       // Legenda do convite SEMPRE é a template determinística focada em UM único
       // tratamento — nunca aceitamos texto da IA aqui porque ela drifta entre
@@ -408,7 +410,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
             <div className="flex flex-wrap gap-1.5">
               {MODELOS_IA.map((m) => (
                 <button key={m.id} type="button" onClick={() => setModelo(m.id)}
-                  className={cn("px-2 py-1 rounded text-[11px] font-semibold border", modelo === m.id ? "bg-amber-600 text-white border-amber-600" : "bg-white border-zinc-200 text-zinc-600")}>{m.label}</button>
+                  className={cn("px-2 py-1 rounded text-[11px] font-semibold border", modelo === m.id ? "bg-amber-600 text-white border-amber-600" : "bg-white border-zinc-200 text-zinc-600")}><ModelLabel m={m} /></button>
               ))}
             </div>
           </div>
@@ -417,7 +419,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
             <div className="flex flex-wrap gap-1.5">
               {MODELOS_IMAGEM.map((m) => (
                 <button key={m.id} type="button" onClick={() => setModeloImagem(m.id)}
-                  className={cn("px-2 py-1 rounded text-[11px] font-semibold border", modeloImagem === m.id ? "bg-fuchsia-600 text-white border-fuchsia-600" : "bg-white border-zinc-200 text-zinc-600")}>{m.label}</button>
+                  className={cn("px-2 py-1 rounded text-[11px] font-semibold border", modeloImagem === m.id ? "bg-fuchsia-600 text-white border-fuchsia-600" : "bg-white border-zinc-200 text-zinc-600")}><ModelLabel m={m} /></button>
               ))}
             </div>
           </div>

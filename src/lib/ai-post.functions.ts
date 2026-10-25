@@ -3,38 +3,11 @@ import { createServerFn } from "@tanstack/react-start";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 
-export const MODELOS_IA = [
-  { id: "local/sem-custo", label: "Local sem custo (texto)" },
-  { id: "openai/gpt-5-mini", label: "GPT-5 mini (texto)" },
-  { id: "openai/gpt-5-nano", label: "GPT-5 nano (texto)" },
-  { id: "openai/gpt-5", label: "GPT-5 (texto)" },
-  { id: "openai/gpt-5.4-mini", label: "GPT-5.4 mini (texto)" },
-  { id: "openai/gpt-5.4", label: "GPT-5.4 (texto)" },
-  { id: "openai/gpt-5.5", label: "GPT-5.5 (texto)" },
-  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (texto)" },
-  { id: "google/gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (texto)" },
-  { id: "google/gemini-3.5-flash", label: "Gemini 3.5 Flash (texto)" },
-  { id: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro (texto)" },
-  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (texto)" },
-  { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro (texto)" },
-] as const;
-const ModeloLocalInput = z
-  .string()
-  .optional()
-  .transform((v) => v || "local/sem-custo");
-
-export const MODELOS_IMAGEM = [
-  { id: "local/sem-custo", label: "Local sem custo (imagem)" },
-  { id: "google/gemini-3.1-flash-image", label: "Gemini Nano Banana 2 (imagem)" },
-  { id: "google/gemini-3-pro-image", label: "Gemini 3 Pro Image (imagem)" },
-  { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana (imagem)" },
-  { id: "openai/gpt-image-2", label: "GPT Image 2 (imagem)" },
-  { id: "openai/gpt-image-1-mini", label: "GPT image 1 mini (imagem)" },
-] as const;
-const ModeloImagemLocalInput = z
-  .string()
-  .optional()
-  .transform((v) => v || "local/sem-custo");
+import { MODELOS_IA, MODELOS_IMAGEM, normalizeTextModel, normalizeImageModel } from "@/lib/ai-models";
+export { MODELOS_IA, MODELOS_IMAGEM };
+// Catálogo único em src/lib/ai-models.ts. Valores legados/inválidos viram o padrão grátis.
+const ModeloLocalInput = z.string().optional().transform((v) => normalizeTextModel(v) as string);
+const ModeloImagemLocalInput = z.string().optional().transform((v) => normalizeImageModel(v) as string);
 
 const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico", "google-business"]);
 export type NivelConteudo = z.infer<typeof NivelEnum>;
@@ -47,7 +20,7 @@ const SingleInput = z.object({
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   quando: z.string().datetime().optional(),
-  // Aceita qualquer valor legado vindo de abas antigas, mas ignora e usa sempre o gerador local.
+  // Modelo escolhido na interface — respeitado de ponta a ponta.
   modelo: ModeloLocalInput,
   modeloImagem: ModeloImagemLocalInput,
   // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
@@ -1599,8 +1572,13 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           nivel,
           audiencia: data.audiencia,
         });
+    const { textModelUsesAI } = await import("@/lib/ai-gateway.server");
+    const avisos: string[] = [];
     const legendaPromise = (async () => {
-      if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") return localCaption();
+      if (!textModelUsesAI(data.modelo)) {
+        if (data.modelo !== "local/sem-custo") avisos.push("Legenda feita com o texto pronto do app: nenhuma chave de IA de texto está configurada para o modelo escolhido.");
+        return localCaption();
+      }
       // TEMAS DIVERSOS: prompt totalmente fora da saúde.
       if (isDiverso) {
         try {
@@ -1611,6 +1589,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           return txt || localCaption();
         } catch (err) {
           console.warn("[ai-post] legenda diversa caiu para local:", err instanceof Error ? err.message : err);
+          avisos.push("A IA de texto falhou; a legenda usa o texto pronto do app.");
           return localCaption();
         }
       }
@@ -1635,6 +1614,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         return txt || localCaption();
       } catch (err) {
         console.warn("[ai-post] legenda caiu para local:", err instanceof Error ? err.message : err);
+        avisos.push("A IA de texto falhou; a legenda usa o texto pronto do app.");
         return localCaption();
       }
     })();
@@ -1675,18 +1655,20 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         return await generateImageBase64({ prompt: safePrompt, size, model: data.modeloImagem });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message);
-        // Prompt inválido/tamanho/safety → não adianta re-tentar; usa fallback local
-        // para NÃO derrubar o post inteiro (usuário fica sem rascunho salvo).
-        const nonRetryable400 = /400|string too long|invalid.?prompt|safety|moderation|content_policy/i.test(message);
-        if (nonRetryable400) {
-          console.warn("[ai-post] imagem 400/safety → fallback local para não perder rascunho:", message.slice(0, 200));
-          const { generateImageBase64: gen } = await import("@/lib/ai-gateway.server");
-          return gen({ prompt: safePrompt.slice(0, 4000), size, model: "local/sem-custo" });
+        const retryable = /queue|quee|full|rate|429|503|tempor/i.test(message) && !/FREE_LIMIT|Free limit/i.test(message);
+        if (retryable && attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
+          return generateImageWithRetry(prompt, attempt + 1);
         }
-        if (!retryable || attempt >= 4) throw error;
-        await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
-        return generateImageWithRetry(prompt, attempt + 1);
+        // Falha definitiva: salva o rascunho com fundo liso da marca, mas AVISA o usuário.
+        console.warn("[ai-post] imagem IA falhou → fundo liso (com aviso):", message.slice(0, 200));
+        const motivo = /FREE_LIMIT|Free limit/i.test(message)
+          ? "o limite gratuito do Pollinations sem chave (1 imagem a cada 45 s) foi atingido — adicione POLLINATIONS_API_KEY ou escolha um modelo pago"
+          : message.slice(0, 160);
+        const aviso = `Imagem substituída por fundo liso da marca (sem IA): ${motivo}.`;
+        if (!avisos.includes(aviso)) avisos.push(aviso);
+        const { generateImageBase64: gen } = await import("@/lib/ai-gateway.server");
+        return gen({ prompt: safePrompt.slice(0, 4000), size, model: "local/sem-custo" });
       }
     };
     const applyOverlay = async (b64: string) => {
@@ -1765,7 +1747,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     let cenaVisualNexo = visualSceneForTopic(tema, guiaTema, data.audiencia);
     let cenasPorSlide: string[] = slideNarratives.map((_, i) => visualSceneForTopic(tema, guiaTema, data.audiencia, i));
     try {
-      if (!isDiverso && process.env.LOVABLE_API_KEY && data.modelo !== "local/sem-custo") {
+      if (!isDiverso && textModelUsesAI(data.modelo)) {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
         const briefSys = `Você é diretor de arte médico. Use o CONTRATO CLÍNICO como fonte única de verdade e devolva UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente tema + conduta. Sem metáforas vagas, sem texto na imagem, sem cor nomeada, sem pessoa real. Se a legenda estiver genérica, siga o contrato.`;
         const briefPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
@@ -1948,7 +1930,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const urls = imagensCarrosselCache.length
       ? imagensCarrosselCache
       : [urlImagemCache || urlImagem];
-    return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.length, urls, slideLegendas: slideNarratives.slice(0, urls.length) };
+    return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.length, urls, slideLegendas: slideNarratives.slice(0, urls.length), avisos };
   });
 
 // Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado gerado.
@@ -2057,14 +2039,15 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const nivel = resolveNivel(data.nivel, data.rede);
     const tema = data.tema.trim();
-    const captionModel = data.modelo === "local/sem-custo" ? "openai/gpt-5.5" : data.modelo;
+    const captionModel = data.modelo;
     const isChico = data.audiencia === "chico-drfm";
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const local = () => buildLocalCaption({
       tema, rede: data.rede, formato: data.formato,
       especialidade: data.especialidade, nivel, audiencia: data.audiencia,
     });
-    if (!process.env.LOVABLE_API_KEY) {
+    const { textModelUsesAI } = await import("@/lib/ai-gateway.server");
+    if (!textModelUsesAI(captionModel)) {
       return { legenda: local(), via: "local" as const };
     }
     try {
