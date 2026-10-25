@@ -745,11 +745,11 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         <div className="space-y-2 pt-3 border-t border-indigo-200">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-indigo-900">
-              {temas.length} slots no cronograma fixo — aprove para gerar imagem + agendar:
+              {temas.length} slots no cronograma fixo — cada um gera um post separado que vai para revisão (pré-visualize antes de aprovar):
             </p>
             <Button size="sm" variant="default" onClick={approveAll} disabled={busy !== null} className="bg-emerald-600 hover:bg-emerald-700">
               {busy === "week" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
-              Aprovar tudo
+              Gerar todos para revisão
             </Button>
           </div>
           <div className="max-h-80 overflow-y-auto space-y-1.5">
