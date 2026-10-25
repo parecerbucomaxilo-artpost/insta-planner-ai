@@ -1,7 +1,9 @@
+- [x] Tornar aprovação visível junto aos posts pendentes e expor listas persistidas após trocar abas; conferir Chico, Posts 7 dias, lista e calendário em desktop/celular com respostas somente de teste.
 - [x] Implementar revisão compartilhada nas listagens e prévias dos planners.
 - [x] Corrigir briefs específicos do Chico, transmissão ao provedor e vínculo post/slide, sem imagens substitutas.
 - [x] Executar 22 testes, lint dos arquivos novos e geração real de post/carrossel no modelo original, sem publicar.
 - [ ] Confirmar leitura autenticada dos exemplos após recarregar: falta sessão da conta solicitante; geração e prévia imediata verificadas.
 - [x] Verificar por testes os estados de revisão sem publicação e conferir confirmação/cancelamento no navegador.
 - [x] Executar seis testes, lint dos novos arquivos e conferir compilação automática.
-- [ ] Verificar aprovação/recusa e leitura de retorno com um post real: depende de o usuário entrar na prévia; não foi possível obter sessão da conta solicitante.
+- [ ] Verificar aprovação/recusa e leitura de retorno com um post real: usuário precisa entrar na conta na prévia; sessão própria indisponível e sessão de outra conta exige aprovação indisponível neste contexto. Sem afrouxar permissões.
+- [x] Executar 23 testes e lint dos controles compartilhados; compilação automática OK. Lint ampliado das telas tem 818 problemas preexistentes/estilísticos e não passou.

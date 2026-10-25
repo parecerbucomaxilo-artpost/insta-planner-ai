@@ -1,6 +1,6 @@
 import { Posts7Dias } from "@/components/Posts7Dias";
 import { PostReviewActions } from "@/components/PostReviewActions";
-import { POST_REVIEW_CHANGED } from "@/lib/post-review";
+import { POST_REVIEW_CHANGED, GENERATED_POST_STATUS } from "@/lib/post-review";
 import { startGenerationProgress } from "@/lib/generation-progress";
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,6 +102,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const effectiveAudiencia: typeof audiencia = usarTipoLiga ? "estudantes-graduacao" : audiencia;
   const effectiveConta = usarTipoLiga ? LIGA_ACCOUNT : conta;
   const canPublishAutomatically = destinoStatus === "ok";
+  const pendingCount = posts.filter((post) => post.status === "PendenteAprovacao").length;
 
 
   useEffect(() => {
@@ -320,6 +321,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const stopP = startGenerationProgress(tid, "Gerando post", formato === "Carrossel");
       const out = await genSingle({ data: {
         tema: temaReq,
+        status: GENERATED_POST_STATUS,
         especialidade: especialidadeReq,
         rede: "instagram",
         tipo,
@@ -333,6 +335,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       } as any }).finally(stopP);
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, slideLegendas: (out as any).slideLegendas });
+      await carregar();
       setTema("");
       toast.success("Pré-visualize abaixo.", { id: tid });
     } catch (e: any) {
@@ -364,7 +367,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     try {
       const stopP = startGenerationProgress(tid, "Gerando post", t.formato === "Carrossel");
       const out = await genSingle({ data: {
-        tema: t.tema, especialidade,
+        tema: t.tema, especialidade, status: GENERATED_POST_STATUS,
         rede: (t.rede === "estilo-x" ? "estilo-x" : "instagram") as any,
         tipo: t.tipo as any, formato: t.formato as any, quando: t.quando,
         ambasRedes: false,
@@ -374,9 +377,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         logoKeys,
       } as any }).finally(stopP);
       await marcarConta(out.id);
-      await approveFn({ data: { id: out.id, acao: "agendar" } });
+      setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, slideLegendas: (out as any).slideLegendas });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
-      toast.success("Agendado!", { id: tid });
+      toast.success("Post gerado. Aguardando aprovação.", { id: tid });
       carregar();
     } catch (e: any) {
       toast.error(e.message || "Falha", { id: tid });
@@ -497,6 +500,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      <Button className="min-h-11" onClick={() => document.getElementById(`${lsKey}-posts`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+        <Check className="h-4 w-4" /> Aprovar posts ({pendingCount})
+      </Button>
       <Card className="p-5 space-y-3">
         <Label className="flex items-center gap-2 text-sm font-semibold">
           <Instagram className="w-4 h-4" /> Conta do Instagram
@@ -744,11 +750,12 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               temaGuia={tema}
               gerar={async (item, formato) => {
                 const out = await genSingle({ data: {
-                  tema: item.tema, especialidade, rede: "instagram",
+                  tema: item.tema, especialidade, rede: "instagram", status: GENERATED_POST_STATUS,
                   tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando,
                   ambasRedes: false, audiencia: effectiveAudiencia, modelo, modeloImagem, logoKeys,
                 } as any });
                 await marcarConta(out.id);
+                await carregar();
                 return { id: out.id, urls: out.urls, legenda: out.legenda };
               }}
             />
@@ -847,8 +854,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                             <p className="text-sm font-medium truncate">{t.tema}</p>
                             <p className="text-xs text-zinc-500 truncate">{t.gancho}</p>
                           </div>
-                          <Button size="sm" variant="ghost" onClick={() => aprovarTema(t)}>
-                            <Check className="w-4 h-4 text-emerald-600" />
+                          <Button size="sm" variant="outline" onClick={() => aprovarTema(t)}>
+                            <Wand2 className="w-4 h-4" /> Gerar post
                           </Button>
                         </div>
                       );
@@ -864,6 +871,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {preview && (
             <Card className="p-5 space-y-3 border-2 border-emerald-200 bg-emerald-50/30">
               <h3 className="font-semibold text-emerald-900">Pré-visualização</h3>
+              <PostReviewActions key={preview.id} id={preview.id} disabled={busy} onChange={() => { setPreview(null); }} />
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   {preview.urls.length > 1 ? (
@@ -901,7 +909,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 </div>
                 <Textarea value={preview.legenda} readOnly rows={12} className="text-xs" />
               </div>
-              <PostReviewActions key={preview.id} id={preview.id} disabled={busy} onChange={() => { setPreview(null); }} />
               <div className="grid grid-cols-3 gap-2">
                 {quando === "agora" ? (
                   <Button onClick={() => decidirPreview("publicar")} className="bg-emerald-600 hover:bg-emerald-700 col-span-2">
@@ -995,7 +1002,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           )}
 
           {/* Lista */}
-          <Card className="p-5">
+          <Card id={`${lsKey}-posts`} className="p-5 scroll-mt-24">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-base font-semibold">Publicações de @{conta}</h3>
               <span className="text-xs text-zinc-500">{posts.length} {posts.length === 1 ? "post" : "posts"}</span>

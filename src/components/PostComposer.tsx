@@ -776,6 +776,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
               Confira a legenda e {preview && preview.urls.length > 1 ? `os ${preview.urls.length} cards` : "a imagem"} antes de publicar. Você pode descartar e gerar novamente.
             </DialogDescription>
           </DialogHeader>
+          {preview && <PostReviewActions key={preview.id} id={preview.id} disabled={discarding || approving !== null} onChange={() => { setPreview(null); onCreated(); }} />}
           {preview && (() => {
             const total = preview.urls.length;
             const safeIdx = Math.min(previewIdx, total - 1);
@@ -875,7 +876,6 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
               </div>
             );
           })()}
-          {preview && <PostReviewActions key={preview.id} id={preview.id} disabled={discarding || approving !== null} onChange={() => { setPreview(null); onCreated(); }} />}
           <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
             <Button
               variant="destructive"

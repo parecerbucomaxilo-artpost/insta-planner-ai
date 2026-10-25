@@ -1,4 +1,5 @@
 # Architecture rules
 - Generated-post review uses the shared PostReviewActions component and existing posts statuses through the authenticated browser client, so RLS applies and internal approval never invokes publishing.
+- Keep review actions before long slide/caption content and expose saved pending posts through visible navigation; generation refreshes persisted lists without auto-scheduling.
 - Chico images use finalized slide text through the contextual-image pipeline; generation errors never substitute providers or procedural images, so unrelated imagery cannot be saved as success.
 - Assign the post ID before image generation and bind fresh storage objects to slide indexes; validate order, completeness and unique URLs before inserting the post to prevent cross-post or cross-slide reuse.

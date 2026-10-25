@@ -129,9 +129,15 @@ export function PostReviewActions({
         : [];
   const caption = post?.legenda || post?.legenda_instagram || post?.legenda_linkedin;
   return (
-    <div className="space-y-2">
+    <div className="w-full min-w-0 space-y-2 rounded-md border border-border bg-background p-3">
       <div className="flex flex-wrap gap-2" aria-label="Revisão do post" aria-busy={busy !== null}>
-        <Button size="sm" variant="outline" disabled={blocked} onClick={visualizar}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="min-h-11 px-3 text-sm"
+          disabled={blocked}
+          onClick={visualizar}
+        >
           {busy === "visualizar" ? (
             <Loader2 className="h-4 w-4 mr-1 animate-spin" />
           ) : (
@@ -141,6 +147,7 @@ export function PostReviewActions({
         </Button>
         <Button
           size="sm"
+          className="min-h-11 flex-1 px-3 text-sm font-semibold order-first"
           disabled={blocked || !canReview(currentStatus)}
           onClick={() => decidir("aceitar")}
         >
@@ -149,11 +156,12 @@ export function PostReviewActions({
           ) : (
             <Check className="h-4 w-4 mr-1" />
           )}
-          Aceitar
+          Aprovar post
         </Button>
         <Button
           size="sm"
           variant="outline"
+          className="min-h-11 px-3 text-sm"
           disabled={blocked || !canReview(currentStatus)}
           onClick={() => setConfirm(true)}
         >
@@ -171,7 +179,7 @@ export function PostReviewActions({
           : currentStatus === "Arquivado"
             ? "Negado / arquivado"
             : currentStatus === "Rascunho"
-              ? "Rascunho — não publicado"
+              ? "Aprovado / rascunho — não publicado"
               : currentStatus}
       </p>
       <AlertDialog
