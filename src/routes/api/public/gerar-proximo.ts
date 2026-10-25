@@ -161,8 +161,8 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
               tipo: proximo.tipo,
               formato,
               quando: proximo.quando.toISOString(),
-              modelo: "local/sem-custo",
-              modeloImagem: "local/sem-custo",
+              modelo: "auto/gratis",
+              modeloImagem: "auto/gratis",
               ambasRedes: false,
               // Aguarda aprovação manual no preview — nunca publica direto.
               status: "PendenteAprovacao",
