@@ -1,4 +1,4 @@
-import { ModelLabel, showAvisos } from "@/components/ModelLabel";
+import { ModelLabel, showAvisos, useModeloBloqueado } from "@/components/ModelLabel";
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -40,6 +40,7 @@ interface PlannerSimplificadoProps {
 }
 
 export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao", permiteTipoLiga = false }: PlannerSimplificadoProps = {}) {
+  const bloqueado = useModeloBloqueado();
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
   const genCaption = useServerFn(generateCaptionOnly);
@@ -730,10 +731,10 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 {MODELOS_IA.map((m) => (
                   <button
                     key={m.id}
-                    type="button"
+                    type="button" disabled={bloqueado(m)}
                     onClick={() => setModelo(m.id)}
                     className={cn(
-                      "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
+                      "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
                       modelo === m.id
                         ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
                         : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
@@ -751,10 +752,10 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 {MODELOS_IMAGEM.map((m) => (
                   <button
                     key={m.id}
-                    type="button"
+                    type="button" disabled={bloqueado(m)}
                     onClick={() => setModeloImagem(m.id)}
                     className={cn(
-                      "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
+                      "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
                       modeloImagem === m.id
                         ? "bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm"
                         : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",

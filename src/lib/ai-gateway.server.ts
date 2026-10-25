@@ -31,7 +31,23 @@ export function freeProvidersStatus() {
     gemini: !!process.env.GEMINI_API_KEY,
     groq: !!process.env.GROQ_API_KEY,
     pollinations: !!process.env.POLLINATIONS_API_KEY,
+    openai: !!process.env.OPENAI_API_KEY,
+    // Aceite explícito de cobrança: segredo do servidor com valor exatamente "sim".
+    openaiPagoLiberado: process.env.OPENAI_ACEITO_COBRANCA?.trim().toLowerCase() === "sim",
+    geminiPagoLiberado: process.env.GEMINI_ACEITO_COBRANCA?.trim().toLowerCase() === "sim",
   };
+}
+
+/** Bloqueia chamadas pagas sem chave + aceite. Mensagem explica o motivo ao usuário. */
+function exigirPagoLiberado(provedor: "openai" | "gemini") {
+  const s = freeProvidersStatus();
+  if (provedor === "openai") {
+    if (!s.openai) throw new Error("OpenAI API desativada: cadastre OPENAI_API_KEY em Secrets (a assinatura ChatGPT não inclui API).");
+    if (!s.openaiPagoLiberado) throw new Error("OpenAI API é paga: adicione o segredo OPENAI_ACEITO_COBRANCA=sim para confirmar que aceita os custos.");
+  } else {
+    if (!s.gemini) throw new Error("Gemini API desativada: cadastre GEMINI_API_KEY em Secrets (a assinatura Gemini/Google One não inclui API).");
+    if (!s.geminiPagoLiberado) throw new Error("Imagem pelo Gemini API é paga: adicione o segredo GEMINI_ACEITO_COBRANCA=sim para confirmar que aceita os custos.");
+  }
 }
 
 /** True quando o modelo de texto escolhido pode, de fato, chamar alguma IA. */
@@ -43,6 +59,7 @@ export function textModelUsesAI(model?: string): boolean {
   if (id.startsWith("gemini/")) return s.gemini;
   if (id.startsWith("groq/")) return s.groq;
   if (id.startsWith("pollinations/")) return s.pollinations;
+  if (id.startsWith("openai/")) return s.openai && s.openaiPagoLiberado;
   return false;
 }
 
@@ -124,8 +141,12 @@ export async function generateTextAI(opts: {
   if (model.startsWith("gemini/")) return generateTextFree("gemini", model.slice(7), opts.system, opts.prompt);
   if (model.startsWith("groq/")) return generateTextFree("groq", model.slice(5), opts.system, opts.prompt);
   if (model.startsWith("pollinations/")) return generateTextFree("pollinations", model.slice(13), opts.system, opts.prompt);
+  if (model.startsWith("openai/")) {
+    exigirPagoLiberado("openai");
+    return openAICompatChat({ url: "https://api.openai.com/v1/chat/completions", apiKey: process.env.OPENAI_API_KEY!, model: model.slice(7), system: opts.system, prompt: opts.prompt, label: "OpenAI" });
+  }
 
-  throw new Error(`Modelo de texto não suportado (somente gratuitos): ${model}`);
+  throw new Error(`Modelo de texto não suportado: ${model}`);
 }
 
 // ---------------- Fallback local (gerador procedural anatômico) ----------------
@@ -244,6 +265,48 @@ export async function generateImageBase64(opts: {
   if (model === "local/sem-custo") return generateImageLocal({ prompt: opts.prompt, size });
   if (model === "auto/gratis") return generateImagePollinations({ prompt: opts.prompt, size, model: "flux" });
   if (model.startsWith("pollinations/")) return generateImagePollinations({ prompt: opts.prompt, size, model });
+  if (model.startsWith("openai/")) {
+    exigirPagoLiberado("openai");
+    return generateImageOpenAI({ prompt: opts.prompt, size, model: model.slice(7) });
+  }
+  if (model.startsWith("gemini/")) {
+    exigirPagoLiberado("gemini");
+    return generateImageGemini({ prompt: opts.prompt, size, model: model.slice(7) });
+  }
 
-  throw new Error(`Modelo de imagem não suportado (somente gratuitos): ${model}`);
+  throw new Error(`Modelo de imagem não suportado: ${model}`);
+}
+
+// OpenAI Images API oficial (POST /v1/images/generations). Pago; só após aceite.
+async function generateImageOpenAI(opts: { prompt: string; size: string; model: string }): Promise<string> {
+  const res = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+    body: JSON.stringify({ model: opts.model, prompt: opts.prompt.slice(0, 30000), size: opts.size, n: 1 }),
+  });
+  if (!res.ok) throw new Error(`OpenAI imagem ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+  const json: any = await res.json();
+  const b64 = json?.data?.[0]?.b64_json;
+  if (!b64) throw new Error("OpenAI imagem: resposta sem imagem");
+  return b64;
+}
+
+// Gemini API oficial (generateContent com saída de imagem). Pago; só após aceite.
+async function generateImageGemini(opts: { prompt: string; size: string; model: string }): Promise<string> {
+  const aspect = opts.size === "1536x1024" ? "3:2" : opts.size === "1024x1536" ? "2:3" : "1:1";
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${opts.model}:generateContent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: opts.prompt.slice(0, 30000) }] }],
+      generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: aspect } },
+    }),
+  });
+  if (!res.ok) throw new Error(`Gemini imagem ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+  const json: any = await res.json();
+  const parts: any[] = json?.candidates?.[0]?.content?.parts ?? [];
+  const img = parts.find((p) => p?.inlineData?.data || p?.inline_data?.data);
+  const b64 = img?.inlineData?.data ?? img?.inline_data?.data;
+  if (!b64) throw new Error("Gemini imagem: resposta sem imagem");
+  return b64;
 }

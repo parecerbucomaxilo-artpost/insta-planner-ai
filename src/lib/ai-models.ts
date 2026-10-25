@@ -6,9 +6,17 @@
 //  - "gratis":       funciona sem chave, mas com limites fortes do provedor.
 //  - "chave-gratis": exige cadastro e chave gratuita (camada gratuita com cota do provedor).
 //  Modelos pagos (Lovable AI Gateway) foram REMOVIDOS: o app não gera cobrança de IA.
+//  - "pago-opt-in":  API oficial com cobrança (OpenAI; imagem Gemini). DESATIVADO até o
+//                    usuário cadastrar a chave E o segredo de aceite de cobrança no servidor.
+//                    Nunca entra no modo "Automático grátis".
 //  - "sem-ia":       conteúdo pronto do próprio app, sem IA.
+//
+// IMPORTANTE: assinaturas de consumidor (Gemini/Google One familiar, ChatGPT Plus/Team/familiar)
+// NÃO incluem acesso à API. O app usa só as APIs oficiais (ai.google.dev / platform.openai.com)
+// com chave própria — nunca o site/app do Gemini ou do ChatGPT.
 
-export type NivelCusto = "gratis" | "chave-gratis" | "sem-ia";
+export type NivelCusto = "gratis" | "chave-gratis" | "pago-opt-in" | "sem-ia";
+export type Provedor = "gemini" | "openai" | "groq" | "pollinations" | "auto" | "local";
 
 export type ModeloInfo = {
   id: string;
@@ -20,6 +28,7 @@ export type ModeloInfo = {
 export const NIVEL_LABEL: Record<NivelCusto, string> = {
   gratis: "Grátis (com limites)",
   "chave-gratis": "Requer chave gratuita",
+  "pago-opt-in": "Pago — exige chave + aceite de cobrança",
   "sem-ia": "Sem IA",
 };
 
@@ -47,6 +56,12 @@ export const MODELOS_IA = [
     label: "GPT-5.4 nano (Pollinations)",
     nivel: "chave-gratis",
     nota: "Chave POLLINATIONS_API_KEY. Cota gratuita limitada.",
+  },
+  {
+    id: "openai/gpt-5-mini",
+    label: "ChatGPT / OpenAI API — GPT-5 mini",
+    nivel: "pago-opt-in",
+    nota: "API oficial da OpenAI (platform.openai.com), cobrada por token. Exige OPENAI_API_KEY e OPENAI_ACEITO_COBRANCA=sim. A assinatura ChatGPT não inclui API.",
   },
   {
     id: "local/sem-custo",
@@ -82,6 +97,18 @@ export const MODELOS_IMAGEM = [
     nota: "Chave POLLINATIONS_API_KEY.",
   },
   {
+    id: "gemini/gemini-3.1-flash-image",
+    label: "Gemini API — Nano Banana 2 (imagem)",
+    nivel: "pago-opt-in",
+    nota: "Modelos de imagem do Gemini não têm camada gratuita na API. Exige GEMINI_API_KEY e GEMINI_ACEITO_COBRANCA=sim (conta com faturamento ativo).",
+  },
+  {
+    id: "openai/gpt-image-2",
+    label: "ChatGPT / OpenAI API — GPT Image (imagem)",
+    nivel: "pago-opt-in",
+    nota: "API oficial da OpenAI, cobrada por imagem/token. Exige OPENAI_API_KEY e OPENAI_ACEITO_COBRANCA=sim.",
+  },
+  {
     id: "local/sem-custo",
     label: "Fundo liso do app",
     nivel: "sem-ia",
@@ -102,6 +129,32 @@ const ALIASES: Record<string, string> = {
 };
 
 /** Normaliza valores legados/inválidos para um id válido do catálogo. */
+export function provedorDoModelo(id: string): Provedor {
+  if (id.startsWith("auto/")) return "auto";
+  if (id.startsWith("local/")) return "local";
+  return id.split("/")[0] as Provedor;
+}
+
+/** Status de conexão (somente booleanos vindos do servidor). */
+export type StatusProvedores = {
+  gemini: boolean;
+  groq: boolean;
+  pollinations: boolean;
+  openai: boolean;
+  openaiPagoLiberado: boolean;
+  geminiPagoLiberado: boolean;
+};
+
+/** Um modelo pode ser usado agora? Pagos só com chave + aceite explícito de cobrança. */
+export function modeloLiberado(m: ModeloInfo, s: StatusProvedores | null): boolean {
+  if (m.nivel !== "pago-opt-in") return true;
+  if (!s) return false;
+  const p = provedorDoModelo(m.id);
+  if (p === "openai") return s.openai && s.openaiPagoLiberado;
+  if (p === "gemini") return s.gemini && s.geminiPagoLiberado;
+  return false;
+}
+
 export function normalizeTextModel(v?: string | null): ModeloTexto {
   const id = ALIASES[v ?? ""] ?? v;
   return (MODELOS_IA.find((m) => m.id === id)?.id ?? DEFAULT_TEXT_MODEL) as ModeloTexto;
