@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 import { ANGULOS_EDITORIAIS, JANELA_ASSUNTO_DIAS, acharConflito, assuntoPrincipal, chaveIdempotencia, findDuplicate, mensagemConflito, planDistinctTopics, titleOf, type AssinaturaPost } from "./dedup";
+import { assinaturasDoHistorico, filtroHistorico, slidesRepetidos } from "./post-guard";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
 export const MODELOS_IA = [
@@ -1628,20 +1629,12 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         .select("prompt_ia, legenda, created_at, data_agendamento, status")
         .eq("user_id", context.userId)
         .neq("status", "Erro")
-        .or(`created_at.gte.${desdeDedup},data_agendamento.gte.${desdeAgenda}`)
+        .or(filtroHistorico(agora))
         .order("created_at", { ascending: false })
         .limit(400);
       if (recErr) throw recErr;
-      for (const r of recentes ?? []) {
-        if (r.prompt_ia) historicoTemas.push(r.prompt_ia);
-        historicoSig.push({
-          tema: r.prompt_ia || "",
-          titulo: r.legenda ? titleOf(r.legenda) : "",
-          corpo: (r.legenda || "").slice(0, 1500),
-          quando: r.data_agendamento ?? null,
-          status: r.status,
-        });
-      }
+      for (const r of recentes ?? []) if (r.prompt_ia) historicoTemas.push(r.prompt_ia);
+      historicoSig.push(...assinaturasDoHistorico(recentes ?? []));
     } catch (e) {
       console.warn("[dedup] histórico indisponível; usando só temas do lote:", e instanceof Error ? e.message : e);
     }
@@ -1867,6 +1860,11 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       ? isChico ? extractFinalSlides(legendaBaseResolvida, slideCount)
         : buildSlideNarratives(tema, data.audiencia)
       : [];
+    // Carrossel: slides progressivos dentro do mesmo tema — slide que repete outro bloqueia o salvamento.
+    if (formato === "Carrossel" && isChico) {
+      const rep = slidesRepetidos(slideNarratives);
+      if (rep.length) throw new Error(`O carrossel repetiu o conteúdo no(s) slide(s) ${rep.map((i) => i + 1).join(", ")}. Nada foi salvo — gere novamente para obter slides diferentes e progressivos.`);
+    }
     const legendaResolvida = isChico ? legendaBaseResolvida
       : formato === "Carrossel" && !isDiverso ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia) : legendaBaseResolvida;
 

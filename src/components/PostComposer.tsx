@@ -1,4 +1,5 @@
 import { Posts7Dias } from "@/components/Posts7Dias";
+import { salvarPostInedito } from "@/lib/post-guard";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import { startGenerationProgress } from "@/lib/generation-progress";
 import { useState, useCallback, useRef, type ChangeEvent } from "react";
@@ -103,8 +104,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           ? "Publicado"
           : "Agendado";
 
-      const { data: inserted, error: dbError } = await supabase.from("posts").insert({
-        user_id: userId,
+      const salvo = await salvarPostInedito(supabase, userId, {
         tipo_post: tipoDb,
         legenda,
         url_imagem: publicUrl,
@@ -114,9 +114,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         status: initialStatus,
         data_agendamento: dataAgendamentoIso,
         estilo_layout: formato === "Estilo X" ? "Estilo X" : "Padrão",
-      } as any).select("id").single();
-
-      if (dbError) throw dbError;
+      });
+      if (salvo.existente) { toast.info("Este post já estava salvo — nenhuma cópia criada.", { id: tId }); onCreated(); return; }
+      const inserted = { id: salvo.id };
       if (quando === "agora" && networks.includes("instagram") && inserted?.id) {
         const out = await publishIg({ data: { id: inserted.id } });
         if (out && "ok" in out && out.ok === false) {
