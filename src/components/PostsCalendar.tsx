@@ -135,6 +135,19 @@ export function PostsCalendar({ posts, onChange }: { posts: PostRow[]; onChange?
           </ul>
         )}
       </Card>
+      {posts.some((post) => !post.data_agendamento && post.status === "PendenteAprovacao") && (
+        <section className="lg:col-span-2 space-y-3">
+          <h3 className="font-semibold">Posts aguardando aprovação — sem data</h3>
+          <ul className="space-y-3">
+            {posts.filter((post) => !post.data_agendamento && post.status === "PendenteAprovacao").map((post) => (
+              <li key={post.id} className="space-y-2 rounded-md border border-border p-3">
+                <PostReviewActions id={post.id} status={post.status} onChange={() => onChange?.()} />
+                <p className="text-sm line-clamp-2">{post.legenda || "Sem legenda disponível."}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

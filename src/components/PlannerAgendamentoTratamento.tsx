@@ -449,7 +449,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       {preview && (
         <Card className="p-5 space-y-3 border-2 border-emerald-300 bg-emerald-50/30">
           <h3 className="font-semibold text-emerald-900 flex items-center gap-2"><Sparkles className="w-4 h-4" /> Pré-visualização</h3>
-          <PostReviewActions key={preview.id} id={preview.id} disabled={busy} onChange={() => setPreview(null)} />
+          <PostReviewActions key={preview.id} id={preview.id} disabled={busy} />
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               {preview.urls.length > 1 ? (
