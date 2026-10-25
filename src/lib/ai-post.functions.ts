@@ -1663,9 +1663,9 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const conflito = temaDup(tema);
       if (conflito) {
         if (!(data.tema ?? "").trim()) {
-          // Tema automático: pede nova ideia (assunto diferente), no máximo 3 vezes.
+          // Tema automático: pede nova ideia (assunto diferente), no máximo 8 vezes (sem custo de IA).
           let novo: string | null = null;
-          for (let i = 0; i < 3 && !novo; i++) {
+          for (let i = 0; i < 8 && !novo; i++) {
             const cand = chooseLocalTema(data.audiencia, historicoTemas, `${data.rede}-${formato}-${i}-${Date.now()}`, data.especialidade);
             if (!temaDup(cand)) novo = cand;
             else historicoTemas.push(cand);
