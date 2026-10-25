@@ -1200,13 +1200,21 @@ function topicGuidance(tema: string): TopicGuidance {
       ganho: "dar mais segurança ao tratamento médico e reduzir complicações evitáveis relacionadas à boca",
     };
   }
-  return {
+  return GENERIC_GUIDANCE;
+}
+
+// Guia genérico: usado quando o tema não tem roteiro clínico próprio. NÃO deve virar
+// parágrafo de preenchimento em posts diferentes (era a origem de textos "iguais").
+const GENERIC_GUIDANCE: TopicGuidance = {
     oQue: "um sinal na boca, face ou mandíbula pode ter causas diferentes e não deve ser interpretado isoladamente",
     porQue: "dor, inflamação, sobrecarga muscular, posição dos dentes e alterações anatômicas podem produzir sintomas parecidos",
     conduta: "o caminho seguro é avaliação clínica, exame de imagem quando necessário e plano individual com orientação, controle dos fatores de risco e tratamento específico",
     alerta: "dor persistente, inchaço, travamento, sangramento, febre ou piora progressiva pedem avaliação especializada",
     ganho: "entender a causa real e escolher a conduta certa, sem soluções genéricas",
-  };
+};
+
+function isGenericGuidance(g: TopicGuidance): boolean {
+  return g === GENERIC_GUIDANCE;
 }
 
 function visualSceneForTopic(tema: string, g: TopicGuidance, audiencia: z.infer<typeof SingleInput>["audiencia"], slideIndex?: number) {
@@ -1415,6 +1423,12 @@ function completeCaptionIfNeeded(params: {
   const minLen = params.formato === "Story" ? 140 : params.rede === "linkedin" ? 600 : 380;
   const tooShort = raw.length < minLen;
   if (!tooShort && hasConduta && hasWhy && hasAlert && hasGanho) return raw;
+  // Texto completo escrito para o tema + guia genérico: não anexar parágrafos de preenchimento
+  // idênticos aos de outros posts (só o fechamento oficial, se faltar).
+  if (!tooShort && isGenericGuidance(g)) {
+    if (params.rede === "linkedin" || params.formato === "Story" || /link da bio|link na bio/i.test(raw)) return raw;
+    return `${raw}\n\n${params.audiencia === "estudantes-graduacao" ? "Salve para revisar e compare com sua conduta na clínica." : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`}`;
+  }
 
   if (params.formato === "Story") {
     return `${raw}\n\nO que fazer: ${g.conduta}.\n\nGanho: ${g.ganho}.\n\nAtenção: ${g.alerta}.\n\nLink na Bio`;
