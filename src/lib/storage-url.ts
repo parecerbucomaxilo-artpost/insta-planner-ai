@@ -41,6 +41,12 @@ function isCacheValid(expiresAt: string | null | undefined) {
   return new Date(expiresAt).getTime() - Date.now() > CACHE_REFRESH_MARGIN_MS;
 }
 
+export function samePostMediaObject(original: string | null | undefined, cached: string | null | undefined): boolean {
+  const source = getPostStorageObjectRef(original);
+  const cache = getPostStorageObjectRef(cached);
+  return Boolean(source && cache && source.bucket === cache.bucket && source.path === cache.path);
+}
+
 export async function createPostMediaDisplayUrl(value: string | null | undefined): Promise<string | null> {
   if (!value) return null;
   const ref = getPostStorageObjectRef(value);
@@ -84,10 +90,13 @@ export async function signPostMediaUrls<T extends {
 }>(
   post: T,
 ): Promise<T & { imagens_carrossel: string[] }> {
-  const cachedImagem = post.url_imagem_cache && isCacheValid(post.url_imagem_cache_expires_at) ? post.url_imagem_cache : null;
+  const cachedImagem = post.url_imagem_cache && isCacheValid(post.url_imagem_cache_expires_at) && samePostMediaObject(post.url_imagem, post.url_imagem_cache) ? post.url_imagem_cache : null;
+  const sourceCarousel = normalizeCarousel(post.imagens_carrossel);
+  const candidateCache = normalizeCarousel(post.imagens_carrossel_cache);
   const cachedCarousel = isCacheValid(post.imagens_carrossel_cache_expires_at)
-    ? normalizeCarousel(post.imagens_carrossel_cache)
-    : [];
+    && candidateCache.length === sourceCarousel.length
+    && candidateCache.every((url, i) => samePostMediaObject(sourceCarousel[i], url))
+    ? candidateCache : [];
 
   const [urlImagem, urlDaImagem, imagensCarrossel] = await Promise.all([
     cachedImagem ? Promise.resolve(cachedImagem) : createPostMediaDisplayUrl(post.url_imagem),
