@@ -193,3 +193,212 @@ export function chaveIdempotencia(
     (data.quando ?? new Date().toISOString()).slice(0, 10),
   ]);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CAMADA SEMÂNTICA — "assunto-raiz" + ângulo + intenção + título + corpo.
+// A comparação de palavras sozinha deixava passar posts essencialmente iguais com
+// palavras diferentes (ex.: "Cirurgia ortognática Classe III", "Quando a mordida
+// interfere na mastigação" e "Distração osteogênica em deformidades" na mesma semana).
+// Cada tema é mapeado para um assunto-raiz clínico; dois posts com o mesmo assunto-raiz
+// na mesma janela de dias são o MESMO assunto, mesmo com títulos diferentes.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Ordem importa: o primeiro assunto que casar é o assunto principal do tema. */
+export const ASSUNTOS_RAIZ: Array<{ id: string; re: RegExp }> = [
+  { id: "anestesia-local", re: /\b(anestesi|bloqueio do nervo|carpule|agulha)/ },
+  { id: "sutura", re: /\bsutura/ },
+  { id: "forceps-exodontia", re: /\b(forceps|alveoloplastia)/ },
+  { id: "alveolite-posoperatorio", re: /\b(alveolite|trismo|pos ?operatori|coagulo)/ },
+  { id: "terceiro-molar", re: /\b(siso|terceiros? molar|coronectomia|inclus)/ },
+  { id: "bruxismo-masseter", re: /\b(bruxismo|apertamento|masseter|miofascia|cefaleia|dor de cabeca|musculos da face)/ },
+  { id: "atm", re: /\b(atm|temporomandibular|disco articular|estalo|travar|trava|luxacao|osteoartrose|condil)/ },
+  { id: "ortognatica-deformidades", re: /\b(ortognatic|prognatismo|retrognatismo|mordida|deformidade|distracao osteogenica|assimetria|harmonia facial)/ },
+  { id: "apneia-ronco", re: /\b(apneia|ronco|avanco maxilomandibular)/ },
+  { id: "infeccao-odontogenica", re: /\b(infecc|ludwig|osteomielite|abscesso)/ },
+  { id: "trauma-facial", re: /\b(trauma facia|traumas facia|fratura|zigoma|orbita)/ },
+  { id: "trauma-dental", re: /\b(avulsao|reimplante|dentoalveolar)/ },
+  { id: "seio-maxilar", re: /\b(seio maxilar|sinusite|bucossinusal)/ },
+  { id: "implantes-enxertos", re: /\b(implante|enxerto|all on 4|pre protetica|perda ossea|cirurgia guiada)/ },
+  { id: "planejamento-digital", re: /\b(planejamento digital|computador|impressao 3d)/ },
+  { id: "cistos", re: /\b(cisto|queratocisto)/ },
+  { id: "tumores-odontogenicos", re: /\b(odontoma|ameloblastoma|tumor|tumores)/ },
+  { id: "displasia-fibrosa", re: /\bdisplasia fibrosa/ },
+  { id: "cancer-boca", re: /\b(cancer|ferida na boca|carcinoma|biopsia imediata)/ },
+  { id: "lesoes-potencialmente-malignas", re: /\b(leucoplasia|eritroplasia|liquen)/ },
+  { id: "glandulas-salivares", re: /\b(sialolit|mucocele|ranula|xerostomia|glandula salivar|glandulas salivares|parotid)/ },
+  { id: "nervos-dor-facial", re: /\b(neuralgia|trigemeo|parestesia|nervo alveolar|paralisia facial|eagle|estiloide)/ },
+  { id: "osteonecrose", re: /\b(osteonecrose|bisfosfonato|osteorradionecrose)/ },
+  { id: "oncologia-radioterapia", re: /\b(oncologic|radioterapia|mucosite|quimio)/ },
+  { id: "hospitalar-uti", re: /\b(uti|internad|ventilacao|hospitalar|pneumonia)/ },
+  { id: "pacientes-sistemicos", re: /\b(cardiopata|diabetic|anticoagulad|gestante)/ },
+  { id: "freio-lingual", re: /\b(freio lingual|frenectomia|anquiloglossia)/ },
+  { id: "fissuras", re: /\bfissura/ },
+  { id: "ancoragem-ortodontica", re: /\b(miniparafuso|marpe|expansao maxilar)/ },
+  { id: "estetica-facial", re: /\b(toxina botulinica|preenchedor|harmonizacao)/ },
+  { id: "supranumerarios", re: /\bsupranumerari/ },
+];
+
+const baseTema = (t: string) => (t || "").split(" — ")[0];
+
+/** Todos os assuntos-raiz citados num texto (tema, título ou corpo). */
+export function assuntosDe(texto: string): string[] {
+  const n = ` ${normalizeText(texto)} `;
+  return ASSUNTOS_RAIZ.filter((a) => a.re.test(n)).map((a) => a.id);
+}
+
+/** Assunto principal do tema. Sem correspondência no mapa: radicais principais do tema. */
+export function assuntoPrincipal(tema: string): string {
+  const [primeiro] = assuntosDe(baseTema(tema));
+  if (primeiro) return primeiro;
+  const t = [...tokens(baseTema(tema))].slice(0, 2).sort();
+  return t.length ? `t:${t.join("+")}` : "";
+}
+
+/** Ângulo editorial (sufixo " — ângulo" do planner), normalizado. */
+export function anguloDe(tema: string): string {
+  const parts = (tema || "").split(" — ");
+  return parts.length > 1 ? normalizeText(parts.slice(1).join(" ")) : "";
+}
+
+const BOILERPLATE =
+  /(#|link na bio|link da bio|atend|prof\.? francisco|francisco menezes|crosp|wa\.me|whatsapp|duvidas\?|hook_imagem|alt text|cirurgia e traumatologia bucomaxilofacia|odontologia hospitalar$)/i;
+
+/** Corpo editorial sem assinatura, CTA fixo, cidades e hashtags (que são iguais em todos os posts). */
+export function corpoEditorial(legenda: string): string {
+  return (legenda || "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l && !BOILERPLATE.test(l))
+    .join("\n");
+}
+
+/** Fração dos trechos de 4 palavras do menor texto que aparecem no outro (frases reaproveitadas). */
+export function overlapTrechos(a: string, b: string, n = 4): number {
+  const sh = (s: string) => {
+    const w = normalizeText(s).split(" ").filter(Boolean);
+    const out = new Set<string>();
+    for (let i = 0; i + n <= w.length; i++) out.add(w.slice(i, i + n).join(" "));
+    return out;
+  };
+  const sa = sh(a);
+  const sb = sh(b);
+  if (sa.size < 8 || sb.size < 8) return 0;
+  const [menor, maior] = sa.size <= sb.size ? [sa, sb] : [sb, sa];
+  let inter = 0;
+  for (const s of menor) if (maior.has(s)) inter++;
+  return inter / menor.size;
+}
+
+export type AssinaturaPost = {
+  tema: string;
+  titulo?: string;
+  corpo?: string;
+  objetivo?: string;
+  /** ISO da data agendada (ou da criação, se não houver data). */
+  quando?: string | null;
+  status?: string | null;
+};
+
+export type ConflitoPost = {
+  motivo: "tema" | "assunto-na-janela" | "assunto-e-angulo" | "titulo" | "corpo";
+  com: string;
+};
+
+export type OpcoesConflito = {
+  /** Dias ao redor do slot em que o mesmo assunto-raiz não pode repetir. */
+  janelaDias?: number;
+  /** Semana guiada por um tema escolhido pelo usuário: mesmo assunto permitido, ângulos não. */
+  assuntoGuiado?: boolean;
+};
+
+export const JANELA_ASSUNTO_DIAS = 6;
+
+function dentroDaJanela(a?: string | null, b?: string | null, dias = JANELA_ASSUNTO_DIAS) {
+  if (!a || !b) return true; // sem data: trata como mesmo lote (mais seguro)
+  const da = new Date(a).getTime();
+  const db = new Date(b).getTime();
+  if (!Number.isFinite(da) || !Number.isFinite(db)) return true;
+  return Math.abs(da - db) <= dias * 24 * 60 * 60 * 1000;
+}
+
+/** Decide se `cand` repete `hist` (tema + intenção + ângulo + título + corpo). */
+export function conflitoSemantico(
+  cand: AssinaturaPost,
+  hist: AssinaturaPost,
+  opts: OpcoesConflito = {},
+): ConflitoPost | null {
+  const com = hist.titulo || hist.tema;
+  if (cand.tema && hist.tema) {
+    if (
+      similarity(cand.tema, hist.tema) >= DUP_THRESHOLD ||
+      similarity(baseTema(cand.tema), baseTema(hist.tema)) >= 0.95
+    ) {
+      const angA = anguloDe(cand.tema);
+      const angB = anguloDe(hist.tema);
+      // Mesmo assunto com ângulo explicitamente diferente só é aceito em semana guiada.
+      if (!(opts.assuntoGuiado && angA && angB && angA !== angB)) return { motivo: "tema", com };
+    }
+    const aA = assuntoPrincipal(cand.tema);
+    const aB = assuntoPrincipal(hist.tema);
+    if (aA && aA === aB) {
+      const angA = anguloDe(cand.tema);
+      const angB = anguloDe(hist.tema);
+      if (angA && angA === angB) return { motivo: "assunto-e-angulo", com };
+      if (
+        !opts.assuntoGuiado &&
+        hist.status !== "Arquivado" &&
+        dentroDaJanela(cand.quando, hist.quando, opts.janelaDias)
+      )
+        return { motivo: "assunto-na-janela", com };
+    }
+  }
+  if (cand.titulo && hist.titulo && similarity(cand.titulo, hist.titulo) >= 0.8)
+    return { motivo: "titulo", com };
+  const ca = corpoEditorial(cand.corpo || "");
+  const cb = corpoEditorial(hist.corpo || "");
+  if (ca.length >= 120 && cb.length >= 120) {
+    if (similarity(ca.slice(0, 900), cb.slice(0, 900)) >= 0.6 || overlapTrechos(ca, cb) >= 0.3)
+      return { motivo: "corpo", com };
+  }
+  return null;
+}
+
+export function acharConflito(
+  cand: AssinaturaPost,
+  historico: AssinaturaPost[],
+  opts: OpcoesConflito = {},
+): ConflitoPost | null {
+  for (const h of historico) {
+    const c = conflitoSemantico(cand, h, opts);
+    if (c) return c;
+  }
+  return null;
+}
+
+/** Índices do lote que repetem um item anterior (o primeiro de cada grupo fica). */
+export function conflitosNoLote(itens: AssinaturaPost[], opts: OpcoesConflito = {}): number[] {
+  const aceitos: AssinaturaPost[] = [];
+  const dups: number[] = [];
+  itens.forEach((it, i) => {
+    if (!it.tema.trim()) return;
+    if (acharConflito(it, aceitos, opts)) dups.push(i);
+    else aceitos.push(it);
+  });
+  return dups;
+}
+
+export function mensagemConflito(c: ConflitoPost): string {
+  const alvo = `"${c.com.slice(0, 70)}"`;
+  switch (c.motivo) {
+    case "assunto-na-janela":
+      return `Mesmo assunto de um post próximo (${alvo}). Escolha um assunto diferente para esta semana.`;
+    case "assunto-e-angulo":
+      return `Mesmo assunto e mesma abordagem de um post recente (${alvo}).`;
+    case "tema":
+      return `Tema repetido: já usado em ${alvo}.`;
+    case "titulo":
+      return `Título muito parecido com ${alvo}.`;
+    case "corpo":
+      return `Texto essencialmente igual a ${alvo}.`;
+  }
+}
