@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, X, Eye, Loader2, ChevronLeft, ChevronRight, Pencil, Save } from "lucide-react";
+import { Check, X, Eye, Loader2, ChevronLeft, ChevronRight, Pencil, Save, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   canEditPreview,
+  formatPreviewDate,
+  loadPostPreview,
   previewCaption,
-  previewMedia,
   previewPlatforms,
   savedSlideText,
+  type PreviewData,
   type PreviewPlatform,
 } from "@/lib/post-preview";
 import {
@@ -30,7 +30,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { signPostMediaUrls } from "@/lib/storage-url";
+import { signPostMediaStrict } from "@/lib/storage-url";
 import type { PostRow } from "@/lib/posts-types";
 import {
   canReview,
@@ -55,7 +55,9 @@ export function PostReviewActions({
   const lock = useRef(false);
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
-  const [post, setPost] = useState<PostRow | null>(null);
+  const [preview, setPreview] = useState<PreviewData | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const post = preview?.post ?? null;
   const [slide, setSlide] = useState(0);
   const [mediaError, setMediaError] = useState(false);
   const [platform, setPlatform] = useState<PreviewPlatform | null>(null);
@@ -76,24 +78,34 @@ export function PostReviewActions({
     setMediaError(false);
   }, [slide, post]);
 
+  const carregarPrevia = async () => {
+    const data = await loadPostPreview(id, {
+      fetchPost: async (postId) => {
+        const { data, error } = await supabase.from("posts").select("*").eq("id", postId).maybeSingle();
+        return { data: data as unknown as PostRow | null, error };
+      },
+      signOne: signPostMediaStrict,
+    });
+    setPreview(data);
+    setCurrentStatus(data.post.status);
+    return data;
+  };
+
+  // A prévia abre na hora (com carregamento) e mostra o erro DENTRO do modal, com "Tentar novamente".
   const visualizar = async () => {
-    if (lock.current) return;
-    lock.current = true;
+    if (busy === "visualizar") return;
     setBusy("visualizar");
+    setOpen(true);
+    setLoadError(null);
+    setEditing(false);
+    setSlide(0);
     try {
-      const { data, error } = await supabase.from("posts").select("*").eq("id", id).single();
-      if (error) throw error;
-      const signed = await signPostMediaUrls(data as unknown as PostRow);
-      setPost(signed as PostRow);
-      setPlatform(previewPlatforms(data as unknown as PostRow)[0] ?? null);
-      setEditing(false);
-      setCurrentStatus(data.status as PostRow["status"]);
-      setSlide(0);
-      setOpen(true);
+      const data = await carregarPrevia();
+      setPlatform(previewPlatforms(data.post)[0] ?? null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível abrir o post.");
+      setPreview(null);
+      setLoadError(error instanceof Error ? error.message : "Não foi possível abrir o post.");
     } finally {
-      lock.current = false;
       setBusy(null);
     }
   };
@@ -111,7 +123,7 @@ export function PostReviewActions({
         .select("*")
         .single();
       if (error || !data) throw new Error(error?.message || "O post mudou. Reabra a prévia.");
-      setPost((await signPostMediaUrls(data as unknown as PostRow)) as PostRow);
+      setPreview((prev) => (prev ? { ...prev, post: data as unknown as PostRow } : prev));
       setEditing(false);
       window.dispatchEvent(
         new CustomEvent(POST_REVIEW_CHANGED, { detail: { id, status: currentStatus } }),
@@ -162,7 +174,9 @@ export function PostReviewActions({
   };
 
   const blocked = disabled || busy !== null;
-  const images = post ? previewMedia(post) : [];
+  const images = preview?.media ?? [];
+  const slideFalhou = preview?.mediaFalhas.includes(slide) ?? false;
+  const slideAusente = preview?.mediaAusente.includes(slide) ?? false;
   const caption = post ? previewCaption(post, platform) : "";
   const platforms = post ? previewPlatforms(post) : [];
   const slideText = post ? savedSlideText(post.legenda, slide) : null;
@@ -173,7 +187,8 @@ export function PostReviewActions({
           size="sm"
           variant="outline"
           className="min-h-11 px-3 text-sm"
-          disabled={blocked}
+          disabled={busy === "visualizar"}
+          aria-haspopup="dialog"
           onClick={visualizar}
         >
           {busy === "visualizar" ? (
@@ -245,7 +260,7 @@ export function PostReviewActions({
       <Dialog
         open={open}
         onOpenChange={(value) => {
-          if (!busy) setOpen(value);
+          if (!busy || busy === "visualizar") setOpen(value);
         }}
       >
         <DialogContent
@@ -263,11 +278,10 @@ export function PostReviewActions({
           <DialogHeader>
             <DialogTitle>Visualizar post completo</DialogTitle>
             <DialogDescription>
-              {post?.tipo_post} · {post?.formato_midia}
-              {` · ${platforms.map((p) => (p === "instagram" ? "Instagram" : "LinkedIn")).join(" / ") || "Plataforma não definida"}`}
-              {post?.data_agendamento &&
-                ` · ${format(new Date(post.data_agendamento), "dd/MM/yyyy HH:mm", { locale: ptBR })}`}
-              {!post?.data_agendamento && " · Sem data/horário"}
+              {!post && (loadError ? "Erro ao carregar" : "Carregando dados reais do post…")}
+              {post && `${post.tipo_post} · ${post.formato_midia}`}
+              {post && ` · ${platforms.map((p) => (p === "instagram" ? "Instagram" : "LinkedIn")).join(" / ") || "Plataforma não definida"}`}
+              {post && ` · ${formatPreviewDate(post.data_agendamento)}`}
             </DialogDescription>
           </DialogHeader>
           <div
