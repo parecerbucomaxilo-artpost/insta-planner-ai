@@ -1,3 +1,4 @@
+import { startGenerationProgress } from "@/lib/generation-progress";
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -303,6 +304,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               ? `${temaBase} — foco Odontologia Hospitalar (ambiente hospitalar, paciente sistêmico, centro cirúrgico)`
               : "Tema de Odontologia Hospitalar: atendimento odontológico em ambiente hospitalar (UTI, enfermaria, centro cirúrgico), paciente com comorbidade, prevenção de PAV, protocolo pré-operatório, foco infeccioso odontogênico.")
           : temaBase;
+      const stopP = startGenerationProgress(tid, "Gerando post", formato === "Carrossel");
       const out = await genSingle({ data: {
         tema: temaReq,
         especialidade: especialidadeReq,
@@ -315,7 +317,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modelo,
         modeloImagem,
         logoKeys,
-      } as any });
+      } as any }).finally(stopP);
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, slideLegendas: (out as any).slideLegendas });
       setTema("");
@@ -345,6 +347,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     const tid = `aprov-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     try {
+      const stopP = startGenerationProgress(tid, "Gerando post", t.formato === "Carrossel");
       const out = await genSingle({ data: {
         tema: t.tema, especialidade,
         rede: (t.rede === "estilo-x" ? "estilo-x" : "instagram") as any,
@@ -354,7 +357,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modelo,
         modeloImagem,
         logoKeys,
-      } as any });
+      } as any }).finally(stopP);
       await marcarConta(out.id);
       await approveFn({ data: { id: out.id, acao: "agendar" } });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);

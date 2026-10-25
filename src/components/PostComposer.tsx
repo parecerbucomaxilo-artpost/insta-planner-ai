@@ -1,3 +1,4 @@
+import { startGenerationProgress } from "@/lib/generation-progress";
 import { useState, useCallback, useRef, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -443,7 +444,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     try {
-      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede: "instagram", tipo: config.tipo, formato: config.formato, modelo, modeloImagem, ambasRedes: false }, signal: ctrl.signal });
+      const stopP = startGenerationProgress(tid, "Gerando post", config.formato === "Carrossel");
+      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede: "instagram", tipo: config.tipo, formato: config.formato, modelo, modeloImagem, ambasRedes: false }, signal: ctrl.signal }).finally(stopP);
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
@@ -492,7 +494,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     try {
-      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes }, signal: ctrl.signal });
+      const stopP = startGenerationProgress(tid, "Gerando post", t.formato === "Carrossel");
+      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes }, signal: ctrl.signal }).finally(stopP);
       toast.success(t.quando ? "Agendado! Pré-visualize abaixo." : "Gerado! Pré-visualize abaixo.", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
