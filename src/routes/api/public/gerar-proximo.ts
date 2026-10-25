@@ -106,21 +106,17 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
                     ? "ig-conversao"
                     : "ig-autoridade";
 
-          // TEMA DO DIA: reaproveita o tema do 1º post já gerado no mesmo dia,
-          // para que todas as postagens do dia tratem do MESMO assunto com
-          // abordagens diferentes (sem repetir texto nem imagem — isso é
-          // garantido pelos prompts de geração).
-          const inicioDia = new Date(proximo.quando); inicioDia.setHours(0, 0, 0, 0);
-          const fimDia = new Date(proximo.quando); fimDia.setHours(23, 59, 59, 999);
+          // Antes: reaproveitava o tema do 1º post do dia em TODOS os slots do dia — causa de
+          // posts repetidos. Agora cada slot recebe tema próprio; temas do mesmo dia e de ±3 dias
+          // entram como proibidos.
+          const inicioDia = new Date(proximo.quando.getTime() - 12 * 3600_000);
+          const fimDia = new Date(proximo.quando.getTime() + 12 * 3600_000);
           const { data: doDia } = await supabaseAdmin
             .from("posts")
-            .select("prompt_ia,data_agendamento")
+            .select("prompt_ia")
             .gte("data_agendamento", inicioDia.toISOString())
             .lte("data_agendamento", fimDia.toISOString())
-            .not("prompt_ia", "is", null)
-            .order("data_agendamento", { ascending: true })
-            .limit(1);
-          let temaDoDia = doDia?.[0]?.prompt_ia?.trim();
+            .not("prompt_ia", "is", null);
 
           // NÃO REPETIR ASSUNTO em dias próximos: coleta temas usados nos
           // 3 dias anteriores e nos 3 dias seguintes (janela ±3 dias).
@@ -142,20 +138,15 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
           const temasProibidos = Array.from(
             new Set(
               [...(vizinhos ?? []), ...(vizinhosDepois ?? [])]
+                .concat(doDia ?? [])
                 .map((p: any) => (p.prompt_ia || "").trim())
                 .filter(Boolean),
             ),
           );
 
-          // Se o "tema do dia" reaproveitado bater com um tema de dia vizinho,
-          // descarta para forçar geração de um novo tema.
-          if (temaDoDia && temasProibidos.some((t) => t.toLowerCase() === temaDoDia!.toLowerCase())) {
-            temaDoDia = undefined;
-          }
-
           const result = await generateSinglePost({
             data: {
-              tema: temaDomingo || temaDoDia || "",
+              tema: temaDomingo,
               especialidade: "Ambas",
               rede: proximo.rede,
               tipo: proximo.tipo,
@@ -168,6 +159,9 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
               status: "PendenteAprovacao",
               nivel,
               temasProibidos,
+              // Idempotência por slot: chamadas concorrentes do cron não criam 2 posts no mesmo horário.
+              operacaoId: "cron-agenda",
+              slotKey: `${proximo.quando.toISOString()}|${proximo.rede}|${proximo.tipo}`,
             },
           });
 
