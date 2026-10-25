@@ -73,6 +73,7 @@ function Dashboard() {
  const [autoGenWeekly, setAutoGenWeekly] = useState(false);
  const pendingPosts = posts.filter((post) => post.status === "PendenteAprovacao");
  const [pendingOnly, setPendingOnly] = useState(false);
+ const [signedOut, setSignedOut] = useState(false);
 
  const load = useCallback(async () => {
  console.log("[Reset] Carregando posts.");
@@ -118,6 +119,7 @@ function Dashboard() {
  useEffect(() => {
  load();
  loadPerfil();
+ void supabase.auth.getSession().then(({ data }) => setSignedOut(!data.session));
  }, [load, loadPerfil]);
  useEffect(() => {
  const refresh = () => { void load(); };
@@ -235,6 +237,10 @@ function Dashboard() {
  </section>
 
  <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+ {signedOut && <div role="status" className="mb-4 flex flex-wrap items-center gap-3 border border-border bg-muted p-3">
+ <p className="text-sm">Entre na sua conta para visualizar e aprovar os posts salvos.</p>
+ <Button variant="outline" onClick={() => navigate({ to: "/auth", search: { redirect: "/" } })}>Entrar na conta</Button>
+ </div>}
  <div className="mb-4 flex flex-wrap gap-2">
  <Button onClick={() => { void load(); setPendingOnly(true); setTab("todos"); }}>
  <Check className="h-4 w-4" aria-hidden="true" /> Aprovar posts ({pendingPosts.length})
@@ -256,7 +262,7 @@ function Dashboard() {
  <TabsTrigger value="agendamento-liga"><Stethoscope className="h-4 w-4 mr-1.5" aria-hidden="true" /> Cirurgia e Biópsias</TabsTrigger>
  <TabsTrigger value="clinica-escola"><CalendarCheck className="h-4 w-4 mr-1.5" aria-hidden="true" /> Planner Clínica Escola</TabsTrigger>
  <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" aria-hidden="true" /> Cronograma de 7 dias</TabsTrigger>
- <TabsTrigger value="calendario"><CalendarIcon className="h-4 w-4 mr-1.5" aria-hidden="true" /> Calendário</TabsTrigger>
+ <TabsTrigger value="calendario" onClick={() => { void load(); }}><CalendarIcon className="h-4 w-4 mr-1.5" aria-hidden="true" /> Calendário</TabsTrigger>
  <TabsTrigger value="todos" onClick={() => { setPendingOnly(false); void load(); }}><LayoutGrid className="h-4 w-4 mr-1.5" aria-hidden="true" /> Todas as publicações</TabsTrigger>
  <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" aria-hidden="true" /> Desempenho</TabsTrigger>
  <TabsTrigger value="perfil"><Settings className="h-4 w-4 mr-1.5" aria-hidden="true" /> Perfil</TabsTrigger>

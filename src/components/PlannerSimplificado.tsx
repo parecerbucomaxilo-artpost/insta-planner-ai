@@ -102,6 +102,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const effectiveAudiencia: typeof audiencia = usarTipoLiga ? "estudantes-graduacao" : audiencia;
   const effectiveConta = usarTipoLiga ? LIGA_ACCOUNT : conta;
   const canPublishAutomatically = destinoStatus === "ok";
+  const pendingCount = posts.filter((post) => post.status === "PendenteAprovacao").length;
 
 
   useEffect(() => {
@@ -498,6 +499,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      <Button className="min-h-11" onClick={() => document.getElementById(`${lsKey}-posts`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+        <Check className="h-4 w-4" /> Aprovar posts ({pendingCount})
+      </Button>
       <Card className="p-5 space-y-3">
         <Label className="flex items-center gap-2 text-sm font-semibold">
           <Instagram className="w-4 h-4" /> Conta do Instagram
@@ -997,7 +1001,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           )}
 
           {/* Lista */}
-          <Card className="p-5">
+          <Card id={`${lsKey}-posts`} className="p-5 scroll-mt-24">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-base font-semibold">Publicações de @{conta}</h3>
               <span className="text-xs text-zinc-500">{posts.length} {posts.length === 1 ? "post" : "posts"}</span>

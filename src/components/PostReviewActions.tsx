@@ -131,7 +131,13 @@ export function PostReviewActions({
   return (
     <div className="w-full min-w-0 space-y-2 rounded-md border border-border bg-background p-3">
       <div className="flex flex-wrap gap-2" aria-label="Revisão do post" aria-busy={busy !== null}>
-        <Button size="sm" variant="outline" className="min-h-11 px-3 text-sm" disabled={blocked} onClick={visualizar}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="min-h-11 px-3 text-sm"
+          disabled={blocked}
+          onClick={visualizar}
+        >
           {busy === "visualizar" ? (
             <Loader2 className="h-4 w-4 mr-1 animate-spin" />
           ) : (
