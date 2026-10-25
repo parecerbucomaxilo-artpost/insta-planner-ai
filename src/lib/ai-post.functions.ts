@@ -1576,7 +1576,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const avisos: string[] = [];
     const legendaPromise = (async () => {
       if (!textModelUsesAI(data.modelo)) {
-        if (data.modelo !== "local/sem-custo") avisos.push("Legenda feita com o texto pronto do app: nenhuma chave de IA de texto está configurada para o modelo escolhido.");
+        if (String(data.modelo).startsWith("openai/")) avisos.push("ChatGPT (API oficial da OpenAI) está bloqueado: cadastre OPENAI_API_KEY e OPENAI_ACEITO_COBRANCA=sim em Secrets. A assinatura ChatGPT não libera a API. Legenda feita com o texto pronto do app.");
+        else if (data.modelo !== "local/sem-custo") avisos.push("Legenda feita com o texto pronto do app: nenhuma chave de IA de texto está configurada para o modelo escolhido.");
         return localCaption();
       }
       // TEMAS DIVERSOS: prompt totalmente fora da saúde.
@@ -2048,6 +2049,7 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
     });
     const { textModelUsesAI } = await import("@/lib/ai-gateway.server");
     if (!textModelUsesAI(captionModel)) {
+      if (String(captionModel).startsWith("openai/")) throw new Error("ChatGPT (API oficial da OpenAI) está bloqueado: cadastre OPENAI_API_KEY e OPENAI_ACEITO_COBRANCA=sim em Configurações do projeto → Secrets. A assinatura ChatGPT não libera a API e o uso pode ser cobrado.");
       return { legenda: local(), via: "local" as const };
     }
     try {

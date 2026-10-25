@@ -64,12 +64,12 @@ export function AnthropicKeySettings() {
       </Card>
 
       <Card className="p-5 space-y-3">
-        <h3 className="font-semibold text-sm">Ferramentas Gemini e ChatGPT/OpenAI</h3>
+        <h3 className="font-semibold text-sm">Ferramentas Gemini e ChatGPT</h3>
         <div className="flex flex-wrap gap-2">
           {(["gemini", "openai"] as const).map((p) => (
             <button key={p} type="button" onClick={() => setProvedor(p)}
               className={cn("px-3 py-1.5 rounded-md text-xs font-semibold border", provedor === p ? "bg-primary text-primary-foreground border-primary" : "border-border")}>
-              {p === "gemini" ? "Gemini" : "ChatGPT / OpenAI"}
+              {p === "gemini" ? "Gemini" : "ChatGPT · API oficial da OpenAI"}
             </button>
           ))}
           <span className="w-px bg-border mx-1" />

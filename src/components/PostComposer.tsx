@@ -1,4 +1,4 @@
-import { ModelLabel, showAvisos, useModeloBloqueado } from "@/components/ModelLabel";
+import { ModelLabel, showAvisos, useModeloBloqueado, avisarSeBloqueado } from "@/components/ModelLabel";
 import { useState, useCallback, useRef, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -584,8 +584,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           {MODELOS_IA.map((m) => (
             <button
               key={m.id}
-              type="button" disabled={bloqueado(m)}
-              onClick={() => setModelo(m.id)}
+              type="button"
+              onClick={() => { setModelo(m.id); avisarSeBloqueado(m, bloqueado(m)); }}
               className={cn(
                 "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
                 modelo === m.id
@@ -593,12 +593,12 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                   : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
               )}
             >
-              <ModelLabel m={m} />
+              <ModelLabel m={m} />{bloqueado(m) ? " 🔒" : ""}
             </button>
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Padrão grátis. Gemini e ChatGPT/OpenAI pagos ficam desativados até cadastrar a chave e aceitar a cobrança em Configurações → IA.
+          Padrão grátis. ChatGPT (API oficial da OpenAI) usa chave OpenAI separada da assinatura e pode ser cobrado: fica bloqueado (🔒) até a chave e o aceite de cobrança.
         </p>
       </div>
 
@@ -608,8 +608,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           {MODELOS_IMAGEM.map((m) => (
             <button
               key={m.id}
-              type="button" disabled={bloqueado(m)}
-              onClick={() => setModeloImagem(m.id)}
+              type="button"
+              onClick={() => { setModeloImagem(m.id); avisarSeBloqueado(m, bloqueado(m)); }}
               className={cn(
                 "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
                 modeloImagem === m.id
@@ -617,7 +617,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                   : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
               )}
             >
-              <ModelLabel m={m} />
+              <ModelLabel m={m} />{bloqueado(m) ? " 🔒" : ""}
             </button>
           ))}
         </div>
