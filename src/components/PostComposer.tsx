@@ -1,4 +1,3 @@
-import { ModelLabel, showAvisos, useModeloBloqueado, avisarSeBloqueado } from "@/components/ModelLabel";
 import { useState, useCallback, useRef, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -37,7 +36,6 @@ const FORMATOS: { id: Formato; label: string; icon: React.ComponentType<{ classN
 ];
 
 export function PostComposer({ onCreated }: { onCreated: () => void }) {
-  const bloqueado = useModeloBloqueado();
   const publishIg = useServerFn(publishInstagramNow);
   const genCaption = useServerFn(generateCaptionOnly);
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
@@ -400,12 +398,11 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 }
 
 function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
-  const bloqueado = useModeloBloqueado();
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x" | "google">("instagram");
-  const [modelo, setModelo] = useState<ModeloIA>("auto/gratis");
-  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("auto/gratis");
+  const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
   const [ambasRedes, setAmbasRedes] = useState(false);
   const [busy, setBusy] = useState<null | AiQuickFormat | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
@@ -447,7 +444,6 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     abortRef.current = ctrl;
     try {
       const out = await genSingle({ data: { tema: temaTrim, especialidade, rede: "instagram", tipo: config.tipo, formato: config.formato, modelo, modeloImagem, ambasRedes: false }, signal: ctrl.signal });
-      showAvisos(out);
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
@@ -497,7 +493,6 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     abortRef.current = ctrl;
     try {
       const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes }, signal: ctrl.signal });
-      showAvisos(out);
       toast.success(t.quando ? "Agendado! Pré-visualize abaixo." : "Gerado! Pré-visualize abaixo.", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
@@ -585,20 +580,20 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             <button
               key={m.id}
               type="button"
-              onClick={() => { setModelo(m.id); avisarSeBloqueado(m, bloqueado(m)); }}
+              onClick={() => setModelo(m.id)}
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
+                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
                 modelo === m.id
                   ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
                   : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
               )}
             >
-              <ModelLabel m={m} />{bloqueado(m) ? " 🔒" : ""}
+              {m.label}
             </button>
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Padrão grátis. ChatGPT (API oficial da OpenAI) usa chave OpenAI separada da assinatura e pode ser cobrado: fica bloqueado (🔒) até a chave e o aceite de cobrança.
+          Selecione Local para o app escrever; selecione GPT/Gemini para a IA escrever.
         </p>
       </div>
 
@@ -609,20 +604,20 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             <button
               key={m.id}
               type="button"
-              onClick={() => { setModeloImagem(m.id); avisarSeBloqueado(m, bloqueado(m)); }}
+              onClick={() => setModeloImagem(m.id)}
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
+                "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
                 modeloImagem === m.id
                   ? "bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm"
                   : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
               )}
             >
-              <ModelLabel m={m} />{bloqueado(m) ? " 🔒" : ""}
+              {m.label}
             </button>
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Padrão: grátis (Pollinations, com limite). Se a IA falhar, o app mostra um aviso e o motivo — o fundo liso NÃO é imagem de IA.
+          Selecione Local para imagem do app; selecione Gemini/GPT Image para imagem por IA.
         </p>
       </div>
 

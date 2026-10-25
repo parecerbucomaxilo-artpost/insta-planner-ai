@@ -1,23 +1,39 @@
-// Geração de texto/imagem com estratégia free-first.
-// Catálogo único de modelos em src/lib/ai-models.ts (também usado pela interface).
-// Provedores: Gemini API (chave gratuita), Groq (chave gratuita), Pollinations
-// (grátis com limites / chave gratuita). SEM modelos pagos: o Lovable AI Gateway não é chamado.
-// Chaves ficam SOMENTE em segredos do servidor; nunca são registradas em logs.
+// Lovable AI Gateway: GPT-5-mini (texto) + Gemini 3.1 Flash Image / Nano Banana (imagem).
+// Mantém um gerador local de fallback caso o gateway retorne 402 (créditos) ou 429 (rate-limit).
 import * as jpeg from "jpeg-js";
-import {
-  MODELOS_IA,
-  MODELOS_IMAGEM,
-  DEFAULT_TEXT_MODEL,
-  DEFAULT_IMAGE_MODEL,
-  normalizeTextModel,
-  normalizeImageModel,
-  type ModeloTexto,
-  type ModeloImagem,
-} from "@/lib/ai-models";
 
-export { MODELOS_IA, MODELOS_IMAGEM };
-export type { ModeloTexto, ModeloImagem };
+const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
 
+export const MODELOS_IA = [
+  { id: "openai/gpt-5-mini", label: "GPT-5 mini (texto)" },
+  { id: "openai/gpt-5-nano", label: "GPT-5 nano (texto)" },
+  { id: "openai/gpt-5", label: "GPT-5 (texto)" },
+  { id: "openai/gpt-5.4-mini", label: "GPT-5.4 mini (texto)" },
+  { id: "openai/gpt-5.4", label: "GPT-5.4 (texto)" },
+  { id: "openai/gpt-5.5", label: "GPT-5.5 (texto)" },
+  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (texto)" },
+  { id: "google/gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (texto)" },
+  { id: "google/gemini-3.5-flash", label: "Gemini 3.5 Flash (texto)" },
+  { id: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro (texto)" },
+  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (texto)" },
+  { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro (texto)" },
+] as const;
+export type ModeloTexto = (typeof MODELOS_IA)[number]["id"];
+
+export const MODELOS_IMAGEM = [
+  { id: "google/gemini-3.1-flash-image", label: "Gemini Nano Banana 2 (imagem)" },
+  { id: "google/gemini-3-pro-image", label: "Gemini 3 Pro Image (imagem)" },
+  { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana (imagem)" },
+  { id: "openai/gpt-image-2", label: "GPT Image 2 (imagem)" },
+  { id: "openai/gpt-image-1-mini", label: "GPT image 1 mini (imagem)" },
+  { id: "pollinations/flux", label: "Pollinations Flux (grátis, sem custo)" },
+  { id: "pollinations/flux-realism", label: "Pollinations Flux Realism (grátis)" },
+  { id: "pollinations/turbo", label: "Pollinations Turbo (grátis, rápido)" },
+] as const;
+export type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
+
+const DEFAULT_TEXT_MODEL: ModeloTexto = "openai/gpt-5-mini";
+const DEFAULT_IMAGE_MODEL: ModeloImagem = "google/gemini-3.1-flash-image";
 
 function sizeToWH(size?: string): { width: number; height: number } {
   if (size === "1536x1024") return { width: 1536, height: 1024 };
@@ -25,90 +41,7 @@ function sizeToWH(size?: string): { width: number; height: number } {
   return { width: 1024, height: 1024 };
 }
 
-/** Quais provedores gratuitos têm chave configurada (somente booleanos). */
-export function freeProvidersStatus() {
-  return {
-    gemini: !!process.env.GEMINI_API_KEY,
-    groq: !!process.env.GROQ_API_KEY,
-    pollinations: !!process.env.POLLINATIONS_API_KEY,
-    openai: !!process.env.OPENAI_API_KEY,
-    // Aceite explícito de cobrança: segredo do servidor com valor exatamente "sim".
-    openaiPagoLiberado: process.env.OPENAI_ACEITO_COBRANCA?.trim().toLowerCase() === "sim",
-    geminiPagoLiberado: process.env.GEMINI_ACEITO_COBRANCA?.trim().toLowerCase() === "sim",
-  };
-}
-
-/** Bloqueia chamadas pagas sem chave + aceite. Mensagem explica o motivo ao usuário. */
-function exigirPagoLiberado(provedor: "openai" | "gemini") {
-  const s = freeProvidersStatus();
-  if (provedor === "openai") {
-    if (!s.openai) throw new Error("OpenAI API desativada: cadastre OPENAI_API_KEY em Secrets (a assinatura ChatGPT não inclui API).");
-    if (!s.openaiPagoLiberado) throw new Error("OpenAI API é paga: adicione o segredo OPENAI_ACEITO_COBRANCA=sim para confirmar que aceita os custos.");
-  } else {
-    if (!s.gemini) throw new Error("Gemini API desativada: cadastre GEMINI_API_KEY em Secrets (a assinatura Gemini/Google One não inclui API).");
-    if (!s.geminiPagoLiberado) throw new Error("Imagem pelo Gemini API é paga: adicione o segredo GEMINI_ACEITO_COBRANCA=sim para confirmar que aceita os custos.");
-  }
-}
-
-/** True quando o modelo de texto escolhido pode, de fato, chamar alguma IA. */
-export function textModelUsesAI(model?: string): boolean {
-  const id = normalizeTextModel(model);
-  const s = freeProvidersStatus();
-  if (id === "local/sem-custo") return false;
-  if (id === "auto/gratis") return s.gemini || s.groq || s.pollinations;
-  if (id.startsWith("gemini/")) return s.gemini;
-  if (id.startsWith("groq/")) return s.groq;
-  if (id.startsWith("pollinations/")) return s.pollinations;
-  if (id.startsWith("openai/")) return s.openai && s.openaiPagoLiberado;
-  return false;
-}
-
-async function openAICompatChat(opts: {
-  url: string;
-  apiKey: string;
-  model: string;
-  system?: string;
-  prompt: string;
-  label: string;
-}): Promise<string> {
-  const res = await fetch(opts.url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${opts.apiKey}` },
-    body: JSON.stringify({
-      model: opts.model,
-      messages: [
-        ...(opts.system ? [{ role: "system", content: opts.system }] : []),
-        { role: "user", content: opts.prompt },
-      ],
-    }),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`${opts.label} texto ${res.status}: ${body.slice(0, 200)}`);
-  }
-  const json: any = await res.json();
-  const txt = json?.choices?.[0]?.message?.content?.toString().trim() || "";
-  if (!txt) throw new Error(`${opts.label}: resposta vazia`);
-  return txt;
-}
-
-async function generateTextFree(provider: "gemini" | "groq" | "pollinations", model: string, system: string | undefined, prompt: string) {
-  if (provider === "gemini") {
-    const k = process.env.GEMINI_API_KEY;
-    if (!k) throw new Error("GEMINI_API_KEY não configurada");
-    return openAICompatChat({ url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", apiKey: k, model, system, prompt, label: "Gemini" });
-  }
-  if (provider === "groq") {
-    const k = process.env.GROQ_API_KEY;
-    if (!k) throw new Error("GROQ_API_KEY não configurada");
-    return openAICompatChat({ url: "https://api.groq.com/openai/v1/chat/completions", apiKey: k, model, system, prompt, label: "Groq" });
-  }
-  const k = process.env.POLLINATIONS_API_KEY;
-  if (!k) throw new Error("POLLINATIONS_API_KEY não configurada");
-  return openAICompatChat({ url: "https://gen.pollinations.ai/v1/chat/completions", apiKey: k, model, system, prompt, label: "Pollinations" });
-}
-
-// ---------------- Texto ----------------
+// ---------------- Texto: GPT-5 mini via Lovable Gateway ----------------
 
 export async function generateTextAI(opts: {
   apiKey?: string;
@@ -117,36 +50,117 @@ export async function generateTextAI(opts: {
   model?: ModeloTexto | string;
   maxTokens?: number;
 }): Promise<string> {
-  const model = normalizeTextModel((opts.model as string) || DEFAULT_TEXT_MODEL);
-  if (model === "local/sem-custo") throw new Error("Modelo sem IA selecionado");
+  const apiKey = opts.apiKey || process.env.LOVABLE_API_KEY;
+  if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
+  const model = (opts.model as string) || DEFAULT_TEXT_MODEL;
 
-  if (model === "auto/gratis") {
-    // Cada provedor é tentado UMA vez (sem loops). Ordem: Gemini → Groq → Pollinations.
-    const s = freeProvidersStatus();
-    const chain: Array<["gemini" | "groq" | "pollinations", string]> = [];
-    if (s.gemini) chain.push(["gemini", "gemini-3.8-flash"]);
-    if (s.groq) chain.push(["groq", "openai/gpt-oss-120b"]);
-    if (s.pollinations) chain.push(["pollinations", "openai"]);
-    if (!chain.length) throw new Error("Nenhuma chave gratuita de texto configurada");
-    const erros: string[] = [];
-    for (const [p, m] of chain) {
-      try {
-        return await generateTextFree(p, m, opts.system, opts.prompt);
-      } catch (err) {
-        erros.push(err instanceof Error ? err.message : String(err));
-      }
+  const res = await fetch(`${GATEWAY_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Lovable-API-Key": apiKey,
+      "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        ...(opts.system ? [{ role: "system", content: opts.system }] : []),
+        { role: "user", content: opts.prompt },
+      ],
+      ...(opts.maxTokens ? { max_completion_tokens: opts.maxTokens } : {}),
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Lovable AI texto ${res.status}: ${body.slice(0, 240)}`);
+  }
+  const json: any = await res.json();
+  return json?.choices?.[0]?.message?.content?.toString().trim() || "";
+}
+
+// ---------------- Imagem: Gemini Nano Banana via Lovable Gateway ----------------
+
+async function generateImageGateway(opts: {
+  apiKey: string;
+  prompt: string;
+  model: string;
+  size: "1024x1024" | "1024x1536" | "1536x1024";
+  referenceImageUrls?: string[];
+}): Promise<string> {
+  const isOpenAIImage = opts.model.startsWith("openai/gpt-image");
+
+  const fetchUrlAsB64 = async (url: string) => {
+    const r2 = await fetch(url);
+    if (!r2.ok) throw new Error(`Lovable AI imagem: falha ao baixar URL ${r2.status}`);
+    const buf = Buffer.from(await r2.arrayBuffer());
+    return buf.toString("base64");
+  };
+
+  const extractImageB64 = async (json: any): Promise<string> => {
+    const first = json?.data?.[0];
+    const direct = first?.b64_json || first?.image?.b64_json || first?.image?.base64;
+    if (typeof direct === "string" && direct.trim()) {
+      return direct.startsWith("data:") ? direct.split(",")[1] || "" : direct;
     }
-    throw new Error(`Provedores gratuitos falharam: ${erros.join(" | ").slice(0, 400)}`);
-  }
-  if (model.startsWith("gemini/")) return generateTextFree("gemini", model.slice(7), opts.system, opts.prompt);
-  if (model.startsWith("groq/")) return generateTextFree("groq", model.slice(5), opts.system, opts.prompt);
-  if (model.startsWith("pollinations/")) return generateTextFree("pollinations", model.slice(13), opts.system, opts.prompt);
-  if (model.startsWith("openai/")) {
-    exigirPagoLiberado("openai");
-    return openAICompatChat({ url: "https://api.openai.com/v1/chat/completions", apiKey: process.env.OPENAI_API_KEY!, model: model.slice(7), system: opts.system, prompt: opts.prompt, label: "OpenAI" });
+    const url = first?.url || first?.image_url?.url || first?.image_url;
+    if (typeof url === "string" && url.trim()) {
+      return url.startsWith("data:") ? url.split(",")[1] || "" : fetchUrlAsB64(url);
+    }
+    throw new Error("Lovable AI imagem: resposta sem b64/url");
+  };
+
+  if (isOpenAIImage) {
+    const res = await fetch(`${GATEWAY_URL}/images/generations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${opts.apiKey}`,
+        "Lovable-API-Key": opts.apiKey,
+        "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+      },
+      body: JSON.stringify({
+        model: opts.model,
+        prompt: opts.prompt,
+        size: opts.size,
+        n: 1,
+        quality: "low",
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Lovable AI imagem ${res.status}: ${body.slice(0, 240)}`);
+    }
+    const json: any = await res.json();
+    return extractImageB64(json);
   }
 
-  throw new Error(`Modelo de texto não suportado: ${model}`);
+  // Gemini image via endpoint oficial de imagens do Gateway. O shape é diferente
+  // do OpenAI: usa messages + modalities; o retorno é normalizado em data[0].b64_json.
+  const userContent: any[] = [{ type: "text", text: opts.prompt }];
+  for (const url of opts.referenceImageUrls ?? []) {
+    userContent.push({ type: "image_url", image_url: { url } });
+  }
+  const res = await fetch(`${GATEWAY_URL}/images/generations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${opts.apiKey}`,
+      "Lovable-API-Key": opts.apiKey,
+      "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+    },
+    body: JSON.stringify({
+      model: opts.model,
+      messages: [{ role: "user", content: userContent.length === 1 ? opts.prompt : userContent }],
+      modalities: ["image", "text"],
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Lovable AI imagem ${res.status}: ${body.slice(0, 240)}`);
+  }
+  const json: any = await res.json();
+  return extractImageB64(json);
 }
 
 // ---------------- Fallback local (gerador procedural anatômico) ----------------
@@ -221,37 +235,25 @@ async function generateImageLocal(opts: { prompt: string; size?: "1024x1024" | "
   return Buffer.from(out).toString("base64");
 }
 
-// Pollinations.ai — documentado em gen.pollinations.ai. Sem chave: endpoint clássico
-// image.pollinations.ai, limitado a 1 imagem a cada 45 s por IP (verificado em 25/10/2026).
-// Com POLLINATIONS_API_KEY (cadastro gratuito em enter.pollinations.ai): gen.pollinations.ai.
+// Pollinations.ai — geração de imagens 100% gratuita, sem chave, sem custo.
+// Boa qualidade (Flux) e ótimo fallback quando o Lovable Gateway retorna 402/429.
 async function generateImagePollinations(opts: {
   prompt: string;
   size: "1024x1024" | "1024x1536" | "1536x1024";
-  model?: string; // "flux" | "zimage" | "flux-klein"
+  model?: string; // "flux" | "flux-realism" | "turbo"
 }): Promise<string> {
   const { width, height } = sizeToWH(opts.size);
   const model = (opts.model || "flux").replace(/^pollinations\//, "");
-  // A API recebe o prompt na URL; limita o tamanho (o tema vem primeiro no prompt).
-  const prompt = encodeURIComponent(opts.prompt.slice(0, 1800));
-  const qs = `width=${width}&height=${height}&model=${encodeURIComponent(model)}&nologo=true&seed=${Math.floor(Math.random() * 1_000_000)}`;
-  const key = process.env.POLLINATIONS_API_KEY;
-  const res = key
-    ? await fetch(`https://gen.pollinations.ai/image/${prompt}?${qs}`, { headers: { Authorization: `Bearer ${key}` } })
-    : await fetch(`https://image.pollinations.ai/prompt/${prompt}?${qs}`);
-  const ct = res.headers.get("content-type") || "";
-  if (!res.ok || !ct.startsWith("image/")) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Pollinations imagem ${res.status}: ${body.slice(0, 200)}`);
-  }
+  const url =
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(opts.prompt)}` +
+    `?width=${width}&height=${height}&model=${encodeURIComponent(model)}` +
+    `&nologo=true&enhance=true&seed=${Math.floor(Math.random() * 1_000_000)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Pollinations ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   return buf.toString("base64");
 }
 
-/**
- * Gera imagem com o modelo escolhido. NÃO troca silenciosamente por fundo procedural:
- * se a IA falhar, lança erro com o motivo. O fundo liso só é usado quando o usuário
- * escolhe "local/sem-custo" explicitamente (ou pelo chamador, que deve avisar o usuário).
- */
 export async function generateImageBase64(opts: {
   apiKey?: string;
   prompt: string;
@@ -259,54 +261,48 @@ export async function generateImageBase64(opts: {
   model?: ModeloImagem | string;
   referenceImageUrls?: string[];
 }): Promise<string> {
+  const apiKey = opts.apiKey || process.env.LOVABLE_API_KEY;
   const size = opts.size ?? "1024x1024";
-  const model = normalizeImageModel((opts.model as string) || DEFAULT_IMAGE_MODEL);
+  const model = (opts.model as string) || DEFAULT_IMAGE_MODEL;
 
-  if (model === "local/sem-custo") return generateImageLocal({ prompt: opts.prompt, size });
-  if (model === "auto/gratis") return generateImagePollinations({ prompt: opts.prompt, size, model: "flux" });
-  if (model.startsWith("pollinations/")) return generateImagePollinations({ prompt: opts.prompt, size, model });
-  if (model.startsWith("openai/")) {
-    exigirPagoLiberado("openai");
-    return generateImageOpenAI({ prompt: opts.prompt, size, model: model.slice(7) });
-  }
-  if (model.startsWith("gemini/")) {
-    exigirPagoLiberado("gemini");
-    return generateImageGemini({ prompt: opts.prompt, size, model: model.slice(7) });
+  // Pollinations é gratuito e não precisa de chave.
+  if (model.startsWith("pollinations/")) {
+    try {
+      return await generateImagePollinations({ prompt: opts.prompt, size, model });
+    } catch (err) {
+      console.warn("[ai-gateway] Pollinations falhou, caindo para local:", err);
+      return generateImageLocal({ prompt: opts.prompt, size });
+    }
   }
 
-  throw new Error(`Modelo de imagem não suportado: ${model}`);
-}
+  if (apiKey && model !== "local/sem-custo") {
+    try {
+      return await generateImageGateway({ apiKey, prompt: opts.prompt, model, size, referenceImageUrls: opts.referenceImageUrls });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const safetyBlock = /safety system|rejected|moderation|content_policy|image_generation_user_error/i.test(msg);
+      if (safetyBlock && model.startsWith("openai/")) {
+        console.warn("[ai-gateway] OpenAI bloqueou por safety, tentando Gemini:", msg.slice(0, 160));
+        try {
+          return await generateImageGateway({ apiKey, prompt: opts.prompt, model: "google/gemini-3.1-flash-image", size, referenceImageUrls: opts.referenceImageUrls });
+        } catch (err2) {
+          console.warn("[ai-gateway] Gemini falhou, tentando Pollinations grátis:", err2);
+          try { return await generateImagePollinations({ prompt: opts.prompt, size, model: "flux-realism" }); } catch {}
+          return generateImageLocal({ prompt: opts.prompt, size });
+        }
+      }
+      // 402 (sem créditos) ou 429 (rate-limit) → tenta Pollinations grátis antes do local
+      if (/402|429|payment|credit|rate|insufficient/i.test(msg)) {
+        console.warn("[ai-gateway] Gateway sem créditos/rate-limit, tentando Pollinations grátis");
+        try { return await generateImagePollinations({ prompt: opts.prompt, size, model: "flux-realism" }); } catch {}
+        return generateImageLocal({ prompt: opts.prompt, size });
+      }
+      if (!/sem imagem|sem b64|resposta sem/i.test(msg)) throw err;
+      console.warn("[ai-gateway] imagem caiu para gerador local:", msg);
+    }
+  }
 
-// OpenAI Images API oficial (POST /v1/images/generations). Pago; só após aceite.
-async function generateImageOpenAI(opts: { prompt: string; size: string; model: string }): Promise<string> {
-  const res = await fetch("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-    body: JSON.stringify({ model: opts.model, prompt: opts.prompt.slice(0, 30000), size: opts.size, n: 1 }),
-  });
-  if (!res.ok) throw new Error(`OpenAI imagem ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
-  const json: any = await res.json();
-  const b64 = json?.data?.[0]?.b64_json;
-  if (!b64) throw new Error("OpenAI imagem: resposta sem imagem");
-  return b64;
-}
-
-// Gemini API oficial (generateContent com saída de imagem). Pago; só após aceite.
-async function generateImageGemini(opts: { prompt: string; size: string; model: string }): Promise<string> {
-  const aspect = opts.size === "1536x1024" ? "3:2" : opts.size === "1024x1536" ? "2:3" : "1:1";
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${opts.model}:generateContent`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: opts.prompt.slice(0, 30000) }] }],
-      generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: aspect } },
-    }),
-  });
-  if (!res.ok) throw new Error(`Gemini imagem ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
-  const json: any = await res.json();
-  const parts: any[] = json?.candidates?.[0]?.content?.parts ?? [];
-  const img = parts.find((p) => p?.inlineData?.data || p?.inline_data?.data);
-  const b64 = img?.inlineData?.data ?? img?.inline_data?.data;
-  if (!b64) throw new Error("Gemini imagem: resposta sem imagem");
-  return b64;
+  // Sem API key → tenta Pollinations gratuito antes de cair pro local procedural.
+  try { return await generateImagePollinations({ prompt: opts.prompt, size, model: "flux-realism" }); } catch {}
+  return generateImageLocal({ prompt: opts.prompt, size });
 }
