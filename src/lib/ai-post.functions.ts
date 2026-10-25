@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 import { ANGULOS_EDITORIAIS, JANELA_ASSUNTO_DIAS, acharConflito, assuntoPrincipal, chaveIdempotencia, findDuplicate, mensagemConflito, planDistinctTopics, titleOf, type AssinaturaPost } from "./dedup";
+import { quantidadeSlides } from "./carousel-slides";
 import { assinaturasDoHistorico, filtroHistorico, slidesRepetidos } from "./post-guard";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
@@ -49,6 +50,8 @@ const SingleInput = z.object({
   rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
+  /** Quantidade de slides pedida explicitamente; sem pedido, Feed do IG = 5. */
+  slides: z.number().int().min(2).max(10).optional(),
   quando: z.string().datetime().optional(),
   // Aceita qualquer valor legado vindo de abas antigas, mas ignora e usa sempre o gerador local.
   modelo: ModeloLocalInput,
@@ -154,7 +157,7 @@ ETAPA 4 — FORMATO: respeitar o solicitado (Carrossel · Reel · Story · Post 
 ETAPA 5 — GANCHO: selecionar o MELHOR modelo entre Verdades Duras · Curiosidade · Open Loop · História · Prova · Experimento · Desafio · Problema. Nunca usar título genérico.
 ETAPA 6 — HEADLINE: gerar mentalmente 3 opções de headline (3–6 palavras), classificar da mais forte para a mais fraca e escolher a melhor. Esta headline VAI OBRIGATORIAMENTE ESCRITA NA IMAGEM (capa, se carrossel).
 ETAPA 7 — ROTEIRO:
- • CARROSSEL: S1 gancho · S2 problema · S3 explicação · S4 consequências · S5 como resolver · S6 quando procurar ajuda · S7 resumo · S8 CTA. Se o pedido limitar a 5 slides, condensar para: S1 gancho · S2 problema · S3 mecanismo · S4 solução/conduta · S5 CTA.
+ • CARROSSEL: S1 gancho · S2 problema · S3 explicação · S4 consequências · S5 como resolver · S6 quando procurar ajuda · S7 resumo · S8 CTA. PADRÃO DO FEED DO INSTAGRAM = 5 SLIDES (salvo quantidade pedida explicitamente) — condensar para: S1 gancho · S2 problema · S3 mecanismo · S4 solução/conduta · S5 CTA.
  • REEL: 0–3s gancho · 3–10s problema · 10–25s explicação · 25–40s solução · 40–50s conclusão · 50–60s CTA.
  • POST ÚNICO / STORY: gancho → mini-explicação → CTA.
 ETAPA 8 — BRIEF VISUAL: descrever a cena exigida (identidade do perfil, paleta, logo correta, headline visível, hierarquia, pouco texto, imagem coerente com o tema, 4:5 feed / 9:16 story-reel / 1.91:1 LinkedIn).
@@ -1714,7 +1717,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         try {
           const { generateTextAI } = await import("@/lib/ai-gateway.server");
           const system = diverseCaptionSystem(data.rede, formato);
-          const prompt = `${isChico && formato === "Carrossel" ? `Inclua ${data.rede === "estilo-x" ? 3 : 5} blocos distintos completos marcados Slide 1, Slide 2 etc. Cada bloco contém título e texto final específico.\n` : ""}Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}${objetivoLinha}${novaAbordagem}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
+          const prompt = `${isChico && formato === "Carrossel" ? `Inclua ${quantidadeSlides({ rede: data.rede, formato, tipo: data.tipo, pedido: data.slides })} blocos distintos completos marcados Slide 1, Slide 2 etc. Cada bloco contém título e texto final específico.\n` : ""}Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}${objetivoLinha}${novaAbordagem}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
           const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : formato === "Carrossel" ? 1100 : 800 });
           return txt || localCaption();
         } catch (err) {
@@ -1736,7 +1739,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}`;
         const contrato = clinicalContract(tema, data.audiencia);
         const roteiroCarrossel = formato === "Carrossel"
-          ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter ${data.rede === "estilo-x" ? 3 : 5} blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
+          ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter ${quantidadeSlides({ rede: data.rede, formato, tipo: data.tipo, pedido: data.slides })} blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
           : "";
         const prompt = `${contrato}\n\nTema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${objetivoLinha}${roteiroCarrossel}${novaAbordagem}\n\nTAREFA: escreva a legenda final pronta para publicação. Ela só será aceita se mencionar explicitamente O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA. Não termine antes da conduta/tratamento.\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
         const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1700 : formato === "Carrossel" ? 1200 : 950 });
@@ -1852,7 +1855,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       }
       legendaBaseResolvida = completar(await escreverLegenda(`\n\nNOVA ABORDAGEM OBRIGATÓRIA (tentativa ${tentativa + 1}): a versão anterior ficou parecida demais com um post já existente ("${conflito.com.slice(0, 90)}"). Use outro gancho, outro título, outra estrutura e outros exemplos concretos. Não reutilize frases daquele post.`));
     }
-    const slideCount = formato === "Carrossel" ? (data.rede === "estilo-x" ? 3 : 5) : 1;
+    const slideCount = quantidadeSlides({ rede: data.rede, formato, tipo: data.tipo, pedido: data.slides });
     // Chico: texto final completo, sem trocar/truncar blocos por narrativas genéricas.
     const slideNarratives = formato === "Carrossel"
       ? isChico ? extractFinalSlides(legendaBaseResolvida, slideCount)
