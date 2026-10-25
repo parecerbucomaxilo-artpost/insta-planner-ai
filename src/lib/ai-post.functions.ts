@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
+import { contentKey, findDuplicate, planDistinctTopics, retryDistinct, similarity, titleOf } from "./dedup";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
 export const MODELOS_IA = [
@@ -1606,6 +1607,17 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     }
     const temaBase = (s: string) => s.split(" — ")[0];
     const temaDup = (t: string) => findDuplicate(t, historicoTemas) || findDuplicate(temaBase(t), historicoTemas.map(temaBase), 0.95);
+    {
+      const chaveInicial = contentKey([context.userId, tema, formato, data.rede, (data.quando ?? new Date().toISOString()).slice(0, 10)]);
+      const { data: jaExiste } = await supabaseAdmin.from("posts").select("id, legenda, url_imagem, url_imagem_cache, imagens_carrossel_cache").eq("user_id", context.userId).eq("content_key", chaveInicial).maybeSingle();
+      if (jaExiste) {
+        console.info("[dedup] pedido repetido (duplo clique/retry): devolvendo post existente", { postId: jaExiste.id });
+        const carr = Array.isArray((jaExiste as any).imagens_carrossel_cache) ? (jaExiste as any).imagens_carrossel_cache as string[] : [];
+        const u = (jaExiste as any).url_imagem_cache || (jaExiste as any).url_imagem;
+        const urls = carr.length ? carr : [u].filter(Boolean);
+        return { id: jaExiste.id, url: u, legenda: jaExiste.legenda, slides: urls.length, urls, slideLegendas: [] as string[], reaproveitado: true };
+      }
+    }
     if (temaDup(tema)) {
       if (!(data.tema ?? "").trim()) {
         // Tema automático: pede nova ideia, no máximo 3 vezes.
@@ -2285,7 +2297,23 @@ export const getWeekTopics = createServerFn({ method: "POST" })
         [lista[i], lista[j]] = [lista[j], lista[i]];
       }
     }
-    const temas: string[] = [];
-    for (let i = 0; i < data.quantidade; i++) temas.push(lista[i % lista.length]);
-    return { temas };
+    // Exclui temas do histórico real (60 dias) e do plano semanal já salvo; cada item ganha ângulo próprio.
+    let historico: string[] = [];
+    let historicoOk = true;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const desde = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: rec, error } = await supabaseAdmin.from("posts").select("prompt_ia").eq("user_id", TEMP_USER_ID).neq("status", "Erro").or(`created_at.gte.${desde},data_agendamento.gte.${new Date().toISOString()}`).not("prompt_ia", "is", null).limit(300);
+      if (error) throw error;
+      historico = (rec ?? []).map((r: any) => r.prompt_ia as string);
+    } catch (e) {
+      historicoOk = false;
+      console.warn("[dedup] getWeekTopics sem histórico:", e instanceof Error ? e.message : e);
+    }
+    const temas = guia ? planDistinctTopics(lista, [], data.quantidade) : planDistinctTopics(lista, historico, data.quantidade);
+    const aviso = temas.length < data.quantidade
+      ? `Só ${temas.length} temas inéditos disponíveis; os demais ficaram em branco para você preencher.`
+      : historicoOk ? undefined : "Histórico indisponível: a verificação contra posts antigos será feita na geração.";
+    while (temas.length < data.quantidade) temas.push("");
+    return { temas, aviso };
   });
