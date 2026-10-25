@@ -10,7 +10,14 @@ describe("Revisão interna", () => {
   });
   it("permite decidir somente posts pendentes", () => {
     expect(canReview("PendenteAprovacao")).toBe(true);
-    for (const status of ["Rascunho", "Agendado", "Publicado", "EnviadoMake", "Erro", "Arquivado"] as const) {
+    for (const status of [
+      "Rascunho",
+      "Agendado",
+      "Publicado",
+      "EnviadoMake",
+      "Erro",
+      "Arquivado",
+    ] as const) {
       expect(canReview(status)).toBe(false);
     }
   });
