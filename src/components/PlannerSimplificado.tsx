@@ -79,6 +79,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [data, setData] = useState<string>("");
   const [hora, setHora] = useState<string>("09:00");
   const [busy, setBusy] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [retryGeneration, setRetryGeneration] = useState<(() => void) | null>(null);
   const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[]; slideLegendas?: string[] } | null>(null);
   const [temas, setTemas] = useState<Array<{ rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
 
@@ -293,6 +295,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   const handleGerar = async (opts?: { conjugado?: boolean; forcarEspecialidade?: "CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos" }) => {
     if (!conta) return toast.error("Selecione uma conta do Instagram.");
+    setGenerationError(null);
+    setRetryGeneration(null);
+    setPreview(null);
     setBusy(true);
     const tid = "local-simple";
     const labelModo = modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post de feed";
@@ -331,6 +336,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       setTema("");
       toast.success("Pré-visualize abaixo.", { id: tid });
     } catch (e: any) {
+      setGenerationError(e.message || "A geração contextual falhou; nenhuma imagem substituta foi salva.");
+      setRetryGeneration(() => () => { void handleGerar(opts); });
       toast.error(e.message || "Falha na geração.", { id: tid });
     } finally { setBusy(false); }
   };
@@ -789,6 +796,14 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             </div>
             {modo !== "semana" ? (
               <>
+                {generationError && (
+                  <div role="alert" className="space-y-2 text-sm text-destructive">
+                    <p>{generationError}</p>
+                    <Button variant="outline" disabled={busy} onClick={() => retryGeneration?.()}>
+                      <RotateCcw className="mr-2 h-4 w-4" /> Tentar gerar novamente
+                    </Button>
+                  </div>
+                )}
                 <Button onClick={() => handleGerar()} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
                   Criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} com imagem + legenda {modelo === "local/sem-custo" ? "pelo app" : "pela IA"}
