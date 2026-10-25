@@ -1,4 +1,3 @@
-import { ModelLabel, showAvisos, useModeloBloqueado, avisarSeBloqueado } from "@/components/ModelLabel";
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -40,7 +39,6 @@ interface PlannerSimplificadoProps {
 }
 
 export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao", permiteTipoLiga = false }: PlannerSimplificadoProps = {}) {
-  const bloqueado = useModeloBloqueado();
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
   const genCaption = useServerFn(generateCaptionOnly);
@@ -67,8 +65,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
 
   // Geração local sem IA paga
   const [modo, setModo] = useState<Modo>("feed");
-  const [modelo, setModelo] = useState<ModeloIA>("auto/gratis");
-  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("auto/gratis");
+  const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
   const defaultLogoKey: LogoKey = audiencia === "estudantes-graduacao" ? "liga-ctbmf" : "planner";
   const [logoKeys, setLogoKeys] = useState<LogoKey[]>([defaultLogoKey]);
@@ -318,7 +316,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modeloImagem,
         logoKeys,
       } as any });
-      showAvisos(out);
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, slideLegendas: (out as any).slideLegendas });
       setTema("");
@@ -358,7 +355,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         modeloImagem,
         logoKeys,
       } as any });
-      showAvisos(out);
       await marcarConta(out.id);
       await approveFn({ data: { id: out.id, acao: "agendar" } });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
@@ -732,15 +728,15 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                   <button
                     key={m.id}
                     type="button"
-                    onClick={() => { setModelo(m.id); avisarSeBloqueado(m, bloqueado(m)); }}
+                    onClick={() => setModelo(m.id)}
                     className={cn(
-                      "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
+                      "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
                       modelo === m.id
                         ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
                         : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
                     )}
                   >
-                    <ModelLabel m={m} />{bloqueado(m) ? " 🔒" : ""}
+                    {m.label}
                   </button>
                 ))}
               </div>
@@ -753,15 +749,15 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                   <button
                     key={m.id}
                     type="button"
-                    onClick={() => { setModeloImagem(m.id); avisarSeBloqueado(m, bloqueado(m)); }}
+                    onClick={() => setModeloImagem(m.id)}
                     className={cn(
-                      "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
+                      "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
                       modeloImagem === m.id
                         ? "bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm"
                         : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
                     )}
                   >
-                    <ModelLabel m={m} />{bloqueado(m) ? " 🔒" : ""}
+                    {m.label}
                   </button>
                 ))}
               </div>
