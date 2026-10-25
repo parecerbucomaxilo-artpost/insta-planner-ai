@@ -4,7 +4,9 @@
 // de igualdade literal. Sem chamada de IA: barato, determinístico e testável.
 
 const STOP = new Set(
-  "a o as os um uma uns umas de da do das dos em na no nas nos por para pra com sem sob sobre e ou que se seu sua seus suas voce voces isso esse essa este esta como quando qual quais porque por que mais menos muito pouco ja nao sim ao aos ate entre pode podem ser sao foi tem ter".split(" "),
+  "a o as os um uma uns umas de da do das dos em na no nas nos por para pra com sem sob sobre e ou que se seu sua seus suas voce voces isso esse essa este esta como quando qual quais porque por que mais menos muito pouco ja nao sim ao aos ate entre pode podem ser sao foi tem ter".split(
+    " ",
+  ),
 );
 
 export function normalizeText(s: string): string {
@@ -19,7 +21,9 @@ export function normalizeText(s: string): string {
 
 function stem(w: string): string {
   // Radical simples PT-BR: remove plurais/sufixos comuns para aproximar variações.
-  return w.replace(/(mente|coes|cao|oes|ais|eis|ores|ados|idas|idos|ada|ado|ida|ido|es|s)$/, "").slice(0, 7);
+  return w
+    .replace(/(mente|coes|cao|oes|ais|eis|ores|ados|idas|idos|ada|ado|ida|ido|es|s)$/, "")
+    .slice(0, 7);
 }
 
 export function tokens(s: string): Set<string> {
@@ -51,7 +55,11 @@ export function similarity(a: string, b: string): number {
 
 export const DUP_THRESHOLD = 0.72;
 
-export function findDuplicate(candidate: string, history: string[], threshold = DUP_THRESHOLD): string | null {
+export function findDuplicate(
+  candidate: string,
+  history: string[],
+  threshold = DUP_THRESHOLD,
+): string | null {
   for (const h of history) if (h && similarity(candidate, h) >= threshold) return h;
   return null;
 }
@@ -60,7 +68,12 @@ export function findDuplicate(candidate: string, history: string[], threshold = 
 export function titleOf(legenda: string): string {
   const line = (legenda || "")
     .split("\n")
-    .map((l) => l.replace(/^\s*(slide\s*\d+\s*[:\-–]?|#+|\*+|[-•]\s*)/i, "").replace(/\*+/g, "").trim())
+    .map((l) =>
+      l
+        .replace(/^\s*(slide\s*\d+\s*[:\-–]?|#+|\*+|[-•]\s*)/i, "")
+        .replace(/\*+/g, "")
+        .trim(),
+    )
     .find((l) => l.length > 3);
   return (line || "").slice(0, 160);
 }
@@ -69,7 +82,8 @@ export function titleOf(legenda: string): string {
 export function contentKey(parts: Array<string | null | undefined>): string {
   const s = parts.map((p) => normalizeText(p || "")).join("|");
   // FNV-1a 64 bits (duas metades) — sem dependências de Node, roda no Worker e no navegador.
-  let h1 = 0x811c9dc5, h2 = 0xcbf29ce4;
+  let h1 = 0x811c9dc5,
+    h2 = 0xcbf29ce4;
   for (let i = 0; i < s.length; i++) {
     const c = s.charCodeAt(i);
     h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
@@ -99,7 +113,12 @@ export const ANGULOS_EDITORIAIS = [
  * recebe um ângulo editorial diferente. Quando a lista base acaba, combina tema+ângulo
  * inéditos; se nada inédito couber, retorna menos itens (o chamador avisa o usuário).
  */
-export function planDistinctTopics(base: string[], historico: string[], quantidade: number, angulos = ANGULOS_EDITORIAIS): string[] {
+export function planDistinctTopics(
+  base: string[],
+  historico: string[],
+  quantidade: number,
+  angulos = ANGULOS_EDITORIAIS,
+): string[] {
   const escolhidos: string[] = [];
   const bloqueados = [...historico];
   let a = 0;
@@ -131,13 +150,25 @@ export function planDistinctTopics(base: string[], historico: string[], quantida
 export function batchDuplicates(items: string[], threshold = DUP_THRESHOLD): number[] {
   const dups: number[] = [];
   items.forEach((t, i) => {
-    if (findDuplicate(t, items.slice(0, i).filter((_, j) => !dups.includes(j)), threshold)) dups.push(i);
+    if (
+      findDuplicate(
+        t,
+        items.slice(0, i).filter((_, j) => !dups.includes(j)),
+        threshold,
+      )
+    )
+      dups.push(i);
   });
   return dups;
 }
 
 /** Repete `gerar` até achar algo inédito, com limite finito. Retorna null se esgotar. */
-export async function retryDistinct<T>(gerar: (tentativa: number) => Promise<T>, chave: (v: T) => string, historico: string[], maxTentativas = 3): Promise<{ valor: T; tentativas: number } | null> {
+export async function retryDistinct<T>(
+  gerar: (tentativa: number) => Promise<T>,
+  chave: (v: T) => string,
+  historico: string[],
+  maxTentativas = 3,
+): Promise<{ valor: T; tentativas: number } | null> {
   for (let i = 0; i < maxTentativas; i++) {
     const v = await gerar(i);
     if (!findDuplicate(chave(v), historico)) return { valor: v, tentativas: i + 1 };
