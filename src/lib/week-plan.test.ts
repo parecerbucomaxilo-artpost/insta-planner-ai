@@ -5,7 +5,10 @@ import { buildScheduleSlots } from "./schedule-config";
 import { batchDuplicates, chaveIdempotencia, similarity } from "./dedup";
 
 const quarta = new Date(2026, 9, 21, 10, 0); // quarta 21/10/2026 (local)
-const temas = Array.from({ length: 28 }, (_, i) => `Tema distinto número ${i} sobre assunto ${String.fromCharCode(65 + (i % 26))}${i}`);
+const temas = Array.from(
+  { length: 28 },
+  (_, i) => `Tema distinto número ${i} sobre assunto ${String.fromCharCode(65 + (i % 26))}${i}`,
+);
 
 describe("Posts 7 dias — slots e horários", () => {
   it("começa na segunda e termina no domingo", () => {
@@ -21,7 +24,14 @@ describe("Posts 7 dias — slots e horários", () => {
     expect(s).toHaveLength(28);
     const seg = s.slice(0, 4);
     expect(seg.map((i) => i.horario)).toEqual(["09:00", "14:00", "18:00", "21:00"]);
-    expect(seg.map((i) => [new Date(i.quando).getHours(), new Date(i.quando).getMinutes()])).toEqual([[9, 0], [14, 0], [18, 0], [21, 0]]);
+    expect(
+      seg.map((i) => [new Date(i.quando).getHours(), new Date(i.quando).getMinutes()]),
+    ).toEqual([
+      [9, 0],
+      [14, 0],
+      [18, 0],
+      [21, 0],
+    ]);
     expect(seg.every((i) => new Date(i.quando).getDate() === 26)).toBe(true);
   });
 
@@ -46,7 +56,8 @@ describe("Posts 7 dias — slots e horários", () => {
 
   it("nenhuma data no passado", () => {
     const seg = new Date(2026, 9, 26, 12, 0);
-    for (const i of montarSemana(temas, 4, seg)) expect(new Date(i.quando).getTime()).toBeGreaterThan(seg.getTime());
+    for (const i of montarSemana(temas, 4, seg))
+      expect(new Date(i.quando).getTime()).toBeGreaterThan(seg.getTime());
   });
 });
 
@@ -60,7 +71,10 @@ describe("Fuso do agendador automático", () => {
     const slots = buildScheduleSlots(new Date("2026-10-26T03:30:00Z"), 1) // segunda 00:30 em SP
       .filter((s) => s.rede === "instagram" && s.tipo === "feed");
     expect(slots.map((s) => s.quando.toISOString())).toEqual([
-      "2026-10-26T12:00:00.000Z", "2026-10-26T17:00:00.000Z", "2026-10-26T21:00:00.000Z", "2026-10-27T00:00:00.000Z",
+      "2026-10-26T12:00:00.000Z",
+      "2026-10-26T17:00:00.000Z",
+      "2026-10-26T21:00:00.000Z",
+      "2026-10-27T00:00:00.000Z",
     ]);
     expect(diaNoFuso(slots[3].quando).dia).toBe(26); // 21:00 continua sendo segunda em SP
   });
@@ -69,19 +83,40 @@ describe("Fuso do agendador automático", () => {
 describe("Idempotência por operação/slot", () => {
   const base = { rede: "instagram", quando: "2026-10-26T12:00:00.000Z" };
   it("double-click/retry no mesmo slot gera a mesma chave (o banco recusa o 2º insert)", () => {
-    const a = chaveIdempotencia("u1", "Siso", "Carrossel", { ...base, operacaoId: "op1", slotKey: "2026-10-26T09:00" });
-    const b = chaveIdempotencia("u1", "Siso", "Carrossel", { ...base, operacaoId: "op1", slotKey: "2026-10-26T09:00" });
+    const a = chaveIdempotencia("u1", "Siso", "Carrossel", {
+      ...base,
+      operacaoId: "op1",
+      slotKey: "2026-10-26T09:00",
+    });
+    const b = chaveIdempotencia("u1", "Siso", "Carrossel", {
+      ...base,
+      operacaoId: "op1",
+      slotKey: "2026-10-26T09:00",
+    });
     expect(a).toBe(b);
   });
   it("slots diferentes da mesma operação têm chaves diferentes", () => {
-    const keys = ["09:00", "14:00", "18:00", "21:00"].map((h) => chaveIdempotencia("u1", `t${h}`, "Carrossel", { ...base, operacaoId: "op1", slotKey: `2026-10-26T${h}` }));
+    const keys = ["09:00", "14:00", "18:00", "21:00"].map((h) =>
+      chaveIdempotencia("u1", `t${h}`, "Carrossel", {
+        ...base,
+        operacaoId: "op1",
+        slotKey: `2026-10-26T${h}`,
+      }),
+    );
     expect(new Set(keys).size).toBe(4);
   });
   it("sem slot, mesmo tema no mesmo dia também é idempotente", () => {
-    expect(chaveIdempotencia("u1", "Siso!", "Story", base)).toBe(chaveIdempotencia("u1", "siso", "Story", base));
+    expect(chaveIdempotencia("u1", "Siso!", "Story", base)).toBe(
+      chaveIdempotencia("u1", "siso", "Story", base),
+    );
   });
   it("4 textos de horários diferentes não são considerados iguais", () => {
-    const textos = ["Siso incluso: quando operar", "Bruxismo noturno e dor na ATM", "Fratura de mandíbula após acidente", "Higiene oral na UTI reduz pneumonia"];
+    const textos = [
+      "Siso incluso: quando operar",
+      "Bruxismo noturno e dor na ATM",
+      "Fratura de mandíbula após acidente",
+      "Higiene oral na UTI reduz pneumonia",
+    ];
     expect(batchDuplicates(textos)).toEqual([]);
     expect(similarity(textos[0], textos[1])).toBeLessThan(0.5);
   });
