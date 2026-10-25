@@ -251,7 +251,7 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
           postId: result.id,
           reviewStatus: "PendenteAprovacao",
           date: s.quando,
-          horaAgendamento: format(s.quando, "HH:mm"),
+          horaAgendamento: s.quando.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
           legenda: result.legenda,
           titulo: result.legenda.split("\n")[0],
           imagem: result.urls[0] ?? null,
