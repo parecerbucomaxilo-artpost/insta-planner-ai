@@ -1,3 +1,4 @@
+import { Posts7Dias } from "@/components/Posts7Dias";
 import { startGenerationProgress } from "@/lib/generation-progress";
 import { useState, useCallback, useRef, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -575,6 +576,15 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           </button>
         ))}
       </div>
+
+      <Posts7Dias
+        especialidade={especialidade}
+        temaGuia={tema}
+        gerar={async (item, formato) => {
+          const out = await genSingle({ data: { tema: item.tema, especialidade, rede: "instagram", tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando, modelo, modeloImagem, ambasRedes } });
+          return { id: out.id, urls: out.urls, legenda: out.legenda };
+        }}
+      />
 
       <div className="space-y-1.5">
           <Label className="text-xs">Gerador de texto</Label>

@@ -145,7 +145,7 @@ export function PlannerAgendamentoTratamento() {
     if (!telefone.trim()) { toast.error("Informe o telefone de agendamento antes de gerar."); return; }
     if (!override) setBusy(true);
     const tid = override ? `agend-liga-${override.iso}` : "agend-liga";
-    if (!override) toast.loading(`Criando convite: ${tratamentoLabel(tratamento)}...`, { id: tid });
+    if (!override) toast.loading(`Criando convite: ${tratamentoLabel(tratSel)}...`, { id: tid });
     try {
       const iso = override ? override.iso : buildIso();
       const tratObj = TRATAMENTOS.find((t) => t.id === tratSel)!;
@@ -184,7 +184,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       // Legenda do convite SEMPRE é a template determinística focada em UM único
       // tratamento — nunca aceitamos texto da IA aqui porque ela drifta entre
       // tratamentos. Só respeitamos legenda 100% manual digitada pelo usuário.
-      const legendaPaciente = legendaGerada.trim()
+      const legendaPaciente = !override && legendaGerada.trim()
         ? legendaGerada.trim()
         : buildPatientCaption({ tratamento: tratSel, telefone, base: "", assunto });
       await supabase
@@ -299,10 +299,12 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       </Card>
 
       <Posts7Dias
-        temasFixos={TRATAMENTOS.map((t) => t.id)}
+        temasFixos={TRATAMENTOS.map((t) => t.label)}
         formatos={["Post Único", "Carrossel", "Story"]}
         gerar={async (item, formato) => {
-          const r = await gerar({ trat: item.tema as TratId, iso: item.quando, formato });
+          const trat = TRATAMENTOS.find((t) => t.label === item.tema.trim())?.id;
+          if (!trat) throw new Error(`Tratamento não reconhecido: "${item.tema}". Use um dos tratamentos da lista.`);
+          const r = await gerar({ trat, iso: item.quando, formato });
           if (!r) throw new Error("Preencha o telefone de agendamento.");
           return r;
         }}
