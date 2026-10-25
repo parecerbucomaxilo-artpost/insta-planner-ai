@@ -372,7 +372,30 @@ export function PostReviewActions({
               </div>
             </section>
           )}
-          <div className="space-y-4">
+          {busy === "visualizar" && !post && (
+            <div role="status" className="flex items-center gap-2 py-10 justify-center text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" /> Carregando imagem e textos salvos…
+            </div>
+          )}
+          {loadError && (
+            <div role="alert" className="space-y-3 rounded-md border border-destructive/40 bg-destructive/5 p-4">
+              <p className="flex items-start gap-2 text-sm text-destructive">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                {loadError}
+              </p>
+              <Button variant="outline" onClick={visualizar} disabled={busy === "visualizar"}>
+                <RefreshCw className="h-4 w-4" /> Tentar novamente
+              </Button>
+            </div>
+          )}
+          {post && (preview?.mediaFalhas.length ?? 0) > 0 && (
+            <p role="alert" className="text-sm text-destructive">
+              {preview!.mediaFalhas.length === images.length
+                ? "Nenhuma imagem deste post pôde ser carregada (arquivo ausente ou sem permissão)."
+                : `Imagem não carregada no(s) slide(s) ${preview!.mediaFalhas.map((i) => i + 1).join(", ")}.`}
+            </p>
+          )}
+          {post && <div className="space-y-4">
             {platforms.length > 1 && (
               <div className="flex gap-2" aria-label="Plataforma da prévia">
                 {platforms.map((p) => (
@@ -388,9 +411,18 @@ export function PostReviewActions({
               </div>
             )}
             <div className="bg-muted flex justify-center min-h-24">
-              {mediaError ? (
+              {slideFalhou ? (
                 <p role="alert" className="p-4 text-destructive">
-                  Não foi possível carregar a mídia. Feche e abra a prévia para tentar novamente.
+                  A imagem deste slide existe, mas não pôde ser carregada (sem permissão ou arquivo removido).
+                </p>
+              ) : slideAusente ? (
+                <p role="alert" className="p-4 text-destructive">
+                  Este slide não tem imagem salva.
+                </p>
+              ) : mediaError ? (
+                <p role="alert" className="p-4 text-destructive">
+                  Não foi possível exibir a mídia. Use "Tentar novamente" abaixo.
+                  <Button variant="link" className="px-1" onClick={visualizar}>Tentar novamente</Button>
                 </p>
               ) : images[slide] ? (
                 post?.formato_midia === "Vídeo/Reels" ? (
@@ -410,7 +442,7 @@ export function PostReviewActions({
                   />
                 )
               ) : (
-                <p className="p-4 text-muted-foreground">Sem imagem disponível.</p>
+                <p role="alert" className="p-4 text-destructive">Este post não tem imagem salva.</p>
               )}
             </div>
             {images.length > 1 && (
@@ -453,7 +485,7 @@ export function PostReviewActions({
                 {caption || "Sem legenda disponível."}
               </p>
             </section>
-          </div>
+          </div>}
         </DialogContent>
       </Dialog>
     </div>
