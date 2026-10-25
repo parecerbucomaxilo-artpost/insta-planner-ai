@@ -871,7 +871,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {preview && (
             <Card className="p-5 space-y-3 border-2 border-emerald-200 bg-emerald-50/30">
               <h3 className="font-semibold text-emerald-900">Pré-visualização</h3>
-              <PostReviewActions key={preview.id} id={preview.id} disabled={busy} onChange={() => { setPreview(null); }} />
+              <PostReviewActions key={preview.id} id={preview.id} disabled={busy} onChange={() => { carregar(); }} />
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   {preview.urls.length > 1 ? (
@@ -1015,6 +1015,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               <ul className="space-y-3">
                 {posts.map((p) => (
                   <li key={p.id} className="flex flex-wrap gap-3 border rounded-md p-3">
+                    <div className="w-full"><PostReviewActions id={p.id} status={p.status} disabled={busy} /></div>
                     {p.url_imagem && <img src={p.url_imagem} alt="" className="w-16 h-16 rounded object-cover shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm line-clamp-2">{p.legenda || "(sem legenda)"}</p>
@@ -1049,7 +1050,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                     <Button variant="ghost" size="icon" onClick={() => excluir(p.id)} disabled={busy}>
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
-                    <div className="w-full"><PostReviewActions id={p.id} status={p.status} disabled={busy} /></div>
                   </li>
                 ))}
               </ul>

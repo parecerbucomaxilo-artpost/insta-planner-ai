@@ -1,3 +1,4 @@
+- [x] Mover revisão para o início dos cards Chico, manter modal aberto após revisão, atualizar listas após geração e expor pendentes sem data no calendário; 27 testes passaram.
 - [x] Ampliar prévia compartilhada do Chico/Posts 7 dias com mídia real, plataforma, texto por número de slide, edição e revisão no modal; 27 testes e lint passaram, compilação automática OK.
 - [ ] Conferir abertura, slides, edição e aprovação no modal com posts reais em desktop/celular: sessão da conta solicitante indisponível; telas sem sessão conferidas, sem mocks e sem erros de página.
 - [x] Tornar aprovação visível junto aos posts pendentes e expor listas persistidas após trocar abas; conferir Chico, Posts 7 dias, lista e calendário em desktop/celular com respostas somente de teste.
