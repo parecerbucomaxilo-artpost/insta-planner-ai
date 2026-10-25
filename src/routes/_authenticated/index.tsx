@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
@@ -37,6 +37,7 @@ import logoAsset from "@/assets/logo-planner.png.asset.json";
 import type { PostRow } from "@/lib/posts-types";
 import { signPostMediaUrls } from "@/lib/storage-url";
 import { POST_REVIEW_CHANGED } from "@/lib/post-review";
+import { ApproveAllReview } from "@/components/ApproveAllReview";
 
 export const Route = createFileRoute("/_authenticated/")({
  head: () => ({
@@ -72,7 +73,9 @@ function Dashboard() {
  const [tab, setTab] = useState("criar");
  const [autoGenWeekly, setAutoGenWeekly] = useState(false);
  const pendingPosts = posts.filter((post) => post.status === "PendenteAprovacao");
+ const reviewIds = useMemo(() => pendingPosts.map((p) => p.id), [reviewAll]); // eslint-disable-line react-hooks/exhaustive-deps
  const [pendingOnly, setPendingOnly] = useState(false);
+ const [reviewAll, setReviewAll] = useState(false);
  const [signedOut, setSignedOut] = useState(false);
 
  const load = useCallback(async () => {
@@ -245,6 +248,10 @@ function Dashboard() {
  <Button onClick={() => { void load(); setPendingOnly(true); setTab("todos"); }}>
  <Check className="h-4 w-4" aria-hidden="true" /> Aprovar posts ({pendingPosts.length})
  </Button>
+ <Button variant="secondary" disabled={pendingPosts.length === 0} onClick={() => setReviewAll(true)}>
+ <Check className="h-4 w-4" aria-hidden="true" /> Aprovar tudo (revisar {pendingPosts.length})
+ </Button>
+ <ApproveAllReview ids={reviewIds} open={reviewAll} onOpenChange={setReviewAll} onDone={() => void load()} />
  <Button variant="outline" onClick={() => { void load(); setPendingOnly(false); setTab("todos"); }}>
  <LayoutGrid className="h-4 w-4" aria-hidden="true" /> Todas as publicações
  </Button>
