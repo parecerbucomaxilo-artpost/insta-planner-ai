@@ -15,21 +15,17 @@ import { FUSO_PADRAO, diaNoFuso, horarioNoFuso } from "./post-slots";
 
 // Seg-Sáb (dia da semana 1..6 em getDay())
 export const SLOTS_SEMANA: Slot[] = [
-  // Instagram FEED — horários padrão 09:00, 14:00, 18:00, 21:00 (4/dia, um conteúdo distinto por slot)
-  { rede: "instagram", tipo: "feed", hora: 9, minuto: 0 },
+  // Instagram — 4/dia: 09h story · 14h feed (carrossel 5 slides) · 18h story · 21h feed (carrossel 5 slides)
+  { rede: "instagram", tipo: "stories", hora: 9, minuto: 0 },
   { rede: "instagram", tipo: "feed", hora: 14, minuto: 0 },
-  { rede: "instagram", tipo: "feed", hora: 18, minuto: 0 },
+  { rede: "instagram", tipo: "stories", hora: 18, minuto: 0 },
   { rede: "instagram", tipo: "feed", hora: 21, minuto: 0 },
-  // Instagram STORIES — 3/dia
-  { rede: "instagram", tipo: "stories", hora: 8, minuto: 0 },
-  { rede: "instagram", tipo: "stories", hora: 13, minuto: 0 },
-  { rede: "instagram", tipo: "stories", hora: 17, minuto: 0 },
   // LinkedIn — 2/dia
   { rede: "linkedin", tipo: "feed", hora: 9, minuto: 0 },
-  { rede: "linkedin", tipo: "feed", hora: 17, minuto: 30 },
+  { rede: "linkedin", tipo: "feed", hora: 13, minuto: 0 },
   // Google Business Profile — 2/dia
-  { rede: "google", tipo: "feed", hora: 10, minuto: 30 },
-  { rede: "google", tipo: "feed", hora: 16, minuto: 30 },
+  { rede: "google", tipo: "feed", hora: 10, minuto: 0 },
+  { rede: "google", tipo: "feed", hora: 15, minuto: 0 },
 ];
 
 // Domingo: mensagem mais leve / inspiracional
@@ -64,8 +60,9 @@ export function buildScheduleSlots(startDate: Date, dias = 7, tz = FUSO_PADRAO) 
 }
 
 export const HORARIOS_RESUMO = {
-  instagramFeed: "09:00, 14:00, 18:00 e 21:00 (seg-sáb)",
-  instagramStories: "08h, 13h e 17h (seg-sáb)",
-  linkedin: "09h e 17h30 (seg-sáb)",
+  instagramFeed: "14h e 21h — carrossel de 5 slides (seg-sáb)",
+  instagramStories: "09h e 18h (seg-sáb)",
+  linkedin: "09h e 13h (seg-sáb)",
+  google: "10h e 15h (seg-sáb)",
   domingo: "Mensagem de domingo (IG 10h + story 9h, LinkedIn 11h)",
 };

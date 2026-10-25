@@ -45,7 +45,9 @@ export function Posts7Dias(props: {
   const fetchTopics = useServerFn(getWeekTopics);
   const formatos = props.formatos ?? ["Post Único", "Carrossel", "Story"];
   const [porDia, setPorDia] = useState(props.postsPorDiaInicial ?? POSTS_POR_DIA_PADRAO);
-  const [formato, setFormato] = useState<FormatoSemana>(formatos[0]);
+  const temCronograma = !props.postsPorDiaInicial && formatos.includes("Story") && formatos.includes("Carrossel");
+  // "Cronograma" = formato de cada horário (09h/18h story, 14h/21h carrossel de 5 slides).
+  const [formato, setFormato] = useState<FormatoSemana | "Cronograma">(temCronograma ? "Cronograma" : formatos[0]);
   const [plano, setPlano] = useState<ItemSemana[] | null>(null);
   const [estados, setEstados] = useState<Record<string, Estado>>({});
   const [busy, setBusy] = useState(false);
@@ -105,7 +107,7 @@ export function Posts7Dias(props: {
       await emParalelo(pendentes, 1, async (item) => {
         setEstados((s) => ({ ...s, [item.key]: { status: "gerando" } }));
         try {
-          const res = await props.gerar(item, formato, { operacaoId, slotKey: item.key, objetivo: item.objetivo, assuntoGuiado });
+          const res = await props.gerar(item, formato === "Cronograma" ? item.formato : formato, { operacaoId, slotKey: item.key, objetivo: item.objetivo, assuntoGuiado });
           setEstados((s) => ({ ...s, [item.key]: { status: "ok", res } }));
         } catch (e: any) {
           setEstados((s) => ({ ...s, [item.key]: { status: "erro", erro: e?.message || "Falha" } }));
@@ -141,7 +143,7 @@ export function Posts7Dias(props: {
         <div className="space-y-1">
           <Label className="text-xs">Formato</Label>
           <div className="flex gap-1">
-            {formatos.map((f) => (
+            {(temCronograma ? (["Cronograma", ...formatos] as const) : formatos).map((f) => (
               <button key={f} type="button" onClick={() => setFormato(f)} disabled={busy}
                 className={cn("px-3 py-1.5 rounded-md text-xs font-semibold border", formato === f ? "bg-primary text-primary-foreground border-primary" : "border-border")}>
                 {f}

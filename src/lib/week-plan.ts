@@ -2,7 +2,7 @@
 // Determinístico, sem IA: a IA só é chamada depois, uma vez por post (legenda + imagens).
 // Horários vêm de HORARIOS_POSTAGEM (09:00, 14:00, 18:00, 21:00) no fuso local do navegador.
 
-import { horariosDoDia, parseHorario, type HorarioPostagem } from "./post-slots";
+import { FORMATO_POR_HORARIO_IG, horariosDoDia, parseHorario, type HorarioPostagem } from "./post-slots";
 
 export const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 export { HORARIOS_POSTAGEM } from "./post-slots";
@@ -18,6 +18,8 @@ export type ItemSemana = {
   quando: string; // ISO (UTC) do horário local escolhido
   tema: string;
   objetivo: string;
+  /** Formato do cronograma para este horário (09h/18h story, 14h/21h carrossel). */
+  formato: "Story" | "Carrossel";
 };
 
 /** Próxima segunda-feira às 00:00 (hoje, se for segunda). */
@@ -59,6 +61,7 @@ export function montarSemana(
         // Sem rotação cíclica: tema faltante fica vazio para o usuário preencher (evita repetir).
         tema: (temas[k] ?? "").trim(),
         objetivo: OBJETIVOS[k % OBJETIVOS.length],
+        formato: FORMATO_POR_HORARIO_IG[horario],
       });
       k++;
     }
