@@ -1,4 +1,5 @@
 import { Posts7Dias } from "@/components/Posts7Dias";
+import { PostReviewActions } from "@/components/PostReviewActions";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -478,6 +479,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
               </Button>
             </div>
           </div>
+          <PostReviewActions key={preview.id} id={preview.id} disabled={busy} onChange={() => setPreview(null)} />
           <div className="flex flex-wrap gap-2 pt-2">
             <Button onClick={() => decidir("publicar")} className="bg-emerald-600 hover:bg-emerald-700">Publicar agora</Button>
             <Button onClick={() => decidir("agendar")} variant="secondary">Salvar/Agendar</Button>

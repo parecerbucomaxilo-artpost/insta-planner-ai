@@ -35,6 +35,7 @@ import { NotificationsBell } from "@/components/NotificationsBell";
 import logoAsset from "@/assets/logo-planner.png.asset.json";
 import type { PostRow } from "@/lib/posts-types";
 import { signPostMediaUrls } from "@/lib/storage-url";
+import { POST_REVIEW_CHANGED } from "@/lib/post-review";
 
 export const Route = createFileRoute("/_authenticated/")({
  head: () => ({
@@ -43,6 +44,8 @@ export const Route = createFileRoute("/_authenticated/")({
  { name: "description", content: "Planner Chico: crie, agende e publique posts para Odontologia (CTBMF e Hospitalar), Cirurgia Bucal, Biópsias e Clínica Escola." },
  { property: "og:title", content: "Planner Chico — Agendamento de Posts" },
  { property: "og:description", content: "Planner Chico: crie, agende e publique posts para Odontologia (CTBMF e Hospitalar), Cirurgia Bucal, Biópsias e Clínica Escola." },
+ { property: "og:type", content: "website" },
+ { name: "twitter:card", content: "summary" },
  ],
  }),
  component: Dashboard,
@@ -113,6 +116,11 @@ function Dashboard() {
  load();
  loadPerfil();
  }, [load, loadPerfil]);
+ useEffect(() => {
+ const refresh = () => { void load(); };
+ window.addEventListener(POST_REVIEW_CHANGED, refresh);
+ return () => window.removeEventListener(POST_REVIEW_CHANGED, refresh);
+ }, [load]);
 
  const handleSignOut = useCallback(async () => {
  await supabase.auth.signOut();
@@ -273,7 +281,7 @@ function Dashboard() {
  <WeeklyCalendar perfil={perfil} onCreated={load} autoGenerate={autoGenWeekly} />
  </TabsContent>
  <TabsContent value="calendario" className="mt-6">
- <PostsCalendar posts={posts} />
+ <PostsCalendar posts={posts} onChange={load} />
  </TabsContent>
  <TabsContent value="todos" className="mt-6">
  <PostsList posts={posts} onChange={load} />

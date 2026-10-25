@@ -1,4 +1,6 @@
 import { Posts7Dias } from "@/components/Posts7Dias";
+import { PostReviewActions } from "@/components/PostReviewActions";
+import { POST_REVIEW_CHANGED } from "@/lib/post-review";
 import { startGenerationProgress } from "@/lib/generation-progress";
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -269,6 +271,11 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   }, [conta]);
 
   useEffect(() => { carregar(); }, [carregar]);
+  useEffect(() => {
+    const refresh = () => { void carregar(); };
+    window.addEventListener(POST_REVIEW_CHANGED, refresh);
+    return () => window.removeEventListener(POST_REVIEW_CHANGED, refresh);
+  }, [carregar]);
 
   const buildAgendamentoIso = (): string | undefined => {
     if (quando !== "data") return undefined;
@@ -879,6 +886,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 </div>
                 <Textarea value={preview.legenda} readOnly rows={12} className="text-xs" />
               </div>
+              <PostReviewActions key={preview.id} id={preview.id} disabled={busy} onChange={() => { setPreview(null); }} />
               <div className="grid grid-cols-3 gap-2">
                 {quando === "agora" ? (
                   <Button onClick={() => decidirPreview("publicar")} className="bg-emerald-600 hover:bg-emerald-700 col-span-2">
@@ -984,7 +992,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             ) : (
               <ul className="space-y-3">
                 {posts.map((p) => (
-                  <li key={p.id} className="flex gap-3 border rounded-md p-3">
+                  <li key={p.id} className="flex flex-wrap gap-3 border rounded-md p-3">
                     {p.url_imagem && <img src={p.url_imagem} alt="" className="w-16 h-16 rounded object-cover shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm line-clamp-2">{p.legenda || "(sem legenda)"}</p>
@@ -1019,6 +1027,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                     <Button variant="ghost" size="icon" onClick={() => excluir(p.id)} disabled={busy}>
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
+                    <div className="w-full"><PostReviewActions id={p.id} status={p.status} disabled={busy} /></div>
                   </li>
                 ))}
               </ul>
