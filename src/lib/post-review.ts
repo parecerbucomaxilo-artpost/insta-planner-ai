@@ -21,7 +21,13 @@ export const POST_REVIEW_CHANGED = "planner-post-review-changed";
 
 // ── Prévia obrigatória antes da aprovação ───────────────────────────────────
 
-export type ProblemaPrevia = "sem-texto" | "midia-ausente" | "midia-falhou" | "duplicado" | "slides-fora-padrao" | "slides-repetidos";
+export type ProblemaPrevia =
+  | "sem-texto"
+  | "midia-ausente"
+  | "midia-falhou"
+  | "duplicado"
+  | "slides-fora-padrao"
+  | "slides-repetidos";
 
 export function problemasPrevia(p: PreviewData): ProblemaPrevia[] {
   const out: ProblemaPrevia[] = [];
@@ -35,10 +41,12 @@ export function problemasPrevia(p: PreviewData): ProblemaPrevia[] {
   if (p.media.length === 0 || p.mediaAusente.length) out.push("midia-ausente");
   if (p.mediaFalhas.length) out.push("midia-falhou");
   if (p.post.tipo_post === "Carrossel") {
-    if (carrosselForaDoPadrao({ ...p.post, slides: p.media.length })) out.push("slides-fora-padrao");
+    if (carrosselForaDoPadrao({ ...p.post, slides: p.media.length }))
+      out.push("slides-fora-padrao");
     const textos = p.media.map((_, i) => savedSlideText(p.post.legenda, i) ?? "");
     const urls = p.media.filter(Boolean);
-    if (slidesRepetidos(textos).length || new Set(urls).size < urls.length) out.push("slides-repetidos");
+    if (slidesRepetidos(textos).length || new Set(urls).size < urls.length)
+      out.push("slides-repetidos");
   }
   return out;
 }
