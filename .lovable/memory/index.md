@@ -11,6 +11,7 @@ CTAs IG/X: "Link na Bio" / "Saiba mais pelo link da bio". CTA LinkedIn: WhatsApp
 ## Memories
 - [Estilo visual Dr. Francisco Menezes](mem://design/visual-style-francisco-menezes) — Padrão completo de direção de arte, paleta, composição, formatos, regras de copy
 - [Acesso público post-images](mem://constraints/post-images-security.md) — O bucket post-images deve ser público para que APIs externas funcionem.
+- [Todas as redes](mem://constraints/all-networks.md) — Dizer "todas as redes"; regras valem para toda plataforma.
 - [X é estilo, não rede](mem://constraints/x-twitter-style) — Botão X = formato tweet publicado em IG/LinkedIn.
 - [Tom de voz e bibliografia](mem://features/tone-and-bibliography) — IG/X linguagem leiga e empática; LinkedIn formal/científico com DOI. Fontes: Lancet, IJOMS, JOMS, OSOMOPOR, BJOMS.
 - [Cronograma de postagens](mem://features/schedule-cadence) — Seg-Sáb: IG feed 09:00/14:00/18:00/21:00 (fuso local), stories 8/13/17, LinkedIn 9 e 17:30. Domingo: posts especiais automáticos.
