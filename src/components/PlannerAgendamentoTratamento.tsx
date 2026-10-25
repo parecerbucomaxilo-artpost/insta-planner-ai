@@ -1,4 +1,4 @@
-import { ModelLabel, showAvisos } from "@/components/ModelLabel";
+import { ModelLabel, showAvisos, useModeloBloqueado } from "@/components/ModelLabel";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -73,6 +73,7 @@ interface PreviewState {
 }
 
 export function PlannerAgendamentoTratamento() {
+  const bloqueado = useModeloBloqueado();
   const genSingle = useServerFn(generateSinglePost);
   const genCaption = useServerFn(generateCaptionOnly);
   const approveFn = useServerFn(approvePost);

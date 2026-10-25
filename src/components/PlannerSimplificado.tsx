@@ -1,4 +1,4 @@
-import { ModelLabel, showAvisos } from "@/components/ModelLabel";
+import { ModelLabel, showAvisos, useModeloBloqueado } from "@/components/ModelLabel";
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -40,6 +40,7 @@ interface PlannerSimplificadoProps {
 }
 
 export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estudantes-graduacao", permiteTipoLiga = false }: PlannerSimplificadoProps = {}) {
+  const bloqueado = useModeloBloqueado();
   const genSingle = useServerFn(generateSinglePost);
   const genWeek = useServerFn(generateWeekThemes);
   const genCaption = useServerFn(generateCaptionOnly);

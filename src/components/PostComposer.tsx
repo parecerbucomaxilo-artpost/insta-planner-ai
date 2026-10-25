@@ -1,4 +1,4 @@
-import { ModelLabel, showAvisos } from "@/components/ModelLabel";
+import { ModelLabel, showAvisos, useModeloBloqueado } from "@/components/ModelLabel";
 import { useState, useCallback, useRef, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -37,6 +37,7 @@ const FORMATOS: { id: Formato; label: string; icon: React.ComponentType<{ classN
 ];
 
 export function PostComposer({ onCreated }: { onCreated: () => void }) {
+  const bloqueado = useModeloBloqueado();
   const publishIg = useServerFn(publishInstagramNow);
   const genCaption = useServerFn(generateCaptionOnly);
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
@@ -596,7 +597,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Somente IAs gratuitas. "Requer chave gratuita" só funciona com a chave cadastrada em Configurações → IA.
+          Padrão grátis. Gemini e ChatGPT/OpenAI pagos ficam desativados até cadastrar a chave e aceitar a cobrança em Configurações → IA.
         </p>
       </div>
 
