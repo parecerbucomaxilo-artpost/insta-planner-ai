@@ -47,10 +47,19 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
           const fim = slots[slots.length - 1].quando.toISOString();
           const { data: existentes, error: qErr } = await supabaseAdmin
             .from("posts")
-            .select("data_agendamento,postar_instagram,postar_linkedin,postar_google,estilo_layout,formato_midia")
+            .select(
+              "data_agendamento,postar_instagram,postar_linkedin,postar_google,estilo_layout,formato_midia",
+            )
             .gte("data_agendamento", inicio)
             .lte("data_agendamento", fim)
-            .in("status", ["Agendado", "PendenteAprovacao", "Publicado", "Rascunho", "Arquivado", "EnviadoMake"]);
+            .in("status", [
+              "Agendado",
+              "PendenteAprovacao",
+              "Publicado",
+              "Rascunho",
+              "Arquivado",
+              "EnviadoMake",
+            ]);
 
           if (qErr) return json({ error: qErr.message }, 500);
 
@@ -59,7 +68,9 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
           for (const p of existentes ?? []) {
             if (!p.data_agendamento) continue;
             const min = Math.floor(new Date(p.data_agendamento).getTime() / 60_000);
-            const tipo = (p.formato_midia || "").toLowerCase().includes("stor") ? "stories" : "feed";
+            const tipo = (p.formato_midia || "").toLowerCase().includes("stor")
+              ? "stories"
+              : "feed";
             if (p.postar_instagram) ocupados.add(`${min}|instagram|${tipo}`);
             if (p.postar_linkedin) ocupados.add(`${min}|linkedin|${tipo}`);
             if ((p as any).postar_google) ocupados.add(`${min}|google|${tipo}`);
@@ -72,7 +83,11 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
           });
 
           if (!proximo) {
-            return json({ ok: true, generated: 0, message: "Semana completa: todos os slots já têm post." });
+            return json({
+              ok: true,
+              generated: 0,
+              message: "Semana completa: todos os slots já têm post.",
+            });
           }
 
           // Define formato com base no slot.
@@ -86,16 +101,21 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
                 : "Post Único";
 
           // Para slots de domingo, força tema de mensagem leve/inspiracional.
-          const temaDomingo = isDomingo && proximo.rede !== "google"
-            ? "Mensagem de domingo: descanso, gratidão e cuidado com a saúde bucomaxilofacial"
-            : "";
+          const temaDomingo =
+            isDomingo && proximo.rede !== "google"
+              ? "Mensagem de domingo: descanso, gratidão e cuidado com a saúde bucomaxilofacial"
+              : "";
 
           // Define nível editorial:
           // - Google → SEO local (google-business)
           // - LinkedIn → científico
           // - IG stories → conversão (dor/teaser do feed)
           // - IG feed → alterna entre conversão (manhã 9h) e autoridade (15h/19h)
-          const nivel: "ig-conversao" | "ig-autoridade" | "linkedin-cientifico" | "google-business" =
+          const nivel:
+            | "ig-conversao"
+            | "ig-autoridade"
+            | "linkedin-cientifico"
+            | "google-business" =
             proximo.rede === "google"
               ? "google-business"
               : proximo.rede === "linkedin"
@@ -120,8 +140,10 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
 
           // NÃO REPETIR ASSUNTO em dias próximos: coleta temas usados nos
           // 3 dias anteriores e nos 3 dias seguintes (janela ±3 dias).
-          const janelaAntes = new Date(inicioDia); janelaAntes.setDate(janelaAntes.getDate() - 3);
-          const janelaDepois = new Date(fimDia); janelaDepois.setDate(janelaDepois.getDate() + 3);
+          const janelaAntes = new Date(inicioDia);
+          janelaAntes.setDate(janelaAntes.getDate() - 3);
+          const janelaDepois = new Date(fimDia);
+          janelaDepois.setDate(janelaDepois.getDate() + 3);
           const { data: vizinhos } = await supabaseAdmin
             .from("posts")
             .select("prompt_ia,data_agendamento")
@@ -137,7 +159,11 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
             .not("prompt_ia", "is", null);
           const temasProibidos = Array.from(
             new Set(
-              ([...(vizinhos ?? []), ...(vizinhosDepois ?? []), ...(doDia ?? [])] as Array<{ prompt_ia: string | null }>)
+              (
+                [...(vizinhos ?? []), ...(vizinhosDepois ?? []), ...(doDia ?? [])] as Array<{
+                  prompt_ia: string | null;
+                }>
+              )
                 .map((p) => (p.prompt_ia || "").trim())
                 .filter(Boolean),
             ),

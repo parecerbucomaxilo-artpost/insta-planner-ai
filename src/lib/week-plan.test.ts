@@ -5,11 +5,37 @@ import { buildScheduleSlots } from "./schedule-config";
 import { batchDuplicates, chaveIdempotencia, similarity } from "./dedup";
 
 const quarta = new Date(2026, 9, 21, 10, 0); // quarta 21/10/2026 (local)
-const assuntos = ["Siso incluso", "Bruxismo noturno", "Fratura de mandíbula", "Disfunção da ATM", "Cisto maxilar", "Implante zigomático", "Pneumonia associada à ventilação", "Biópsia oral", "Angina de Ludwig", "Síndrome de Eagle", "Trismo pós-operatório", "Comunicação bucossinusal", "Elevação de seio", "Fratura de órbita", "Queratocisto odontogênico", "Reabsorção condilar", "Leucoplasia", "Líquen plano", "Paciente anticoagulado", "Osteonecrose por bisfosfonato", "Frenectomia lingual", "Alveolite seca", "Sinusite odontogênica", "Paciente diabético", "Cardiopata no consultório", "Enxerto ósseo", "Deformidade dentofacial", "Nervo alveolar inferior"];
+const assuntos = [
+  "Siso incluso",
+  "Bruxismo noturno",
+  "Fratura de mandíbula",
+  "Disfunção da ATM",
+  "Cisto maxilar",
+  "Implante zigomático",
+  "Pneumonia associada à ventilação",
+  "Biópsia oral",
+  "Angina de Ludwig",
+  "Síndrome de Eagle",
+  "Trismo pós-operatório",
+  "Comunicação bucossinusal",
+  "Elevação de seio",
+  "Fratura de órbita",
+  "Queratocisto odontogênico",
+  "Reabsorção condilar",
+  "Leucoplasia",
+  "Líquen plano",
+  "Paciente anticoagulado",
+  "Osteonecrose por bisfosfonato",
+  "Frenectomia lingual",
+  "Alveolite seca",
+  "Sinusite odontogênica",
+  "Paciente diabético",
+  "Cardiopata no consultório",
+  "Enxerto ósseo",
+  "Deformidade dentofacial",
+  "Nervo alveolar inferior",
+];
 const temas = assuntos;
-  { length: 28 },
-  (_, i) => `Tema distinto número ${i} sobre assunto ${String.fromCharCode(65 + (i % 26))}${i}`,
-);
 
 describe("Posts 7 dias — slots e horários", () => {
   it("começa na segunda e termina no domingo", () => {
