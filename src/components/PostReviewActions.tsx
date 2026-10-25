@@ -45,6 +45,12 @@ import { signPostMediaStrict } from "@/lib/storage-url";
 import type { PostRow } from "@/lib/posts-types";
 import {
   canReview,
+  foiVisto,
+  marcarVisto,
+  podeAprovar,
+  problemasPrevia,
+  PREVIEW_SEEN,
+  PROBLEMA_LABEL,
   reviewStatus,
   POST_REVIEW_CHANGED,
   type ReviewDecision,
