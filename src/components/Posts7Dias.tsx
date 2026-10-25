@@ -7,16 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getWeekTopics } from "@/lib/ai-post.functions";
-import { montarSemana, emParalelo, type ItemSemana } from "@/lib/week-plan";
+import { montarSemana, emParalelo, proximaSegunda, type ItemSemana } from "@/lib/week-plan";
 import { horariosDoDia } from "@/lib/post-slots";
-import { batchDuplicates } from "@/lib/dedup";
+import { conflitosNoLote } from "@/lib/dedup";
 import { cn } from "@/lib/utils";
 import { PostReviewActions } from "@/components/PostReviewActions";
 
 export type FormatoSemana = "Post Único" | "Carrossel" | "Story";
 export type ResultadoPost = { id: string; urls: string[]; legenda: string };
 /** Contexto de idempotência: mesma operação + mesmo slot nunca cria um segundo post. */
-export type ContextoSlot = { operacaoId: string; slotKey: string };
+export type ContextoSlot = { operacaoId: string; slotKey: string; objetivo?: string; assuntoGuiado?: boolean };
 
 type Estado = { status: "fila" | "gerando" | "ok" | "erro"; res?: ResultadoPost; erro?: string };
 
@@ -37,6 +37,8 @@ export function Posts7Dias(props: {
   /** Temas próprios do planner (ex.: tratamentos). Se ausente, usa o banco de temas do app. */
   temasFixos?: string[];
   formatos?: FormatoSemana[];
+  /** O planner está usando o escritor local (sem IA): planejar só temas que ele escreve com conteúdo próprio. */
+  escritorLocal?: boolean;
 }) {
   const fetchTopics = useServerFn(getWeekTopics);
   const formatos = props.formatos ?? ["Post Único", "Carrossel", "Story"];
@@ -59,7 +61,7 @@ export function Posts7Dias(props: {
       let temas: string[];
       if (props.temasFixos?.length) temas = props.temasFixos;
       else {
-        const r = await fetchTopics({ data: { especialidade: props.especialidade ?? "Ambas", temaGuia: props.temaGuia ?? "", quantidade: qtd } });
+        const r = await fetchTopics({ data: { especialidade: props.especialidade ?? "Ambas", temaGuia: props.temaGuia ?? "", quantidade: qtd, inicioSemana: proximaSegunda().toISOString(), escritorLocal: Boolean(props.escritorLocal) } });
         temas = r.temas;
         if (r.aviso) toast.warning(r.aviso);
       }
@@ -74,18 +76,20 @@ export function Posts7Dias(props: {
     }
   };
 
+  const assuntoGuiado = Boolean(props.temaGuia?.trim()) && !props.temasFixos?.length;
   const gerarSemana = async () => {
     if (!plano || travaRef.current) return;
     travaRef.current = true;
     setBusy(true);
     try {
       // Dedup dentro do lote ANTES de gerar: repetidos/vazios ficam pendentes para edição.
-      const dupIdx = new Set(batchDuplicates(plano.map((i) => i.tema)));
+      // Semântico: mesmo assunto-raiz na semana conta como repetido, mesmo com título diferente.
+      const dupIdx = new Set(conflitosNoLote(plano.map((i) => ({ tema: i.tema, quando: i.quando })), { assuntoGuiado }));
       const bloqueados: Record<string, Estado> = {};
       plano.forEach((i, idx) => {
         if (estados[i.key]?.status === "ok") return;
         if (!i.tema.trim()) bloqueados[i.key] = { status: "erro", erro: "Sem tema inédito — escreva um tema para este horário." };
-        else if (dupIdx.has(idx)) bloqueados[i.key] = { status: "erro", erro: "Tema repetido nesta semana — edite para um assunto diferente." };
+        else if (dupIdx.has(idx)) bloqueados[i.key] = { status: "erro", erro: "Mesmo assunto de outro horário desta semana — escreva um assunto diferente." };
       });
       if (Object.keys(bloqueados).length) toast.warning(`${Object.keys(bloqueados).length} item(ns) repetido(s) ou vazio(s) não foram gerados. Edite e gere de novo.`);
       const pendentes = plano.filter((i) => estados[i.key]?.status !== "ok" && !bloqueados[i.key]);
@@ -99,7 +103,7 @@ export function Posts7Dias(props: {
       await emParalelo(pendentes, 1, async (item) => {
         setEstados((s) => ({ ...s, [item.key]: { status: "gerando" } }));
         try {
-          const res = await props.gerar(item, formato, { operacaoId, slotKey: item.key });
+          const res = await props.gerar(item, formato, { operacaoId, slotKey: item.key, objetivo: item.objetivo, assuntoGuiado });
           setEstados((s) => ({ ...s, [item.key]: { status: "ok", res } }));
         } catch (e: any) {
           setEstados((s) => ({ ...s, [item.key]: { status: "erro", erro: e?.message || "Falha" } }));

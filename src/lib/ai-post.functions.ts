@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
-import { ANGULOS_EDITORIAIS, chaveIdempotencia, findDuplicate, planDistinctTopics, retryDistinct, similarity, titleOf } from "./dedup";
+import { ANGULOS_EDITORIAIS, JANELA_ASSUNTO_DIAS, acharConflito, assuntoPrincipal, chaveIdempotencia, findDuplicate, mensagemConflito, planDistinctTopics, titleOf, type AssinaturaPost } from "./dedup";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
 export const MODELOS_IA = [
@@ -67,6 +67,10 @@ const SingleInput = z.object({
   // (duplo clique, retry, cron concorrente).
   operacaoId: z.string().min(1).max(80).optional(),
   slotKey: z.string().min(1).max(120).optional(),
+  // Intenção editorial do slot (Educar, Prevenir…) — entra no texto e na assinatura de dedup.
+  objetivo: z.string().max(60).optional(),
+  // Semana guiada por um tema escolhido pelo usuário: mesmo assunto permitido, com ângulos distintos.
+  assuntoGuiado: z.boolean().optional().default(false),
   // Logo(s) a serem aplicadas como overlay. `logoKey` é legado; `logoKeys`
   // permite escolher mais de uma logo no dashboard.
   logoKey: z.enum(["nsp", "anhanguera", "planner", "liga-ctbmf", "clinica-escola", "nenhuma"]).optional(),
@@ -1196,13 +1200,21 @@ function topicGuidance(tema: string): TopicGuidance {
       ganho: "dar mais segurança ao tratamento médico e reduzir complicações evitáveis relacionadas à boca",
     };
   }
-  return {
+  return GENERIC_GUIDANCE;
+}
+
+// Guia genérico: usado quando o tema não tem roteiro clínico próprio. NÃO deve virar
+// parágrafo de preenchimento em posts diferentes (era a origem de textos "iguais").
+const GENERIC_GUIDANCE: TopicGuidance = {
     oQue: "um sinal na boca, face ou mandíbula pode ter causas diferentes e não deve ser interpretado isoladamente",
     porQue: "dor, inflamação, sobrecarga muscular, posição dos dentes e alterações anatômicas podem produzir sintomas parecidos",
     conduta: "o caminho seguro é avaliação clínica, exame de imagem quando necessário e plano individual com orientação, controle dos fatores de risco e tratamento específico",
     alerta: "dor persistente, inchaço, travamento, sangramento, febre ou piora progressiva pedem avaliação especializada",
     ganho: "entender a causa real e escolher a conduta certa, sem soluções genéricas",
-  };
+};
+
+function isGenericGuidance(g: TopicGuidance): boolean {
+  return g === GENERIC_GUIDANCE;
 }
 
 function visualSceneForTopic(tema: string, g: TopicGuidance, audiencia: z.infer<typeof SingleInput>["audiencia"], slideIndex?: number) {
@@ -1411,6 +1423,12 @@ function completeCaptionIfNeeded(params: {
   const minLen = params.formato === "Story" ? 140 : params.rede === "linkedin" ? 600 : 380;
   const tooShort = raw.length < minLen;
   if (!tooShort && hasConduta && hasWhy && hasAlert && hasGanho) return raw;
+  // Texto completo escrito para o tema + guia genérico: não anexar parágrafos de preenchimento
+  // idênticos aos de outros posts (só o fechamento oficial, se faltar).
+  if (!tooShort && isGenericGuidance(g)) {
+    if (params.rede === "linkedin" || params.formato === "Story" || /link da bio|link na bio/i.test(raw)) return raw;
+    return `${raw}\n\n${params.audiencia === "estudantes-graduacao" ? "Salve para revisar e compare com sua conduta na clínica." : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`}`;
+  }
 
   if (params.formato === "Story") {
     return `${raw}\n\nO que fazer: ${g.conduta}.\n\nGanho: ${g.ganho}.\n\nAtenção: ${g.alerta}.\n\nLink na Bio`;
@@ -1593,31 +1611,43 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       }
     }
 
-    // DEDUP com histórico REAL (últimos 60 dias, 300 posts, sem Erro). Falha de consulta não
-    // libera duplicatas silenciosamente: segue só com o lote/agendador e registra aviso.
+    // DEDUP com histórico REAL: posts criados nos últimos 60 dias OU agendados a partir de
+    // 7 dias atrás (inclui itens já salvos do mesmo lote semanal, que roda em sequência).
+    // Compara tema + assunto-raiz + ângulo + intenção + título + corpo (dedup.ts).
+    // Falha de consulta não libera duplicatas silenciosamente: registra aviso e segue só com o lote.
+    const historicoSig: AssinaturaPost[] = (data.temasProibidos ?? [])
+      .filter(Boolean)
+      .map((t) => ({ tema: t, quando: data.quando ?? null }));
     const historicoTemas: string[] = [...(data.temasProibidos ?? [])];
-    const historicoTitulos: string[] = [];
-    const historicoCorpos: string[] = [];
     try {
-      const desdeDedup = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const agora = Date.now();
+      const desdeDedup = new Date(agora - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const desdeAgenda = new Date(agora - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data: recentes, error: recErr } = await supabaseAdmin
         .from("posts")
-        .select("prompt_ia, legenda")
+        .select("prompt_ia, legenda, created_at, data_agendamento, status")
         .eq("user_id", context.userId)
         .neq("status", "Erro")
-        .gte("created_at", desdeDedup)
+        .or(`created_at.gte.${desdeDedup},data_agendamento.gte.${desdeAgenda}`)
         .order("created_at", { ascending: false })
-        .limit(300);
+        .limit(400);
       if (recErr) throw recErr;
       for (const r of recentes ?? []) {
         if (r.prompt_ia) historicoTemas.push(r.prompt_ia);
-        if (r.legenda) { historicoTitulos.push(titleOf(r.legenda)); historicoCorpos.push(r.legenda.slice(0, 600)); }
+        historicoSig.push({
+          tema: r.prompt_ia || "",
+          titulo: r.legenda ? titleOf(r.legenda) : "",
+          corpo: (r.legenda || "").slice(0, 1500),
+          quando: r.data_agendamento ?? null,
+          status: r.status,
+        });
       }
     } catch (e) {
       console.warn("[dedup] histórico indisponível; usando só temas do lote:", e instanceof Error ? e.message : e);
     }
-    const temaBase = (s: string) => s.split(" — ")[0];
-    const temaDup = (t: string) => findDuplicate(t, historicoTemas) || findDuplicate(temaBase(t), historicoTemas.map(temaBase), 0.95);
+    const quandoRef = data.quando ?? new Date().toISOString();
+    const optsConflito = { janelaDias: JANELA_ASSUNTO_DIAS, assuntoGuiado: data.assuntoGuiado };
+    const temaDup = (t: string) => acharConflito({ tema: t, quando: quandoRef, objetivo: data.objetivo }, historicoSig, optsConflito);
     {
       const chaveInicial = chaveIdempotencia(context.userId, tema, formato, data);
       const { data: jaExiste } = await supabaseAdmin.from("posts").select("id, legenda, url_imagem, url_imagem_cache, imagens_carrossel_cache").eq("user_id", context.userId).eq("content_key", chaveInicial).maybeSingle();
@@ -1629,21 +1659,33 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         return { id: jaExiste.id, url: u, legenda: jaExiste.legenda, slides: urls.length, urls, slideLegendas: [] as string[], reaproveitado: true };
       }
     }
-    if (temaDup(tema)) {
-      if (!(data.tema ?? "").trim()) {
-        // Tema automático: pede nova ideia, no máximo 3 vezes.
-        const r = await retryDistinct(
-          async (i) => chooseLocalTema(data.audiencia, historicoTemas, `${data.rede}-${formato}-${i}-${Date.now()}`, data.especialidade),
-          (t) => t, historicoTemas, 3,
-        );
-        if (!r) throw new Error("Não foi possível garantir um tema inédito. Informe um tema manualmente.");
-        tema = r.valor;
-      } else {
-        throw new Error(`Tema repetido: "${tema.slice(0, 80)}" já foi usado recentemente. Edite o tema para um assunto ou ângulo novo.`);
+    // Escritor local só escreve texto próprio para temas com guia clínico específico.
+    const escritorLocalSemGuia = (t: string) =>
+      (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo")
+      && data.especialidade !== "Temas Diversos" && data.audiencia !== "estudantes-graduacao"
+      && isGenericGuidance(topicGuidance(t));
+    {
+      const conflito = temaDup(tema);
+      if (conflito || (!(data.tema ?? "").trim() && escritorLocalSemGuia(tema))) {
+        if (!(data.tema ?? "").trim()) {
+          // Tema automático: pede nova ideia (assunto diferente), no máximo 40 candidatos (sem custo de IA).
+          let novo: string | null = null;
+          for (let i = 0; i < 40 && !novo; i++) {
+            const cand = chooseLocalTema(data.audiencia, historicoTemas, `${data.rede}-${formato}-${i}-${Date.now()}`, data.especialidade);
+            if (!temaDup(cand) && !escritorLocalSemGuia(cand)) novo = cand;
+            else historicoTemas.push(cand);
+          }
+          if (!novo) throw new Error("Não foi possível garantir um tema inédito. Informe um tema manualmente.");
+          tema = novo;
+        } else {
+          throw new Error(`${mensagemConflito(conflito!)} Nada foi salvo — edite o tema deste horário.`);
+        }
       }
     }
+    console.info("[dedup] tema aprovado", { postId, assunto: assuntoPrincipal(tema), slot: data.slotKey ?? null });
     // Idempotência: mesmo usuário + tema + formato + rede + dia = mesmo post.
     const chaveConteudo = chaveIdempotencia(context.userId, tema, formato, data);
+
 
     // 1. Resolve nível editorial
     const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
@@ -1664,8 +1706,15 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           nivel,
           audiencia: data.audiencia,
         });
-    const legendaPromise = (async () => {
-      if (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") {
+    const usaEscritorLocal = !process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo";
+    // O escritor local (sem IA) só tem conteúdo próprio para temas com guia clínico específico.
+    // Para os demais ele produziria o MESMO corpo genérico em todo post — isso não é inédito.
+    if (usaEscritorLocal && !isDiverso && !isEstudantes && isGenericGuidance(topicGuidance(tema))) {
+      throw new Error(`O escritor local não tem texto próprio para "${tema.slice(0, 70)}" e repetiria o mesmo conteúdo de outros posts. Escolha um gerador de texto (GPT/Gemini) ou outro tema. Nada foi salvo.`);
+    }
+    const objetivoLinha = data.objetivo ? `\nObjetivo editorial deste post: ${data.objetivo}` : "";
+    const escreverLegenda = async (novaAbordagem = ""): Promise<string> => {
+      if (usaEscritorLocal) {
         if (isChico && isDiverso && formato === "Carrossel") throw new Error("Finalize os textos individuais com um modelo de texto antes de gerar este carrossel editorial.");
         return localCaption();
       }
@@ -1674,7 +1723,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         try {
           const { generateTextAI } = await import("@/lib/ai-gateway.server");
           const system = diverseCaptionSystem(data.rede, formato);
-          const prompt = `${isChico && formato === "Carrossel" ? `Inclua ${data.rede === "estilo-x" ? 3 : 5} blocos distintos completos marcados Slide 1, Slide 2 etc. Cada bloco contém título e texto final específico.\n` : ""}Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
+          const prompt = `${isChico && formato === "Carrossel" ? `Inclua ${data.rede === "estilo-x" ? 3 : 5} blocos distintos completos marcados Slide 1, Slide 2 etc. Cada bloco contém título e texto final específico.\n` : ""}Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}${objetivoLinha}${novaAbordagem}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
           const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : formato === "Carrossel" ? 1100 : 800 });
           return txt || localCaption();
         } catch (err) {
@@ -1698,14 +1747,15 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         const roteiroCarrossel = formato === "Carrossel"
           ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter ${data.rede === "estilo-x" ? 3 : 5} blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
           : "";
-        const prompt = `${contrato}\n\nTema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${roteiroCarrossel}\n\nTAREFA: escreva a legenda final pronta para publicação. Ela só será aceita se mencionar explicitamente O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA. Não termine antes da conduta/tratamento.\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
+        const prompt = `${contrato}\n\nTema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${objetivoLinha}${roteiroCarrossel}${novaAbordagem}\n\nTAREFA: escreva a legenda final pronta para publicação. Ela só será aceita se mencionar explicitamente O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA. Não termine antes da conduta/tratamento.\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
         const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1700 : formato === "Carrossel" ? 1200 : 950 });
         return txt || localCaption();
       } catch (err) {
         console.warn("[ai-post] legenda caiu para local:", err instanceof Error ? err.message : err);
         return localCaption();
       }
-    })();
+    };
+    const legendaPromise = escreverLegenda();
 
     // Tamanho ideal por plataforma (gateway suporta 1024x1024, 1024x1536, 1536x1024):
     // - IG Feed/Carrossel: vertical 4:5  → 1024x1536
@@ -1786,14 +1836,31 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
 
 
-    const legendaBaseResolvida = completeCaptionIfNeeded({
-      legenda: await legendaPromise,
+    const completar = (legenda: string) => completeCaptionIfNeeded({
+      legenda,
       tema,
       rede: data.rede,
       formato,
       audiencia: data.audiencia,
       especialidade: data.especialidade,
     });
+    // Dedup do TEXTO antes de gerar imagens/salvar: título e corpo editorial (sem assinatura,
+    // CTA e hashtags) comparados ao histórico real, inclusive frases reaproveitadas.
+    // Duplicata → reescreve SÓ este post com nova abordagem (máx. 2 vezes); depois, erro visível.
+    const conflitoTexto = (legenda: string) => {
+      const limpo = (legenda || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/im, "").trim();
+      return acharConflito({ tema: "", titulo: titleOf(limpo), corpo: limpo.slice(0, 1500), quando: quandoRef }, historicoSig, optsConflito);
+    };
+    let legendaBaseResolvida = completar(await legendaPromise);
+    for (let tentativa = 1; ; tentativa++) {
+      const conflito = conflitoTexto(legendaBaseResolvida);
+      if (!conflito) break;
+      console.warn("[dedup] texto repetido", { postId, tentativa, motivo: conflito.motivo });
+      if (usaEscritorLocal || tentativa > 2) {
+        throw new Error(`${mensagemConflito(conflito)} ${usaEscritorLocal ? "O escritor local não consegue variar este texto" : `Tentamos ${tentativa} abordagens diferentes`}. Nada foi salvo — revise o tema deste horário.`);
+      }
+      legendaBaseResolvida = completar(await escreverLegenda(`\n\nNOVA ABORDAGEM OBRIGATÓRIA (tentativa ${tentativa + 1}): a versão anterior ficou parecida demais com um post já existente ("${conflito.com.slice(0, 90)}"). Use outro gancho, outro título, outra estrutura e outros exemplos concretos. Não reutilize frases daquele post.`));
+    }
     const slideCount = formato === "Carrossel" ? (data.rede === "estilo-x" ? 3 : 5) : 1;
     // Chico: texto final completo, sem trocar/truncar blocos por narrativas genéricas.
     const slideNarratives = formato === "Carrossel"
@@ -1819,17 +1886,6 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // remove a linha HOOK_IMAGEM da legenda exibida/publicada
     let legendaSemHook = (legendaResolvida || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "").trim();
     if (!isChico) legendaSemHook = enforceHookCoherence(legendaSemHook, hookImagem, tema);
-    // Dedup do TEXTO antes de gerar imagens/salvar: título/gancho e corpo comparados ao histórico real.
-    {
-      const tituloNovo = titleOf(legendaSemHook);
-      const corpoNovo = legendaSemHook.slice(0, 600);
-      const dupTitulo = tituloNovo ? findDuplicate(tituloNovo, historicoTitulos, 0.8) : null;
-      const dupCorpo = historicoCorpos.find((c) => similarity(corpoNovo, c) >= 0.6) ?? null;
-      if (dupTitulo || dupCorpo) {
-        console.warn("[dedup] texto repetido bloqueado", { postId, tema: tema.slice(0, 80) });
-        throw new Error(`Texto muito parecido com um post recente${dupTitulo ? ` ("${dupTitulo.slice(0, 70)}")` : ""}. Nada foi salvo — edite o tema ou tente novamente para um novo ângulo.`);
-      }
-    }
     const headlineLegenda = extractHeadline(legendaSemHook) || hookImagem;
     const altLegenda = extractAlt(legendaSemHook);
     const guiaTema = topicGuidance(tema);
@@ -2021,15 +2077,16 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // outra aba ou item concorrente) também contam. Nunca salva duplicata silenciosamente.
     try {
       const desdeRecente = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      const { data: recem } = await supabaseAdmin.from("posts").select("id, prompt_ia, legenda").eq("user_id", context.userId).neq("status", "Erro").gte("created_at", desdeRecente).limit(100);
-      const corpo = legenda.slice(0, 600);
-      const colisao = (recem ?? []).find((r: any) =>
-        (r.prompt_ia && similarity(r.prompt_ia, tema) >= 0.85)
-        || (r.legenda && similarity(r.legenda.slice(0, 600), corpo) >= 0.6)
-        || (r.legenda && titleOf(r.legenda) && similarity(titleOf(r.legenda), titleOf(legenda)) >= 0.8));
+      const { data: recem } = await supabaseAdmin.from("posts").select("id, prompt_ia, legenda, created_at, data_agendamento, status").eq("user_id", context.userId).neq("status", "Erro").gte("created_at", desdeRecente).limit(100);
+      const assinaturaNova: AssinaturaPost = { tema, titulo: titleOf(legenda), corpo: legenda.slice(0, 1500), quando: quandoRef, objetivo: data.objetivo };
+      const colisao = acharConflito(
+        assinaturaNova,
+        (recem ?? []).map((r: any) => ({ tema: r.prompt_ia || "", titulo: r.legenda ? titleOf(r.legenda) : "", corpo: (r.legenda || "").slice(0, 1500), quando: r.data_agendamento ?? null, status: r.status })),
+        optsConflito,
+      );
       if (colisao) {
-        console.warn("[dedup] colisão com post salvo durante a geração", { postId, existente: (colisao as any).id });
-        throw new Error("Outro post com o mesmo assunto/texto foi salvo enquanto este era gerado. Nada foi duplicado — edite o tema e tente novamente.");
+        console.warn("[dedup] colisão com post salvo durante a geração", { postId, motivo: colisao.motivo });
+        throw new Error(`Outro post salvo durante esta geração tem o mesmo assunto/texto. ${mensagemConflito(colisao)} Nada foi duplicado.`);
       }
     } catch (e) {
       if (e instanceof Error && e.message.startsWith("Outro post")) throw e;
@@ -2313,6 +2370,10 @@ export const getWeekTopics = createServerFn({ method: "POST" })
       especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("Ambas"),
       temaGuia: z.string().optional().default(""),
       quantidade: z.number().int().min(1).max(28).default(7),
+      // Início (ISO) da semana planejada — assuntos usados perto dessas datas ficam bloqueados.
+      inicioSemana: z.string().datetime().optional(),
+      // Planner usando o escritor local (sem IA): só temas com roteiro clínico próprio.
+      escritorLocal: z.boolean().optional().default(false),
     }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -2321,6 +2382,10 @@ export const getWeekTopics = createServerFn({ method: "POST" })
     const lista = guia
       ? [...angulos, ...ANGULOS_EDITORIAIS].map((a) => `${guia}: ${a}`)
       : [...(data.especialidade === "Temas Diversos" ? TEMAS_DIVERSOS : TEMAS_GERAIS)];
+    if (!guia && data.escritorLocal && data.especialidade !== "Temas Diversos") {
+      const comGuia = lista.filter((t) => !isGenericGuidance(topicGuidance(t)));
+      lista.splice(0, lista.length, ...comGuia);
+    }
     if (!guia) {
       for (let i = lista.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -2329,20 +2394,36 @@ export const getWeekTopics = createServerFn({ method: "POST" })
     }
     // Exclui temas do histórico real (60 dias) e do plano semanal já salvo; cada item ganha ângulo próprio.
     let historico: string[] = [];
+    const assuntosBloqueados: string[] = [];
     let historicoOk = true;
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const desde = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
-      const { data: rec, error } = await supabaseAdmin.from("posts").select("prompt_ia").eq("user_id", TEMP_USER_ID).neq("status", "Erro").or(`created_at.gte.${desde},data_agendamento.gte.${new Date().toISOString()}`).not("prompt_ia", "is", null).limit(300);
+      const desdeAgenda = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: rec, error } = await supabaseAdmin.from("posts").select("prompt_ia, created_at, data_agendamento, status").eq("user_id", TEMP_USER_ID).neq("status", "Erro").or(`created_at.gte.${desde},data_agendamento.gte.${desdeAgenda}`).not("prompt_ia", "is", null).limit(400);
       if (error) throw error;
       historico = (rec ?? []).map((r: any) => r.prompt_ia as string);
+      // Mesmo assunto-raiz não pode cair a menos de JANELA_ASSUNTO_DIAS de um post já existente
+      // (negados/arquivados liberam o assunto). Mesma regra que generateSinglePost aplica por slot.
+      const inicio = new Date(data.inicioSemana ?? Date.now()).getTime();
+      const dia = 24 * 60 * 60 * 1000;
+      const de = inicio - JANELA_ASSUNTO_DIAS * dia;
+      const ate = inicio + (7 + JANELA_ASSUNTO_DIAS) * dia;
+      for (const r of rec ?? []) {
+        if ((r as any).status === "Arquivado" || !(r as any).data_agendamento) continue;
+        const quando = new Date((r as any).data_agendamento).getTime();
+        if (quando >= de && quando <= ate) assuntosBloqueados.push(assuntoPrincipal((r as any).prompt_ia));
+      }
     } catch (e) {
       historicoOk = false;
       console.warn("[dedup] getWeekTopics sem histórico:", e instanceof Error ? e.message : e);
     }
-    const temas = guia ? lista.filter((t) => !findDuplicate(t, historico)).slice(0, data.quantidade) : planDistinctTopics(lista, historico, data.quantidade);
+    // Tema guiado: o usuário escolheu o assunto da semana — ângulos distintos, mesmo assunto.
+    const temas = guia
+      ? lista.filter((t) => !findDuplicate(t, historico)).slice(0, data.quantidade)
+      : planDistinctTopics(lista, historico, data.quantidade, ANGULOS_EDITORIAIS, { assuntosBloqueados });
     const aviso = temas.length < data.quantidade
-      ? `Só ${temas.length} temas inéditos disponíveis; os demais ficaram em branco para você preencher.`
+      ? `Só ${temas.length} assuntos realmente diferentes estão livres nesta semana (cada post precisa de um assunto próprio e sem repetir posts próximos). Os demais horários ficaram em branco para você escrever um tema novo.`
       : historicoOk ? undefined : "Histórico indisponível: a verificação contra posts antigos será feita na geração.";
     while (temas.length < data.quantidade) temas.push("");
     return { temas, aviso };
