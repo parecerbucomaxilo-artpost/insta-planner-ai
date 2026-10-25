@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
-import { ANGULOS_EDITORIAIS, contentKey, findDuplicate, planDistinctTopics, retryDistinct, similarity, titleOf } from "./dedup";
+import { ANGULOS_EDITORIAIS, chaveIdempotencia, findDuplicate, planDistinctTopics, retryDistinct, similarity, titleOf } from "./dedup";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
 export const MODELOS_IA = [
@@ -1519,12 +1519,6 @@ function buildLocalCaption(params: {
 
 
 
-
-/** Chave de idempotência: por operação+slot quando informados; senão por conteúdo+dia. */
-function chaveIdempotencia(userId: string, tema: string, formato: string, data: { operacaoId?: string; slotKey?: string; rede: string; quando?: string }) {
-  if (data.operacaoId && data.slotKey) return contentKey([userId, "op", data.operacaoId, data.slotKey, data.rede, formato]);
-  return contentKey([userId, tema, formato, data.rede, (data.quando ?? new Date().toISOString()).slice(0, 10)]);
-}
 
 export const generateSinglePost = createServerFn({ method: "POST" })
   .middleware([])
