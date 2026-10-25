@@ -1,4 +1,5 @@
-- [ ] Ampliar prévia real do Chico/Posts 7 dias com plataforma, texto por slide, edição e revisão no modal; testar sem dados de demonstração.
+- [x] Ampliar prévia compartilhada do Chico/Posts 7 dias com mídia real, plataforma, texto por número de slide, edição e revisão no modal; 27 testes e lint passaram, compilação automática OK.
+- [ ] Conferir abertura, slides, edição e aprovação no modal com posts reais em desktop/celular: sessão da conta solicitante indisponível; telas sem sessão conferidas, sem mocks e sem erros de página.
 - [x] Tornar aprovação visível junto aos posts pendentes e expor listas persistidas após trocar abas; conferir Chico, Posts 7 dias, lista e calendário em desktop/celular com respostas somente de teste.
 - [x] Implementar revisão compartilhada nas listagens e prévias dos planners.
 - [x] Corrigir briefs específicos do Chico, transmissão ao provedor e vínculo post/slide, sem imagens substitutas.
