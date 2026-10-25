@@ -22,7 +22,12 @@ export type ProblemaPrevia = "sem-texto" | "midia-ausente" | "midia-falhou" | "d
 
 export function problemasPrevia(p: PreviewData): ProblemaPrevia[] {
   const out: ProblemaPrevia[] = [];
-  const texto = (p.post.legenda_instagram ?? p.post.legenda_linkedin ?? p.post.legenda ?? "").trim();
+  const texto = (
+    p.post.legenda_instagram ??
+    p.post.legenda_linkedin ??
+    p.post.legenda ??
+    ""
+  ).trim();
   if (texto.length < 20) out.push("sem-texto");
   if (p.media.length === 0 || p.mediaAusente.length) out.push("midia-ausente");
   if (p.mediaFalhas.length) out.push("midia-falhou");
@@ -37,14 +42,24 @@ export const PROBLEMA_LABEL: Record<ProblemaPrevia, string> = {
 };
 
 /** Aprovação só depois de ver a prévia; problemas exigem "ignorar" explícito; duplicado nunca. */
-export function podeAprovar(s: { visto: boolean; problemas: ProblemaPrevia[]; ignorado: boolean }): boolean {
+export function podeAprovar(s: {
+  visto: boolean;
+  problemas: ProblemaPrevia[];
+  ignorado: boolean;
+}): boolean {
   if (!s.visto) return false;
   if (s.problemas.includes("duplicado")) return false;
   return s.problemas.length === 0 || s.ignorado;
 }
 
 /** Índices do lote que repetem um post anterior (texto + tema). */
-export function duplicadosNoLote(posts: Array<{ legenda?: string | null; prompt_ia?: string | null; data_agendamento?: string | null }>): number[] {
+export function duplicadosNoLote(
+  posts: Array<{
+    legenda?: string | null;
+    prompt_ia?: string | null;
+    data_agendamento?: string | null;
+  }>,
+): number[] {
   return conflitosNoLote(
     posts.map((p) => ({
       tema: p.prompt_ia || titleOf(p.legenda || "") || "?",
@@ -60,7 +75,8 @@ const vistos = new Set<string>();
 export const PREVIEW_SEEN = "planner-post-preview-seen";
 export function marcarVisto(id: string) {
   vistos.add(id);
-  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(PREVIEW_SEEN, { detail: { id } }));
+  if (typeof window !== "undefined")
+    window.dispatchEvent(new CustomEvent(PREVIEW_SEEN, { detail: { id } }));
 }
 export function foiVisto(id: string) {
   return vistos.has(id);

@@ -68,14 +68,25 @@ export function ApproveAllReview({
         try {
           const data = await loadPostPreview(id, {
             fetchPost: async (postId) => {
-              const { data, error } = await supabase.from("posts").select("*").eq("id", postId).maybeSingle();
+              const { data, error } = await supabase
+                .from("posts")
+                .select("*")
+                .eq("id", postId)
+                .maybeSingle();
               return { data: data as unknown as PostRow | null, error };
             },
             signOne: signPostMediaStrict,
           });
           if (vivo) setItems((xs) => xs.map((x) => (x.id === id ? { id, data } : x)));
         } catch (e) {
-          if (vivo) setItems((xs) => xs.map((x) => (x.id === id ? { id, erro: e instanceof Error ? e.message : "Falha ao carregar" } : x)));
+          if (vivo)
+            setItems((xs) =>
+              xs.map((x) =>
+                x.id === id
+                  ? { id, erro: e instanceof Error ? e.message : "Falha ao carregar" }
+                  : x,
+              ),
+            );
         }
       }
     })();
@@ -106,7 +117,13 @@ export function ApproveAllReview({
   }, [atual?.id, atual?.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const aprovaveis = items.filter(
-    (it) => it.data && podeAprovar({ visto: vistos.has(it.id), problemas: problemasDe(it), ignorado: ignorados.has(it.id) }),
+    (it) =>
+      it.data &&
+      podeAprovar({
+        visto: vistos.has(it.id),
+        problemas: problemasDe(it),
+        ignorado: ignorados.has(it.id),
+      }),
   );
   const todosVistos = items.length > 0 && items.every((it) => vistos.has(it.id) || it.erro);
   const bloqueados = items.length - aprovaveis.length;
@@ -126,11 +143,15 @@ export function ApproveAllReview({
         .maybeSingle();
       if (!error && data) {
         ok++;
-        window.dispatchEvent(new CustomEvent(POST_REVIEW_CHANGED, { detail: { id: it.id, status: "Rascunho" } }));
+        window.dispatchEvent(
+          new CustomEvent(POST_REVIEW_CHANGED, { detail: { id: it.id, status: "Rascunho" } }),
+        );
       }
     }
     setSaving(false);
-    toast.success(`${ok} post(s) aprovados como rascunho. Nada foi publicado.${bloqueados ? ` ${bloqueados} ficaram pendentes (bloqueados).` : ""}`);
+    toast.success(
+      `${ok} post(s) aprovados como rascunho. Nada foi publicado.${bloqueados ? ` ${bloqueados} ficaram pendentes (bloqueados).` : ""}`,
+    );
     onOpenChange(false);
     onDone?.();
   };
@@ -139,7 +160,7 @@ export function ApproveAllReview({
   const post = d?.post;
   const probs = atual ? problemasDe(atual) : [];
   const img = d?.media[slide] ?? null;
-  const plat = post ? previewPlatforms(post)[0] ?? null : null;
+  const plat = post ? (previewPlatforms(post)[0] ?? null) : null;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !saving && onOpenChange(v)}>
@@ -147,7 +168,8 @@ export function ApproveAllReview({
         <DialogHeader>
           <DialogTitle>Revisar antes de aprovar tudo</DialogTitle>
           <DialogDescription>
-            Confira cada post individualmente. A confirmação final só libera depois de ver todos ({vistos.size}/{items.length} vistos).
+            Confira cada post individualmente. A confirmação final só libera depois de ver todos (
+            {vistos.size}/{items.length} vistos).
           </DialogDescription>
         </DialogHeader>
 
@@ -172,68 +194,138 @@ export function ApproveAllReview({
         </div>
 
         {atual && !d && !atual.erro && (
-          <p className="flex items-center gap-2 py-8 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Carregando dados reais do post…</p>
+          <p className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando dados reais do post…
+          </p>
         )}
-        {atual?.erro && <p role="alert" className="rounded-md border border-destructive p-3 text-sm text-destructive">Não foi possível carregar este post: {atual.erro}. Ele não será aprovado.</p>}
+        {atual?.erro && (
+          <p
+            role="alert"
+            className="rounded-md border border-destructive p-3 text-sm text-destructive"
+          >
+            Não foi possível carregar este post: {atual.erro}. Ele não será aprovado.
+          </p>
+        )}
 
         {post && d && (
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
                 {img ? (
-                  <img src={img} alt={`Slide ${slide + 1}`} className="h-full w-full object-contain" />
+                  <img
+                    src={img}
+                    alt={`Slide ${slide + 1}`}
+                    className="h-full w-full object-contain"
+                  />
                 ) : (
                   <p className="flex flex-col items-center gap-2 p-4 text-center text-sm text-destructive">
                     <ImageOff className="h-6 w-6" />
-                    {d.mediaFalhas.includes(slide) ? "Imagem salva não carregou" : "Slide sem imagem salva"}
+                    {d.mediaFalhas.includes(slide)
+                      ? "Imagem salva não carregou"
+                      : "Slide sem imagem salva"}
                   </p>
                 )}
               </div>
               {d.media.length > 1 && (
                 <div className="flex items-center justify-between">
-                  <Button size="sm" variant="outline" onClick={() => setSlide((s) => (s - 1 + d.media.length) % d.media.length)} aria-label="Slide anterior"><ChevronLeft className="h-4 w-4" /></Button>
-                  <span className="text-xs">Slide {slide + 1} de {d.media.length}</span>
-                  <Button size="sm" variant="outline" onClick={() => setSlide((s) => (s + 1) % d.media.length)} aria-label="Próximo slide"><ChevronRight className="h-4 w-4" /></Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSlide((s) => (s - 1 + d.media.length) % d.media.length)}
+                    aria-label="Slide anterior"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-xs">
+                    Slide {slide + 1} de {d.media.length}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSlide((s) => (s + 1) % d.media.length)}
+                    aria-label="Próximo slide"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
               )}
               {d.media.length > 1 && (
-                <p className="rounded-md bg-muted p-2 text-xs"><strong>Texto do slide {slide + 1}:</strong> {savedSlideText(post.legenda, slide) ?? "sem texto próprio identificado"}</p>
+                <p className="rounded-md bg-muted p-2 text-xs">
+                  <strong>Texto do slide {slide + 1}:</strong>{" "}
+                  {savedSlideText(post.legenda, slide) ?? "sem texto próprio identificado"}
+                </p>
               )}
             </div>
             <div className="space-y-2 text-sm">
               <p className="text-xs text-muted-foreground">
-                {post.tipo_post} · {post.formato_midia} · {previewPlatforms(post).map((p) => (p === "instagram" ? "Instagram" : "LinkedIn")).join(" / ") || "Plataforma não definida"} · {formatPreviewDate(post.data_agendamento)}
+                {post.tipo_post} · {post.formato_midia} ·{" "}
+                {previewPlatforms(post)
+                  .map((p) => (p === "instagram" ? "Instagram" : "LinkedIn"))
+                  .join(" / ") || "Plataforma não definida"}{" "}
+                · {formatPreviewDate(post.data_agendamento)}
               </p>
               {probs.length > 0 && (
-                <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs">
-                  <ul className="list-disc pl-4">{probs.map((p) => <li key={p}>{PROBLEMA_LABEL[p]}</li>)}</ul>
+                <div
+                  role="alert"
+                  className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs"
+                >
+                  <ul className="list-disc pl-4">
+                    {probs.map((p) => (
+                      <li key={p}>{PROBLEMA_LABEL[p]}</li>
+                    ))}
+                  </ul>
                   {probs.includes("duplicado") ? (
-                    <p className="mt-1 font-semibold text-destructive">Duplicado: não será aprovado. Negue-o no card.</p>
+                    <p className="mt-1 font-semibold text-destructive">
+                      Duplicado: não será aprovado. Negue-o no card.
+                    </p>
                   ) : (
                     <label className="mt-1 flex items-center gap-2">
                       <input
                         type="checkbox"
                         checked={ignorados.has(atual.id)}
-                        onChange={(e) => setIgnorados((s) => { const n = new Set(s); if (e.target.checked) n.add(atual.id); else n.delete(atual.id); return n; })}
+                        onChange={(e) =>
+                          setIgnorados((s) => {
+                            const n = new Set(s);
+                            if (e.target.checked) n.add(atual.id);
+                            else n.delete(atual.id);
+                            return n;
+                          })
+                        }
                       />
                       Ignorar e aprovar este post mesmo assim
                     </label>
                   )}
                 </div>
               )}
-              <pre className="max-h-[50dvh] overflow-y-auto whitespace-pre-wrap rounded-md border border-border p-2 font-sans text-sm">{previewCaption(post, plat) || "(sem legenda)"}</pre>
+              <pre className="max-h-[50dvh] overflow-y-auto whitespace-pre-wrap rounded-md border border-border p-2 font-sans text-sm">
+                {previewCaption(post, plat) || "(sem legenda)"}
+              </pre>
             </div>
           </div>
         )}
 
         <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 border-t border-border bg-background pt-3">
           <div className="flex gap-2">
-            <Button variant="outline" disabled={idx === 0} onClick={() => setIdx((i) => i - 1)}>Anterior</Button>
-            <Button variant="outline" disabled={idx >= items.length - 1} onClick={() => setIdx((i) => i + 1)}>Próximo</Button>
+            <Button variant="outline" disabled={idx === 0} onClick={() => setIdx((i) => i - 1)}>
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              disabled={idx >= items.length - 1}
+              onClick={() => setIdx((i) => i + 1)}
+            >
+              Próximo
+            </Button>
           </div>
           <Button disabled={!todosVistos || saving || aprovaveis.length === 0} onClick={confirmar}>
-            {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Check className="mr-1 h-4 w-4" />}
-            {todosVistos ? `Confirmar aprovação de ${aprovaveis.length}` : `Veja todos para liberar (${vistos.size}/${items.length})`}
+            {saving ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="mr-1 h-4 w-4" />
+            )}
+            {todosVistos
+              ? `Confirmar aprovação de ${aprovaveis.length}`
+              : `Veja todos para liberar (${vistos.size}/${items.length})`}
           </Button>
         </div>
       </DialogContent>

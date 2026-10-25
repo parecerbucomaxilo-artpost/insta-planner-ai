@@ -83,7 +83,9 @@ export function PostReviewActions({
   const [ignorado, setIgnorado] = useState(false);
   useEffect(() => {
     setVisto(foiVisto(id));
-    const on = (e: Event) => { if ((e as CustomEvent<{ id: string }>).detail?.id === id) setVisto(true); };
+    const on = (e: Event) => {
+      if ((e as CustomEvent<{ id: string }>).detail?.id === id) setVisto(true);
+    };
     window.addEventListener(PREVIEW_SEEN, on);
     return () => window.removeEventListener(PREVIEW_SEEN, on);
   }, [id]);
@@ -169,7 +171,9 @@ export function PostReviewActions({
     }
   };
 
-  const aprovavel = !!preview && podeAprovar({ visto, problemas: preview ? problemasPrevia(preview) : [], ignorado });
+  const aprovavel =
+    !!preview &&
+    podeAprovar({ visto, problemas: preview ? problemasPrevia(preview) : [], ignorado });
 
   const decidir = async (decision: ReviewDecision) => {
     if (lock.current || !canReview(currentStatus)) return;
@@ -365,11 +369,24 @@ export function PostReviewActions({
               Negar
             </Button>
             {problemas.length > 0 && canReview(currentStatus) && (
-              <div className="w-full rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs" role="alert">
-                <p className="font-semibold text-destructive">Aprovação bloqueada até você decidir:</p>
-                <ul className="list-disc pl-4">{problemas.map((p) => <li key={p}>{PROBLEMA_LABEL[p]}</li>)}</ul>
+              <div
+                className="w-full rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs"
+                role="alert"
+              >
+                <p className="font-semibold text-destructive">
+                  Aprovação bloqueada até você decidir:
+                </p>
+                <ul className="list-disc pl-4">
+                  {problemas.map((p) => (
+                    <li key={p}>{PROBLEMA_LABEL[p]}</li>
+                  ))}
+                </ul>
                 <label className="mt-1 flex items-center gap-2">
-                  <input type="checkbox" checked={ignorado} onChange={(e) => setIgnorado(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={ignorado}
+                    onChange={(e) => setIgnorado(e.target.checked)}
+                  />
                   Estou ciente e quero aprovar mesmo assim (ou use Editar/Negar)
                 </label>
               </div>
