@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 import { ANGULOS_EDITORIAIS, JANELA_ASSUNTO_DIAS, acharConflito, assuntoPrincipal, chaveIdempotencia, findDuplicate, mensagemConflito, planDistinctTopics, titleOf, type AssinaturaPost } from "./dedup";
+import { quantidadeSlides } from "./carousel-slides";
 import { assinaturasDoHistorico, filtroHistorico, slidesRepetidos } from "./post-guard";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
@@ -49,6 +50,8 @@ const SingleInput = z.object({
   rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
+  /** Quantidade de slides pedida explicitamente; sem pedido, Feed do IG = 5. */
+  slides: z.number().int().min(2).max(10).optional(),
   quando: z.string().datetime().optional(),
   // Aceita qualquer valor legado vindo de abas antigas, mas ignora e usa sempre o gerador local.
   modelo: ModeloLocalInput,
@@ -1852,7 +1855,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       }
       legendaBaseResolvida = completar(await escreverLegenda(`\n\nNOVA ABORDAGEM OBRIGATÓRIA (tentativa ${tentativa + 1}): a versão anterior ficou parecida demais com um post já existente ("${conflito.com.slice(0, 90)}"). Use outro gancho, outro título, outra estrutura e outros exemplos concretos. Não reutilize frases daquele post.`));
     }
-    const slideCount = formato === "Carrossel" ? (data.rede === "estilo-x" ? 3 : 5) : 1;
+    const slideCount = quantidadeSlides({ rede: data.rede, formato, tipo: data.tipo, pedido: data.slides });
     // Chico: texto final completo, sem trocar/truncar blocos por narrativas genéricas.
     const slideNarratives = formato === "Carrossel"
       ? isChico ? extractFinalSlides(legendaBaseResolvida, slideCount)
