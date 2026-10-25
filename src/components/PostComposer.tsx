@@ -1,3 +1,4 @@
+import { ModelLabel, showAvisos } from "@/components/ModelLabel";
 import { useState, useCallback, useRef, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -401,8 +402,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x" | "google">("instagram");
-  const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
-  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
+  const [modelo, setModelo] = useState<ModeloIA>("auto/gratis");
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("auto/gratis");
   const [ambasRedes, setAmbasRedes] = useState(false);
   const [busy, setBusy] = useState<null | AiQuickFormat | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
@@ -444,6 +445,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     abortRef.current = ctrl;
     try {
       const out = await genSingle({ data: { tema: temaTrim, especialidade, rede: "instagram", tipo: config.tipo, formato: config.formato, modelo, modeloImagem, ambasRedes: false }, signal: ctrl.signal });
+      showAvisos(out);
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
@@ -493,6 +495,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     abortRef.current = ctrl;
     try {
       const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes }, signal: ctrl.signal });
+      showAvisos(out);
       toast.success(t.quando ? "Agendado! Pré-visualize abaixo." : "Gerado! Pré-visualize abaixo.", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
@@ -588,7 +591,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                   : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
               )}
             >
-              {m.label}
+              <ModelLabel m={m} />
             </button>
           ))}
         </div>
@@ -612,7 +615,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                   : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300",
               )}
             >
-              {m.label}
+              <ModelLabel m={m} />
             </button>
           ))}
         </div>
