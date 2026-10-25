@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getWeekTopics } from "@/lib/ai-post.functions";
 import { montarSemana, emParalelo, proximaSegunda, type ItemSemana } from "@/lib/week-plan";
-import { horariosDoDia } from "@/lib/post-slots";
+import { horariosDoDia, POSTS_POR_DIA_PADRAO } from "@/lib/post-slots";
 import { conflitosNoLote } from "@/lib/dedup";
 import { cn } from "@/lib/utils";
 import { PostReviewActions } from "@/components/PostReviewActions";
@@ -39,10 +39,12 @@ export function Posts7Dias(props: {
   formatos?: FormatoSemana[];
   /** O planner está usando o escritor local (sem IA): planejar só temas que ele escreve com conteúdo próprio. */
   escritorLocal?: boolean;
+  /** Padrão = 4/dia. Planners de agenda clínica passam 1. */
+  postsPorDiaInicial?: number;
 }) {
   const fetchTopics = useServerFn(getWeekTopics);
   const formatos = props.formatos ?? ["Post Único", "Carrossel", "Story"];
-  const [porDia, setPorDia] = useState(1);
+  const [porDia, setPorDia] = useState(props.postsPorDiaInicial ?? POSTS_POR_DIA_PADRAO);
   const [formato, setFormato] = useState<FormatoSemana>(formatos[0]);
   const [plano, setPlano] = useState<ItemSemana[] | null>(null);
   const [estados, setEstados] = useState<Record<string, Estado>>({});

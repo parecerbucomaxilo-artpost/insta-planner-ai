@@ -32,7 +32,7 @@ export function proximaSegunda(agora: Date = new Date()): Date {
 /** Monta 7 dias × postsPorDia (1–4), seg→dom. Um item por slot; temas não se repetem (vazios ficam vazios). */
 export function montarSemana(
   temas: string[],
-  postsPorDia = 1,
+  postsPorDia = 4,
   agora: Date = new Date(),
 ): ItemSemana[] {
   const horarios = horariosDoDia(postsPorDia);

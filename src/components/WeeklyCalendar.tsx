@@ -224,7 +224,7 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
     // 2 publicações por dia x 7 dias = 14 slots, nos horários padrão (09:00 e 18:00, fuso local)
     const slots: { quando: Date; tipo: "feed" | "stories"; key: string }[] = [];
     for (let d = 0; d < 7; d++) {
-      for (const h of horariosDoDia(2)) {
+      for (const h of horariosDoDia(POSTS_POR_DIA_PADRAO)) {
         const { hora, minuto } = parseHorario(h);
         const q = new Date(weekStart);
         q.setDate(q.getDate() + d);
