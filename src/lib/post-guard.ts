@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- cliente genérico (navegador/servidor) e dublê de teste */
 // Pipeline compartilhado de criação de posts (todas as formas: post único, carrossel,
 // story, "outra publicação", lote e planner semanal). Qualquer caminho que salve um
 // post NOVO — gerado por IA (generateSinglePost) ou escrito à mão — passa por aqui:
