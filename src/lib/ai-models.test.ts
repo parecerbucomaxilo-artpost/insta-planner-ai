@@ -18,6 +18,8 @@ describe("catálogo de modelos", () => {
     expect(normalizeTextModel("groq/openai/gpt-oss-120b")).toBe("groq/openai/gpt-oss-120b");
     expect(normalizeImageModel("pollinations/zimage")).toBe("pollinations/zimage");
     expect(normalizeTextModel("local/sem-custo")).toBe("local/sem-custo");
+    expect(normalizeTextModel("openai/gpt-5-mini")).toBe("openai/gpt-5-mini");
+    expect(normalizeImageModel("openai/gpt-image-2")).toBe("openai/gpt-image-2");
   });
   it("modelos Pollinations que não existem mais são trocados", () => {
     expect(normalizeImageModel("pollinations/flux-realism")).toBe("pollinations/flux");
