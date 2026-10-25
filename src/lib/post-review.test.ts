@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { canReview, reviewStatus } from "./post-review";
+import { canReview, reviewStatus, GENERATED_POST_STATUS } from "./post-review";
 
 describe("Revisão interna", () => {
+  it("posts gerados começam pendentes e permitem aprovação, mesmo com data planejada", () => {
+    expect(GENERATED_POST_STATUS).toBe("PendenteAprovacao");
+    expect(canReview(GENERATED_POST_STATUS)).toBe(true);
+  });
   it("aceitar salva como rascunho, nunca agenda ou publica", () => {
     expect(reviewStatus("aceitar")).toBe("Rascunho");
   });

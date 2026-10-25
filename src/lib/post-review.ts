@@ -1,6 +1,7 @@
 import type { PostRow } from "./posts-types";
 
 export type ReviewDecision = "aceitar" | "negar";
+export const GENERATED_POST_STATUS = "PendenteAprovacao" as const;
 
 // Rascunho is the existing internally accepted state; only Agendado enters the publisher.
 export function reviewStatus(decision: ReviewDecision): PostRow["status"] {

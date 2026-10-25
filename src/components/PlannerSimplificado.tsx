@@ -1,6 +1,6 @@
 import { Posts7Dias } from "@/components/Posts7Dias";
 import { PostReviewActions } from "@/components/PostReviewActions";
-import { POST_REVIEW_CHANGED } from "@/lib/post-review";
+import { POST_REVIEW_CHANGED, GENERATED_POST_STATUS } from "@/lib/post-review";
 import { startGenerationProgress } from "@/lib/generation-progress";
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -321,6 +321,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const stopP = startGenerationProgress(tid, "Gerando post", formato === "Carrossel");
       const out = await genSingle({ data: {
         tema: temaReq,
+        status: GENERATED_POST_STATUS,
         especialidade: especialidadeReq,
         rede: "instagram",
         tipo,
@@ -366,7 +367,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
     try {
       const stopP = startGenerationProgress(tid, "Gerando post", t.formato === "Carrossel");
       const out = await genSingle({ data: {
-        tema: t.tema, especialidade,
+        tema: t.tema, especialidade, status: GENERATED_POST_STATUS,
         rede: (t.rede === "estilo-x" ? "estilo-x" : "instagram") as any,
         tipo: t.tipo as any, formato: t.formato as any, quando: t.quando,
         ambasRedes: false,
@@ -749,7 +750,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
               temaGuia={tema}
               gerar={async (item, formato) => {
                 const out = await genSingle({ data: {
-                  tema: item.tema, especialidade, rede: "instagram",
+                  tema: item.tema, especialidade, rede: "instagram", status: GENERATED_POST_STATUS,
                   tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando,
                   ambasRedes: false, audiencia: effectiveAudiencia, modelo, modeloImagem, logoKeys,
                 } as any });
