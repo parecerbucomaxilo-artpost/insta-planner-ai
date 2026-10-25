@@ -50,7 +50,7 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
             .select("data_agendamento,postar_instagram,postar_linkedin,postar_google,estilo_layout,formato_midia")
             .gte("data_agendamento", inicio)
             .lte("data_agendamento", fim)
-            .in("status", ["Agendado", "PendenteAprovacao", "Publicado"]);
+            .in("status", ["Agendado", "PendenteAprovacao", "Publicado", "Rascunho", "Arquivado", "EnviadoMake"]);
 
           if (qErr) return json({ error: qErr.message }, 500);
 
@@ -146,7 +146,8 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
 
           const result = await generateSinglePost({
             data: {
-              tema: temaDomingo,
+              // Só o 1º slot do domingo usa a mensagem fixa; os demais recebem tema próprio.
+              tema: (doDia ?? []).length ? "" : temaDomingo,
               especialidade: "Ambas",
               rede: proximo.rede,
               tipo: proximo.tipo,

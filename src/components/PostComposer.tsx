@@ -581,8 +581,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       <Posts7Dias
         especialidade={especialidade}
         temaGuia={tema}
-        gerar={async (item, formato) => {
-          const out = await genSingle({ data: { tema: item.tema, especialidade, rede: "instagram", tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando, modelo, modeloImagem, ambasRedes } });
+        gerar={async (item, formato, ctx) => {
+          const out = await genSingle({ data: { tema: item.tema, especialidade, rede: "instagram", tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando, modelo, modeloImagem, ambasRedes, operacaoId: ctx.operacaoId, slotKey: ctx.slotKey } });
           return { id: out.id, urls: out.urls, legenda: out.legenda };
         }}
       />
