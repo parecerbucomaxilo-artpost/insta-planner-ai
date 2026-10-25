@@ -73,9 +73,9 @@ function Dashboard() {
  const [tab, setTab] = useState("criar");
  const [autoGenWeekly, setAutoGenWeekly] = useState(false);
  const pendingPosts = posts.filter((post) => post.status === "PendenteAprovacao");
- const reviewIds = useMemo(() => pendingPosts.map((p) => p.id), [reviewAll]); // eslint-disable-line react-hooks/exhaustive-deps
  const [pendingOnly, setPendingOnly] = useState(false);
  const [reviewAll, setReviewAll] = useState(false);
+ const reviewIds = useMemo(() => pendingPosts.map((p) => p.id), [reviewAll]); // eslint-disable-line react-hooks/exhaustive-deps
  const [signedOut, setSignedOut] = useState(false);
 
  const load = useCallback(async () => {
