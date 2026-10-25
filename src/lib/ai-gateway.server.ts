@@ -1,6 +1,5 @@
 // Lovable AI Gateway: GPT-5-mini (texto) + Gemini 3.1 Flash Image / Nano Banana (imagem).
-// Mantém um gerador local de fallback caso o gateway retorne 402 (créditos) ou 429 (rate-limit).
-import * as jpeg from "jpeg-js";
+// A geração preserva o provedor selecionado e nunca retorna uma imagem substituta.
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
 
@@ -98,13 +97,19 @@ async function generateImageGateway(opts: {
   };
 
   const extractImageB64 = async (json: any): Promise<string> => {
+    if (json?.error || json?.choices?.[0]?.finish_reason === "content_filter" || json?.choices?.[0]?.message?.refusal) {
+      throw new Error("O provedor recusou a geração da imagem. A solicitação foi encerrada.");
+    }
     const first = json?.data?.[0];
     const direct = first?.b64_json || first?.image?.b64_json || first?.image?.base64;
     if (typeof direct === "string" && direct.trim()) {
+      console.info("[image-response]", { model: opts.model, origin: "provider-inline" });
       return direct.startsWith("data:") ? direct.split(",")[1] || "" : direct;
     }
     const url = first?.url || first?.image_url?.url || first?.image_url;
     if (typeof url === "string" && url.trim()) {
+      if (!url.startsWith("data:") && !url.startsWith("https://")) throw new Error("Origem da imagem inválida.");
+      console.info("[image-response]", { model: opts.model, origin: url.startsWith("data:") ? "provider-inline" : new URL(url).origin });
       return url.startsWith("data:") ? url.split(",")[1] || "" : fetchUrlAsB64(url);
     }
     throw new Error("Lovable AI imagem: resposta sem b64/url");
@@ -163,78 +168,6 @@ async function generateImageGateway(opts: {
   return extractImageB64(json);
 }
 
-// ---------------- Fallback local (gerador procedural anatômico) ----------------
-
-function hashText(input: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < input.length; i++) {
-    h ^= input.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-function hexToRgb(hex: string): [number, number, number] {
-  const c = hex.replace("#", "");
-  return [parseInt(c.slice(0, 2), 16), parseInt(c.slice(2, 4), 16), parseInt(c.slice(4, 6), 16)];
-}
-function blend(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
-  const u = Math.max(0, Math.min(1, t));
-  return [
-    Math.round(a[0] + (b[0] - a[0]) * u),
-    Math.round(a[1] + (b[1] - a[1]) * u),
-    Math.round(a[2] + (b[2] - a[2]) * u),
-  ];
-}
-function setPixel(px: Uint8Array, w: number, h: number, x: number, y: number, color: [number, number, number], alpha = 1) {
-  const ix = Math.round(x), iy = Math.round(y);
-  if (ix < 0 || iy < 0 || ix >= w || iy >= h) return;
-  const p = (iy * w + ix) * 4;
-  const a = Math.max(0, Math.min(1, alpha));
-  px[p] = Math.round(px[p] * (1 - a) + color[0] * a);
-  px[p + 1] = Math.round(px[p + 1] * (1 - a) + color[1] * a);
-  px[p + 2] = Math.round(px[p + 2] * (1 - a) + color[2] * a);
-  px[p + 3] = 255;
-}
-function fillEllipse(px: Uint8Array, w: number, h: number, cx: number, cy: number, rx: number, ry: number, color: [number, number, number], alpha = 1) {
-  const x0 = Math.max(0, Math.floor(cx - rx)), x1 = Math.min(w - 1, Math.ceil(cx + rx));
-  const y0 = Math.max(0, Math.floor(cy - ry)), y1 = Math.min(h - 1, Math.ceil(cy + ry));
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-    const dx = (x - cx) / rx, dy = (y - cy) / ry;
-    const d = dx * dx + dy * dy;
-    if (d <= 1) setPixel(px, w, h, x, y, color, alpha * Math.min(1, (1 - d) * 2.5));
-  }
-}
-function fillRect(px: Uint8Array, w: number, h: number, x: number, y: number, rw: number, rh: number, color: [number, number, number], alpha = 1) {
-  const x0 = Math.max(0, Math.floor(x)), x1 = Math.min(w, Math.ceil(x + rw));
-  const y0 = Math.max(0, Math.floor(y)), y1 = Math.min(h, Math.ceil(y + rh));
-  for (let yy = y0; yy < y1; yy++) for (let xx = x0; xx < x1; xx++) setPixel(px, w, h, xx, yy, color, alpha);
-}
-
-async function generateImageLocal(opts: { prompt: string; size?: "1024x1024" | "1024x1536" | "1536x1024" }): Promise<string> {
-  const { width, height } = sizeToWH(opts.size);
-  const px = new Uint8Array(width * height * 4);
-  const seed = hashText(`${opts.prompt}|${Date.now()}|${Math.random()}`);
-  const isLiga = /Liga Acadêmica|graduação|lactbmf|anhanguera/i.test(opts.prompt);
-  const navy = hexToRgb(isLiga ? "#2D2C32" : "#0c2340");
-  const navy2 = hexToRgb(isLiga ? "#111114" : "#14366b");
-  const cyan = hexToRgb(isLiga ? "#DD8E3C" : "#2dd4ff");
-  const white = hexToRgb("#ffffff");
-  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
-    const radial = Math.hypot((x - width * 0.58) / width, (y - height * 0.38) / height);
-    const t = Math.min(1, y / height * 0.7 + radial * 0.8);
-    const c = blend(navy2, navy, t);
-    const p = (y * width + x) * 4;
-    px[p] = c[0]; px[p + 1] = c[1]; px[p + 2] = c[2]; px[p + 3] = 255;
-  }
-  fillEllipse(px, width, height, width * 0.72, height * 0.25, width * 0.28, height * 0.16, cyan, 0.10);
-  fillEllipse(px, width, height, width * 0.18, height * 0.78, width * 0.22, height * 0.13, white, 0.06);
-  const bandH = Math.round(height * 0.16);
-  fillRect(px, width, height, 0, height - bandH, width, bandH, hexToRgb("#06182c"), 0.62);
-  const out = jpeg.encode({ data: px, width, height }, 90).data;
-  void seed;
-  return Buffer.from(out).toString("base64");
-}
-
 // Pollinations.ai — geração de imagens 100% gratuita, sem chave, sem custo.
 // Boa qualidade (Flux) e ótimo fallback quando o Lovable Gateway retorna 402/429.
 async function generateImagePollinations(opts: {
@@ -265,44 +198,11 @@ export async function generateImageBase64(opts: {
   const size = opts.size ?? "1024x1024";
   const model = (opts.model as string) || DEFAULT_IMAGE_MODEL;
 
-  // Pollinations é gratuito e não precisa de chave.
-  if (model.startsWith("pollinations/")) {
-    try {
-      return await generateImagePollinations({ prompt: opts.prompt, size, model });
-    } catch (err) {
-      console.warn("[ai-gateway] Pollinations falhou, caindo para local:", err);
-      return generateImageLocal({ prompt: opts.prompt, size });
-    }
+  if (!opts.prompt.trim()) throw new Error("Brief visual vazio; geração bloqueada.");
+  if (model === "local/sem-custo") {
+    throw new Error("O modelo local não gera imagens contextuais. Selecione um dos geradores de imagem existentes para continuar; nenhuma imagem genérica foi criada.");
   }
-
-  if (apiKey && model !== "local/sem-custo") {
-    try {
-      return await generateImageGateway({ apiKey, prompt: opts.prompt, model, size, referenceImageUrls: opts.referenceImageUrls });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const safetyBlock = /safety system|rejected|moderation|content_policy|image_generation_user_error/i.test(msg);
-      if (safetyBlock && model.startsWith("openai/")) {
-        console.warn("[ai-gateway] OpenAI bloqueou por safety, tentando Gemini:", msg.slice(0, 160));
-        try {
-          return await generateImageGateway({ apiKey, prompt: opts.prompt, model: "google/gemini-3.1-flash-image", size, referenceImageUrls: opts.referenceImageUrls });
-        } catch (err2) {
-          console.warn("[ai-gateway] Gemini falhou, tentando Pollinations grátis:", err2);
-          try { return await generateImagePollinations({ prompt: opts.prompt, size, model: "flux-realism" }); } catch {}
-          return generateImageLocal({ prompt: opts.prompt, size });
-        }
-      }
-      // 402 (sem créditos) ou 429 (rate-limit) → tenta Pollinations grátis antes do local
-      if (/402|429|payment|credit|rate|insufficient/i.test(msg)) {
-        console.warn("[ai-gateway] Gateway sem créditos/rate-limit, tentando Pollinations grátis");
-        try { return await generateImagePollinations({ prompt: opts.prompt, size, model: "flux-realism" }); } catch {}
-        return generateImageLocal({ prompt: opts.prompt, size });
-      }
-      if (!/sem imagem|sem b64|resposta sem/i.test(msg)) throw err;
-      console.warn("[ai-gateway] imagem caiu para gerador local:", msg);
-    }
-  }
-
-  // Sem API key → tenta Pollinations gratuito antes de cair pro local procedural.
-  try { return await generateImagePollinations({ prompt: opts.prompt, size, model: "flux-realism" }); } catch {}
-  return generateImageLocal({ prompt: opts.prompt, size });
+  if (model.startsWith("pollinations/")) return generateImagePollinations({ prompt: opts.prompt, size, model });
+  if (!apiKey) throw new Error("Gerador de imagem não configurado; nenhuma imagem substituta foi criada.");
+  return generateImageGateway({ apiKey, prompt: opts.prompt, model, size, referenceImageUrls: opts.referenceImageUrls });
 }
