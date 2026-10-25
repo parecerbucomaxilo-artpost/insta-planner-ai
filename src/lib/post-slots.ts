@@ -9,6 +9,14 @@ export const FUSO_PADRAO = "America/Sao_Paulo";
 /** Padrão dos planners de conteúdo: 4 posts/dia (09:00, 14:00, 18:00, 21:00). */
 export const POSTS_POR_DIA_PADRAO = 4;
 
+/** Formato de cada horário do Instagram (cronograma do Prof. Francisco): feed sempre carrossel de 5 slides. */
+export const FORMATO_POR_HORARIO_IG: Record<HorarioPostagem, "Story" | "Carrossel"> = {
+  "09:00": "Story",
+  "14:00": "Carrossel",
+  "18:00": "Story",
+  "21:00": "Carrossel",
+};
+
 export function horariosDoDia(postsPorDia: number): HorarioPostagem[] {
   const n = Math.min(4, Math.max(1, Math.round(postsPorDia || 1)));
   const escolha: Record<number, HorarioPostagem[]> = {

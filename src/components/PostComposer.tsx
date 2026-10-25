@@ -736,7 +736,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       )}
 
       <p className="text-[11px] text-indigo-700/80 bg-indigo-50/60 rounded-md p-2 leading-relaxed">
-        <strong>Cronograma fixo (seg-sáb):</strong> IG feed 09h / 15h / 19h · IG stories 08h / 13h / 17h · LinkedIn 09h e 17h30.
+        <strong>Cronograma fixo (seg-sáb):</strong> Instagram 09h story · 14h feed (carrossel 5 slides) · 18h story · 21h feed (carrossel 5 slides) · Google 10h e 15h · LinkedIn 09h e 13h.
         <br />
         <strong>Domingo:</strong> mensagem especial automática (IG 10h + story 9h · LinkedIn 11h).
       </p>
