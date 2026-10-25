@@ -52,7 +52,7 @@ const SingleInput = z.object({
   // Aceita qualquer valor legado vindo de abas antigas, mas ignora e usa sempre o gerador local.
   modelo: ModeloLocalInput,
   modeloImagem: ModeloImagemLocalInput,
-  // Cross-posting: publica simultaneamente em ambas as redes (ignora `rede` para destino).
+  // Cross-posting: publica simultaneamente em todas as redes (ignora `rede` para destino).
   ambasRedes: z.boolean().optional().default(false),
   // Status inicial do post (PendenteAprovacao = revisão manual; Agendado = vai pro cron de publicação).
   status: z.enum(["PendenteAprovacao", "Agendado"]).optional().default("PendenteAprovacao"),
