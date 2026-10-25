@@ -114,6 +114,8 @@ export const ANGULOS_EDITORIAIS = [
  * não 3 variações do mesmo). `assuntosBloqueados` = assuntos já usados perto destas datas.
  * Se nada inédito couber, retorna menos itens (o chamador avisa o usuário).
  */
+const baseTemaPlano = (t: string) => (t || "").split(" — ")[0];
+
 export function planDistinctTopics(
   base: string[],
   historico: string[],
@@ -125,28 +127,20 @@ export function planDistinctTopics(
   const bloqueados = [...historico];
   const assuntosUsados = new Set<string>(opts.assuntosBloqueados ?? []);
   let a = 0;
-  const tentar = (t: string) => {
-    if (escolhidos.length >= quantidade) return;
-    const assunto = assuntoPrincipal(t);
-    if (assunto && assuntosUsados.has(assunto)) return;
-    if (findDuplicate(t, bloqueados)) return;
-    escolhidos.push(t);
-    bloqueados.push(t);
-    if (assunto) assuntosUsados.add(assunto);
-  };
   for (const t of base) {
     if (escolhidos.length >= quantidade) break;
     const raw = t.trim();
     if (!raw || findDuplicate(raw, bloqueados)) continue;
-    tentar(`${raw} — ${angulos[a++ % angulos.length]}`);
-  }
-  // Segunda passada: tema já visto no histórico, mas com ângulo novo e assunto livre no lote.
-  for (let ang = 0; escolhidos.length < quantidade && ang < angulos.length; ang++) {
-    for (const t of base) {
-      if (escolhidos.length >= quantidade) break;
-      if (!t.trim()) continue;
-      tentar(`${t.trim()} — ${angulos[(ang + 5) % angulos.length]}`);
-    }
+    // Tema já usado no histórico (mesmo com outro ângulo) conta como repetido.
+    if (historico.some((h) => similarity(raw, baseTemaPlano(h)) >= 0.95)) continue;
+    const assunto = assuntoPrincipal(raw);
+    if (assunto && assuntosUsados.has(assunto)) continue;
+    const cand = `${raw} — ${angulos[a % angulos.length]}`;
+    if (findDuplicate(cand, bloqueados)) continue;
+    a++; // o ângulo só é consumido quando o tema é aceito → ângulos nunca repetem no lote
+    escolhidos.push(cand);
+    bloqueados.push(cand);
+    if (assunto) assuntosUsados.add(assunto);
   }
   return escolhidos;
 }
@@ -220,7 +214,7 @@ export const ASSUNTOS_RAIZ: Array<{ id: string; re: RegExp }> = [
   { id: "ortognatica-deformidades", re: /\b(ortognatic|prognatismo|retrognatismo|mordida|deformidade|distracao osteogenica|assimetria|harmonia facial)/ },
   { id: "apneia-ronco", re: /\b(apneia|ronco|avanco maxilomandibular)/ },
   { id: "infeccao-odontogenica", re: /\b(infecc|ludwig|osteomielite|abscesso)/ },
-  { id: "trauma-facial", re: /\b(trauma facia|traumas facia|fratura|zigoma|orbita)/ },
+  { id: "trauma-facial", re: /\b(trauma facia|traumas facia|fratura|zigoma\\b|orbita)/ },
   { id: "trauma-dental", re: /\b(avulsao|reimplante|dentoalveolar)/ },
   { id: "seio-maxilar", re: /\b(seio maxilar|sinusite|bucossinusal)/ },
   { id: "implantes-enxertos", re: /\b(implante|enxerto|all on 4|pre protetica|perda ossea|cirurgia guiada)/ },
