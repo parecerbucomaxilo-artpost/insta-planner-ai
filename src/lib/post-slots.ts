@@ -6,6 +6,9 @@ export type HorarioPostagem = (typeof HORARIOS_POSTAGEM)[number];
 export const FUSO_PADRAO = "America/Sao_Paulo";
 
 /** Quais horários usar para 1–4 posts/dia (sempre dentre os 4 padrões, sem repetir). */
+/** Padrão dos planners de conteúdo: 4 posts/dia (09:00, 14:00, 18:00, 21:00). */
+export const POSTS_POR_DIA_PADRAO = 4;
+
 export function horariosDoDia(postsPorDia: number): HorarioPostagem[] {
   const n = Math.min(4, Math.max(1, Math.round(postsPorDia || 1)));
   const escolha: Record<number, HorarioPostagem[]> = {

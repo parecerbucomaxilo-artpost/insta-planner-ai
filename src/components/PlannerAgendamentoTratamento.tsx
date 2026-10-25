@@ -302,6 +302,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       </Card>
 
       <Posts7Dias
+        postsPorDiaInicial={1}
         temasFixos={TRATAMENTOS.map((t) => t.label)}
         formatos={["Post Único", "Carrossel", "Story"]}
         gerar={async (item, formato, ctx) => {
