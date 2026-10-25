@@ -1,3 +1,4 @@
+- [ ] Ampliar prévia real do Chico/Posts 7 dias com plataforma, texto por slide, edição e revisão no modal; testar sem dados de demonstração.
 - [x] Tornar aprovação visível junto aos posts pendentes e expor listas persistidas após trocar abas; conferir Chico, Posts 7 dias, lista e calendário em desktop/celular com respostas somente de teste.
 - [x] Implementar revisão compartilhada nas listagens e prévias dos planners.
 - [x] Corrigir briefs específicos do Chico, transmissão ao provedor e vínculo post/slide, sem imagens substitutas.
