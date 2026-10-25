@@ -3,7 +3,7 @@ import { canEditPreview, previewCaption, previewMedia, savedSlideText } from "./
 import type { PostRow } from "./posts-types";
 
 describe("conteúdo real da prévia", () => {
-  it("ne masque pas une image de carrossel absente par la couverture", () => {
+  it("não substitui um slide ausente pela imagem de capa", () => {
     const post = {
       tipo_post: "Carrossel",
       legenda: "Slide 1: ATM\nSlide 2: Dor",

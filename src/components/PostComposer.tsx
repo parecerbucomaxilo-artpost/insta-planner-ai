@@ -452,7 +452,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       setTema("");
       setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
-      // Não chama onCreated() — post fica pendente até aprovação/descarte no preview.
+      onCreated(); // Refresh saved pending posts without approving, scheduling or publishing.
     } catch (e: any) {
       if (ctrl.signal.aborted || e?.name === "AbortError") {
         toast.dismiss(tid);
@@ -498,11 +498,11 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     try {
       const stopP = startGenerationProgress(tid, "Gerando post", t.formato === "Carrossel");
       const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes }, signal: ctrl.signal }).finally(stopP);
-      toast.success(t.quando ? "Agendado! Pré-visualize abaixo." : "Gerado! Pré-visualize abaixo.", { id: tid });
+      toast.success("Post gerado. Aguardando aprovação; não foi agendado nem publicado.", { id: tid });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
-      // Não chama onCreated() — fica pendente até aprovação no preview.
+      onCreated(); // Expose the saved pending post immediately.
     } catch (e: any) {
       if (ctrl.signal.aborted || e?.name === "AbortError") {
         toast.dismiss(tid);
@@ -776,7 +776,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
               Confira a legenda e {preview && preview.urls.length > 1 ? `os ${preview.urls.length} cards` : "a imagem"} antes de publicar. Você pode descartar e gerar novamente.
             </DialogDescription>
           </DialogHeader>
-          {preview && <PostReviewActions key={preview.id} id={preview.id} disabled={discarding || approving !== null} onChange={() => { setPreview(null); onCreated(); }} />}
+          {preview && <PostReviewActions key={preview.id} id={preview.id} disabled={discarding || approving !== null} onChange={() => { onCreated(); }} />}
           {preview && (() => {
             const total = preview.urls.length;
             const safeIdx = Math.min(previewIdx, total - 1);

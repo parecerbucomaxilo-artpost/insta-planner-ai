@@ -1,3 +1,4 @@
+- [ ] Conferir novamente botões em cada caminho gerado e evitar fechamento da prévia ao revisar; executar testes e verificação desktop/celular sem mocks.
 - [x] Ampliar prévia compartilhada do Chico/Posts 7 dias com mídia real, plataforma, texto por número de slide, edição e revisão no modal; 27 testes e lint passaram, compilação automática OK.
 - [ ] Conferir abertura, slides, edição e aprovação no modal com posts reais em desktop/celular: sessão da conta solicitante indisponível; telas sem sessão conferidas, sem mocks e sem erros de página.
 - [x] Tornar aprovação visível junto aos posts pendentes e expor listas persistidas após trocar abas; conferir Chico, Posts 7 dias, lista e calendário em desktop/celular com respostas somente de teste.

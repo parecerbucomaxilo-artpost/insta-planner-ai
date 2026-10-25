@@ -248,7 +248,13 @@ export function PostReviewActions({
           if (!busy) setOpen(value);
         }}
       >
-        <DialogContent className="max-w-3xl w-[calc(100%-1rem)] max-h-[90dvh] overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="max-w-3xl w-[calc(100%-1rem)] max-h-[90dvh] overflow-y-auto p-4 sm:p-6" onKeyDown={(event) => {
+          if (editing || event.target instanceof HTMLTextAreaElement || images.length < 2) return;
+          if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+            event.preventDefault();
+            setSlide((i) => (i + (event.key === "ArrowRight" ? 1 : -1) + images.length) % images.length);
+          }
+        }}>
           <DialogHeader>
             <DialogTitle>Visualizar post completo</DialogTitle>
             <DialogDescription>
@@ -299,7 +305,7 @@ export function PostReviewActions({
               Negar
             </Button>
             <span className="w-full text-xs text-muted-foreground" role="status">
-              {currentStatus}
+              {currentStatus === "PendenteAprovacao" ? "Aguardando aprovação" : currentStatus === "Rascunho" ? "Aprovado / rascunho — não publicado" : currentStatus === "Arquivado" ? "Negado / arquivado" : currentStatus}
             </span>
           </div>
           {editing && (
