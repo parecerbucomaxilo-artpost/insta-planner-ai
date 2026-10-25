@@ -53,9 +53,9 @@ export function AnthropicKeySettings() {
       <Card className="p-5 space-y-2 text-xs">
         <h3 className="font-semibold text-sm">Modelos disponíveis</h3>
         <p className="font-medium">Texto</p>
-        <ul className="list-disc pl-5 space-y-0.5">{MODELOS_IA.map((m) => <li key={m.id}><ModelLabel m={m} />{m.nota ? ` — ${m.nota}` : ""}</li>)}</ul>
+        <ul className="list-disc pl-5 space-y-0.5">{MODELOS_IA.map((m) => <li key={m.id}><ModelLabel m={m} />{(m as { nota?: string }).nota ? ` — ${(m as { nota?: string }).nota}` : ""}</li>)}</ul>
         <p className="font-medium pt-2">Imagem</p>
-        <ul className="list-disc pl-5 space-y-0.5">{MODELOS_IMAGEM.map((m) => <li key={m.id}><ModelLabel m={m} />{m.nota ? ` — ${m.nota}` : ""}</li>)}</ul>
+        <ul className="list-disc pl-5 space-y-0.5">{MODELOS_IMAGEM.map((m) => <li key={m.id}><ModelLabel m={m} />{(m as { nota?: string }).nota ? ` — ${(m as { nota?: string }).nota}` : ""}</li>)}</ul>
       </Card>
     </div>
   );
