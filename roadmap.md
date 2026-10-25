@@ -1,3 +1,4 @@
+- [ ] Tornar aprovação visível junto aos posts pendentes e recuperar prévias após trocar abas; verificar Chico, Posts 7 dias, lista e calendário em desktop/celular.
 - [x] Implementar revisão compartilhada nas listagens e prévias dos planners.
 - [x] Corrigir briefs específicos do Chico, transmissão ao provedor e vínculo post/slide, sem imagens substitutas.
 - [x] Executar 22 testes, lint dos arquivos novos e geração real de post/carrossel no modelo original, sem publicar.
