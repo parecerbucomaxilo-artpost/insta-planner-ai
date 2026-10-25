@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   canEditPreview,
   previewCaption,
+  previewMedia,
   previewPlatforms,
   savedSlideText,
   type PreviewPlatform,
@@ -161,12 +162,7 @@ export function PostReviewActions({
   };
 
   const blocked = disabled || busy !== null;
-  const images =
-    post?.tipo_post === "Carrossel" && post.imagens_carrossel.length
-      ? post.imagens_carrossel
-      : post?.url_imagem
-        ? [post.url_imagem]
-        : [];
+  const images = post ? previewMedia(post) : [];
   const caption = post ? previewCaption(post, platform) : "";
   const platforms = post ? previewPlatforms(post) : [];
   const slideText = post ? savedSlideText(post.legenda, slide) : null;

@@ -27,3 +27,10 @@ export function savedSlideText(caption: string, index: number): string | null {
 export function canEditPreview(status: PostRow["status"]): boolean {
   return status === "PendenteAprovacao" || status === "Rascunho";
 }
+
+export function previewMedia(post: PostRow): (string | null)[] {
+  if (post.tipo_post !== "Carrossel") return post.url_imagem ? [post.url_imagem] : [];
+  const numbers = [...post.legenda.matchAll(/^\s*\**Slide\s*(\d+)\b/gim)].map((m) => Number(m[1]));
+  const total = Math.max(post.imagens_carrossel.length, ...numbers, 0);
+  return Array.from({ length: total }, (_, i) => post.imagens_carrossel[i] || null);
+}
