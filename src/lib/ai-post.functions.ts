@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
-import { contentKey, findDuplicate, planDistinctTopics, retryDistinct, similarity, titleOf } from "./dedup";
+import { ANGULOS_EDITORIAIS, contentKey, findDuplicate, planDistinctTopics, retryDistinct, similarity, titleOf } from "./dedup";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
 export const MODELOS_IA = [
@@ -63,6 +63,10 @@ const SingleInput = z.object({
   // Temas adicionais a evitar (além do histórico dos últimos 200 posts) —
   // usado pelo agendador para não repetir assunto em dias próximos.
   temasProibidos: z.array(z.string()).optional().default([]),
+  // Idempotência por operação/slot: mesma operação + mesmo slot nunca gera um 2º post
+  // (duplo clique, retry, cron concorrente).
+  operacaoId: z.string().min(1).max(80).optional(),
+  slotKey: z.string().min(1).max(120).optional(),
   // Logo(s) a serem aplicadas como overlay. `logoKey` é legado; `logoKeys`
   // permite escolher mais de uma logo no dashboard.
   logoKey: z.enum(["nsp", "anhanguera", "planner", "liga-ctbmf", "clinica-escola", "nenhuma"]).optional(),
@@ -1468,6 +1472,13 @@ function ensureCarouselCaption(base: string, slideNarratives: string[], audienci
   return `${firstLine}\n\n${blocks.join("\n\n")}\n\n${fechamento}\n\n${hashtags}`;
 }
 
+/** Abertura local variada e SEMPRE ancorada no tema — evita a mesma frase de abertura em todos os posts. */
+function pickOpener(tema: string, modelos: string[]) {
+  const t = tema.split(" — ")[0].trim();
+  const h = Math.abs(t.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7));
+  return modelos[h % modelos.length].replace("{t}", t);
+}
+
 function buildLocalCaption(params: {
   tema: string;
   rede: "instagram" | "linkedin" | "estilo-x" | "google";
@@ -1489,10 +1500,10 @@ function buildLocalCaption(params: {
     return `${tema}\n\n${slides.join("\n\n")}\n\n${fechamento}\n\n${hashtags}`;
   }
   if (audiencia === "estudantes-graduacao") {
-    return `Caiu na clínica: ${tema}\n\nO que observar: ${g.oQue}.\n\nPor que acontece: ${g.porQue}.\n\nConduta prática: ${g.conduta}.\n\nSinal de alerta: ${g.alerta}.\n\n#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF`;
+    return `${pickOpener(tema, ["Caiu na clínica: {t}", "{t}: o que a prova cobra", "Revisão rápida — {t}", "Na prática clínica: {t}"])}\n\nO que observar: ${g.oQue}.\n\nPor que acontece: ${g.porQue}.\n\nConduta prática: ${g.conduta}.\n\nSinal de alerta: ${g.alerta}.\n\n#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF`;
   }
   if (audiencia === "chico-drfm") {
-    return `Você se identificou com isso?\n\n${g.oQue}.\n\nIsso acontece porque ${g.porQue}.\n\nO tratamento não é uma receita pronta: ${g.conduta}.\n\nSe você percebe ${g.alerta}, vale investigar com segurança.\n\nDúvidas? Link na bio para contato e agendamento pelo WhatsApp.\n\nAtendo em ${CHICO_CIDADES}.\n\n#drfranciscomenezes #bucomaxilofacial #CTBMF #cirurgiabucomaxilofacial #saudebucal`;
+    return `${pickOpener(tema, ["{t}: você se identificou?", "{t} — o que pouca gente sabe", "Já sentiu isso? {t}", "{t}: quando vale investigar", "Entenda de forma simples: {t}"])}\n\n${g.oQue}.\n\nIsso acontece porque ${g.porQue}.\n\nO tratamento não é uma receita pronta: ${g.conduta}.\n\nSe você percebe ${g.alerta}, vale investigar com segurança.\n\nDúvidas? Link na bio para contato e agendamento pelo WhatsApp.\n\nAtendo em ${CHICO_CIDADES}.\n\n#drfranciscomenezes #bucomaxilofacial #CTBMF #cirurgiabucomaxilofacial #saudebucal`;
   }
   if (rede === "linkedin") {
     return `**${tema}**\n\nNa prática em ${especialidade}, a apresentação clínica exige diferenciar sintoma, mecanismo e indicação terapêutica. ${g.oQue}.\n\nMecanismo provável: ${g.porQue}. A decisão clínica deve considerar exame físico, imagem quando indicada, risco anatômico e impacto funcional.\n\nImpacto para a prática:\n• ${g.conduta};\n• ${g.alerta};\n• o objetivo é ${g.ganho}.\n\nReferências:\n1. Journal of Oral and Maxillofacial Surgery. Clinical practice updates in oral and maxillofacial surgery. J Oral Maxillofac Surg.\n2. International Journal of Oral and Maxillofacial Surgery. Evidence-based decision making in maxillofacial care. Int J Oral Maxillofac Surg.\n\nDiscussão aberta aos colegas. WhatsApp: ${WHATSAPP}\n\n#CTBMF #CirurgiaBucoMaxiloFacial #OdontologiaHospitalar #EvidenceBasedPractice`;
@@ -1503,11 +1514,17 @@ function buildLocalCaption(params: {
   if (formato === "Story") {
     return `${tema}\n\n${g.oQue}.\n\nO caminho seguro: ${g.conduta}.\n\nLink na Bio`;
   }
-  return `Isso pode estar tentando te avisar algo.\n\n${g.oQue}.\n\nPor trás disso, geralmente existe um mecanismo: ${g.porQue}.\n\nA solução começa entendendo a causa. Na prática, ${g.conduta}.\n\n${g.alerta}.\n\nSaiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.\n\n#bucomaxilofacial #CTBMF #drfranciscomenezes #saudebucal #cirurgiaoral`;
+  return `${pickOpener(tema, ["{t}: isso pode estar tentando te avisar algo", "{t} — o sinal que muita gente ignora", "O que ninguém te contou sobre {t}"])}\n\n${g.oQue}.\n\nPor trás disso, geralmente existe um mecanismo: ${g.porQue}.\n\nA solução começa entendendo a causa. Na prática, ${g.conduta}.\n\n${g.alerta}.\n\nSaiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.\n\n#bucomaxilofacial #CTBMF #drfranciscomenezes #saudebucal #cirurgiaoral`;
 }
 
 
 
+
+/** Chave de idempotência: por operação+slot quando informados; senão por conteúdo+dia. */
+function chaveIdempotencia(userId: string, tema: string, formato: string, data: { operacaoId?: string; slotKey?: string; rede: string; quando?: string }) {
+  if (data.operacaoId && data.slotKey) return contentKey([userId, "op", data.operacaoId, data.slotKey, data.rede, formato]);
+  return contentKey([userId, tema, formato, data.rede, (data.quando ?? new Date().toISOString()).slice(0, 10)]);
+}
 
 export const generateSinglePost = createServerFn({ method: "POST" })
   .middleware([])
@@ -1608,7 +1625,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const temaBase = (s: string) => s.split(" — ")[0];
     const temaDup = (t: string) => findDuplicate(t, historicoTemas) || findDuplicate(temaBase(t), historicoTemas.map(temaBase), 0.95);
     {
-      const chaveInicial = contentKey([context.userId, tema, formato, data.rede, (data.quando ?? new Date().toISOString()).slice(0, 10)]);
+      const chaveInicial = chaveIdempotencia(context.userId, tema, formato, data);
       const { data: jaExiste } = await supabaseAdmin.from("posts").select("id, legenda, url_imagem, url_imagem_cache, imagens_carrossel_cache").eq("user_id", context.userId).eq("content_key", chaveInicial).maybeSingle();
       if (jaExiste) {
         console.info("[dedup] pedido repetido (duplo clique/retry): devolvendo post existente", { postId: jaExiste.id });
@@ -1632,7 +1649,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       }
     }
     // Idempotência: mesmo usuário + tema + formato + rede + dia = mesmo post.
-    const chaveConteudo = contentKey([context.userId, tema, formato, data.rede, (data.quando ?? new Date().toISOString()).slice(0, 10)]);
+    const chaveConteudo = chaveIdempotencia(context.userId, tema, formato, data);
 
     // 1. Resolve nível editorial
     const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
@@ -2006,6 +2023,25 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       ? "lactbmf.anhanguerasbo"
       : "drfranciscomenezes";
 
+    // Recheque imediatamente antes do insert: posts salvos DURANTE esta geração (outro planner,
+    // outra aba ou item concorrente) também contam. Nunca salva duplicata silenciosamente.
+    try {
+      const desdeRecente = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const { data: recem } = await supabaseAdmin.from("posts").select("id, prompt_ia, legenda").eq("user_id", context.userId).neq("status", "Erro").gte("created_at", desdeRecente).limit(100);
+      const corpo = legenda.slice(0, 600);
+      const colisao = (recem ?? []).find((r: any) =>
+        (r.prompt_ia && similarity(r.prompt_ia, tema) >= 0.85)
+        || (r.legenda && similarity(r.legenda.slice(0, 600), corpo) >= 0.6)
+        || (r.legenda && titleOf(r.legenda) && similarity(titleOf(r.legenda), titleOf(legenda)) >= 0.8));
+      if (colisao) {
+        console.warn("[dedup] colisão com post salvo durante a geração", { postId, existente: (colisao as any).id });
+        throw new Error("Outro post com o mesmo assunto/texto foi salvo enquanto este era gerado. Nada foi duplicado — edite o tema e tente novamente.");
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith("Outro post")) throw e;
+      console.warn("[dedup] recheque pré-insert indisponível:", e instanceof Error ? e.message : e);
+    }
+
     const { data: inserted, error: insErr } = await supabaseAdmin
       .from("posts")
       .insert({
@@ -2282,14 +2318,14 @@ export const getWeekTopics = createServerFn({ method: "POST" })
     z.object({
       especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("Ambas"),
       temaGuia: z.string().optional().default(""),
-      quantidade: z.number().int().min(1).max(21).default(7),
+      quantidade: z.number().int().min(1).max(28).default(7),
     }).parse(d),
   )
   .handler(async ({ data }) => {
     const guia = data.temaGuia.trim();
     const angulos = ["visão geral", "sinais de alerta", "mito e verdade", "como é o tratamento", "cuidados e prevenção", "dúvidas frequentes", "quando procurar ajuda"];
     const lista = guia
-      ? angulos.map((a) => `${guia}: ${a}`)
+      ? [...angulos, ...ANGULOS_EDITORIAIS].map((a) => `${guia}: ${a}`)
       : [...(data.especialidade === "Temas Diversos" ? TEMAS_DIVERSOS : TEMAS_GERAIS)];
     if (!guia) {
       for (let i = lista.length - 1; i > 0; i--) {
