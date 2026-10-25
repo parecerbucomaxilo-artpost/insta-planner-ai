@@ -333,6 +333,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       } as any }).finally(stopP);
       await marcarConta(out.id);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, slideLegendas: (out as any).slideLegendas });
+      await carregar();
       setTema("");
       toast.success("Pré-visualize abaixo.", { id: tid });
     } catch (e: any) {
@@ -374,9 +375,9 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         logoKeys,
       } as any }).finally(stopP);
       await marcarConta(out.id);
-      await approveFn({ data: { id: out.id, acao: "agendar" } });
+      setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, slideLegendas: (out as any).slideLegendas });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
-      toast.success("Agendado!", { id: tid });
+      toast.success("Post gerado. Aguardando aprovação.", { id: tid });
       carregar();
     } catch (e: any) {
       toast.error(e.message || "Falha", { id: tid });
@@ -749,6 +750,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                   ambasRedes: false, audiencia: effectiveAudiencia, modelo, modeloImagem, logoKeys,
                 } as any });
                 await marcarConta(out.id);
+                await carregar();
                 return { id: out.id, urls: out.urls, legenda: out.legenda };
               }}
             />
@@ -847,8 +849,8 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                             <p className="text-sm font-medium truncate">{t.tema}</p>
                             <p className="text-xs text-zinc-500 truncate">{t.gancho}</p>
                           </div>
-                          <Button size="sm" variant="ghost" onClick={() => aprovarTema(t)}>
-                            <Check className="w-4 h-4 text-emerald-600" />
+                          <Button size="sm" variant="outline" onClick={() => aprovarTema(t)}>
+                            <Wand2 className="w-4 h-4" /> Gerar post
                           </Button>
                         </div>
                       );
@@ -864,6 +866,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
           {preview && (
             <Card className="p-5 space-y-3 border-2 border-emerald-200 bg-emerald-50/30">
               <h3 className="font-semibold text-emerald-900">Pré-visualização</h3>
+              <PostReviewActions key={preview.id} id={preview.id} disabled={busy} onChange={() => { setPreview(null); }} />
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   {preview.urls.length > 1 ? (
@@ -901,7 +904,6 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 </div>
                 <Textarea value={preview.legenda} readOnly rows={12} className="text-xs" />
               </div>
-              <PostReviewActions key={preview.id} id={preview.id} disabled={busy} onChange={() => { setPreview(null); }} />
               <div className="grid grid-cols-3 gap-2">
                 {quando === "agora" ? (
                   <Button onClick={() => decidirPreview("publicar")} className="bg-emerald-600 hover:bg-emerald-700 col-span-2">

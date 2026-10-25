@@ -226,6 +226,7 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
               )}
             </div>
             <div className="p-4 flex-1 flex flex-col gap-3">
+              <PostReviewActions id={p.id} status={p.status} disabled={isPublishing || savingEdit} onChange={() => onChange()} />
               <div className="flex gap-1 flex-wrap items-center">
                 <Badge variant="outline" className="text-xs">{p.tipo_post}</Badge>
                 <Badge variant="outline" className="text-xs">{p.estilo_layout}</Badge>
@@ -287,7 +288,6 @@ export function PostsList({ posts, onChange }: { posts: PostRow[]; onChange: () 
                 </p>
               )}
 
-              <PostReviewActions id={p.id} status={p.status} disabled={isPublishing || savingEdit} onChange={() => onChange()} />
               <div className="flex items-center gap-2 pt-1">
                 <Button
                   size="sm"
