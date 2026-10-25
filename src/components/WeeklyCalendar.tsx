@@ -17,7 +17,7 @@ import { DirectReplyCard } from "./DirectReplyCard";
 import brandLogo from "@/assets/logo-clinica.png";
 import { useServerFn } from "@tanstack/react-start";
 import { generateSinglePost } from "@/lib/ai-post.functions";
-import { horariosDoDia, parseHorario } from "@/lib/post-slots";
+import { horariosDoDia, parseHorario, POSTS_POR_DIA_PADRAO } from "@/lib/post-slots";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import type { PostRow } from "@/lib/posts-types";
 // import { suggestIdea } from "@/lib/ai/suggest-idea.functions";
@@ -221,7 +221,7 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
     setLoading(true);
     const especialidade = "CTBMF" as const;
     const operacaoId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `op-${Date.now()}`;
-    // 2 publicações por dia x 7 dias = 14 slots, nos horários padrão (09:00 e 18:00, fuso local)
+    // 4 publicações por dia x 7 dias = 28 slots (09:00, 14:00, 18:00, 21:00, fuso local); cada slot tem tema próprio
     const slots: { quando: Date; tipo: "feed" | "stories"; key: string }[] = [];
     for (let d = 0; d < 7; d++) {
       for (const h of horariosDoDia(POSTS_POR_DIA_PADRAO)) {

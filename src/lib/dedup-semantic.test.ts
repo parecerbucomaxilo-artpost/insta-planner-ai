@@ -159,3 +159,20 @@ describe("idempotência de double-click/retry", () => {
     );
   });
 });
+
+import { montarSemana } from "./week-plan";
+import { POSTS_POR_DIA_PADRAO } from "./post-slots";
+describe("padrão de 4 posts/dia", () => {
+  it("padrão é 4 por dia nos horários 09:00, 14:00, 18:00 e 21:00, um slot por item", () => {
+    expect(POSTS_POR_DIA_PADRAO).toBe(4);
+    const temas = Array.from({ length: 28 }, (_, i) => `Tema ${i}`);
+    const semana = montarSemana(temas, undefined, new Date(2026, 9, 25, 12));
+    expect(semana).toHaveLength(28);
+    expect(semana.slice(0, 4).map((s) => s.horario)).toEqual(["09:00", "14:00", "18:00", "21:00"]);
+    expect(new Set(semana.map((s) => s.key)).size).toBe(28);
+  });
+  it("faltando temas inéditos, slots ficam vazios em vez de copiar", () => {
+    const semana = montarSemana(["A", "B"], undefined, new Date(2026, 9, 25, 12));
+    expect(semana.filter((s) => s.tema).map((s) => s.tema)).toEqual(["A", "B"]);
+  });
+});
