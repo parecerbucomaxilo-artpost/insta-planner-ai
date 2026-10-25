@@ -1,4 +1,5 @@
 import { Posts7Dias } from "@/components/Posts7Dias";
+import { salvarPostInedito } from "@/lib/post-guard";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import { POST_REVIEW_CHANGED, GENERATED_POST_STATUS } from "@/lib/post-review";
 import { startGenerationProgress } from "@/lib/generation-progress";
@@ -447,14 +448,15 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
       const iso = buildAgendamentoIso();
       const shouldAutoPublish = quando === "agora" && canPublishAutomatically;
       const status = shouldAutoPublish ? "Agendado" : quando === "agora" ? "Rascunho" : "Agendado";
-      const { data: ins, error } = await supabase.from("posts").insert({
-        user_id: uid, tipo_post: "Post Único",
+      const salvo = await salvarPostInedito(supabase, uid, {
+        tipo_post: "Post Único",
         legenda, url_imagem: url,
         postar_instagram: true, postar_linkedin: false,
         status, data_agendamento: iso ?? null,
         estilo_layout: "Padrão", instagram_conta: effectiveConta,
-      } as any).select("id").single();
-      if (error) throw error;
+      });
+      if (salvo.existente) { toast.info("Este post já estava salvo — nenhuma cópia criada."); carregar(); return; }
+      const ins = { id: salvo.id };
       if (shouldAutoPublish && ins?.id) {
         const out = await publishIg({ data: { id: ins.id } });
         assertPublishOk(out);

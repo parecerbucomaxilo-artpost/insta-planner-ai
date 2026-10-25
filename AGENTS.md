@@ -8,3 +8,4 @@
 - Default posting slots come only from src/lib/post-slots.ts and are resolved in the project/user time zone (never the server's); batch generation runs sequentially with an operation+slot idempotency key so retries and double clicks cannot insert a second post per slot.
 - Semantic dedup maps each topic to a root subject (ASSUNTOS_RAIZ in src/lib/dedup.ts): one subject per batch, no repeat within JANELA_ASSUNTO_DIAS of a scheduled post, text conflicts get at most 2 rewrites then a visible error — wording-only checks missed same-subject posts.
 - Preview loads by post ID via loadPostPreview (src/lib/post-preview.ts) with strict per-slide signing; failures show inside the modal, never a fallback public URL (buckets are private).
+- New posts from any creation path (AI generator or manual save) go through src/lib/post-guard.ts (shared history, semantic dedup, content_key idempotency); never insert into posts directly from a component.

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { salvarPostInedito } from "@/lib/post-guard";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
@@ -305,8 +306,8 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
       setOpenIdx(null);
       return;
     }
-    const { error } = await supabase.from("posts").insert({
-      user_id: uid,
+    try {
+      const salvo = await salvarPostInedito(supabase, uid, {
       tipo_post: p.formato === "Carrossel" ? "Carrossel" : "Post Único",
       estilo_layout: "Padrão",
       formato_midia: p.formato === "Carrossel" ? "Carrossel" : "Imagem",
@@ -320,8 +321,11 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
       data_agendamento: agendar ? data.toISOString() : null,
       status: agendar ? "Agendado" : "Rascunho",
       prompt_ia: p.promptImagem,
-    });
-    if (error) return toast.error(error.message);
+      });
+      if (salvo.existente) { toast.info("Este post já estava salvo — nenhuma cópia criada."); onCreated(); return; }
+    } catch (e) {
+      return toast.error(e instanceof Error ? e.message : "Falha ao salvar.");
+    }
     toast.success(agendar ? `Agendado para ${fmtDate(data)} às ${p.horaAgendamento}` : "Salvo como rascunho");
     onCreated();
     setOpenIdx(null);
