@@ -11,6 +11,7 @@ import {
   findDuplicate,
   mensagemConflito,
   planDistinctTopics,
+  reformularTema,
   titleOf,
   type AssinaturaPost,
 } from "./dedup";
@@ -2026,32 +2027,42 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       data.audiencia !== "estudantes-graduacao" &&
       isGenericGuidance(topicGuidance(t));
     {
-      const conflito = temaDup(tema);
-      if (conflito || (!(data.tema ?? "").trim() && escritorLocalSemGuia(tema))) {
-        if (!(data.tema ?? "").trim()) {
-          // Tema automático: pede nova ideia (assunto diferente), no máximo 40 candidatos (sem custo de IA).
-          let novo: string | null = null;
-          for (let i = 0; i < 40 && !novo; i++) {
-            const cand = chooseLocalTema(
-              data.audiencia,
-              historicoTemas,
-              `${data.rede}-${formato}-${i}-${Date.now()}`,
-              data.especialidade,
-            );
-            if (!temaDup(cand) && !escritorLocalSemGuia(cand)) novo = cand;
-            else historicoTemas.push(cand);
-          }
-          if (!novo)
-            throw new Error(
-              "Não foi possível garantir um tema inédito. Informe um tema manualmente.",
-            );
-          tema = novo;
-        } else {
-          throw new Error(
-            `${mensagemConflito(conflito!)} Nada foi salvo — edite o tema deste horário.`,
-          );
-        }
+      // Originalidade automática em TODOS os caminhos (tema digitado, planner, cronograma, 7 dias,
+      // "crie outra"): antes, um tema informado que colidisse com o histórico/lote lançava
+      // "edite o tema deste horário" e o slot ficava vazio. Agora o próprio pipeline troca o
+      // ângulo e, se preciso, o assunto, revalidando cada candidato (limite finito).
+      const ok = (t: string) =>
+        temaDup(t) ??
+        (!(data.tema ?? "").trim() && escritorLocalSemGuia(t)
+          ? ({ motivo: "tema", com: "escritor local sem roteiro próprio" } as any)
+          : null);
+      let k = 0;
+      const alternativo = () => {
+        const cand = chooseLocalTema(
+          data.audiencia,
+          historicoTemas,
+          `${data.rede}-${formato}-${k++}-${Date.now()}`,
+          data.especialidade,
+        );
+        historicoTemas.push(cand);
+        return escritorLocalSemGuia(cand) ? null : cand;
+      };
+      const ref = reformularTema(tema, ok, alternativo, { maxTentativas: 40 });
+      if (!ref) {
+        const c = temaDup(tema);
+        throw new Error(
+          `${c ? mensagemConflito(c) : "Tema sem conteúdo inédito."} Tentamos novos ângulos e assuntos e todos ficaram parecidos com posts existentes. Nada foi salvo neste horário.`,
+        );
       }
+      if (ref.via !== "original")
+        console.info("[dedup] tema regenerado", {
+          postId,
+          slot: data.slotKey ?? null,
+          via: ref.via,
+          tentativas: ref.tentativas,
+          motivos: ref.rejeitados.slice(0, 5).map((r) => r.motivo),
+        });
+      tema = ref.tema;
     }
     console.info("[dedup] tema aprovado", {
       postId,
@@ -2279,6 +2290,26 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const conflito = conflitoTexto(legendaBaseResolvida);
       if (!conflito) break;
       console.warn("[dedup] texto repetido", { postId, tentativa, motivo: conflito.motivo });
+      // Reescritas com o mesmo tema não bastaram: troca o ÂNGULO (novo conceito) e reescreve;
+      // imagem e brief usam o tema novo, então texto e imagem continuam correspondendo.
+      if (!usaEscritorLocal && tentativa > 2 && tentativa <= 4) {
+        const ref = reformularTema(
+          tema,
+          (t) => (t === tema ? ({ motivo: conflito.motivo, com: conflito.com } as any) : temaDup(t)),
+          () => null,
+          { maxTentativas: 12 },
+        );
+        if (ref && ref.tema !== tema) {
+          console.info("[dedup] texto regenerado com novo ângulo", { postId, tentativa, motivo: conflito.motivo });
+          tema = ref.tema;
+          legendaBaseResolvida = completar(
+            await escreverLegenda(
+              `\n\nNOVO CONCEITO OBRIGATÓRIO: escreva sobre "${tema}". A abordagem anterior ficou parecida com um post existente; mude intenção, gancho, título, estrutura, exemplos e CTA. Não reutilize frases.`,
+            ),
+          );
+          continue;
+        }
+      }
       if (usaEscritorLocal || tentativa > 2) {
         throw new Error(
           `${mensagemConflito(conflito)} ${usaEscritorLocal ? "O escritor local não consegue variar este texto" : `Tentamos ${tentativa} abordagens diferentes`}. Nada foi salvo — revise o tema deste horário.`,
