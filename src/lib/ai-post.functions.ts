@@ -1404,7 +1404,7 @@ function buildDiverseLocalCaption(tema: string, rede: "instagram" | "linkedin" |
   return `${tema}\n\nUm registro especial sobre este tema. Compartilhe com quem se identifica.\n\n${tag}`;
 }
 
-function completeCaptionIfNeeded(params: {
+export function completeCaptionIfNeeded(params: {
   legenda: string;
   tema: string;
   rede: "instagram" | "linkedin" | "estilo-x" | "google";
