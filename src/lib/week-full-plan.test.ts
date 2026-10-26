@@ -1,7 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { montarSemanaCronograma, SLOTS_POR_SEMANA } from "./week-plan";
 import { planDistinctTopics, conflitosNoLote, ANGULOS_EDITORIAIS } from "./dedup";
-import { TEMAS_GERAIS } from "./topics";
+const TEMAS_GERAIS = [
+  "Por que o siso incluso pode causar dor que irradia para o ouvido",
+  "Como o bruxismo noturno pode sobrecarregar dentes e articulações",
+  "Quando o estalo na ATM merece atenção especializada",
+  "Por que infecções odontogênicas não devem ser ignoradas",
+  "Quando uma ferida na boca precisa ser investigada",
+  "Como a Odontologia Hospitalar protege pacientes internados",
+  "Fratura de mandíbula: sinais que ninguém pode ignorar",
+  "Enxerto ósseo antes do implante: o que muda no planejamento",
+];
 
 const agora = new Date(2026, 9, 25, 12, 0, 0); // domingo
 
