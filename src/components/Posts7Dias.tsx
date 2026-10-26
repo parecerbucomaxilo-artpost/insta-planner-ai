@@ -67,7 +67,7 @@ export function Posts7Dias(props: {
       else {
         const r = await fetchTopics({ data: { especialidade: props.especialidade ?? "Ambas", temaGuia: props.temaGuia ?? "", quantidade: qtd, inicioSemana: proximaSegunda().toISOString(), escritorLocal: Boolean(props.escritorLocal) } });
         temas = r.temas;
-        if (r.aviso) toast.warning(r.aviso);
+        if (r.aviso) toast.warning(r.aviso, { action: { label: "Gerar novos temas", onClick: () => { void planejar(); } }, duration: 15000 });
       }
       setPlano(montarSemana(temas, porDia));
       setEstados({});
