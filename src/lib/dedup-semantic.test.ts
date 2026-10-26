@@ -47,9 +47,13 @@ describe("dedup semântico — assunto-raiz", () => {
 
   it("contra o histórico: mesmo assunto a menos de 6 dias é bloqueado; negado (arquivado) libera", () => {
     const hist = [{ tema: ORTO[1], quando: "2026-10-28T12:00:00.000Z" }];
-    expect(acharConflito({ tema: ORTO[2], quando: "2026-10-30T12:00:00.000Z" }, hist)?.motivo).toBe(
+    // Mesmo assunto, ângulo diferente: bloqueado no mesmo dia, aceito em outro dia.
+    expect(acharConflito({ tema: ORTO[2], quando: "2026-10-28T20:00:00.000Z" }, hist)?.motivo).toBe(
       "assunto-na-janela",
     );
+    expect(acharConflito({ tema: ORTO[2], quando: "2026-10-30T12:00:00.000Z" }, hist)).toBeNull();
+    // Sem ângulo explícito, vale a janela inteira.
+    expect(acharConflito({ tema: "Cirurgia ortognática", quando: "2026-10-30T12:00:00.000Z" }, [{ tema: "Mordida cruzada", quando: "2026-10-28T12:00:00.000Z" }])?.motivo).toBe("assunto-na-janela");
     expect(acharConflito({ tema: ORTO[2], quando: "2026-11-10T12:00:00.000Z" }, hist)).toBeNull();
     expect(
       acharConflito({ tema: ORTO[2], quando: "2026-10-30T12:00:00.000Z" }, [
@@ -138,13 +142,17 @@ describe("3 posts por dia = 3 assuntos distintos", () => {
     expect(new Set(plano.map((t) => t.split(" — ")[1])).size).toBe(9);
     expect(conflitosNoLote(plano.map((tema) => ({ tema, quando: null })))).toEqual([]);
   });
-  it("não usa assuntos bloqueados pelo histórico próximo e devolve menos itens em vez de repetir", () => {
+  it("assuntos livres vêm primeiro; o restante é completado com ângulos novos, sem repetir", () => {
     const plano = planDistinctTopics(BANCO, [], 50, undefined, {
       assuntosBloqueados: ["ortognatica-deformidades"],
     });
-    expect(plano.some((t) => assuntoPrincipal(t) === "ortognatica-deformidades")).toBe(false);
-    expect(plano.length).toBeLessThan(50);
-    expect(new Set(plano.map(assuntoPrincipal)).size).toBe(plano.length);
+    const livres = new Set(BANCO.map(assuntoPrincipal)).size - 1;
+    const primeiros = plano.slice(0, livres);
+    expect(primeiros.some((t) => assuntoPrincipal(t) === "ortognatica-deformidades")).toBe(false);
+    expect(new Set(primeiros.map(assuntoPrincipal)).size).toBe(primeiros.length);
+    expect(plano.length).toBe(50);
+    expect(new Set(plano).size).toBe(50);
+    expect(conflitosNoLote(plano.map((tema) => ({ tema })))).toEqual([]);
   });
 });
 

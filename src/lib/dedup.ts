@@ -395,13 +395,13 @@ export function conflitoSemantico(
       const angA = anguloDe(cand.tema);
       const angB = anguloDe(hist.tema);
       if (angA && angA === angB) return { motivo: "assunto-e-angulo", com };
-      // Mesmo assunto com angulos explicitos e diferentes e outro post (titulo/corpo ainda
-      // precisam ser originais, checados abaixo). Sem angulo, vale a janela de dias.
+      // Mesmo assunto com angulos explicitos e diferentes e outro post, desde que nao no mesmo
+      // dia (titulo/corpo ainda precisam ser originais). Sem angulo, vale a janela inteira.
+      const angulosDiferentes = Boolean(angA && angB);
       if (
-        !(angA && angB) &&
         !opts.assuntoGuiado &&
         hist.status !== "Arquivado" &&
-        dentroDaJanela(cand.quando, hist.quando, opts.janelaDias)
+        dentroDaJanela(cand.quando, hist.quando, angulosDiferentes ? 1 : opts.janelaDias)
       )
         return { motivo: "assunto-na-janela", com };
     }
