@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { CalendarDays, Loader2, Check, X, Clock } from "lucide-react";
@@ -6,32 +6,42 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getWeekTopics } from "@/lib/ai-post.functions";
+import { getWeekTopics, discardPost } from "@/lib/ai-post.functions";
 import {
   montarSemana,
   montarSemanaCronograma,
   SLOTS_POR_SEMANA,
   rotuloRede,
-  emParalelo,
   proximaSegunda,
   type ItemSemana,
 } from "@/lib/week-plan";
 import { horariosDoDia, POSTS_POR_DIA_PADRAO } from "@/lib/post-slots";
 import { conflitosNoLote, espalharTemas } from "@/lib/dedup";
+import {
+  carregarRun,
+  executarSemana,
+  pendentes as slotsPendentes,
+  progresso,
+  salvarRun,
+  type EstadoSlot,
+  type ResultadoPost,
+} from "@/lib/week-run";
 import { cn } from "@/lib/utils";
 import { PostReviewActions } from "@/components/PostReviewActions";
 
 export type FormatoSemana = "Post Único" | "Carrossel" | "Story";
-export type ResultadoPost = { id: string; urls: string[]; legenda: string };
+export type { ResultadoPost };
 /** Contexto de idempotência: mesma operação + mesmo slot nunca cria um segundo post. */
 export type ContextoSlot = {
   operacaoId: string;
   slotKey: string;
   objetivo?: string;
   assuntoGuiado?: boolean;
+  /** Se a imagem falhar, o servidor salva o texto e devolve `imagemErro` (nunca imagem genérica). */
+  salvarTextoSeImagemFalhar?: boolean;
 };
 
-type Estado = { status: "fila" | "gerando" | "ok" | "erro"; res?: ResultadoPost; erro?: string };
+type Estado = EstadoSlot;
 
 function novaOperacao() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -56,8 +66,11 @@ export function Posts7Dias(props: {
   escritorLocal?: boolean;
   /** Padrão = 4/dia. Planners de agenda clínica passam 1. */
   postsPorDiaInicial?: number;
+  /** Identifica o planner para retomar a semana após recarregar a página. */
+  idRetomada?: string;
 }) {
   const fetchTopics = useServerFn(getWeekTopics);
+  const discardPostFn = useServerFn(discardPost);
   const formatos = props.formatos ?? ["Post Único", "Carrossel", "Story"];
   const [porDia, setPorDia] = useState(props.postsPorDiaInicial ?? POSTS_POR_DIA_PADRAO);
   const temCronograma =
@@ -74,8 +87,11 @@ export function Posts7Dias(props: {
   const travaRef = useRef(false);
   const operacaoRef = useRef<string>(novaOperacao());
 
+  // Antes, "Planejar semana" só montava a lista e a geração dependia de um 2º botão;
+  // agora o clique planeja E gera os slots em seguida.
   const planejar = async () => {
     if (travaRef.current) return;
+    let planoGerar: ItemSemana[] | null = null;
     travaRef.current = true;
     setBusy(true);
     try {
@@ -127,18 +143,44 @@ export function Posts7Dias(props: {
           assuntoGuiado: Boolean(props.temaGuia?.trim()) && !props.temasFixos?.length,
         },
       );
-      setPlano(base.map((i, k) => ({ ...i, tema: ordem[k] ?? "" })));
+      const novo = base.map((i, k) => ({ ...i, tema: ordem[k] ?? "" }));
+      setPlano(novo);
       setEstados({});
       operacaoRef.current = novaOperacao(); // novo plano = nova operação
+      planoGerar = novo;
     } catch (e: any) {
       toast.error(e?.message || "Falha ao planejar a semana.");
     } finally {
       travaRef.current = false;
       setBusy(false);
     }
+    if (planoGerar) await gerarSemana(planoGerar, {});
   };
 
   const assuntoGuiado = Boolean(props.temaGuia?.trim()) && !props.temasFixos?.length;
+  const chave = `posts7dias:${props.idRetomada ?? "geral"}:${props.especialidade ?? "Ambas"}`;
+  const pararRef = useRef(false);
+
+  // Retomada: plano e estado de cada slot ficam salvos neste navegador. Recarregar a página
+  // (ou uma atualização do app) interrompia o lote no meio e o plano sumia sem aviso.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const run = carregarRun(window.localStorage, chave);
+    if (!run) return;
+    setPlano(run.plano);
+    setEstados(run.estados);
+    operacaoRef.current = run.operacaoId;
+  }, [chave]);
+  useEffect(() => {
+    if (typeof window === "undefined" || !plano) return;
+    salvarRun(window.localStorage, chave, { plano, estados, operacaoId: operacaoRef.current });
+  }, [chave, plano, estados]);
+  useEffect(() => {
+    if (!busy) return;
+    const aviso = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", aviso);
+    return () => window.removeEventListener("beforeunload", aviso);
+  }, [busy]);
 
   /** Pede à IA temas inéditos novos (histórico do backend) que não estejam já no plano. */
   const temasNovos = async (n: number, jaUsados: string[]): Promise<string[]> => {
@@ -150,7 +192,7 @@ export function Posts7Dias(props: {
           await fetchTopics({
             data: {
               especialidade: props.especialidade ?? "Ambas",
-              temaGuia: "", // reposição: banco geral + matriz editorial, sem depender do tema digitado
+              temaGuia: "",
               quantidade: Math.min(60, n + 8),
               inicioSemana: proximaSegunda().toISOString(),
               escritorLocal: Boolean(props.escritorLocal),
@@ -160,51 +202,61 @@ export function Posts7Dias(props: {
     return base.filter((t) => t.trim() && !usados.has(t.trim().toLowerCase())).slice(0, n);
   };
 
-  /** Erro de conteúdo repetido/sem tema: a própria ferramenta troca o tema e tenta de novo. */
-  const ehConteudo = (msg: string) =>
-    /repet|duplic|parecid|mesmo assunto|inédit|igual|sem tema|nada foi salvo/i.test(msg);
-  const TENTATIVAS_POR_SLOT = 3;
+  const gerarItem = (item: ItemSemana, slotKey: string, operacaoId: string) =>
+    props.gerar(item, (formato === "Cronograma" ? item.formato : formato) as FormatoSemana, {
+      operacaoId,
+      slotKey,
+      objetivo: item.objetivo,
+      assuntoGuiado,
+      salvarTextoSeImagemFalhar: true,
+    });
 
-  const gerarSlot = async (item: ItemSemana, operacaoId: string, usados: string[]) => {
-    let atual = item;
-    let ultimoErro = "Falha";
-    for (let t = 0; t < TENTATIVAS_POR_SLOT; t++) {
-      setEstados((s) => ({ ...s, [item.key]: { status: "gerando" } }));
-      try {
-        const res = await props.gerar(
-          atual,
-          (formato === "Cronograma" ? atual.formato : formato) as FormatoSemana,
-          {
-            operacaoId,
-            slotKey: t === 0 ? item.key : `${item.key}#${t}`,
-            objetivo: atual.objetivo,
-            assuntoGuiado,
-          },
-        );
-        setEstados((s) => ({ ...s, [item.key]: { status: "ok", res } }));
-        return true;
-      } catch (e: any) {
-        ultimoErro = e?.message || "Falha";
-        if (!ehConteudo(ultimoErro) || t === TENTATIVAS_POR_SLOT - 1) break;
-        const [novo] = await temasNovos(1, usados).catch(() => [] as string[]);
-        if (!novo) break;
-        usados.push(novo);
-        atual = { ...atual, tema: novo };
-        setPlano((p) => p?.map((x) => (x.key === item.key ? { ...x, tema: novo } : x)) ?? null);
-      }
-    }
-    setEstados((s) => ({ ...s, [item.key]: { status: "erro", erro: ultimoErro } }));
-    return false;
+  const rodar = async (itens: ItemSemana[], operacaoId: string) => {
+    const tid = "posts-7-dias";
+    let feitos = 0;
+    toast.loading(`Gerando a semana: 0/${itens.length} horários…`, { id: tid });
+    const r = await executarSemana({
+      itens,
+      concorrencia: 2, // lotes pequenos: respeita o limite do provedor de imagem
+      gerar: (item, slotKey) => gerarItem(item, slotKey, operacaoId),
+      novoTema: async (usados) => (await temasNovos(1, usados))[0],
+      onTema: (key, tema) =>
+        setPlano((p) => p?.map((x) => (x.key === key ? { ...x, tema } : x)) ?? null),
+      onEstado: (key, e) => {
+        setEstados((s) => ({ ...s, [key]: e }));
+        if (e.status !== "gerando") {
+          feitos++;
+          toast.loading(`Gerando a semana: ${feitos}/${itens.length} horários…`, { id: tid });
+        }
+      },
+      deveParar: () => pararRef.current,
+    });
+    if (r.interrompido)
+      toast.error(
+        `Geração pausada: ${r.interrompido}. Nada foi simulado; os horários restantes ficaram pendentes.`,
+        { id: tid, duration: 30000 },
+      );
+    else if (r.erro || r.imagem)
+      toast.error(
+        `${r.ok} post(s) completos, ${r.imagem} com texto salvo mas imagem pendente, ${r.erro} com falha. Veja cada horário e use "Tentar novamente".`,
+        { id: tid, duration: 30000 },
+      );
+    else if (pararRef.current) toast.info(`Geração pausada: ${r.ok} post(s) prontos.`, { id: tid });
+    else
+      toast.success(
+        `Semana completa: ${r.ok} posts com texto e imagem, aguardando sua aprovação.`,
+        { id: tid },
+      );
   };
 
-  const gerarSemana = async () => {
-    if (!plano || travaRef.current) return;
+  const gerarSemana = async (planoAtual = plano, estadosAtuais = estados) => {
+    if (!planoAtual || travaRef.current) return;
     travaRef.current = true;
+    pararRef.current = false;
     setBusy(true);
-    const tid = "posts-7-dias";
     try {
-      // 1) Pauta automática: horários vazios ou que repetem assunto do lote recebem tema da IA.
-      const itens = [...plano];
+      // Pauta automática: horários vazios ou que repetem assunto do lote recebem tema da IA.
+      const itens = [...planoAtual];
       const conflito = new Set(
         conflitosNoLote(
           itens.map((i) => ({ tema: i.tema, quando: i.quando })),
@@ -214,87 +266,51 @@ export function Posts7Dias(props: {
       const trocar = itens
         .map((i, idx) => ({ i, idx }))
         .filter(
-          ({ i, idx }) => estados[i.key]?.status !== "ok" && (!i.tema.trim() || conflito.has(idx)),
+          ({ i, idx }) => !estadosAtuais[i.key]?.res && (!i.tema.trim() || conflito.has(idx)),
         );
       if (trocar.length) {
-        toast.loading(`Escolhendo ${trocar.length} tema(s) inédito(s) automaticamente…`, {
-          id: tid,
-        });
         const fixos = itens
           .filter((_, idx) => !trocar.some((x) => x.idx === idx))
           .map((i) => i.tema);
         const novos = await temasNovos(trocar.length + 4, fixos);
-        const quandos = trocar.map(({ i }) => i.quando);
-        const ordem = espalharTemas(novos, quandos, { assuntoGuiado: false });
+        const ordem = espalharTemas(
+          novos,
+          trocar.map(({ i }) => i.quando),
+          { assuntoGuiado: false },
+        );
         trocar.forEach(({ idx }, k) => {
           itens[idx] = { ...itens[idx], tema: ordem[k] ?? "" };
         });
         setPlano(itens);
       }
-      const usados = itens.map((i) => i.tema);
-      const pendentes = itens.filter((i) => estados[i.key]?.status !== "ok");
+      const fila = slotsPendentes(itens, estadosAtuais);
       setEstados((s) => ({
         ...s,
-        ...Object.fromEntries(pendentes.map((i) => [i.key, { status: "fila" } as Estado])),
+        ...Object.fromEntries(fila.map((i) => [i.key, { status: "fila" } as Estado])),
       }));
-      if (!pendentes.length) return;
-      let feitos = 0;
-      let falhas = 0;
-      toast.loading(`Posts 7 dias: 0/${pendentes.length} prontos…`, { id: tid });
-      const operacaoId = operacaoRef.current;
-      // 2) 1 por vez: cada post é comparado ao histórico já salvo, incluindo os anteriores do lote.
-      await emParalelo(pendentes, 1, async (item) => {
-        if (!item.tema.trim()) {
-          falhas++;
-          setEstados((s) => ({
-            ...s,
-            [item.key]: {
-              status: "erro",
-              erro: "A IA não encontrou tema inédito para este horário.",
-            },
-          }));
-          return;
-        }
-        const ok = await gerarSlot(item, operacaoId, usados);
-        if (ok) feitos++;
-        else falhas++;
-        toast.loading(`Posts 7 dias: ${feitos}/${pendentes.length} prontos…`, { id: tid });
-      });
-      // 3) Nunca alegar sucesso com calendário incompleto.
-      if (falhas)
-        toast.error(
-          `${feitos} de ${pendentes.length} posts gerados. ${falhas} horário(s) falharam — veja o motivo em cada um e use "Tentar de novo".`,
-          { id: tid, duration: 20000 },
-        );
-      else
-        toast.success(
-          `Semana completa: ${feitos} posts gerados, aguardando sua aprovação no painel, já com data.`,
-          { id: tid },
-        );
+      if (!fila.length) {
+        toast.info("Nenhum horário pendente nesta semana.");
+        return;
+      }
+      await rodar(fila, operacaoRef.current);
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao montar a pauta automática.", { id: tid });
+      toast.error(e?.message || "Falha ao montar a pauta automática.", { id: "posts-7-dias" });
     } finally {
       travaRef.current = false;
       setBusy(false);
     }
   };
 
+  /** Tenta de novo só este horário. Imagem pendente: descarta o texto sem imagem e gera o post inteiro de novo. */
   const tentarSlot = async (item: ItemSemana) => {
     if (travaRef.current) return;
     travaRef.current = true;
     setBusy(true);
     try {
-      const usados = (plano ?? []).map((i) => i.tema);
-      let alvo = item;
-      if (!alvo.tema.trim()) {
-        const [novo] = await temasNovos(1, usados);
-        if (!novo) throw new Error("A IA não encontrou tema inédito para este horário.");
-        alvo = { ...alvo, tema: novo };
-        usados.push(novo);
-        setPlano((p) => p?.map((x) => (x.key === item.key ? alvo : x)) ?? null);
-      }
-      const ok = await gerarSlot(alvo, novaOperacao(), usados);
-      if (ok) toast.success(`${item.diaSemana} ${item.dataLabel}: post gerado.`);
+      const st = estados[item.key];
+      if (st?.status === "imagem" && st.res?.id) await discardPostFn({ data: { id: st.res.id } });
+      setEstados((s) => ({ ...s, [item.key]: { status: "fila" } }));
+      await rodar([item], novaOperacao());
     } catch (e: any) {
       setEstados((s) => ({ ...s, [item.key]: { status: "erro", erro: e?.message || "Falha" } }));
     } finally {
@@ -302,6 +318,9 @@ export function Posts7Dias(props: {
       setBusy(false);
     }
   };
+
+  const prog = plano ? progresso(plano, estados) : null;
+  const temPendente = plano ? slotsPendentes(plano, estados).length > 0 : false;
 
   return (
     <Card className="p-5 space-y-3">
@@ -360,9 +379,14 @@ export function Posts7Dias(props: {
         <Button size="sm" variant="outline" onClick={planejar} disabled={busy}>
           Planejar semana
         </Button>
-        {plano && (
-          <Button size="sm" onClick={gerarSemana} disabled={busy}>
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gerar os posts da semana"}
+        {plano && !busy && temPendente && (
+          <Button size="sm" onClick={() => void gerarSemana()}>
+            Continuar geração
+          </Button>
+        )}
+        {busy && (
+          <Button size="sm" variant="secondary" onClick={() => (pararRef.current = true)}>
+            <Loader2 className="h-4 w-4 animate-spin mr-1" /> Pausar
           </Button>
         )}
       </div>
@@ -381,6 +405,23 @@ export function Posts7Dias(props: {
           <span className="hidden sm:inline">— padrão completo: 09:00 · 14:00 · 18:00 · 21:00</span>
         )}
       </p>
+      {prog && (
+        <div className="space-y-1" aria-live="polite">
+          <div className="h-2 w-full rounded bg-muted overflow-hidden">
+            <div
+              className="h-full bg-primary transition-all"
+              style={{
+                width: `${((prog.total - prog.pendentes) / Math.max(1, prog.total)) * 100}%`,
+              }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {prog.ok}/{prog.total} completos · {prog.imagem} com imagem pendente · {prog.erro} com
+            falha · {prog.pendentes} na fila
+            {!busy && temPendente && " — clique em “Continuar geração” para retomar sem duplicar."}
+          </p>
+        </div>
+      )}
       {plano && (
         <ul className="space-y-2">
           {plano.map((item, idx) => {
@@ -398,7 +439,7 @@ export function Posts7Dias(props: {
                   </span>
                   <Input
                     value={item.tema}
-                    disabled={busy || st?.status === "ok"}
+                    disabled={busy || Boolean(st?.res)}
                     className="h-8 text-xs"
                     placeholder="Opcional — a IA escolhe um tema inédito"
                     aria-label={`Tema de ${item.diaSemana} ${item.dataLabel}`}
@@ -417,9 +458,14 @@ export function Posts7Dias(props: {
                     <Loader2 className="h-4 w-4 animate-spin shrink-0" />
                   )}
                   {st?.status === "ok" && <Check className="h-4 w-4 text-primary shrink-0" />}
-                  {st?.status === "erro" && <X className="h-4 w-4 text-destructive shrink-0" />}
+                  {(st?.status === "erro" || st?.status === "imagem") && (
+                    <X className="h-4 w-4 text-destructive shrink-0" />
+                  )}
+                  {st?.status === "fila" && (
+                    <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                  )}
                 </div>
-                {st?.status === "erro" && (
+                {(st?.status === "erro" || st?.status === "imagem") && (
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-destructive">{st.erro}</p>
                     <Button
@@ -429,7 +475,7 @@ export function Posts7Dias(props: {
                       disabled={busy}
                       onClick={() => void tentarSlot(item)}
                     >
-                      Tentar de novo
+                      Tentar novamente
                     </Button>
                   </div>
                 )}

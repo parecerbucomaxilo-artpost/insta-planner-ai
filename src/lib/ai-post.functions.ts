@@ -2,7 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
-import { ANGULOS_EDITORIAIS, JANELA_ASSUNTO_DIAS, acharConflito, assuntoPrincipal, chaveIdempotencia, findDuplicate, mensagemConflito, planDistinctTopics, titleOf, type AssinaturaPost } from "./dedup";
+import {
+  ANGULOS_EDITORIAIS,
+  JANELA_ASSUNTO_DIAS,
+  acharConflito,
+  assuntoPrincipal,
+  chaveIdempotencia,
+  findDuplicate,
+  mensagemConflito,
+  planDistinctTopics,
+  titleOf,
+  type AssinaturaPost,
+} from "./dedup";
 import { quantidadeSlides } from "./carousel-slides";
 import { assinaturasDoHistorico, filtroHistorico, slidesRepetidos } from "./post-guard";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
@@ -40,19 +51,29 @@ const ModeloImagemLocalInput = z
   .optional()
   .transform((v) => v || "local/sem-custo");
 
-const NivelEnum = z.enum(["auto", "ig-conversao", "ig-autoridade", "linkedin-cientifico", "google-business"]);
+const NivelEnum = z.enum([
+  "auto",
+  "ig-conversao",
+  "ig-autoridade",
+  "linkedin-cientifico",
+  "google-business",
+]);
 export type NivelConteudo = z.infer<typeof NivelEnum>;
 
 const SingleInput = z.object({
   // Se vazio, o gerador local escolhe um tema relevante automaticamente.
   tema: z.string().optional().default(""),
-  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("CTBMF"),
+  especialidade: z
+    .enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"])
+    .default("CTBMF"),
   rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
   tipo: z.enum(["feed", "stories"]).optional(),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).optional(),
   /** Quantidade de slides pedida explicitamente; sem pedido, Feed do IG = 5. */
   slides: z.number().int().min(2).max(10).optional(),
   quando: z.string().datetime().optional(),
+  // Posts 7 dias: se a imagem falhar, salva o texto (sem imagem) e devolve `imagemErro`.
+  salvarTextoSeImagemFalhar: z.boolean().optional().default(false),
   // Aceita qualquer valor legado vindo de abas antigas, mas ignora e usa sempre o gerador local.
   modelo: ModeloLocalInput,
   modeloImagem: ModeloImagemLocalInput,
@@ -77,13 +98,18 @@ const SingleInput = z.object({
   assuntoGuiado: z.boolean().optional().default(false),
   // Logo(s) a serem aplicadas como overlay. `logoKey` é legado; `logoKeys`
   // permite escolher mais de uma logo no dashboard.
-  logoKey: z.enum(["nsp", "anhanguera", "planner", "liga-ctbmf", "clinica-escola", "nenhuma"]).optional(),
-  logoKeys: z.array(z.enum(["nsp", "anhanguera", "planner", "liga-ctbmf", "clinica-escola", "nenhuma"])).optional(),
+  logoKey: z
+    .enum(["nsp", "anhanguera", "planner", "liga-ctbmf", "clinica-escola", "nenhuma"])
+    .optional(),
+  logoKeys: z
+    .array(z.enum(["nsp", "anhanguera", "planner", "liga-ctbmf", "clinica-escola", "nenhuma"]))
+    .optional(),
 });
 
-
 const WeekInput = z.object({
-  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("Ambas"),
+  especialidade: z
+    .enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"])
+    .default("Ambas"),
   modelo: ModeloLocalInput,
   temaGuia: z.string().optional().default(""),
 });
@@ -239,21 +265,116 @@ const METODOLOGIAS_COPY = [
 // Frases-choque curtas (3-6 palavras, PT-BR, MAIÚSCULAS) que vão IMPRESSAS DENTRO
 // da imagem da capa. Cada nicho tem várias opções para evitar repetição entre posts.
 const HOOK_BANK: Array<{ match: RegExp; hooks: string[] }> = [
-  { match: /(siso|terceiro molar|exodontia)/i, hooks: ["SISO SEM DOR EXISTE", "DOR NO SISO? RESOLVA HOJE", "EXTRAIR O SISO EM 30 MIN", "SISO INCLUSO: PARE DE SOFRER", "ADEUS INCHAÇO PÓS-SISO"] },
-  { match: /(atm|disfun|dtm|articula.*temporomand)/i, hooks: ["ATM TRAVADA TEM SOLUÇÃO", "PARE DE ESTALAR O MAXILAR", "DTM ROUBA SEU SONO?", "ABRA A BOCA SEM DOR", "CHEGA DE DOR DE OUVIDO SEM CAUSA"] },
-  { match: /(bruxismo|aperto|range)/i, hooks: ["PARE DE DESTRUIR SEUS DENTES", "BRUXISMO TEM TRATAMENTO", "DURMA SEM RANGER", "ACORDE SEM DOR NA FACE"] },
-  { match: /(ronco|apneia|sono|saos)/i, hooks: ["RONCO PODE MATAR", "VOLTE A DORMIR DE VERDADE", "APNEIA NÃO É FRESCURA", "ENERGIA DE VOLTA EM 30 DIAS"] },
-  { match: /(c[âa]ncer|les[ãa]o|biopsia|leucopl|eritropl|maligno)/i, hooks: ["DIAGNÓSTICO PRECOCE SALVA", "FERIDA QUE NÃO SARA: ALERTA", "30 DIAS SEM SARAR? AVALIE", "CÂNCER DE BOCA TEM CURA"] },
-  { match: /(fratura|trauma|acidente|maxilar quebrad|mandibula quebr)/i, hooks: ["TRAUMA NA FACE? AJA RÁPIDO", "FRATURA DA FACE TEM SOLUÇÃO", "RECUPERE SEU SORRISO", "CIRURGIA QUE DEVOLVE A FACE"] },
-  { match: /(implant|reabilita|perda dent)/i, hooks: ["VOLTE A MORDER FORTE", "DENTES FIXOS EM 1 DIA", "ADEUS DENTADURA SOLTA", "SORRIR SEM MEDO DE NOVO"] },
-  { match: /(ortognát|deformidade|classe iii|prognat|retrognat|mordida)/i, hooks: ["A CIRURGIA QUE MUDA A VIDA", "MORDIDA CERTA, ROSTO HARMÔNICO", "ORTOGNÁTICA DEVOLVE O SONO", "RESPIRE, MASTIGUE, SORRIA"] },
-  { match: /(cisto|tumor odontog|ameloblast)/i, hooks: ["CISTO NA MANDÍBULA TEM CURA", "REMOÇÃO SEGURA, OSSO PRESERVADO", "INCHAÇO NO OSSO? AVALIE JÁ"] },
-  { match: /(infec|abscesso|pus|celulite facial|odontog[êe]nica)/i, hooks: ["INFECÇÃO DENTÁRIA MATA", "INCHAÇO NO ROSTO? URGÊNCIA", "PUS NA GENGIVA NÃO ESPERA"] },
-  { match: /(sinus|seio maxilar|comunica.*buco)/i, hooks: ["SINUSITE QUE NASCE DO DENTE", "AR PELO NARIZ AO BEBER?", "DENTE NO SEIO: TEM SOLUÇÃO"] },
-  { match: /(nervo|parestesia|mentual|alveolar inferior|lingual)/i, hooks: ["LÁBIO DORMENTE TEM CONDUTA", "RECUPERE A SENSIBILIDADE", "NERVO LESADO: AGE NAS 72H"] },
-  { match: /(gengiv|periodont|sangra)/i, hooks: ["GENGIVA QUE SANGRA AVISA", "PARE A PERDA ÓSSEA", "DENTE MOLE TEM TRATAMENTO"] },
-  { match: /(hospital|uti|paciente intern|pré.?operat|cirurgia cardíaca|oncolog)/i, hooks: ["BOCA LIMPA SALVA VIDAS", "UTI EXIGE DENTISTA", "MENOS PNEUMONIA HOSPITALAR"] },
-  { match: /(crian|pediátr|odontopedi)/i, hooks: ["TRAUMA NA CRIANÇA? CORRA", "FREIO LINGUAL CURTO TEM SOLUÇÃO", "DENTE DE LEITE QUEBROU?"] },
+  {
+    match: /(siso|terceiro molar|exodontia)/i,
+    hooks: [
+      "SISO SEM DOR EXISTE",
+      "DOR NO SISO? RESOLVA HOJE",
+      "EXTRAIR O SISO EM 30 MIN",
+      "SISO INCLUSO: PARE DE SOFRER",
+      "ADEUS INCHAÇO PÓS-SISO",
+    ],
+  },
+  {
+    match: /(atm|disfun|dtm|articula.*temporomand)/i,
+    hooks: [
+      "ATM TRAVADA TEM SOLUÇÃO",
+      "PARE DE ESTALAR O MAXILAR",
+      "DTM ROUBA SEU SONO?",
+      "ABRA A BOCA SEM DOR",
+      "CHEGA DE DOR DE OUVIDO SEM CAUSA",
+    ],
+  },
+  {
+    match: /(bruxismo|aperto|range)/i,
+    hooks: [
+      "PARE DE DESTRUIR SEUS DENTES",
+      "BRUXISMO TEM TRATAMENTO",
+      "DURMA SEM RANGER",
+      "ACORDE SEM DOR NA FACE",
+    ],
+  },
+  {
+    match: /(ronco|apneia|sono|saos)/i,
+    hooks: [
+      "RONCO PODE MATAR",
+      "VOLTE A DORMIR DE VERDADE",
+      "APNEIA NÃO É FRESCURA",
+      "ENERGIA DE VOLTA EM 30 DIAS",
+    ],
+  },
+  {
+    match: /(c[âa]ncer|les[ãa]o|biopsia|leucopl|eritropl|maligno)/i,
+    hooks: [
+      "DIAGNÓSTICO PRECOCE SALVA",
+      "FERIDA QUE NÃO SARA: ALERTA",
+      "30 DIAS SEM SARAR? AVALIE",
+      "CÂNCER DE BOCA TEM CURA",
+    ],
+  },
+  {
+    match: /(fratura|trauma|acidente|maxilar quebrad|mandibula quebr)/i,
+    hooks: [
+      "TRAUMA NA FACE? AJA RÁPIDO",
+      "FRATURA DA FACE TEM SOLUÇÃO",
+      "RECUPERE SEU SORRISO",
+      "CIRURGIA QUE DEVOLVE A FACE",
+    ],
+  },
+  {
+    match: /(implant|reabilita|perda dent)/i,
+    hooks: [
+      "VOLTE A MORDER FORTE",
+      "DENTES FIXOS EM 1 DIA",
+      "ADEUS DENTADURA SOLTA",
+      "SORRIR SEM MEDO DE NOVO",
+    ],
+  },
+  {
+    match: /(ortognát|deformidade|classe iii|prognat|retrognat|mordida)/i,
+    hooks: [
+      "A CIRURGIA QUE MUDA A VIDA",
+      "MORDIDA CERTA, ROSTO HARMÔNICO",
+      "ORTOGNÁTICA DEVOLVE O SONO",
+      "RESPIRE, MASTIGUE, SORRIA",
+    ],
+  },
+  {
+    match: /(cisto|tumor odontog|ameloblast)/i,
+    hooks: [
+      "CISTO NA MANDÍBULA TEM CURA",
+      "REMOÇÃO SEGURA, OSSO PRESERVADO",
+      "INCHAÇO NO OSSO? AVALIE JÁ",
+    ],
+  },
+  {
+    match: /(infec|abscesso|pus|celulite facial|odontog[êe]nica)/i,
+    hooks: ["INFECÇÃO DENTÁRIA MATA", "INCHAÇO NO ROSTO? URGÊNCIA", "PUS NA GENGIVA NÃO ESPERA"],
+  },
+  {
+    match: /(sinus|seio maxilar|comunica.*buco)/i,
+    hooks: ["SINUSITE QUE NASCE DO DENTE", "AR PELO NARIZ AO BEBER?", "DENTE NO SEIO: TEM SOLUÇÃO"],
+  },
+  {
+    match: /(nervo|parestesia|mentual|alveolar inferior|lingual)/i,
+    hooks: ["LÁBIO DORMENTE TEM CONDUTA", "RECUPERE A SENSIBILIDADE", "NERVO LESADO: AGE NAS 72H"],
+  },
+  {
+    match: /(gengiv|periodont|sangra)/i,
+    hooks: ["GENGIVA QUE SANGRA AVISA", "PARE A PERDA ÓSSEA", "DENTE MOLE TEM TRATAMENTO"],
+  },
+  {
+    match: /(hospital|uti|paciente intern|pré.?operat|cirurgia cardíaca|oncolog)/i,
+    hooks: ["BOCA LIMPA SALVA VIDAS", "UTI EXIGE DENTISTA", "MENOS PNEUMONIA HOSPITALAR"],
+  },
+  {
+    match: /(crian|pediátr|odontopedi)/i,
+    hooks: [
+      "TRAUMA NA CRIANÇA? CORRA",
+      "FREIO LINGUAL CURTO TEM SOLUÇÃO",
+      "DENTE DE LEITE QUEBROU?",
+    ],
+  },
 ];
 
 function pickHookForTopic(tema: string): string {
@@ -262,7 +383,13 @@ function pickHookForTopic(tema: string): string {
     if (match.test(t)) return hooks[Math.floor(Math.random() * hooks.length)];
   }
   // genérico — sempre com ganho/solução, nunca só pergunta
-  const genericos = ["RESOLVA HOJE, NÃO AMANHÃ", "SUA BOCA MERECE CIÊNCIA", "TRATE A CAUSA, NÃO O SINTOMA", "DOR NÃO É NORMAL", "DIAGNÓSTICO CERTO MUDA TUDO"];
+  const genericos = [
+    "RESOLVA HOJE, NÃO AMANHÃ",
+    "SUA BOCA MERECE CIÊNCIA",
+    "TRATE A CAUSA, NÃO O SINTOMA",
+    "DOR NÃO É NORMAL",
+    "DIAGNÓSTICO CERTO MUDA TUDO",
+  ];
   return genericos[Math.floor(Math.random() * genericos.length)];
 }
 
@@ -274,11 +401,14 @@ function listHookExamplesForTopic(tema: string): string[] {
   for (const { match, hooks } of HOOK_BANK) {
     if (match.test(t)) return hooks.slice(0, 6);
   }
-  return ["RESOLVA HOJE, NÃO AMANHÃ", "TRATE A CAUSA, NÃO O SINTOMA", "DOR NÃO É NORMAL", "DIAGNÓSTICO CERTO MUDA TUDO", "SUA BOCA MERECE CIÊNCIA"];
+  return [
+    "RESOLVA HOJE, NÃO AMANHÃ",
+    "TRATE A CAUSA, NÃO O SINTOMA",
+    "DOR NÃO É NORMAL",
+    "DIAGNÓSTICO CERTO MUDA TUDO",
+    "SUA BOCA MERECE CIÊNCIA",
+  ];
 }
-
-
-
 
 // Garante que a 1ª frase da legenda responde diretamente ao gancho da imagem.
 // Caso "Mito ou verdade: X?" → começa com "VERDADE." (default seguro com
@@ -289,24 +419,29 @@ function enforceHookCoherence(legenda: string, hook: string, tema: string): stri
   if (!txt || !hook) return txt;
   const hookLower = hook.toLowerCase();
   const isMitoVerdade = /mito\s*ou\s*verdade|^mito\b|^verdade\b/i.test(hookLower);
-  const isPergunta = /\?/.test(hook) || /^(por que|sem |travado|cansado|come[cç]ando|sobrecarreg|n[ãa]o consegue|sem tempo|sem ideia|ainda n[ãa]o)/i.test(hook);
+  const isPergunta =
+    /\?/.test(hook) ||
+    /^(por que|sem |travado|cansado|come[cç]ando|sobrecarreg|n[ãa]o consegue|sem tempo|sem ideia|ainda n[ãa]o)/i.test(
+      hook,
+    );
   const first280 = txt.slice(0, 280).toLowerCase();
   const startsMV = /^\s*(mito|verdade)\s*\.?/i.test(txt);
   const out: string[] = [];
   if (isMitoVerdade && !startsMV) {
-    out.push(`VERDADE. ${tema.charAt(0).toUpperCase()}${tema.slice(1)} merece um olhar honesto: nem todo caso é igual, e o senso comum costuma simplificar demais.`);
+    out.push(
+      `VERDADE. ${tema.charAt(0).toUpperCase()}${tema.slice(1)} merece um olhar honesto: nem todo caso é igual, e o senso comum costuma simplificar demais.`,
+    );
   } else if (isPergunta) {
     const termo = (tema || "").split(/\s+/).slice(0, 3).join(" ").toLowerCase();
     if (termo && !first280.includes(termo)) {
-      out.push(`Resposta direta sobre ${tema}: a conduta certa depende do quadro clínico, e existe caminho seguro para resolver.`);
+      out.push(
+        `Resposta direta sobre ${tema}: a conduta certa depende do quadro clínico, e existe caminho seguro para resolver.`,
+      );
     }
   }
   out.push(txt);
   return out.join("\n\n");
 }
-
-
-
 
 // === TEMPLATES DE GANCHO (50 estruturas universais) ===
 // Frases com "___" no lugar do TEMA. A IA preenche o "___" com a expressão
@@ -395,15 +530,17 @@ function pickMetodologiaCopy(tema?: string) {
   return `\n\n=== METODOLOGIA DE CONEXÃO DESTE POST (use como esqueleto do texto, sem citar o nome do método) ===\nMétodo: ${m.nome}\nComo aplicar: ${m.guia}\nRegra: aplique o método de forma natural — NÃO escreva "AIDA", "PAS" etc. na legenda; apenas siga o ritmo descrito. Em posts seguidos NÃO repita a mesma abertura.\n\n=== HOOK PARA A IMAGEM (OBRIGATÓRIO) ===\nNa PRIMEIRA linha da sua resposta, ANTES de qualquer coisa, escreva exatamente:\nHOOK_IMAGEM: "<frase final, em MAIÚSCULAS, derivada de UM dos templates abaixo, com o "___" já preenchido pelo TEMA adaptado ao nicho>"${templatesLinha}${bancoLinha}\n\n=== REGRA SUPREMA DE COERÊNCIA (NÃO QUEBRE) ===\nA LEGENDA inteira deve responder/desenvolver EXATAMENTE a frase do HOOK_IMAGEM. Proibido trocar de assunto.\n- Se o gancho for PERGUNTA ("Por que...?", "Travado em...?", "Sem resultado em...?"): a 1ª frase da legenda RESPONDE diretamente a pergunta, citando o mesmo termo do gancho.\n- Se o gancho começar com "Mito ou verdade": a 1ª palavra da legenda DEVE ser "MITO." ou "VERDADE." (em caixa alta, com ponto), seguida da justificativa clínica em 1-2 frases. NUNCA ignore a pergunta.\n- Se o gancho for AFIRMAÇÃO ("A verdade sobre...", "O erro de...", "Testei ___ por 30 dias..."): a legenda revela essa verdade/erro/resultado de forma concreta nos 2 primeiros parágrafos.\nDepois siga com Por que acontece → Conduta → Ganho → Quando procurar (link na bio / WhatsApp).\n=== FIM DA METODOLOGIA ===\n`;
 }
 
-
 function extractHookImagem(txt: string): string {
   const m = (txt || "").match(/HOOK_IMAGEM\s*:\s*["“']?([^"”'\n]+)["”']?/i);
   if (!m) return "";
   return m[1].trim().toUpperCase().slice(0, 60);
 }
 
-
-function resolveNivel(nivel: NivelConteudo, rede: "instagram" | "linkedin" | "estilo-x" | "google", tipo?: "feed" | "stories"): Exclude<NivelConteudo, "auto"> {
+function resolveNivel(
+  nivel: NivelConteudo,
+  rede: "instagram" | "linkedin" | "estilo-x" | "google",
+  tipo?: "feed" | "stories",
+): Exclude<NivelConteudo, "auto"> {
   if (nivel !== "auto") return nivel;
   if (rede === "google") return "google-business";
   if (rede === "linkedin") return "linkedin-cientifico";
@@ -425,7 +562,11 @@ function tonePrompt(nivel: Exclude<NivelConteudo, "auto">) {
   return `TOM: autoridade hospitalar de alto nível, ciência traduzida para leigos, SEM bibliografia, SEM DOI, SEM citação de revista científica. Posicionamento de professor universitário/cirurgião referência falando em linguagem clara para o público geral. Apresente o mecanismo do problema com analogias simples. Desperte confiança e busca espontânea por informação.`;
 }
 
-function captionSystem(rede: "instagram" | "linkedin" | "estilo-x" | "google", especialidade: string, nivel: Exclude<NivelConteudo, "auto">) {
+function captionSystem(
+  rede: "instagram" | "linkedin" | "estilo-x" | "google",
+  especialidade: string,
+  nivel: Exclude<NivelConteudo, "auto">,
+) {
   const isLI = nivel === "linkedin-cientifico";
   const isGoogle = nivel === "google-business";
 
@@ -492,13 +633,14 @@ ${CTAS_PROIBIDOS}
 ${LOCALIZACAO_OBRIGATORIA}
 
 FORMATO DA LEGENDA:
-${isLI
-  ? `- LinkedIn: 1200-1800 caracteres (densidade científica real), parágrafos de no máximo 3 linhas, no máximo 1 emoji sóbrio (ou nenhum). Bloco "Referências:" obrigatório com DOI. Sem linguagem leiga, sem analogias infantis, sem chamadas de Instagram.`
-  : `- Instagram: 400-700 caracteres (NUNCA ultrapasse 800), gancho na 1ª linha, 2-4 emojis estratégicos, parágrafos de 1-2 linhas, 4-6 hashtags ao final. CTA indireto na última linha.`}
+${
+  isLI
+    ? `- LinkedIn: 1200-1800 caracteres (densidade científica real), parágrafos de no máximo 3 linhas, no máximo 1 emoji sóbrio (ou nenhum). Bloco "Referências:" obrigatório com DOI. Sem linguagem leiga, sem analogias infantis, sem chamadas de Instagram.`
+    : `- Instagram: 400-700 caracteres (NUNCA ultrapasse 800), gancho na 1ª linha, 2-4 emojis estratégicos, parágrafos de 1-2 linhas, 4-6 hashtags ao final. CTA indireto na última linha.`
+}
 NÃO inclua a assinatura no corpo do texto — ela aparece como overlay na imagem.
 ${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
 }
-
 
 function themeLock(tema: string) {
   return `\n\n=== TRAVA DE TEMA (REGRA SUPREMA — VIOLAÇÃO = REJEIÇÃO) ===
@@ -511,8 +653,19 @@ function themeLock(tema: string) {
 === FIM DA TRAVA DE TEMA ===\n`;
 }
 
-function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConteudo, "auto">, slide?: { n: number; total: number; papel: string }, especialidade?: string) {
-  if (especialidade === "Temas Diversos") return diverseImagePrompt(tema, rede, { slide, isStory: !slide && nivel === "ig-conversao" && rede === "instagram", brand: "generico" });
+function imageSystemPrompt(
+  tema: string,
+  rede: string,
+  nivel: Exclude<NivelConteudo, "auto">,
+  slide?: { n: number; total: number; papel: string },
+  especialidade?: string,
+) {
+  if (especialidade === "Temas Diversos")
+    return diverseImagePrompt(tema, rede, {
+      slide,
+      isStory: !slide && nivel === "ig-conversao" && rede === "instagram",
+      brand: "generico",
+    });
 
   // === FORMATO ESTILO X (TWEET REAL) — short-circuit ===
   // A imagem PRECISA parecer um print autêntico de um post publicado no X (antigo Twitter),
@@ -521,7 +674,9 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
     const slideTweetInfo = slide
       ? `\n- ESTE É O CARD ${slide.n}/${slide.total} de uma THREAD. Papel: ${slide.papel}. Mantenha a MESMA identidade visual (avatar, handle, paleta) em todos os cards.`
       : "";
-    return themeLock(tema) + `MOCKUP DE TWEET ULTRA REALISTA — print autêntico de um post publicado no X (antigo Twitter), tema "${tema}".
+    return (
+      themeLock(tema) +
+      `MOCKUP DE TWEET ULTRA REALISTA — print autêntico de um post publicado no X (antigo Twitter), tema "${tema}".
 - FORMATO horizontal 16:9 (1536x1024). Composição centralizada: card de tweet ocupando ~70% da largura, sobre fundo neutro suave (cinza claro #f7f9fa OU preto #000000 modo escuro do X — escolha 1 e mantenha consistência).
 - ANATOMIA EXATA DE UM TWEET PUBLICADO no X (não inventar layout):
   1) Cabeçalho: avatar circular à esquerda (foto profissional sóbria de um cirurgião — jaleco branco / luvas, SEM rosto reconhecível de pessoa real); ao lado, em uma linha: nome em bold "Prof. Francisco Menezes" + selo de verificado azul X (checkmark branco em badge azul #1d9bf0) + nova linha com handle cinza "@franciscomenezes_bmf · 2h".
@@ -531,9 +686,9 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - PALETA: usar EXATAMENTE as cores do X — fundo branco #ffffff + texto #0f1419 + cinza #536471 + accent azul #1d9bf0. (Variante dark: fundo #000000 + texto #e7e9ea + cinza #71767b.) NADA de navy #14366b ou ciano #2dd4ff aqui — essa paleta é só para os outros formatos.
 - PROIBIDO: cena médica de fundo, ilustração anatômica, headline tipo cartaz, faixa de assinatura, logos inventados, "PC"/"FM"/"Planner", marca d'água, watermark de IA, texto em inglês, palavras duplicadas, ortografia errada, layout que não exista no X real.
 - O conteúdo do tweet pode (opcionalmente) terminar com a frase natural "Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana." — sem CTAs comerciais.${slideTweetInfo}
-- Variação (seed ${Math.random().toString(36).slice(2, 10)}): variar avatar, contadores e fundo claro/escuro.`;
+- Variação (seed ${Math.random().toString(36).slice(2, 10)}): variar avatar, contadores e fundo claro/escuro.`
+    );
   }
-
 
   const isUltimoSlide = !!slide && slide.n === slide.total;
   const isInstagram = rede === "instagram";
@@ -542,9 +697,10 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
   const slideInfo = slide
     ? `\n- ESTE É O SLIDE ${slide.n}/${slide.total} de um CARROSSEL. Papel deste slide: ${slide.papel}.${isUltimoSlide ? " SLIDE DE FECHAMENTO — caprichar ao máximo: hierarquia limpa, CTA elegante, espaço negativo generoso." : ""}`
     : "";
-  const ctaForteInfo = (isUltimoSlide && rede !== "linkedin") || isPostUnicoComCTA
-    ? `\n- CTA FORTE OBRIGATÓRIO: incluir o ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat, NÃO inventar variações) no canto inferior direito + texto curto "LINK NA BIO" em tipografia bold grande. Pode incluir "+55 11 94768-4004" em corpo menor ao lado do ícone. Hierarquia limpa, sem poluir a composição.`
-    : "";
+  const ctaForteInfo =
+    (isUltimoSlide && rede !== "linkedin") || isPostUnicoComCTA
+      ? `\n- CTA FORTE OBRIGATÓRIO: incluir o ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat, NÃO inventar variações) no canto inferior direito + texto curto "LINK NA BIO" em tipografia bold grande. Pode incluir "+55 11 94768-4004" em corpo menor ao lado do ícone. Hierarquia limpa, sem poluir a composição.`
+      : "";
   const assinaturaInfo = isInstagram
     ? `\n- Não crie faixa, canto limpo, rodapé vazio ou qualquer espaço reservado para assinatura/logo. Se houver assinatura textual, ela deve entrar de forma discreta sobre a composição normal, sem bloco de fundo e sem placeholder.`
     : `\n- RODAPÉ OBRIGATÓRIO em 2 linhas pequenas, centralizado, tipografia bold sans-serif branca sobre faixa azul petróleo (#0c2340): "${ASSINATURA}" / "${ASSINATURA_SUBTITULO}".`;
@@ -559,15 +715,16 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
     : "";
 
   // === Dimensões EXATAS por rede/formato ===
-  const dimensoes = rede === "estilo-x"
-    ? "FORMATO horizontal 16:9 (1536x1024) — estilo tweet visual."
-    : rede === "google"
-      ? "FORMATO horizontal 4:3 (1536x1024) — cartaz Google Meu Negócio, SEO local."
-      : rede === "linkedin"
-        ? "FORMATO horizontal 1.91:1 (1536x1024) — capa de artigo científico premium tipo The Lancet/JOMS."
-        : isStory
-          ? "FORMATO vertical 9:16 (1024x1536) — Instagram Stories, tela cheia mobile."
-          : "FORMATO vertical 4:5 (1024x1536) — Instagram Feed/Carrossel, mobile-first.";
+  const dimensoes =
+    rede === "estilo-x"
+      ? "FORMATO horizontal 16:9 (1536x1024) — estilo tweet visual."
+      : rede === "google"
+        ? "FORMATO horizontal 4:3 (1536x1024) — cartaz Google Meu Negócio, SEO local."
+        : rede === "linkedin"
+          ? "FORMATO horizontal 1.91:1 (1536x1024) — capa de artigo científico premium tipo The Lancet/JOMS."
+          : isStory
+            ? "FORMATO vertical 9:16 (1024x1536) — Instagram Stories, tela cheia mobile."
+            : "FORMATO vertical 4:5 (1024x1536) — Instagram Feed/Carrossel, mobile-first.";
 
   // === Estilo visual: prioriza FOTOGRAFIA REALISTA premium. Quadrinho/colagem/infográfico foram REMOVIDOS por produzirem resultados ruins. ===
   const estilosPossiveis = [
@@ -578,11 +735,14 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
   ];
   const estiloEscolhido = estilosPossiveis[Math.floor(Math.random() * estilosPossiveis.length)];
 
-  const refEditorial = nivel === "linkedin-cientifico"
-    ? "Referência visual: capa The Lancet / NEJM / JOMS."
-    : "Referência visual: Mayo Clinic, Cleveland Clinic, Harvard Health — fotografia médica premium.";
+  const refEditorial =
+    nivel === "linkedin-cientifico"
+      ? "Referência visual: capa The Lancet / NEJM / JOMS."
+      : "Referência visual: Mayo Clinic, Cleveland Clinic, Harvard Health — fotografia médica premium.";
 
-  return themeLock(tema) + `IMAGEM MÉDICA ULTRA PREMIUM — autoridade hospitalar em CTBMF + Odontologia Hospitalar.
+  return (
+    themeLock(tema) +
+    `IMAGEM MÉDICA ULTRA PREMIUM — autoridade hospitalar em CTBMF + Odontologia Hospitalar.
 - ${refEditorial} ZERO cara de anúncio, banco de imagens, estoque, clipart ou "IA óbvia".
 - ${dimensoes}
 - ESTILO OBRIGATÓRIO: ${estiloEscolhido}.
@@ -592,16 +752,16 @@ function imageSystemPrompt(tema: string, rede: string, nivel: Exclude<NivelConte
 - PALETA OBRIGATÓRIA (fundo dominante AZUL NAVY LUMINOSO #14366b — tom vibrante, NÃO escuro/preto — em toda a imagem): NAVY LUMINOSO #14366b = fundo principal com leve gradiente para AZUL CIANO #2dd4ff nos cantos (atmosfera arejada, "daylight"); CIANO #2dd4ff = highlights, linhas, headline; BRANCO = pele/instrumental/texto; VERMELHO #E11D2E só em ponto de dor. Proibido fundo branco, fundo preto, navy chapado escuro tipo meia-noite, roxo, verde, laranja, amarelo, rosa, magenta, filtros saturados.
 - Iluminação CLARA, ARTICULADA e LUMINOSA tipo capa de revista médica premium (key light suave + rim light ciano), nada de cena noturna ou low-key pesado. Profundidade real, qualidade 8K, hierarquia limpa, muito espaço negativo navy luminoso.${assinaturaInfo}${ctaForteInfo}${semMarca}${semInvencao}${semDiagnostico}${semBibliografia}${slideInfo}
 - PROIBIDO: rostos reconhecíveis de pessoas reais, watermark de IA, dentes hiper-saturados, sorrisos clichês de banco de imagens, mãos deformadas, dedos a mais, anatomia impossível, texto em inglês, palavras duplicadas, cores fora da paleta, chamadas comerciais.
-- Variação única (seed ${Math.random().toString(36).slice(2, 10)}): composição, ângulo e enquadramento inéditos.`;
-
+- Variação única (seed ${Math.random().toString(36).slice(2, 10)}): composição, ângulo e enquadramento inéditos.`
+  );
 }
 
 // === PLANNER SIMPLIFICADO — AUDIÊNCIA: ESTUDANTES DE GRADUAÇÃO EM ODONTOLOGIA ===
 // Tom didático e simples sobre cirurgia bucal básica; inclui enquetes, curiosidades,
 // dicas de técnica e mitos x verdades. Sem CTA comercial. Cores das logos da
-  // Liga (grafite + âmbar), SEM fundo branco. A logo escolhida no dashboard é
-  // aplicada como overlay real pelo pipeline — a IA NÃO desenha logos e NÃO
-  // cria espaço reservado/placeholder para elas.
+// Liga (grafite + âmbar), SEM fundo branco. A logo escolhida no dashboard é
+// aplicada como overlay real pelo pipeline — a IA NÃO desenha logos e NÃO
+// cria espaço reservado/placeholder para elas.
 function studentCaptionSystem() {
   return `Você é professor universitário de Cirurgia Bucomaxilofacial escrevendo para ALUNOS DE GRADUAÇÃO em Odontologia.
 TOM: didático, claro, simples, instrutivo, próximo do aluno. Como se fosse um post de monitoria.
@@ -624,29 +784,38 @@ ${CONTEUDO_COMPLETO}${pickMetodologiaCopy()}`;
 function diverseImagePrompt(
   tema: string,
   rede: string,
-  opts?: { slide?: { n: number; total: number; papel: string }; isStory?: boolean; brand?: "chico" | "student" | "generico" },
+  opts?: {
+    slide?: { n: number; total: number; papel: string };
+    isStory?: boolean;
+    brand?: "chico" | "student" | "generico";
+  },
 ) {
   const slide = opts?.slide;
   const isStory = !!opts?.isStory;
   const brand = opts?.brand ?? "generico";
-  const dimensoes = rede === "estilo-x"
-    ? "FORMATO horizontal 16:9 (1536x1024)."
-    : rede === "google"
-      ? "FORMATO horizontal 4:3 (1536x1024)."
-      : rede === "linkedin"
-        ? "FORMATO horizontal 1.91:1 (1536x1024)."
-        : isStory
-          ? "FORMATO vertical 9:16 (1024x1536)."
-          : "FORMATO vertical 4:5 (1024x1536).";
-  const slideInfo = slide ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel. Papel: ${slide.papel}.` : "";
-  const brandPalette = brand === "student"
-    ? `PALETA: fundo grafite #2D2C32 dominante, texto branco #FBFBFB, destaque âmbar #DD8E3C. Sem outras cores fortes.`
-    : `PALETA: fundo azul marinho #0c2340 dominante (leve gradiente para ciano #2dd4ff nos cantos), texto branco puro, destaques em ciano #2dd4ff. Sem outras cores fortes.`;
-  const logoReserva = brand === "student"
-    ? `\n- LOGO: NÃO desenhe nenhum logo/marca/monograma e NÃO reserve faixa, canto, bloco vazio, moldura ou placeholder. O sistema aplica apenas a logo real por cima, sem fundo.`
-    : brand === "chico"
-      ? `\n- LOGO: NÃO desenhe nenhum logo e NÃO reserve canto, bloco vazio, moldura ou placeholder. O sistema aplica apenas a logo real por cima, sem fundo.`
-      : "";
+  const dimensoes =
+    rede === "estilo-x"
+      ? "FORMATO horizontal 16:9 (1536x1024)."
+      : rede === "google"
+        ? "FORMATO horizontal 4:3 (1536x1024)."
+        : rede === "linkedin"
+          ? "FORMATO horizontal 1.91:1 (1536x1024)."
+          : isStory
+            ? "FORMATO vertical 9:16 (1024x1536)."
+            : "FORMATO vertical 4:5 (1024x1536).";
+  const slideInfo = slide
+    ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel. Papel: ${slide.papel}.`
+    : "";
+  const brandPalette =
+    brand === "student"
+      ? `PALETA: fundo grafite #2D2C32 dominante, texto branco #FBFBFB, destaque âmbar #DD8E3C. Sem outras cores fortes.`
+      : `PALETA: fundo azul marinho #0c2340 dominante (leve gradiente para ciano #2dd4ff nos cantos), texto branco puro, destaques em ciano #2dd4ff. Sem outras cores fortes.`;
+  const logoReserva =
+    brand === "student"
+      ? `\n- LOGO: NÃO desenhe nenhum logo/marca/monograma e NÃO reserve faixa, canto, bloco vazio, moldura ou placeholder. O sistema aplica apenas a logo real por cima, sem fundo.`
+      : brand === "chico"
+        ? `\n- LOGO: NÃO desenhe nenhum logo e NÃO reserve canto, bloco vazio, moldura ou placeholder. O sistema aplica apenas a logo real por cima, sem fundo.`
+        : "";
   return `IMAGEM EDITORIAL PREMIUM sobre o tema "${tema}" — pode estar TOTALMENTE FORA da área médica/odontológica (data comemorativa, evento, curiosidade, hobby, cotidiano, cultura, esporte, natureza, tecnologia, comida, música, etc.).
 - ${dimensoes}
 - REPRESENTE LITERALMENTE o tema "${tema}" com uma cena/objeto/símbolo reconhecível (ex.: Dia da Mulher → símbolos femininos elegantes; café → xícara em macro premium; caminhada → tênis em parque; leitura → livro aberto com luz suave; gratidão → mão escrevendo carta; Natal → detalhe minimalista natalino; aniversário da cidade → skyline estilizado).
@@ -658,9 +827,16 @@ function diverseImagePrompt(
 - Variação (seed ${Math.random().toString(36).slice(2, 10)}): ângulo e composição inéditos.`;
 }
 
-function studentImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }, especialidade?: string) {
-  if (especialidade === "Temas Diversos") return diverseImagePrompt(tema, "instagram", { slide, brand: "student" });
-  const slideInfo = slide ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel didático. Papel: ${slide.papel}.` : "";
+function studentImagePrompt(
+  tema: string,
+  slide?: { n: number; total: number; papel: string },
+  especialidade?: string,
+) {
+  if (especialidade === "Temas Diversos")
+    return diverseImagePrompt(tema, "instagram", { slide, brand: "student" });
+  const slideInfo = slide
+    ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel didático. Papel: ${slide.papel}.`
+    : "";
   const isStory = /story|stories/i.test(slide?.papel ?? "");
   const formato = isStory
     ? "FORMATO vertical 9:16 (1024x1820) — Instagram Stories, mobile fullscreen."
@@ -672,7 +848,9 @@ function studentImagePrompt(tema: string, slide?: { n: number; total: number; pa
     "MACROFOTOGRAFIA CIRÚRGICA estilo National Geographic médico: close extremo de campo operatório real (sutura em mucosa, exodontia, biópsia, frenectomia), tecidos com cor e textura fiéis, iluminação dramática vinda de cima.",
   ];
   const conceito = conceitosCriativos[Math.floor(Math.random() * conceitosCriativos.length)];
-  return themeLock(tema) + `IMAGEM EDUCACIONAL CIENTÍFICA para Liga Acadêmica de CTBMF — @lactbmf.anhanguerasbo (graduação em Odontologia).
+  return (
+    themeLock(tema) +
+    `IMAGEM EDUCACIONAL CIENTÍFICA para Liga Acadêmica de CTBMF — @lactbmf.anhanguerasbo (graduação em Odontologia).
 - CONCEITO DESTA GERAÇÃO: ${conceito}
 - ${formato}
 - REALISMO ANATÔMICO OBRIGATÓRIO: todas as estruturas (dentes, ossos, nervos, mucosas, instrumentos) devem ser anatomicamente corretas e cientificamente verificáveis. PROIBIDO inventar estruturas, fantasiar anatomia, criar instrumentos inexistentes ou estilizar de forma infantil/cartoon.
@@ -684,9 +862,9 @@ function studentImagePrompt(tema: string, slide?: { n: number; total: number; pa
 - LOGO: NÃO desenhe, redesenhe, parafraseie ou invente logos, marcas, escudos, brasões, monogramas ou siglas. NÃO reserve faixa inferior, canto limpo, bloco vazio, moldura, quadrado ou placeholder. A arte deve ocupar a composição normalmente; a logo REAL da LACTBMF será sobreposta pelo sistema, sem fundo.
 - Iluminação editorial premium, hierarquia limpa, espaço negativo generoso na cor de fundo, sem ruído visual.
 - PROIBIDO: rostos reconhecíveis de pessoas reais, watermark de IA, anatomia errada, mãos com dedos a mais, texto em inglês, palavras inventadas, palavras duplicadas, letras embaralhadas, caracteres tipográficos estranhos, glifos decorativos no meio de palavras, CTA comercial ("agende", "promoção", "desconto"), WhatsApp, visual de banco de imagens, clipart, flat design infantil, gradientes arco-íris, paleta fora do especificado.${slideInfo}
-- Variação obrigatória (seed ${Math.random().toString(36).slice(2, 10)}): ângulo, enquadramento e composição inéditos em relação aos posts anteriores.`;
+- Variação obrigatória (seed ${Math.random().toString(36).slice(2, 10)}): ângulo, enquadramento e composição inéditos em relação aos posts anteriores.`
+  );
 }
-
 
 // =============================================================================
 // PLANNER CHICO — conta @drfranciscomenezes
@@ -820,7 +998,7 @@ TOM: jovem, acessível, próximo do estudante; técnico o bastante para ser rele
 Você é monitor sênior de Cirurgia Bucal escrevendo para estudantes de graduação em Odontologia (Liga de CTBMF). PT-BR Brasil impecável, ZERO inglês, sem repetições, sem palavras inventadas. Linguagem clínica correta com terminologia anatômica oficial (TA2/SBA). PROIBIDO copy comercial, diagnóstico afirmativo, "agende", "promoção".
 
 === TRAVA DE TEMA (REGRA SUPREMA) ===
-A legenda TODA fala EXCLUSIVAMENTE sobre "${tema || 'o tema informado'}". PROIBIDO mudar de assunto, misturar patologias, citar procedimentos alheios ao tema ou "encher linguiça" com temas genéricos de odontologia. Todos os slides do carrossel (se houver) tratam do MESMO tema em ângulos diferentes.
+A legenda TODA fala EXCLUSIVAMENTE sobre "${tema || "o tema informado"}". PROIBIDO mudar de assunto, misturar patologias, citar procedimentos alheios ao tema ou "encher linguiça" com temas genéricos de odontologia. Todos os slides do carrossel (se houver) tratam do MESMO tema em ângulos diferentes.
 === FIM DA TRAVA ===
 
 === LOCALIZAÇÃO / INSTITUIÇÃO — REGRA ABSOLUTA ===
@@ -831,8 +1009,14 @@ Quando fizer sentido citar onde o cuidado é oferecido, escreva SEMPRE e SOMENTE
 Encerre com 5-10 hashtags acadêmicas incluindo #Bucomaxilo #CirurgiaBucomaxilofacial #TraumatologiaFacial #LigaAcademica #EstudantesDeOdonto #ClinicaEscola #LACTBMF. Formato: ${formato}.${CONTEUDO_COMPLETO}${pickMetodologiaCopy(tema)}`;
 }
 
-function chicoImagePrompt(tema: string, slide?: { n: number; total: number; papel: string }, isStory = false, especialidade?: string) {
-  if (especialidade === "Temas Diversos") return diverseImagePrompt(tema, "instagram", { slide, isStory, brand: "chico" });
+function chicoImagePrompt(
+  tema: string,
+  slide?: { n: number; total: number; papel: string },
+  isStory = false,
+  especialidade?: string,
+) {
+  if (especialidade === "Temas Diversos")
+    return diverseImagePrompt(tema, "instagram", { slide, isStory, brand: "chico" });
   const isUltimo = !!slide && slide.n === slide.total;
   const formato = slide
     ? `FORMATO vertical 4:5 (1024x1280) — Instagram Feed/Carrossel.`
@@ -842,10 +1026,13 @@ function chicoImagePrompt(tema: string, slide?: { n: number; total: number; pape
   const slideInfo = slide
     ? `\n- SLIDE ${slide.n}/${slide.total} de carrossel. Papel: ${slide.papel}.${isUltimo ? " SLIDE DE FECHAMENTO: capricho máximo, hierarquia limpa." : ""}`
     : "";
-  const ctaForte = (isUltimo || !slide)
-    ? `\n- CTA OBRIGATÓRIO no rodapé: tipografia bold em ${CHICO_CIANO} "LINK NA BIO" + ícone oficial do WHATSAPP (balão verde #25D366 com fone branco, flat oficial) discreto. Sem números de telefone, sem URLs longas.`
-    : "";
-  return themeLock(tema) + `IMAGEM PREMIUM para o Instagram @drfranciscomenezes — Cirurgião Bucomaxilofacial.
+  const ctaForte =
+    isUltimo || !slide
+      ? `\n- CTA OBRIGATÓRIO no rodapé: tipografia bold em ${CHICO_CIANO} "LINK NA BIO" + ícone oficial do WHATSAPP (balão verde #25D366 com fone branco, flat oficial) discreto. Sem números de telefone, sem URLs longas.`
+      : "";
+  return (
+    themeLock(tema) +
+    `IMAGEM PREMIUM para o Instagram @drfranciscomenezes — Cirurgião Bucomaxilofacial.
 - ${formato}
 - TEMA LITERAL "${tema}": represente a cena/sintoma de forma reconhecível (siso → região posterior; ATM → mão pré-auricular; trauma → cena clínica plausível; patologia → close de mucosa saudável; ortognática → perfil facial elegante).
 - REALISMO CLÍNICO OBRIGATÓRIO (não-negociável): a imagem deve REPRESENTAR A REALIDADE CLÍNICA do tema. Priorize um destes registros verossímeis (escolha o mais adequado ao tema, varie entre posts para evitar repetição visual):
@@ -869,9 +1056,9 @@ function chicoImagePrompt(tema: string, slide?: { n: number; total: number; pape
 - TEXTO NA IMAGEM — REGRA: o ÚNICO texto permitido é o HEADLINE-GANCHO de 3-6 palavras definido no bloco "TEXTO OBRIGATÓRIO NA IMAGEM" do NEXO acima (capa do carrossel ou imagem única). Renderize-o como tipografia bold sans-serif condensada gigante, BRANCO ou CIANO ${CHICO_CIANO} sobre o navy, centralizado, com acentuação PT-BR perfeita. NENHUM outro texto, número, sigla, parágrafo, lista, watermark, rótulo, marca, telefone ou URL pode aparecer em qualquer lugar da imagem (jaleco, crachá, placa, tela, radiografia, instrumento). Se a cena naturalmente teria texto secundário (tela, livro, radiografia), substitua por formas abstratas/borrão. Em slides intermediários do carrossel (não-capa, não-último) NÃO escreva nenhum texto — só ilustração.
 - PROIBIDO: imagens de procedimentos invasivos, sangue, bisturi cortando, anatomia interna exposta de forma agressiva, watermark de IA, mãos deformadas, dedos a mais, texto em inglês, palavras inventadas, palavras duplicadas, hashtags na imagem, números de telefone, URLs, CTAs comerciais ("agende", "promoção", "desconto"). NÃO MISTURAR ASSUNTOS: a imagem inteira (e todos os slides do carrossel) tratam APENAS do tema "${tema}" — nunca introduzir outra patologia, instrumento ou cena de outro tema.
 - Iluminação editorial premium estilo capa de revista de saúde sofisticada (Harvard Health / Mayo Clinic), atmosfera arejada e luminosa, qualidade 8K.
-- Variação única (seed ${Math.random().toString(36).slice(2, 10)}): ângulo e composição inéditos.`;
+- Variação única (seed ${Math.random().toString(36).slice(2, 10)}): ângulo e composição inéditos.`
+  );
 }
-
 
 const TEMAS_GERAIS = [
   "Por que o siso incluso pode causar dor que irradia para o ouvido",
@@ -958,10 +1145,6 @@ const TEMAS_GERAIS = [
   "Reabsorção condilar idiopática: quando a mordida muda sozinha",
 ];
 
-
-
-
-
 // TEMAS DIVERSOS — assuntos leves do dia a dia, curiosidades de saúde bucal,
 // hábitos, prevenção, bem-estar, alimentação, sono, autocuidado — sem foco
 // exclusivo em CTBMF. Usados quando o usuário escolhe "Temas Diversos".
@@ -1033,15 +1216,31 @@ const TEMAS_ESTUDANTES = [
 ];
 
 function normalizeTema(s: string) {
-  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function chooseLocalTema(audiencia: z.infer<typeof SingleInput>["audiencia"], usados: string[], seedText: string, especialidade?: string) {
-  const list = especialidade === "Temas Diversos"
-    ? TEMAS_DIVERSOS
-    : audiencia === "estudantes-graduacao" ? TEMAS_ESTUDANTES : TEMAS_GERAIS;
+function chooseLocalTema(
+  audiencia: z.infer<typeof SingleInput>["audiencia"],
+  usados: string[],
+  seedText: string,
+  especialidade?: string,
+) {
+  const list =
+    especialidade === "Temas Diversos"
+      ? TEMAS_DIVERSOS
+      : audiencia === "estudantes-graduacao"
+        ? TEMAS_ESTUDANTES
+        : TEMAS_GERAIS;
   const usadosNorm = new Set(usados.map(normalizeTema));
-  const start = Math.abs(seedText.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), Date.now())) % list.length;
+  const start =
+    Math.abs(seedText.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), Date.now())) %
+    list.length;
   for (let i = 0; i < list.length; i++) {
     const tema = list[(start + i) % list.length];
     if (!usadosNorm.has(normalizeTema(tema))) return tema;
@@ -1054,117 +1253,159 @@ function topicGuidance(tema: string): TopicGuidance {
   if (/anestesia|anestesica|bloqueio|agulha|carpule|alveolar inferior/.test(t)) {
     return {
       oQue: "a técnica anestésica precisa atingir o nervo correto para permitir uma cirurgia bucal confortável e segura",
-      porQue: "mandíbula, maxila e mucosas têm inervações diferentes; escolher o bloqueio errado reduz a anestesia e aumenta desconforto",
-      conduta: "a conduta é revisar anatomia, localizar referências intraorais, aspirar antes de depositar o anestésico e escolher a técnica compatível com o dente e o procedimento",
-      alerta: "parestesia, dor intensa, falha repetida de anestesia ou sangramento inesperado exigem revisão técnica e supervisão",
+      porQue:
+        "mandíbula, maxila e mucosas têm inervações diferentes; escolher o bloqueio errado reduz a anestesia e aumenta desconforto",
+      conduta:
+        "a conduta é revisar anatomia, localizar referências intraorais, aspirar antes de depositar o anestésico e escolher a técnica compatível com o dente e o procedimento",
+      alerta:
+        "parestesia, dor intensa, falha repetida de anestesia ou sangramento inesperado exigem revisão técnica e supervisão",
       ganho: "executar o procedimento com previsibilidade, conforto e menor risco anatômico",
     };
   }
   if (/sutura|porta agulhas|fio|ponto|ferida cirurgica|mucosa oral/.test(t)) {
     return {
       oQue: "a sutura aproxima as bordas da mucosa e ajuda a estabilizar o coágulo no pós-operatório",
-      porQue: "tensão, nó mal posicionado ou escolha inadequada do fio podem atrasar cicatrização e aumentar desconforto",
-      conduta: "a conduta é fazer pontos com bordas bem aproximadas, sem estrangular o tecido, usando porta-agulhas adequado, nó estável e orientação de higiene",
-      alerta: "deiscência, sangramento persistente, secreção, dor crescente ou ponto soltando cedo merecem avaliação",
-      ganho: "melhorar cicatrização, proteger o coágulo e reduzir intercorrências no pós-operatório",
+      porQue:
+        "tensão, nó mal posicionado ou escolha inadequada do fio podem atrasar cicatrização e aumentar desconforto",
+      conduta:
+        "a conduta é fazer pontos com bordas bem aproximadas, sem estrangular o tecido, usando porta-agulhas adequado, nó estável e orientação de higiene",
+      alerta:
+        "deiscência, sangramento persistente, secreção, dor crescente ou ponto soltando cedo merecem avaliação",
+      ganho:
+        "melhorar cicatrização, proteger o coágulo e reduzir intercorrências no pós-operatório",
     };
   }
   if (/antibiotico|antibiótico|medicacao|profilaxia/.test(t)) {
     return {
       oQue: "antibiótico não é obrigatório em toda cirurgia bucal e deve ter indicação clínica clara",
-      porQue: "uso desnecessário aumenta resistência bacteriana e efeitos adversos, enquanto infecção ativa ou risco sistêmico exigem avaliação cuidadosa",
-      conduta: "a conduta é avaliar história médica, sinais de infecção, extensão cirúrgica e risco do paciente antes de indicar ou não antibioticoterapia",
-      alerta: "febre, aumento progressivo de edema, secreção, trismo, mal-estar ou comprometimento sistêmico precisam de avaliação",
-      ganho: "usar medicação com segurança, evitando tanto excesso quanto falta de tratamento quando há indicação",
+      porQue:
+        "uso desnecessário aumenta resistência bacteriana e efeitos adversos, enquanto infecção ativa ou risco sistêmico exigem avaliação cuidadosa",
+      conduta:
+        "a conduta é avaliar história médica, sinais de infecção, extensão cirúrgica e risco do paciente antes de indicar ou não antibioticoterapia",
+      alerta:
+        "febre, aumento progressivo de edema, secreção, trismo, mal-estar ou comprometimento sistêmico precisam de avaliação",
+      ganho:
+        "usar medicação com segurança, evitando tanto excesso quanto falta de tratamento quando há indicação",
     };
   }
   if (/alveoloplastia|regularizacao ossea|regularização óssea|rebordo|lima|cinzel/.test(t)) {
     return {
       oQue: "a alveoloplastia regulariza o rebordo ósseo após extrações quando há espículas, irregularidades ou necessidade protética",
-      porQue: "bordas ósseas traumáticas podem machucar a mucosa, atrapalhar cicatrização e dificultar prótese ou reabilitação",
-      conduta: "a conduta envolve avaliação do rebordo, regularização conservadora com instrumental adequado, irrigação, sutura sem tensão e orientação pós-operatória",
-      alerta: "dor localizada, ferida que machuca, espícula exposta, prótese ferindo ou cicatrização ruim pedem avaliação",
-      ganho: "deixar o rebordo mais confortável, cicatrização mais previsível e preparo melhor para reabilitação",
+      porQue:
+        "bordas ósseas traumáticas podem machucar a mucosa, atrapalhar cicatrização e dificultar prótese ou reabilitação",
+      conduta:
+        "a conduta envolve avaliação do rebordo, regularização conservadora com instrumental adequado, irrigação, sutura sem tensão e orientação pós-operatória",
+      alerta:
+        "dor localizada, ferida que machuca, espícula exposta, prótese ferindo ou cicatrização ruim pedem avaliação",
+      ganho:
+        "deixar o rebordo mais confortável, cicatrização mais previsível e preparo melhor para reabilitação",
     };
   }
   if (/forceps|fórceps|extracao|extração|exodontia|molar inferior|dente no alveolo/.test(t)) {
     return {
       oQue: "a exodontia é a remoção planejada de um dente quando ele não pode ser mantido com segurança ou quando há indicação cirúrgica",
-      porQue: "raiz, osso, posição do dente e proximidade com nervos influenciam força, movimento e risco do procedimento",
-      conduta: "a conduta é planejar por exame e imagem, fazer luxação controlada, usar fórceps ou alavancas compatíveis, preservar tecidos e orientar pós-operatório",
-      alerta: "dor intensa, sangramento persistente, edema progressivo, febre, mau gosto ou dormência precisam de avaliação",
+      porQue:
+        "raiz, osso, posição do dente e proximidade com nervos influenciam força, movimento e risco do procedimento",
+      conduta:
+        "a conduta é planejar por exame e imagem, fazer luxação controlada, usar fórceps ou alavancas compatíveis, preservar tecidos e orientar pós-operatório",
+      alerta:
+        "dor intensa, sangramento persistente, edema progressivo, febre, mau gosto ou dormência precisam de avaliação",
       ganho: "remover a causa do problema com menor trauma e recuperação mais previsível",
     };
   }
   if (/forame mentual|nervo mentual|canal mandibular/.test(t)) {
     return {
       oQue: "o forame mentual é a saída do nervo mentual, estrutura importante na região de pré-molares inferiores",
-      porQue: "procedimentos próximos ao forame podem irritar ou lesar o nervo se a anatomia não for reconhecida",
-      conduta: "a conduta é identificar a região por exame e imagem, respeitar distância de segurança e evitar incisões ou pressão instrumental direta sobre o trajeto nervoso",
-      alerta: "formigamento, dormência no lábio inferior ou alteração de sensibilidade após procedimento deve ser avaliada",
+      porQue:
+        "procedimentos próximos ao forame podem irritar ou lesar o nervo se a anatomia não for reconhecida",
+      conduta:
+        "a conduta é identificar a região por exame e imagem, respeitar distância de segurança e evitar incisões ou pressão instrumental direta sobre o trajeto nervoso",
+      alerta:
+        "formigamento, dormência no lábio inferior ou alteração de sensibilidade após procedimento deve ser avaliada",
       ganho: "planejar com mais segurança e reduzir risco neurossensorial",
     };
   }
   if (/alveolite|coagulo|pos exodontia|pos operatorio/.test(t)) {
     return {
       oQue: "dor intensa alguns dias após a extração pode indicar inflamação do alvéolo quando o coágulo se perde ou não protege bem a ferida",
-      porQue: "o osso fica exposto, a cicatrização atrasa e a dor costuma irradiar para ouvido ou têmpora",
-      conduta: "a conduta envolve avaliação, limpeza delicada do alvéolo, curativo local quando indicado, controle da dor e orientação de higiene, sem cutucar a região",
-      alerta: "dor que piora depois do terceiro dia, mau gosto, mau hálito ou alvéolo vazio merecem avaliação",
+      porQue:
+        "o osso fica exposto, a cicatrização atrasa e a dor costuma irradiar para ouvido ou têmpora",
+      conduta:
+        "a conduta envolve avaliação, limpeza delicada do alvéolo, curativo local quando indicado, controle da dor e orientação de higiene, sem cutucar a região",
+      alerta:
+        "dor que piora depois do terceiro dia, mau gosto, mau hálito ou alvéolo vazio merecem avaliação",
       ganho: "controlar a dor, proteger a cicatrização e evitar complicações",
     };
   }
   if (/siso|terceiro molar|38|dente incluso|incluso/.test(t)) {
     return {
       oQue: "o siso pode ficar sem espaço, parcialmente coberto por gengiva ou em contato próximo com estruturas importantes",
-      porQue: "essa posição favorece inflamação, dor irradiada, dificuldade de higienização e risco ao dente vizinho",
-      conduta: "o tratamento começa com exame clínico e imagem; quando indicado, a exodontia planejada é feita com técnica minimamente traumática e cuidados pós-operatórios",
-      alerta: "dor recorrente, inchaço, pus, mau gosto ou dificuldade para abrir a boca pedem avaliação",
+      porQue:
+        "essa posição favorece inflamação, dor irradiada, dificuldade de higienização e risco ao dente vizinho",
+      conduta:
+        "o tratamento começa com exame clínico e imagem; quando indicado, a exodontia planejada é feita com técnica minimamente traumática e cuidados pós-operatórios",
+      alerta:
+        "dor recorrente, inchaço, pus, mau gosto ou dificuldade para abrir a boca pedem avaliação",
       ganho: "resolver a causa do incômodo com mais previsibilidade e segurança",
     };
   }
   if (/atm|dtm|bruxismo|mandibula|estalo|trav|dor facial|dor de cabeca|masseter/.test(t)) {
     return {
       oQue: "dor, estalos, travamento ou cansaço na mandíbula podem vir da articulação temporomandibular e dos músculos mastigatórios",
-      porQue: "sobrecarga, apertamento, inflamação e alterações na mordida podem desorganizar o movimento mandibular",
-      conduta: "a abordagem pode incluir orientação de hábitos, placa oclusal, fisioterapia, controle inflamatório e investigação de fatores articulares ou musculares",
-      alerta: "travamento, dor diária, limitação para abrir a boca ou dor que irradia para ouvido e cabeça precisam de avaliação",
+      porQue:
+        "sobrecarga, apertamento, inflamação e alterações na mordida podem desorganizar o movimento mandibular",
+      conduta:
+        "a abordagem pode incluir orientação de hábitos, placa oclusal, fisioterapia, controle inflamatório e investigação de fatores articulares ou musculares",
+      alerta:
+        "travamento, dor diária, limitação para abrir a boca ou dor que irradia para ouvido e cabeça precisam de avaliação",
       ganho: "reduzir sobrecarga, recuperar função e mastigar com mais conforto",
     };
   }
   if (/ortognatica|mordida|perfil facial|harmonia|respiracao|fala/.test(t)) {
     return {
       oQue: "alterações importantes da mordida podem afetar mastigação, fala, respiração e equilíbrio facial",
-      porQue: "maxila e mandíbula podem crescer em posições diferentes, criando compensações dentárias e musculares",
-      conduta: "o caminho costuma envolver diagnóstico facial, documentação, planejamento digital, ortodontia e cirurgia ortognática quando indicada",
-      alerta: "dificuldade para mastigar, fechar os lábios, respirar bem ou morder corretamente merece avaliação especializada",
+      porQue:
+        "maxila e mandíbula podem crescer em posições diferentes, criando compensações dentárias e musculares",
+      conduta:
+        "o caminho costuma envolver diagnóstico facial, documentação, planejamento digital, ortodontia e cirurgia ortognática quando indicada",
+      alerta:
+        "dificuldade para mastigar, fechar os lábios, respirar bem ou morder corretamente merece avaliação especializada",
       ganho: "buscar função, estabilidade e harmonia facial de forma planejada",
     };
   }
   if (/apneia|ronco|cpap|sono|dormir/.test(t)) {
     return {
       oQue: "ronco intenso e pausas respiratórias durante o sono podem indicar obstrução das vias aéreas",
-      porQue: "a anatomia facial, a posição da mandíbula e tecidos da garganta podem reduzir a passagem de ar",
-      conduta: "a avaliação pode envolver exame do sono, CPAP, dispositivos intraorais e, em casos selecionados, cirurgia ortognática ou abordagem das vias aéreas",
-      alerta: "sonolência diurna, engasgos à noite, pressão alta ou ronco com pausas respiratórias precisam de investigação",
+      porQue:
+        "a anatomia facial, a posição da mandíbula e tecidos da garganta podem reduzir a passagem de ar",
+      conduta:
+        "a avaliação pode envolver exame do sono, CPAP, dispositivos intraorais e, em casos selecionados, cirurgia ortognática ou abordagem das vias aéreas",
+      alerta:
+        "sonolência diurna, engasgos à noite, pressão alta ou ronco com pausas respiratórias precisam de investigação",
       ganho: "respirar melhor, dormir com mais qualidade e reduzir riscos sistêmicos",
     };
   }
   if (/ferida|lesao|biopsia|patologia|mucosa|cicatriza/.test(t)) {
     return {
       oQue: "feridas, manchas ou aumentos de volume na boca que não cicatrizam precisam ser observados com seriedade",
-      porQue: "traumas locais, inflamações, infecções e lesões potencialmente relevantes podem ter aparência parecida",
-      conduta: "a conduta é examinar, remover fatores irritantes e indicar biópsia quando a lesão é persistente ou suspeita",
-      alerta: "lesão por mais de 14 dias, sangramento, endurecimento, crescimento ou dor persistente exigem avaliação",
+      porQue:
+        "traumas locais, inflamações, infecções e lesões potencialmente relevantes podem ter aparência parecida",
+      conduta:
+        "a conduta é examinar, remover fatores irritantes e indicar biópsia quando a lesão é persistente ou suspeita",
+      alerta:
+        "lesão por mais de 14 dias, sangramento, endurecimento, crescimento ou dor persistente exigem avaliação",
       ganho: "chegar ao diagnóstico correto cedo e definir o tratamento adequado",
     };
   }
   if (/trauma|fratura|acidente|face/.test(t)) {
     return {
       oQue: "traumas na face podem envolver dentes, mandíbula, maxila, órbita e articulação temporomandibular",
-      porQue: "impactos alteram o encaixe dos ossos e podem comprometer mordida, respiração, visão ou abertura da boca",
-      conduta: "a conduta envolve avaliação rápida, exames de imagem e, quando necessário, redução e fixação interna rígida das fraturas",
-      alerta: "mordida alterada, assimetria, dormência, sangramento, visão dupla ou dificuldade para abrir a boca são sinais de alerta",
+      porQue:
+        "impactos alteram o encaixe dos ossos e podem comprometer mordida, respiração, visão ou abertura da boca",
+      conduta:
+        "a conduta envolve avaliação rápida, exames de imagem e, quando necessário, redução e fixação interna rígida das fraturas",
+      alerta:
+        "mordida alterada, assimetria, dormência, sangramento, visão dupla ou dificuldade para abrir a boca são sinais de alerta",
       ganho: "restaurar forma, função e segurança no tempo certo",
     };
   }
@@ -1172,36 +1413,56 @@ function topicGuidance(tema: string): TopicGuidance {
     return {
       oQue: "freios labiais ou linguais podem limitar movimento, higiene, fala ou estabilidade gengival em alguns casos",
       porQue: "a inserção do tecido pode criar tração mecânica ou restringir funções orais",
-      conduta: "a conduta é avaliar função e indicação; quando necessário, a frenectomia remove ou reposiciona o freio com técnica controlada",
-      alerta: "dificuldade funcional, retração gengival, espaço persistente entre dentes ou limitação de língua merecem avaliação",
+      conduta:
+        "a conduta é avaliar função e indicação; quando necessário, a frenectomia remove ou reposiciona o freio com técnica controlada",
+      alerta:
+        "dificuldade funcional, retração gengival, espaço persistente entre dentes ou limitação de língua merecem avaliação",
       ganho: "melhorar função oral com indicação correta, sem procedimento desnecessário",
     };
   }
   if (/uti|pneumonia|vap|ventilacao|intubad|higiene oral|paciente critico|internad/.test(t)) {
     return {
       oQue: "a boca do paciente internado pode acumular biofilme e microrganismos que aumentam o risco de complicações sistêmicas",
-      porQue: "em UTI, ventilação mecânica, boca seca e dificuldade de higiene favorecem colonização bacteriana e inflamação",
-      conduta: "a conduta envolve protocolo de higiene oral, avaliação odontológica hospitalar, controle de focos infecciosos e integração com a equipe multiprofissional",
-      alerta: "sangramento, secreção, lesões, dentes com mobilidade, próteses soltas ou piora do quadro respiratório exigem avaliação",
-      ganho: "reduzir risco infeccioso, proteger a mucosa e aumentar a segurança do cuidado hospitalar",
+      porQue:
+        "em UTI, ventilação mecânica, boca seca e dificuldade de higiene favorecem colonização bacteriana e inflamação",
+      conduta:
+        "a conduta envolve protocolo de higiene oral, avaliação odontológica hospitalar, controle de focos infecciosos e integração com a equipe multiprofissional",
+      alerta:
+        "sangramento, secreção, lesões, dentes com mobilidade, próteses soltas ou piora do quadro respiratório exigem avaliação",
+      ganho:
+        "reduzir risco infeccioso, proteger a mucosa e aumentar a segurança do cuidado hospitalar",
     };
   }
-  if (/oncolog|quimioterapia|radioterapia|mronj|bisfosfonato|osteonecrose|terapia sistemica/.test(t)) {
+  if (
+    /oncolog|quimioterapia|radioterapia|mronj|bisfosfonato|osteonecrose|terapia sistemica/.test(t)
+  ) {
     return {
       oQue: "tratamentos oncológicos e medicamentos antirreabsortivos podem deixar a boca mais vulnerável a infecção, mucosite e alterações ósseas",
-      porQue: "a imunidade, a vascularização, a salivação e a remodelação óssea podem ser impactadas pelo tratamento sistêmico",
-      conduta: "o cuidado começa com avaliação odontológica prévia, remoção de focos infecciosos, higiene orientada, acompanhamento durante a terapia e condutas conservadoras quando há risco ósseo",
-      alerta: "dor óssea, exposição de osso, feridas que não cicatrizam, febre, secreção ou dificuldade para se alimentar precisam de avaliação",
-      ganho: "atravessar o tratamento médico com menos interrupções, menos infecção e mais segurança oral",
+      porQue:
+        "a imunidade, a vascularização, a salivação e a remodelação óssea podem ser impactadas pelo tratamento sistêmico",
+      conduta:
+        "o cuidado começa com avaliação odontológica prévia, remoção de focos infecciosos, higiene orientada, acompanhamento durante a terapia e condutas conservadoras quando há risco ósseo",
+      alerta:
+        "dor óssea, exposição de osso, feridas que não cicatrizam, febre, secreção ou dificuldade para se alimentar precisam de avaliação",
+      ganho:
+        "atravessar o tratamento médico com menos interrupções, menos infecção e mais segurança oral",
     };
   }
-  if (/hospitalar|equipe multiprofissional|cirurgia medica|pre operatorio|pos operatorio|risco cirurgico|foco infeccioso/.test(t)) {
+  if (
+    /hospitalar|equipe multiprofissional|cirurgia medica|pre operatorio|pos operatorio|risco cirurgico|foco infeccioso/.test(
+      t,
+    )
+  ) {
     return {
       oQue: "a Odontologia Hospitalar identifica riscos bucais que podem interferir em cirurgias, internações e terapias médicas",
-      porQue: "infecções dentárias, doença periodontal, próteses instáveis e lesões de mucosa podem piorar inflamação, dor e risco infeccioso",
-      conduta: "a conduta inclui avaliação no leito ou ambulatorial, controle de focos, adequação de higiene, parecer odontológico e plano integrado com a equipe médica",
-      alerta: "dor, febre sem foco claro, secreção, sangramento oral, trauma por prótese ou lesão persistente durante internação merecem cuidado especializado",
-      ganho: "dar mais segurança ao tratamento médico e reduzir complicações evitáveis relacionadas à boca",
+      porQue:
+        "infecções dentárias, doença periodontal, próteses instáveis e lesões de mucosa podem piorar inflamação, dor e risco infeccioso",
+      conduta:
+        "a conduta inclui avaliação no leito ou ambulatorial, controle de focos, adequação de higiene, parecer odontológico e plano integrado com a equipe médica",
+      alerta:
+        "dor, febre sem foco claro, secreção, sangramento oral, trauma por prótese ou lesão persistente durante internação merecem cuidado especializado",
+      ganho:
+        "dar mais segurança ao tratamento médico e reduzir complicações evitáveis relacionadas à boca",
     };
   }
   return GENERIC_GUIDANCE;
@@ -1210,18 +1471,26 @@ function topicGuidance(tema: string): TopicGuidance {
 // Guia genérico: usado quando o tema não tem roteiro clínico próprio. NÃO deve virar
 // parágrafo de preenchimento em posts diferentes (era a origem de textos "iguais").
 const GENERIC_GUIDANCE: TopicGuidance = {
-    oQue: "um sinal na boca, face ou mandíbula pode ter causas diferentes e não deve ser interpretado isoladamente",
-    porQue: "dor, inflamação, sobrecarga muscular, posição dos dentes e alterações anatômicas podem produzir sintomas parecidos",
-    conduta: "o caminho seguro é avaliação clínica, exame de imagem quando necessário e plano individual com orientação, controle dos fatores de risco e tratamento específico",
-    alerta: "dor persistente, inchaço, travamento, sangramento, febre ou piora progressiva pedem avaliação especializada",
-    ganho: "entender a causa real e escolher a conduta certa, sem soluções genéricas",
+  oQue: "um sinal na boca, face ou mandíbula pode ter causas diferentes e não deve ser interpretado isoladamente",
+  porQue:
+    "dor, inflamação, sobrecarga muscular, posição dos dentes e alterações anatômicas podem produzir sintomas parecidos",
+  conduta:
+    "o caminho seguro é avaliação clínica, exame de imagem quando necessário e plano individual com orientação, controle dos fatores de risco e tratamento específico",
+  alerta:
+    "dor persistente, inchaço, travamento, sangramento, febre ou piora progressiva pedem avaliação especializada",
+  ganho: "entender a causa real e escolher a conduta certa, sem soluções genéricas",
 };
 
 function isGenericGuidance(g: TopicGuidance): boolean {
   return g === GENERIC_GUIDANCE;
 }
 
-function visualSceneForTopic(tema: string, g: TopicGuidance, audiencia: z.infer<typeof SingleInput>["audiencia"], slideIndex?: number) {
+function visualSceneForTopic(
+  tema: string,
+  g: TopicGuidance,
+  audiencia: z.infer<typeof SingleInput>["audiencia"],
+  slideIndex?: number,
+) {
   const t = normalizeTema(tema);
   const etapa = typeof slideIndex === "number" ? slideIndex : -1;
   const estudante = audiencia === "estudantes-graduacao";
@@ -1347,7 +1616,9 @@ function visualSceneForTopic(tema: string, g: TopicGuidance, audiencia: z.infer<
     ];
     return cenas[Math.max(0, Math.min(cenas.length - 1, etapa))] || cenas[0];
   }
-  if (/oncolog|quimioterapia|radioterapia|mronj|bisfosfonato|osteonecrose|terapia sistemica/.test(t)) {
+  if (
+    /oncolog|quimioterapia|radioterapia|mronj|bisfosfonato|osteonecrose|terapia sistemica/.test(t)
+  ) {
     const cenas = [
       `${prefixo} mostrando avaliação oral pré-tratamento oncológico em ambiente hospitalar, sem marcas ou textos`,
       `${prefixo} mostrando mucosa oral sensível e cuidado de suporte durante terapia sistêmica, sem lesões explícitas`,
@@ -1360,7 +1631,11 @@ function visualSceneForTopic(tema: string, g: TopicGuidance, audiencia: z.infer<
   return `${prefixo} sobre "${tema}" mostrando especificamente: ${g.oQue}; mecanismo visual: ${g.porQue}; solução representada: ${g.conduta}`;
 }
 
-function clinicalContract(tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"], slideIndex?: number) {
+function clinicalContract(
+  tema: string,
+  audiencia: z.infer<typeof SingleInput>["audiencia"],
+  slideIndex?: number,
+) {
   const g = topicGuidance(tema);
   return `CONTRATO CLÍNICO DO POST — FONTE ÚNICA DE VERDADE:
 - Tema único: ${tema}
@@ -1374,14 +1649,18 @@ REGRAS: legenda e imagem devem seguir exatamente este contrato; proibido trocar 
 }
 
 // === TEMAS DIVERSOS (fora da área da saúde) — sistemas de legenda dedicados ===
-function diverseCaptionSystem(rede: "instagram" | "linkedin" | "estilo-x" | "google", formato: "Carrossel" | "Story" | "Post Único") {
-  const tamanho = rede === "linkedin"
-    ? "800-1400 caracteres, tom editorial/institucional, no máx. 1 emoji sóbrio, 3-5 hashtags coerentes com o TEMA (nunca de saúde)."
-    : rede === "google"
-      ? "60-120 palavras, título em **negrito**, 1 linha 'Palavras-chave: ...' coerentes com o TEMA, 1 linha 'ALT TEXT: ...'."
-      : formato === "Story"
-        ? "60-180 caracteres, direto, 1-2 emojis coerentes com o tema."
-        : "400-700 caracteres, gancho na 1ª linha, 2-4 emojis coerentes com o TEMA, 4-6 hashtags do TEMA (nunca de saúde).";
+function diverseCaptionSystem(
+  rede: "instagram" | "linkedin" | "estilo-x" | "google",
+  formato: "Carrossel" | "Story" | "Post Único",
+) {
+  const tamanho =
+    rede === "linkedin"
+      ? "800-1400 caracteres, tom editorial/institucional, no máx. 1 emoji sóbrio, 3-5 hashtags coerentes com o TEMA (nunca de saúde)."
+      : rede === "google"
+        ? "60-120 palavras, título em **negrito**, 1 linha 'Palavras-chave: ...' coerentes com o TEMA, 1 linha 'ALT TEXT: ...'."
+        : formato === "Story"
+          ? "60-180 caracteres, direto, 1-2 emojis coerentes com o tema."
+          : "400-700 caracteres, gancho na 1ª linha, 2-4 emojis coerentes com o TEMA, 4-6 hashtags do TEMA (nunca de saúde).";
   return `Você é copywriter editorial de conteúdo institucional/cultural. PT-BR Brasil impecável, ZERO inglês, sem repetições.
 MODO: TEMAS DIVERSOS — tema TOTALMENTE FORA da saúde (data comemorativa, evento histórico, cultura, esporte, causa social, homenagem, cotidiano, hobby).
 
@@ -1396,11 +1675,17 @@ FORMATO: ${tamanho}
 Sem assinatura no corpo (entra como overlay). Sem aspas envolvendo o texto.`;
 }
 
-function buildDiverseLocalCaption(tema: string, rede: "instagram" | "linkedin" | "estilo-x" | "google", formato: "Carrossel" | "Story" | "Post Único") {
+function buildDiverseLocalCaption(
+  tema: string,
+  rede: "instagram" | "linkedin" | "estilo-x" | "google",
+  formato: "Carrossel" | "Story" | "Post Único",
+) {
   const tag = `#${tema.replace(/[^\p{L}\p{N}]+/gu, "")}`;
   if (formato === "Story") return `${tema}\n\nCompartilhe com quem se identifica.`;
-  if (rede === "linkedin") return `**${tema}**\n\nRegistro especial sobre ${tema}. Um momento que merece ser lembrado e compartilhado.\n\nCompartilhe com quem também valoriza esta data.\n\n${tag}`;
-  if (rede === "google") return `**${tema}**\n\nRegistro editorial sobre ${tema}. Compartilhe com quem se identifica.\n\nPalavras-chave: ${tema}\nALT TEXT: imagem editorial sobre ${tema}`;
+  if (rede === "linkedin")
+    return `**${tema}**\n\nRegistro especial sobre ${tema}. Um momento que merece ser lembrado e compartilhado.\n\nCompartilhe com quem também valoriza esta data.\n\n${tag}`;
+  if (rede === "google")
+    return `**${tema}**\n\nRegistro editorial sobre ${tema}. Compartilhe com quem se identifica.\n\nPalavras-chave: ${tema}\nALT TEXT: imagem editorial sobre ${tema}`;
   return `${tema}\n\nUm registro especial sobre este tema. Compartilhe com quem se identifica.\n\n${tag}`;
 }
 
@@ -1417,13 +1702,31 @@ export function completeCaptionIfNeeded(params: {
   if (params.especialidade === "Temas Diversos") {
     return raw || buildDiverseLocalCaption(params.tema, params.rede, params.formato);
   }
-  if (!raw) return buildLocalCaption({ tema: params.tema, rede: params.rede, formato: params.formato, especialidade: params.especialidade, nivel: resolveNivel("auto", params.rede), audiencia: params.audiencia });
+  if (!raw)
+    return buildLocalCaption({
+      tema: params.tema,
+      rede: params.rede,
+      formato: params.formato,
+      especialidade: params.especialidade,
+      nivel: resolveNivel("auto", params.rede),
+      audiencia: params.audiencia,
+    });
   const g = topicGuidance(params.tema);
   const norm = normalizeTema(raw);
-  const hasConduta = /(trat|conduta|avaliacao|avaliar|planej|fisioterapia|placa|cpap|biopsia|exodontia|higiene|protocolo|fixacao|orientacao|controle|acompanhamento)/.test(norm);
-  const hasWhy = /(porque|por que|acontece|mecanismo|causa|favorece|sobrecarga|inflamacao|risco)/.test(norm);
-  const hasAlert = /(alerta|procure|avaliacao|especialista|persistente|piora|febre|inchaco|sangramento|travamento)/.test(norm);
-  const hasGanho = /(ganho|benef|qualidade de vida|volta a|sem dor|recuper|sorr|mastig|respir|dormir bem)/.test(norm);
+  const hasConduta =
+    /(trat|conduta|avaliacao|avaliar|planej|fisioterapia|placa|cpap|biopsia|exodontia|higiene|protocolo|fixacao|orientacao|controle|acompanhamento)/.test(
+      norm,
+    );
+  const hasWhy =
+    /(porque|por que|acontece|mecanismo|causa|favorece|sobrecarga|inflamacao|risco)/.test(norm);
+  const hasAlert =
+    /(alerta|procure|avaliacao|especialista|persistente|piora|febre|inchaco|sangramento|travamento)/.test(
+      norm,
+    );
+  const hasGanho =
+    /(ganho|benef|qualidade de vida|volta a|sem dor|recuper|sorr|mastig|respir|dormir bem)/.test(
+      norm,
+    );
   const minLen = params.formato === "Story" ? 140 : params.rede === "linkedin" ? 600 : 380;
   const tooShort = raw.length < minLen;
   if (!tooShort && hasConduta && hasWhy && hasAlert && hasGanho) return raw;
@@ -1432,7 +1735,12 @@ export function completeCaptionIfNeeded(params: {
   // Guia genérico NUNCA completa com parágrafos fixos (curto ou longo): eram idênticos em todo
   // post, a dedup recusava as 3 tentativas e nada era salvo ("o app não gera nada").
   if (isGenericGuidance(g)) {
-    if (params.rede === "linkedin" || params.formato === "Story" || /link da bio|link na bio/i.test(raw)) return raw;
+    if (
+      params.rede === "linkedin" ||
+      params.formato === "Story" ||
+      /link da bio|link na bio/i.test(raw)
+    )
+      return raw;
     return `${raw}\n\n${params.audiencia === "estudantes-graduacao" ? "Salve para revisar e compare com sua conduta na clínica." : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`}`;
   }
 
@@ -1447,9 +1755,10 @@ export function completeCaptionIfNeeded(params: {
     if (!hasAlert) extra.push(`Sinais de alerta: ${g.alerta}.`);
     return `${raw}\n\n${extra.join("\n\n")}`;
   }
-  const fechamento = params.audiencia === "estudantes-graduacao"
-    ? "Salve para revisar e compare com sua conduta na clínica."
-    : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
+  const fechamento =
+    params.audiencia === "estudantes-graduacao"
+      ? "Salve para revisar e compare com sua conduta na clínica."
+      : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
   const partes: string[] = [raw];
   if (!hasWhy) partes.push(`Por que acontece: ${g.porQue}.`);
   if (!hasConduta) partes.push(`Como conduzir: ${g.conduta}.`);
@@ -1457,7 +1766,6 @@ export function completeCaptionIfNeeded(params: {
   if (!hasAlert) partes.push(`Quando ligar o alerta: ${g.alerta}.`);
   partes.push(fechamento);
   return partes.join("\n\n");
-
 }
 
 function buildSlideNarratives(tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"]) {
@@ -1468,7 +1776,7 @@ function buildSlideNarratives(tema: string, audiencia: z.infer<typeof SingleInpu
       `Slide 2 — Reconhecimento clínico: ${g.oQue}. Observe sinais, tempo de evolução e relação com anatomia local.`,
       `Slide 3 — Mecanismo/anatomia: ${g.porQue}. A decisão depende da estrutura envolvida e do risco cirúrgico.`,
       `Slide 4 — Conduta prática: ${g.conduta}. Esse é o slide da solução, com raciocínio técnico e seguro.`,
-      `Slide 5 — Fechamento: ${g.alerta}. Salve para revisar e compare com o que você faria na clínica.`
+      `Slide 5 — Fechamento: ${g.alerta}. Salve para revisar e compare com o que você faria na clínica.`,
     ];
   }
   return [
@@ -1476,36 +1784,52 @@ function buildSlideNarratives(tema: string, audiencia: z.infer<typeof SingleInpu
     `Slide 2 — Problema: ${g.porQue}. Mostrar por que o sintoma não deve ser banalizado.`,
     `Slide 3 — Caminho de tratamento: ${g.conduta}. Este slide obrigatoriamente mostra a solução/conduta, não só a doença.`,
     `Slide 4 — Ganho concreto: ${g.ganho}. Traduzir o tratamento em benefício de vida real.`,
-    `Slide 5 — CTA: ${g.alerta}. Link na bio / WhatsApp com fechamento elegante e seguro.`
+    `Slide 5 — CTA: ${g.alerta}. Link na bio / WhatsApp com fechamento elegante e seguro.`,
   ];
 }
 
 /** Slides fora do Chico: usa os blocos "Slide N" escritos pela IA; o roteiro fixo só vale para
  * temas com guia clínico próprio (o guia genérico geraria slides idênticos entre posts). */
-export function slidesNaoChico(legenda: string, tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"], total: number): string[] {
+export function slidesNaoChico(
+  legenda: string,
+  tema: string,
+  audiencia: z.infer<typeof SingleInput>["audiencia"],
+  total: number,
+): string[] {
   try {
     return extractFinalSlides(legenda, total);
   } catch (e) {
     if (isGenericGuidance(topicGuidance(tema))) {
-      throw new Error(`A IA não escreveu ${total} slides distintos para "${tema.slice(0, 60)}". Nada foi salvo — gere novamente ou detalhe melhor o tema.`);
+      throw new Error(
+        `A IA não escreveu ${total} slides distintos para "${tema.slice(0, 60)}". Nada foi salvo — gere novamente ou detalhe melhor o tema.`,
+      );
     }
     return buildSlideNarratives(tema, audiencia);
   }
 }
 
-function ensureCarouselCaption(base: string, slideNarratives: string[], audiencia: z.infer<typeof SingleInput>["audiencia"]) {
+function ensureCarouselCaption(
+  base: string,
+  slideNarratives: string[],
+  audiencia: z.infer<typeof SingleInput>["audiencia"],
+) {
   if (!slideNarratives.length) return base;
-  const firstLine = (base || "")
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .find((l) => l && !/^slide\s*\d/i.test(l) && !/^#/.test(l)) || "Carrossel educativo";
-  const blocks = slideNarratives.map((texto, i) => `Slide ${i + 1}: ${texto.replace(/^Slide\s*\d+\s*[—:-]\s*/i, "").trim()}`);
-  const fechamento = audiencia === "estudantes-graduacao"
-    ? "Salve para revisar e comente qual conduta você escolheria."
-    : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
-  const hashtags = audiencia === "estudantes-graduacao"
-    ? "#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF"
-    : "#bucomaxilofacial #CTBMF #drfranciscomenezes #cirurgiabucomaxilofacial #saudebucal";
+  const firstLine =
+    (base || "")
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .find((l) => l && !/^slide\s*\d/i.test(l) && !/^#/.test(l)) || "Carrossel educativo";
+  const blocks = slideNarratives.map(
+    (texto, i) => `Slide ${i + 1}: ${texto.replace(/^Slide\s*\d+\s*[—:-]\s*/i, "").trim()}`,
+  );
+  const fechamento =
+    audiencia === "estudantes-graduacao"
+      ? "Salve para revisar e comente qual conduta você escolheria."
+      : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
+  const hashtags =
+    audiencia === "estudantes-graduacao"
+      ? "#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF"
+      : "#bucomaxilofacial #CTBMF #drfranciscomenezes #cirurgiabucomaxilofacial #saudebucal";
   return `${firstLine}\n\n${blocks.join("\n\n")}\n\n${fechamento}\n\n${hashtags}`;
 }
 
@@ -1528,12 +1852,14 @@ function buildLocalCaption(params: {
   const g = topicGuidance(tema);
   if (formato === "Carrossel") {
     const slides = buildSlideNarratives(tema, audiencia);
-    const fechamento = audiencia === "estudantes-graduacao"
-      ? "Comente qual conduta você escolheria e salve para revisar antes da clínica."
-      : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
-    const hashtags = audiencia === "estudantes-graduacao"
-      ? "#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF"
-      : "#bucomaxilofacial #CTBMF #drfranciscomenezes #cirurgiabucomaxilofacial #saudebucal";
+    const fechamento =
+      audiencia === "estudantes-graduacao"
+        ? "Comente qual conduta você escolheria e salve para revisar antes da clínica."
+        : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
+    const hashtags =
+      audiencia === "estudantes-graduacao"
+        ? "#OdontologiaAcadêmica #CirurgiaBucal #EstudanteDeOdonto #Graduação #MonitoriaOdonto #CTBMF"
+        : "#bucomaxilofacial #CTBMF #drfranciscomenezes #cirurgiabucomaxilofacial #saudebucal";
     return `${tema}\n\n${slides.join("\n\n")}\n\n${fechamento}\n\n${hashtags}`;
   }
   if (audiencia === "estudantes-graduacao") {
@@ -1554,9 +1880,6 @@ function buildLocalCaption(params: {
   return `${pickOpener(tema, ["{t}: isso pode estar tentando te avisar algo", "{t} — o sinal que muita gente ignora", "O que ninguém te contou sobre {t}"])}\n\n${g.oQue}.\n\nPor trás disso, geralmente existe um mecanismo: ${g.porQue}.\n\nA solução começa entendendo a causa. Na prática, ${g.conduta}.\n\n${g.alerta}.\n\nSaiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.\n\n#bucomaxilofacial #CTBMF #drfranciscomenezes #saudebucal #cirurgiaoral`;
 }
 
-
-
-
 export const generateSinglePost = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) => SingleInput.parse(d))
@@ -1570,11 +1893,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // Resolve formato final
     const formato: "Carrossel" | "Story" | "Post Único" =
       data.formato ??
-      (data.rede === "estilo-x"
-        ? "Carrossel"
-        : data.tipo === "stories"
-          ? "Story"
-          : "Post Único");
+      (data.rede === "estilo-x" ? "Carrossel" : data.tipo === "stories" ? "Story" : "Post Único");
 
     // 0. Se nenhum tema foi fornecido, o gerador local escolhe um automaticamente
     //    EVITANDO temas dos últimos 60 dias (máxima abrangência editorial).
@@ -1610,12 +1929,19 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         .order("created_at", { ascending: false })
         .limit(200);
       const temasUsados = Array.from(
-        new Set([
-          ...(historico ?? []).map((p: any) => (p.prompt_ia || "").trim()),
-          ...(data.temasProibidos ?? []).map((t) => (t || "").trim()),
-        ].filter(Boolean))
+        new Set(
+          [
+            ...(historico ?? []).map((p: any) => (p.prompt_ia || "").trim()),
+            ...(data.temasProibidos ?? []).map((t) => (t || "").trim()),
+          ].filter(Boolean),
+        ),
       ).slice(0, 200);
-      tema = chooseLocalTema(data.audiencia, temasUsados, `${data.rede}-${data.formato}-${data.especialidade}`, data.especialidade);
+      tema = chooseLocalTema(
+        data.audiencia,
+        temasUsados,
+        `${data.rede}-${data.formato}-${data.especialidade}`,
+        data.especialidade,
+      );
     } else if (tema && (data.temasProibidos ?? []).length > 0) {
       // Se veio um tema explícito mas ele colide com um tema proibido (dia adjacente),
       // descarta e reescolhe um novo.
@@ -1652,27 +1978,53 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       for (const r of recentes ?? []) if (r.prompt_ia) historicoTemas.push(r.prompt_ia);
       historicoSig.push(...assinaturasDoHistorico(recentes ?? []));
     } catch (e) {
-      console.warn("[dedup] histórico indisponível; usando só temas do lote:", e instanceof Error ? e.message : e);
+      console.warn(
+        "[dedup] histórico indisponível; usando só temas do lote:",
+        e instanceof Error ? e.message : e,
+      );
     }
     const quandoRef = data.quando ?? new Date().toISOString();
     const optsConflito = { janelaDias: JANELA_ASSUNTO_DIAS, assuntoGuiado: data.assuntoGuiado };
-    const temaDup = (t: string) => acharConflito({ tema: t, quando: quandoRef, objetivo: data.objetivo }, historicoSig, optsConflito);
+    const temaDup = (t: string) =>
+      acharConflito(
+        { tema: t, quando: quandoRef, objetivo: data.objetivo },
+        historicoSig,
+        optsConflito,
+      );
     {
       const chaveInicial = chaveIdempotencia(context.userId, tema, formato, data);
-      const { data: jaExiste } = await supabaseAdmin.from("posts").select("id, legenda, url_imagem, url_imagem_cache, imagens_carrossel_cache").eq("user_id", context.userId).eq("content_key", chaveInicial).maybeSingle();
+      const { data: jaExiste } = await supabaseAdmin
+        .from("posts")
+        .select("id, legenda, url_imagem, url_imagem_cache, imagens_carrossel_cache")
+        .eq("user_id", context.userId)
+        .eq("content_key", chaveInicial)
+        .maybeSingle();
       if (jaExiste) {
-        console.info("[dedup] pedido repetido (duplo clique/retry): devolvendo post existente", { postId: jaExiste.id });
-        const carr = Array.isArray((jaExiste as any).imagens_carrossel_cache) ? (jaExiste as any).imagens_carrossel_cache as string[] : [];
+        console.info("[dedup] pedido repetido (duplo clique/retry): devolvendo post existente", {
+          postId: jaExiste.id,
+        });
+        const carr = Array.isArray((jaExiste as any).imagens_carrossel_cache)
+          ? ((jaExiste as any).imagens_carrossel_cache as string[])
+          : [];
         const u = (jaExiste as any).url_imagem_cache || (jaExiste as any).url_imagem;
         const urls = carr.length ? carr : [u].filter(Boolean);
-        return { id: jaExiste.id, url: u, legenda: jaExiste.legenda, slides: urls.length, urls, slideLegendas: [] as string[], reaproveitado: true };
+        return {
+          id: jaExiste.id,
+          url: u,
+          legenda: jaExiste.legenda,
+          slides: urls.length,
+          urls,
+          slideLegendas: [] as string[],
+          reaproveitado: true,
+        };
       }
     }
     // Escritor local só escreve texto próprio para temas com guia clínico específico.
     const escritorLocalSemGuia = (t: string) =>
-      (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo")
-      && data.especialidade !== "Temas Diversos" && data.audiencia !== "estudantes-graduacao"
-      && isGenericGuidance(topicGuidance(t));
+      (!process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo") &&
+      data.especialidade !== "Temas Diversos" &&
+      data.audiencia !== "estudantes-graduacao" &&
+      isGenericGuidance(topicGuidance(t));
     {
       const conflito = temaDup(tema);
       if (conflito || (!(data.tema ?? "").trim() && escritorLocalSemGuia(tema))) {
@@ -1680,21 +2032,34 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           // Tema automático: pede nova ideia (assunto diferente), no máximo 40 candidatos (sem custo de IA).
           let novo: string | null = null;
           for (let i = 0; i < 40 && !novo; i++) {
-            const cand = chooseLocalTema(data.audiencia, historicoTemas, `${data.rede}-${formato}-${i}-${Date.now()}`, data.especialidade);
+            const cand = chooseLocalTema(
+              data.audiencia,
+              historicoTemas,
+              `${data.rede}-${formato}-${i}-${Date.now()}`,
+              data.especialidade,
+            );
             if (!temaDup(cand) && !escritorLocalSemGuia(cand)) novo = cand;
             else historicoTemas.push(cand);
           }
-          if (!novo) throw new Error("Não foi possível garantir um tema inédito. Informe um tema manualmente.");
+          if (!novo)
+            throw new Error(
+              "Não foi possível garantir um tema inédito. Informe um tema manualmente.",
+            );
           tema = novo;
         } else {
-          throw new Error(`${mensagemConflito(conflito!)} Nada foi salvo — edite o tema deste horário.`);
+          throw new Error(
+            `${mensagemConflito(conflito!)} Nada foi salvo — edite o tema deste horário.`,
+          );
         }
       }
     }
-    console.info("[dedup] tema aprovado", { postId, assunto: assuntoPrincipal(tema), slot: data.slotKey ?? null });
+    console.info("[dedup] tema aprovado", {
+      postId,
+      assunto: assuntoPrincipal(tema),
+      slot: data.slotKey ?? null,
+    });
     // Idempotência: mesmo usuário + tema + formato + rede + dia = mesmo post.
     const chaveConteudo = chaveIdempotencia(context.userId, tema, formato, data);
-
 
     // 1. Resolve nível editorial
     const nivel = resolveNivel(data.nivel, data.rede, data.tipo);
@@ -1705,26 +2070,32 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const isChico = data.audiencia === "chico-drfm";
     const isDiverso = data.especialidade === "Temas Diversos";
-    const localCaption = () => isDiverso
-      ? buildDiverseLocalCaption(tema, data.rede, formato)
-      : buildLocalCaption({
-          tema,
-          rede: data.rede,
-          formato,
-          especialidade: data.especialidade,
-          nivel,
-          audiencia: data.audiencia,
-        });
+    const localCaption = () =>
+      isDiverso
+        ? buildDiverseLocalCaption(tema, data.rede, formato)
+        : buildLocalCaption({
+            tema,
+            rede: data.rede,
+            formato,
+            especialidade: data.especialidade,
+            nivel,
+            audiencia: data.audiencia,
+          });
     const usaEscritorLocal = !process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo";
     // O escritor local (sem IA) só tem conteúdo próprio para temas com guia clínico específico.
     // Para os demais ele produziria o MESMO corpo genérico em todo post — isso não é inédito.
     if (usaEscritorLocal && !isDiverso && !isEstudantes && isGenericGuidance(topicGuidance(tema))) {
-      throw new Error(`O escritor local não tem texto próprio para "${tema.slice(0, 70)}" e repetiria o mesmo conteúdo de outros posts. Escolha um gerador de texto (GPT/Gemini) ou outro tema. Nada foi salvo.`);
+      throw new Error(
+        `O escritor local não tem texto próprio para "${tema.slice(0, 70)}" e repetiria o mesmo conteúdo de outros posts. Escolha um gerador de texto (GPT/Gemini) ou outro tema. Nada foi salvo.`,
+      );
     }
     const objetivoLinha = data.objetivo ? `\nObjetivo editorial deste post: ${data.objetivo}` : "";
     const escreverLegenda = async (novaAbordagem = ""): Promise<string> => {
       if (usaEscritorLocal) {
-        if (isChico && isDiverso && formato === "Carrossel") throw new Error("Finalize os textos individuais com um modelo de texto antes de gerar este carrossel editorial.");
+        if (isChico && isDiverso && formato === "Carrossel")
+          throw new Error(
+            "Finalize os textos individuais com um modelo de texto antes de gerar este carrossel editorial.",
+          );
         return localCaption();
       }
       // TEMAS DIVERSOS: prompt totalmente fora da saúde.
@@ -1733,10 +2104,18 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           const { generateTextAI } = await import("@/lib/ai-gateway.server");
           const system = diverseCaptionSystem(data.rede, formato);
           const prompt = `${isChico && formato === "Carrossel" ? `Inclua ${quantidadeSlides({ rede: data.rede, formato, tipo: data.tipo, pedido: data.slides })} blocos distintos completos marcados Slide 1, Slide 2 etc. Cada bloco contém título e texto final específico.\n` : ""}Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}${objetivoLinha}${novaAbordagem}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
-          const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1400 : formato === "Carrossel" ? 1100 : 800 });
+          const txt = await generateTextAI({
+            system,
+            prompt,
+            model: data.modelo,
+            maxTokens: data.rede === "linkedin" ? 1400 : formato === "Carrossel" ? 1100 : 800,
+          });
           return txt || localCaption();
         } catch (err) {
-          console.warn("[ai-post] legenda diversa caiu para local:", err instanceof Error ? err.message : err);
+          console.warn(
+            "[ai-post] legenda diversa caiu para local:",
+            err instanceof Error ? err.message : err,
+          );
           return localCaption();
         }
       }
@@ -1753,14 +2132,23 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         const { strategyPrompt } = await import("@/lib/strategy-prompt");
         const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}`;
         const contrato = clinicalContract(tema, data.audiencia);
-        const roteiroCarrossel = formato === "Carrossel"
-          ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter ${quantidadeSlides({ rede: data.rede, formato, tipo: data.tipo, pedido: data.slides })} blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
-          : "";
+        const roteiroCarrossel =
+          formato === "Carrossel"
+            ? `\n\nREGRA ESPECÍFICA DO CARROSSEL — CORRIGIR REPETIÇÃO:\nA legenda final DEVE conter ${quantidadeSlides({ rede: data.rede, formato, tipo: data.tipo, pedido: data.slides })} blocos distintos, um por slide, explicitamente marcados como "Slide 1", "Slide 2", "Slide 3", "Slide 4" e "Slide 5".\nCada bloco precisa ter uma mensagem DIFERENTE e progressiva:\nSlide 1 = gancho/identificação; Slide 2 = problema; Slide 3 = mecanismo; Slide 4 = tratamento/conduta/ganho; Slide 5 = CTA.\nPROIBIDO repetir a mesma frase, o mesmo parágrafo ou a mesma legenda em slides diferentes. Cada imagem deve ter seu próprio sentido textual e visual.`
+            : "";
         const prompt = `${contrato}\n\nTema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${objetivoLinha}${roteiroCarrossel}${novaAbordagem}\n\nTAREFA: escreva a legenda final pronta para publicação. Ela só será aceita se mencionar explicitamente O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA. Não termine antes da conduta/tratamento.\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
-        const txt = await generateTextAI({ system, prompt, model: data.modelo, maxTokens: data.rede === "linkedin" ? 1700 : formato === "Carrossel" ? 1200 : 950 });
+        const txt = await generateTextAI({
+          system,
+          prompt,
+          model: data.modelo,
+          maxTokens: data.rede === "linkedin" ? 1700 : formato === "Carrossel" ? 1200 : 950,
+        });
         return txt || localCaption();
       } catch (err) {
-        console.warn("[ai-post] legenda caiu para local:", err instanceof Error ? err.message : err);
+        console.warn(
+          "[ai-post] legenda caiu para local:",
+          err instanceof Error ? err.message : err,
+        );
         return localCaption();
       }
     };
@@ -1784,26 +2172,36 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const uploadOne = async (b64: string, slideIndex = 0) => {
       const buf = Buffer.from(b64, "base64");
       const fileName = `${postId}/slide-${slideIndex + 1}-${crypto.randomUUID()}.jpg`;
-      const { error } = await supabaseAdmin.storage
-        .from("post-images")
-        .upload(fileName, buf, { contentType: "image/jpeg", upsert: false, cacheControl: "604800" });
+      const { error } = await supabaseAdmin.storage.from("post-images").upload(fileName, buf, {
+        contentType: "image/jpeg",
+        upsert: false,
+        cacheControl: "604800",
+      });
       if (error) throw new Error(`Upload: ${error.message}`);
-      const publicUrl = supabaseAdmin.storage.from("post-images").getPublicUrl(fileName).data.publicUrl;
-      const { data: signed } = await supabaseAdmin.storage.from("post-images").createSignedUrl(fileName, 60 * 60 * 24 * 7);
+      const publicUrl = supabaseAdmin.storage.from("post-images").getPublicUrl(fileName)
+        .data.publicUrl;
+      const { data: signed } = await supabaseAdmin.storage
+        .from("post-images")
+        .createSignedUrl(fileName, 60 * 60 * 24 * 7);
       return { postId, slideIndex, publicUrl, signedUrl: signed?.signedUrl ?? publicUrl };
     };
 
     const { ensureJpegB64, overlayLogo } = await import("@/lib/logo-overlay.server");
     // Uma única camada de repetição, somente HTTP 429/5xx. Nunca compactar/reformular uma recusa.
     const generateImageWithRetry = async (prompt: string, attempt = 1): Promise<string> => {
-      if (prompt.length > 28000) throw new Error("Brief muito extenso; nenhuma instrução foi truncada.");
+      if (prompt.length > 28000)
+        throw new Error("Brief muito extenso; nenhuma instrução foi truncada.");
       try {
         return await generateImageBase64({ prompt, size, model: data.modeloImagem });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const status = Number(message.match(/(?:imagem|Pollinations)\s+(\d{3})\b/)?.[1]);
-        const terminal = /account|configuration|billing|permission|denied|refus|recus|not.available|unavailable/i.test(message);
-        if (terminal || !(status === 429 || status >= 500 && status <= 599) || attempt >= 2) throw error;
+        const terminal =
+          /account|configuration|billing|permission|denied|refus|recus|not.available|unavailable/i.test(
+            message,
+          );
+        if (terminal || !(status === 429 || (status >= 500 && status <= 599)) || attempt >= 2)
+          throw error;
         await new Promise((resolve) => setTimeout(resolve, 1800 * attempt + Math.random() * 500));
         return generateImageWithRetry(prompt, attempt + 1);
       }
@@ -1818,13 +2216,24 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const { getLogoOptions } = await import("@/lib/logos-catalog");
       const opts = getLogoOptions(selectedLogoKeys);
       if (opts.length) {
-        const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: logoPosition, smart: false, logoUrls: opts.map((opt) => opt.url) });
-        if (stamped === b64) throw new Error("A logo escolhida não foi aplicada. Publicação bloqueada.");
+        const stamped = await overlayLogo(b64, undefined, 10, {
+          withLogo: true,
+          position: logoPosition,
+          smart: false,
+          logoUrls: opts.map((opt) => opt.url),
+        });
+        if (stamped === b64)
+          throw new Error("A logo escolhida não foi aplicada. Publicação bloqueada.");
         return stamped;
       }
       // Chico/geral: SEMPRE canto inferior direito, sem escolha inteligente.
-      const stamped = await overlayLogo(b64, undefined, 10, { withLogo: true, position: logoPosition, smart: false });
-      if (stamped === b64) throw new Error("A logo oficial não foi aplicada. Publicação bloqueada.");
+      const stamped = await overlayLogo(b64, undefined, 10, {
+        withLogo: true,
+        position: logoPosition,
+        smart: false,
+      });
+      if (stamped === b64)
+        throw new Error("A logo oficial não foi aplicada. Publicação bloqueada.");
       return stamped;
     };
 
@@ -1832,7 +2241,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // gigantes — eles diluem o TEMA e a IA desenha algo genérico "sobre a marca"
     // em vez do assunto pedido. Enviamos apenas o prompt visual (que já contém
     // paleta, estilo, cena e o tema) com uma linha curta de marca.
-    const { pickBrand: pickBrandImg, BRAND_BOOK: BRAND_BOOK_IMG } = await import("@/lib/brand-book");
+    const { pickBrand: pickBrandImg, BRAND_BOOK: BRAND_BOOK_IMG } =
+      await import("@/lib/brand-book");
     const brandKeyImg = pickBrandImg(data.audiencia);
     const b = BRAND_BOOK_IMG[brandKeyImg];
     const brandOneLiner = `MARCA (${b.instagram}): paleta ${b.paleta.primary} · ${b.paleta.secondary} · ${b.paleta.bg} · ${b.paleta.text}. Estilo: ${b.estilo} Nunca desenhar/imitar logo — o sistema aplica overlay real.`;
@@ -1844,21 +2254,25 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         .then((b64) => uploadOne(b64, slideIndex));
     };
 
-
-    const completar = (legenda: string) => completeCaptionIfNeeded({
-      legenda,
-      tema,
-      rede: data.rede,
-      formato,
-      audiencia: data.audiencia,
-      especialidade: data.especialidade,
-    });
+    const completar = (legenda: string) =>
+      completeCaptionIfNeeded({
+        legenda,
+        tema,
+        rede: data.rede,
+        formato,
+        audiencia: data.audiencia,
+        especialidade: data.especialidade,
+      });
     // Dedup do TEXTO antes de gerar imagens/salvar: título e corpo editorial (sem assinatura,
     // CTA e hashtags) comparados ao histórico real, inclusive frases reaproveitadas.
     // Duplicata → reescreve SÓ este post com nova abordagem (máx. 2 vezes); depois, erro visível.
     const conflitoTexto = (legenda: string) => {
       const limpo = (legenda || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/im, "").trim();
-      return acharConflito({ tema: "", titulo: titleOf(limpo), corpo: limpo.slice(0, 1500), quando: quandoRef }, historicoSig, optsConflito);
+      return acharConflito(
+        { tema: "", titulo: titleOf(limpo), corpo: limpo.slice(0, 1500), quando: quandoRef },
+        historicoSig,
+        optsConflito,
+      );
     };
     let legendaBaseResolvida = completar(await legendaPromise);
     for (let tentativa = 1; ; tentativa++) {
@@ -1866,30 +2280,52 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       if (!conflito) break;
       console.warn("[dedup] texto repetido", { postId, tentativa, motivo: conflito.motivo });
       if (usaEscritorLocal || tentativa > 2) {
-        throw new Error(`${mensagemConflito(conflito)} ${usaEscritorLocal ? "O escritor local não consegue variar este texto" : `Tentamos ${tentativa} abordagens diferentes`}. Nada foi salvo — revise o tema deste horário.`);
+        throw new Error(
+          `${mensagemConflito(conflito)} ${usaEscritorLocal ? "O escritor local não consegue variar este texto" : `Tentamos ${tentativa} abordagens diferentes`}. Nada foi salvo — revise o tema deste horário.`,
+        );
       }
-      legendaBaseResolvida = completar(await escreverLegenda(`\n\nNOVA ABORDAGEM OBRIGATÓRIA (tentativa ${tentativa + 1}): a versão anterior ficou parecida demais com um post já existente ("${conflito.com.slice(0, 90)}"). Use outro gancho, outro título, outra estrutura e outros exemplos concretos. Não reutilize frases daquele post.`));
+      legendaBaseResolvida = completar(
+        await escreverLegenda(
+          `\n\nNOVA ABORDAGEM OBRIGATÓRIA (tentativa ${tentativa + 1}): a versão anterior ficou parecida demais com um post já existente ("${conflito.com.slice(0, 90)}"). Use outro gancho, outro título, outra estrutura e outros exemplos concretos. Não reutilize frases daquele post.`,
+        ),
+      );
     }
-    const slideCount = quantidadeSlides({ rede: data.rede, formato, tipo: data.tipo, pedido: data.slides });
+    const slideCount = quantidadeSlides({
+      rede: data.rede,
+      formato,
+      tipo: data.tipo,
+      pedido: data.slides,
+    });
     // Chico: texto final completo, sem trocar/truncar blocos por narrativas genéricas.
-    const slideNarratives = formato === "Carrossel"
-      ? isChico ? extractFinalSlides(legendaBaseResolvida, slideCount)
-        : slidesNaoChico(legendaBaseResolvida, tema, data.audiencia, slideCount)
-      : [];
+    const slideNarratives =
+      formato === "Carrossel"
+        ? isChico
+          ? extractFinalSlides(legendaBaseResolvida, slideCount)
+          : slidesNaoChico(legendaBaseResolvida, tema, data.audiencia, slideCount)
+        : [];
     // Carrossel: slides progressivos dentro do mesmo tema — slide que repete outro bloqueia o salvamento.
     if (formato === "Carrossel" && isChico) {
       const rep = slidesRepetidos(slideNarratives);
-      if (rep.length) throw new Error(`O carrossel repetiu o conteúdo no(s) slide(s) ${rep.map((i) => i + 1).join(", ")}. Nada foi salvo — gere novamente para obter slides diferentes e progressivos.`);
+      if (rep.length)
+        throw new Error(
+          `O carrossel repetiu o conteúdo no(s) slide(s) ${rep.map((i) => i + 1).join(", ")}. Nada foi salvo — gere novamente para obter slides diferentes e progressivos.`,
+        );
     }
-    const legendaResolvida = isChico ? legendaBaseResolvida
-      : formato === "Carrossel" && !isDiverso ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia) : legendaBaseResolvida;
+    const legendaResolvida = isChico
+      ? legendaBaseResolvida
+      : formato === "Carrossel" && !isDiverso
+        ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia)
+        : legendaBaseResolvida;
 
     // === NEXO LEGENDA ↔ IMAGEM ===
     // Extrai HEADLINE (1ª linha não-vazia) + ALT TEXT da legenda e, quando possível,
     // pede ao LLM uma "cena visual" 1-frase fiel ao que a legenda diz. Esse briefing
     // é injetado em TODO prompt de imagem para que a arte conte a MESMA história.
     const extractHeadline = (txt: string) => {
-      const linhas = (txt || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      const linhas = (txt || "")
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
       return (linhas[0] || "").replace(/^[#*>\-•\d.\)\s]+/, "").slice(0, 120);
     };
     const extractAlt = (txt: string) => {
@@ -1898,60 +2334,102 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     };
     const hookImagem = extractHookImagem(legendaResolvida) || pickHookForTopic(tema);
     // remove a linha HOOK_IMAGEM da legenda exibida/publicada
-    let legendaSemHook = (legendaResolvida || "").replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "").trim();
+    let legendaSemHook = (legendaResolvida || "")
+      .replace(/^\s*HOOK_IMAGEM\s*:[^\n]*\n?/i, "")
+      .trim();
     if (!isChico) legendaSemHook = enforceHookCoherence(legendaSemHook, hookImagem, tema);
     const headlineLegenda = extractHeadline(legendaSemHook) || hookImagem;
     const altLegenda = extractAlt(legendaSemHook);
     const guiaTema = topicGuidance(tema);
     let cenaVisualNexo = visualSceneForTopic(tema, guiaTema, data.audiencia);
-    let cenasPorSlide: string[] = slideNarratives.map((_, i) => visualSceneForTopic(tema, guiaTema, data.audiencia, i));
+    let cenasPorSlide: string[] = slideNarratives.map((_, i) =>
+      visualSceneForTopic(tema, guiaTema, data.audiencia, i),
+    );
     try {
-      if (!isChico && !isDiverso && process.env.LOVABLE_API_KEY && data.modelo !== "local/sem-custo") {
+      if (
+        !isChico &&
+        !isDiverso &&
+        process.env.LOVABLE_API_KEY &&
+        data.modelo !== "local/sem-custo"
+      ) {
         const { generateTextAI } = await import("@/lib/ai-gateway.server");
         const briefSys = `Você é diretor de arte médico. Use o CONTRATO CLÍNICO como fonte única de verdade e devolva UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente tema + conduta. Sem metáforas vagas, sem texto na imagem, sem cor nomeada, sem pessoa real. Se a legenda estiver genérica, siga o contrato.`;
         const briefPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
         // Cena única e cenas por slide são independentes → rodam em PARALELO.
-        const cenaPromise = formato === "Carrossel"
-          ? Promise.resolve("")
-          : generateTextAI({ system: briefSys, prompt: briefPrompt, model: data.modelo, maxTokens: 140 }).catch(() => "");
+        const cenaPromise =
+          formato === "Carrossel"
+            ? Promise.resolve("")
+            : generateTextAI({
+                system: briefSys,
+                prompt: briefPrompt,
+                model: data.modelo,
+                maxTokens: 140,
+              }).catch(() => "");
         const cenaIA = ((await cenaPromise) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
         const cenaIANorm = normalizeTema(cenaIA);
-        const palavrasTema = normalizeTema(tema).split(" ").filter((p) => p.length > 4);
-        const palavrasContrato = normalizeTema(`${guiaTema.oQue} ${guiaTema.conduta}`).split(" ").filter((p) => p.length > 5);
-        const cenaAncorada = [...palavrasTema, ...palavrasContrato].some((p) => cenaIANorm.includes(p));
+        const palavrasTema = normalizeTema(tema)
+          .split(" ")
+          .filter((p) => p.length > 4);
+        const palavrasContrato = normalizeTema(`${guiaTema.oQue} ${guiaTema.conduta}`)
+          .split(" ")
+          .filter((p) => p.length > 5);
+        const cenaAncorada = [...palavrasTema, ...palavrasContrato].some((p) =>
+          cenaIANorm.includes(p),
+        );
         if (cenaIA && cenaAncorada) cenaVisualNexo = cenaIA;
 
         // Carrossel: gera 1 cena DISTINTA por slide, ancorada na legenda + papel narrativo.
         if (formato === "Carrossel") {
-          const papeis = data.rede === "estilo-x"
-            ? ["TWEET 1: gancho/pergunta", "TWEET 2: explicação científica curta", "TWEET 3: CTA fechamento"]
-            : [
-                "CAPA: GANCHO ULTRA FORTE 3-6 palavras (dor real/pergunta direta sobre o TEMA, sem citar marca ou @drfranciscomenezes)",
-                "PROBLEMA: aprofundar o sintoma em linguagem leiga",
-                "MECANISMO: como o problema acontece (analogia anatômica simples)",
-                "SOLUÇÃO/GANHO: como o cirurgião resolve, foco no ganho do paciente",
-                "FECHAMENTO: CTA premium Link na Bio + WhatsApp",
-              ];
+          const papeis =
+            data.rede === "estilo-x"
+              ? [
+                  "TWEET 1: gancho/pergunta",
+                  "TWEET 2: explicação científica curta",
+                  "TWEET 3: CTA fechamento",
+                ]
+              : [
+                  "CAPA: GANCHO ULTRA FORTE 3-6 palavras (dor real/pergunta direta sobre o TEMA, sem citar marca ou @drfranciscomenezes)",
+                  "PROBLEMA: aprofundar o sintoma em linguagem leiga",
+                  "MECANISMO: como o problema acontece (analogia anatômica simples)",
+                  "SOLUÇÃO/GANHO: como o cirurgião resolve, foco no ganho do paciente",
+                  "FECHAMENTO: CTA premium Link na Bio + WhatsApp",
+                ];
           try {
             const carrosselSys = `Você é diretor de arte médico. Para o tema "${tema}", use o CONTRATO CLÍNICO como fonte única de verdade. Descreva ${papeis.length} CENAS VISUAIS DISTINTAS — uma por slide — na ordem problema → mecanismo → conduta/tratamento → ganho → CTA. Cada cena: 1 frase em PT-BR (máx. 220 caracteres), literal, sujeito + ação + contexto anatômico/clínico. Sem texto na imagem, sem cor nomeada, sem pessoa real. Responda APENAS um JSON array de ${papeis.length} strings.`;
             const carrosselPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nROTEIRO TEXTUAL OBRIGATÓRIO POR SLIDE:\n${slideNarratives.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nPAPÉIS DOS SLIDES (na ordem):\n${papeis.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nResponda só o JSON array.`;
-            const raw = (await generateTextAI({ system: carrosselSys, prompt: carrosselPrompt, model: data.modelo, maxTokens: 600 }) || "").trim();
+            const raw = (
+              (await generateTextAI({
+                system: carrosselSys,
+                prompt: carrosselPrompt,
+                model: data.modelo,
+                maxTokens: 600,
+              })) || ""
+            ).trim();
             const jsonMatch = raw.match(/\[[\s\S]*\]/);
             if (jsonMatch) {
               const arr = JSON.parse(jsonMatch[0]);
-                if (Array.isArray(arr) && arr.length >= cenasPorSlide.length) {
-                  const parsed = arr.map((s) => String(s || "").trim()).filter(Boolean);
-                  // Validação de coerência: cena precisa citar o tema/contrato ou o texto do slide.
-                  const ancoraSlide = (cena: string, i: number) => {
-                    const n = normalizeTema(cena);
-                    const pal = normalizeTema(`${tema} ${guiaTema.oQue} ${guiaTema.conduta} ${slideNarratives[i] || ""}`).split(" ").filter((p) => p.length > 5);
-                    return pal.some((p) => n.includes(p));
-                  };
-                  cenasPorSlide = cenasPorSlide.map((fallback, i) => (parsed[i] && ancoraSlide(parsed[i], i) ? parsed[i] : fallback));
-                }
+              if (Array.isArray(arr) && arr.length >= cenasPorSlide.length) {
+                const parsed = arr.map((s) => String(s || "").trim()).filter(Boolean);
+                // Validação de coerência: cena precisa citar o tema/contrato ou o texto do slide.
+                const ancoraSlide = (cena: string, i: number) => {
+                  const n = normalizeTema(cena);
+                  const pal = normalizeTema(
+                    `${tema} ${guiaTema.oQue} ${guiaTema.conduta} ${slideNarratives[i] || ""}`,
+                  )
+                    .split(" ")
+                    .filter((p) => p.length > 5);
+                  return pal.some((p) => n.includes(p));
+                };
+                cenasPorSlide = cenasPorSlide.map((fallback, i) =>
+                  parsed[i] && ancoraSlide(parsed[i], i) ? parsed[i] : fallback,
+                );
+              }
             }
           } catch (err) {
-            console.warn("[ai-post] cenas por slide caíram:", err instanceof Error ? err.message : err);
+            console.warn(
+              "[ai-post] cenas por slide caíram:",
+              err instanceof Error ? err.message : err,
+            );
           }
         }
       }
@@ -1959,148 +2437,298 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       console.warn("[ai-post] brief visual caiu:", err instanceof Error ? err.message : err);
     }
     const briefingNexoBase = [
-      headlineLegenda ? `HEADLINE DA LEGENDA (use como ESPÍRITO da cena, NÃO escreva na imagem): "${headlineLegenda}"` : "",
+      headlineLegenda
+        ? `HEADLINE DA LEGENDA (use como ESPÍRITO da cena, NÃO escreva na imagem): "${headlineLegenda}"`
+        : "",
       altLegenda ? `ALT TEXT GUIA (a cena PRECISA bater com isso): "${altLegenda}"` : "",
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
     const withVisual = (basePrompt: string, slideIndex?: number) => {
       const guardaPtBr = `IDIOMA OBRIGATÓRIO — TODO texto renderizado na imagem DEVE ser 100% em PT-BR com acentuação completa e crase correta. PROIBIDO qualquer palavra em inglês/espanhol/latim; PROIBIDO palavras inventadas, duplicadas, sem acento. Se houver dúvida, use sinônimo simples correto em pt-BR.`;
       // TEMAS DIVERSOS: sem contrato clínico, sem cena médica, sem hook de dor.
-      if (isDiverso) return `${guardaPtBr}\n\nTEMA DO POST: "${tema}" (TOTALMENTE FORA da área da saúde/odontologia). NÃO desenhe cena clínica, hospitalar, consultório, dentes, boca, jaleco, instrumental médico. Ilustre APENAS o tema.\n\n${basePrompt}`;
+      if (isDiverso)
+        return `${guardaPtBr}\n\nTEMA DO POST: "${tema}" (TOTALMENTE FORA da área da saúde/odontologia). NÃO desenhe cena clínica, hospitalar, consultório, dentes, boca, jaleco, instrumental médico. Ilustre APENAS o tema.\n\n${basePrompt}`;
       const cenaSlide = typeof slideIndex === "number" ? cenasPorSlide[slideIndex] : "";
       const narrativaSlide = typeof slideIndex === "number" ? slideNarratives[slideIndex] : "";
-      const cena = cenaSlide || visualSceneForTopic(tema, guiaTema, data.audiencia, slideIndex) || cenaVisualNexo;
+      const cena =
+        cenaSlide ||
+        visualSceneForTopic(tema, guiaTema, data.audiencia, slideIndex) ||
+        cenaVisualNexo;
       const contrato = clinicalContract(tema, data.audiencia, slideIndex);
       const isCapa = slideIndex === 0 || typeof slideIndex === "undefined";
-      const hookBloco = (isCapa && hookImagem)
-        ? `TEXTO OBRIGATÓRIO NA IMAGEM (renderize EXATAMENTE esta frase como tipografia gigante bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre o fundo navy luminoso, 3-6 palavras, PT-BR com acentuação perfeita, centralizado na parte superior/central da arte): "${hookImagem}". NÃO altere, NÃO traduza, NÃO adicione outras palavras, NÃO escreva nome de profissional/clínica/marca. É o ÚNICO texto permitido na imagem.`
-        : "";
+      const hookBloco =
+        isCapa && hookImagem
+          ? `TEXTO OBRIGATÓRIO NA IMAGEM (renderize EXATAMENTE esta frase como tipografia gigante bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre o fundo navy luminoso, 3-6 palavras, PT-BR com acentuação perfeita, centralizado na parte superior/central da arte): "${hookImagem}". NÃO altere, NÃO traduza, NÃO adicione outras palavras, NÃO escreva nome de profissional/clínica/marca. É o ÚNICO texto permitido na imagem.`
+          : "";
       const blocos = [
         contrato,
         briefingNexoBase,
-        narrativaSlide ? `LEGENDA/ROTEIRO EXCLUSIVO DESTE SLIDE (não repetir nos outros): ${narrativaSlide}` : "",
-        cena ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cena}` : "",
+        narrativaSlide
+          ? `LEGENDA/ROTEIRO EXCLUSIVO DESTE SLIDE (não repetir nos outros): ${narrativaSlide}`
+          : "",
+        cena
+          ? `CENA OBRIGATÓRIA (ilustre EXATAMENTE isto, sem inventar elemento alheio à legenda): ${cena}`
+          : "",
         hookBloco,
-      ].filter(Boolean).join("\n");
+      ]
+        .filter(Boolean)
+        .join("\n");
       return blocos
         ? `=== NEXO OBRIGATÓRIO COM A LEGENDA (PRIORIDADE MÁXIMA) ===\n${guardaPtBr}\n${blocos}\nA imagem deve mostrar a CONDUTA/TRATAMENTO quando o slide pedir solução. Se houver conflito com o prompt base, ESTE NEXO vence.\n=== FIM DO NEXO ===\n\n${basePrompt}`
         : `${guardaPtBr}\n\n${basePrompt}`;
     };
 
-
-
-    let urlImagem: string;
+    let urlImagem = "";
     let imagensCarrossel: string[] = [];
     let urlImagemCache: string | null = null;
     let imagensCarrosselCache: string[] = [];
 
-    if (isChico) {
-      const texts = formato === "Carrossel" ? slideNarratives : [legendaSemHook];
-      const uploads = await Promise.all(texts.map((texto, slideIndex) => {
-        const brief = {
-          postId, slideIndex, total: texts.length, tema,
-          titulo: (formato === "Carrossel" ? texto : headlineLegenda).split(/\r?\n/)[0].replace(/\*+/g, "").trim(),
-          texto, objetivo: isDiverso ? "Informar sobre o tema editorial" : nivel === "ig-conversao" ? "Educar e favorecer identificação sem prometer resultados" : "Explicar com precisão e orientar cuidado seguro",
-          publico: data.rede === "linkedin" ? "Profissionais de saúde" : "Público leigo brasileiro",
-          contexto: `${data.especialidade}; ${data.rede}; ${formato}. ${isDiverso ? "Tema não clínico: não incluir elementos médicos." : "CTBMF e Odontologia Hospitalar; anatomia correta, sem diagnóstico individual ou procedimentos invasivos."}`,
-          identidade: brandOneLiner + " Fotografia plausível ou anatomia editorial realista; azul petróleo, ciano, branco e preto. Vermelho apenas para dor. Sans-serif bold, padrão hospitalar premium.",
-        };
-        return generateBoundImage(brief, async (prompt) => {
-          const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(prompt));
-          const briefHash = Array.from(new Uint8Array(digest)).map((n) => n.toString(16).padStart(2, "0")).join("");
-          console.info("[contextual-image-request]", { postId, slideIndex, provider: data.modeloImagem.split("/")[0], model: data.modeloImagem, briefHash, briefSummary: { objetivo: brief.objetivo, textLength: texto.length, promptLength: prompt.length }, semanticVerification: "not-performed" });
-          return generateImageWithRetry(prompt);
-        }, async (b64, expectedPostId, expectedSlide) => {
-          if (expectedPostId !== postId) throw new Error("Post incorreto no upload.");
-          const result = await uploadOne(await applyOverlay(await ensureJpegB64(b64)), expectedSlide);
-          console.info("[contextual-image-upload]", { postId, slideIndex: expectedSlide, origin: "fresh-provider-image", storageObject: new URL(result.publicUrl).pathname.split("/").slice(-2).join("/") });
-          return result;
-        });
-      }));
-      const bound = validateImageBindings(postId, texts.length, uploads);
-      urlImagem = bound[0].publicUrl;
-      urlImagemCache = bound[0].signedUrl;
-      if (formato === "Carrossel") {
-        imagensCarrossel = bound.map((r) => r.publicUrl);
-        imagensCarrosselCache = bound.map((r) => r.signedUrl);
-      }
-    } else     if (formato === "Carrossel") {
-      const fullSpec = [
-        { n: 1, total: 5, papel: `CAPA sobre o TEMA "${tema}": GANCHO ULTRA FORTE de conversão obrigatório em tipografia gigante (3-6 palavras, bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre navy luminoso) — pergunta direta de dor real, dado de impacto ou frase-choque relacionada EXCLUSIVAMENTE ao tema "${tema}" (ex.: 'DOR NO SISO?', 'SEU MAXILAR TRAVA?', 'RONCO PODE MATAR', 'ESSE CHEIRO NÃO É NORMAL', 'PERDEU UM DENTE?'). PT-BR impecável, acentuação correta, SEM palavras duplicadas, SEM inglês, SEM texto inventado. O gancho fala DIRETO ao paciente sobre o TEMA — NÃO menciona '@drfranciscomenezes', nome do profissional, marca, clínica ou consultório (a assinatura entra como overlay do sistema). Layout impactante de capa de revista médica, hierarquia visual brutal, ZERO bibliografia, ZERO logo desenhada.` },
-        { n: 2, total: 5, papel: `PROBLEMA do TEMA "${tema}": aprofunda a dor em linguagem leiga, faz a pessoa se identificar. SEM anatomia clínica interna. NÃO mude de assunto — permaneça em "${tema}". PT-BR sem erros.` },
-        { n: 3, total: 5, papel: `MECANISMO do TEMA "${tema}": explica COMO o problema acontece com analogia visual simples. Reforço de autoridade hospitalar. Sem trocar de patologia. PT-BR sem erros.` },
-        { n: 4, total: 5, papel: `SOLUÇÃO/GANHO do TEMA "${tema}": como o cirurgião resolve ESTE tema. Foco no GANHO CONCRETO do paciente (dormir bem, mastigar sem dor, voltar a sorrir, respirar melhor). PT-BR sem erros.` },
-        { n: 5, total: 5, papel: `FECHAMENTO PREMIUM do TEMA "${tema}" com CTA FORTE: tipografia grande 'LINK NA BIO' centralizada + ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat oficial, canto inferior direito) + número '+55 11 94768-4004' em tipografia pequena ao lado do ícone. Hierarquia editorial impecável estilo capa de revista médica top de linha. PT-BR impecável. É o slide mais bonito do carrossel.` },
-      ];
-      const xSpec = [
-        { n: 1, total: 3, papel: `TWEET 1 sobre "${tema}": gancho/pergunta forte com assinatura. PT-BR sem erros.` },
-        { n: 2, total: 3, papel: `TWEET 2 sobre "${tema}": explicação científica curta. Sem mudar de tema. PT-BR sem erros.` },
-        { n: 3, total: 3, papel: `TWEET 3 sobre "${tema}": CTA WhatsApp/Link na Bio + assinatura. PT-BR sem erros.` },
-      ];
-      const diverseSpec = [
-        { n: 1, total: 5, papel: `CAPA editorial sobre "${tema}" (FORA da saúde): headline curto 2-6 palavras em PT-BR coerente com o tema (ex.: homenagem, data, símbolo). Composição impactante, sem elementos clínicos.` },
-        { n: 2, total: 5, papel: `CONTEXTO/HISTÓRIA de "${tema}": cena/objeto/símbolo representando o tema. Sem texto ou máx. 3 palavras.` },
-        { n: 3, total: 5, papel: `DETALHE/CURIOSIDADE de "${tema}": composição editorial reforçando o assunto. Sem texto.` },
-        { n: 4, total: 5, papel: `MOMENTO EMOCIONAL de "${tema}": reforça a mensagem central do tema. Sem texto.` },
-        { n: 5, total: 5, papel: `FECHAMENTO editorial de "${tema}" com CTA coerente com o tema (ex.: "COMPARTILHE", "LEMBRE-SE"). Sem WhatsApp de consultório, sem menção a saúde.` },
-      ];
-      const slidesSpec = data.rede === "estilo-x" ? xSpec : isDiverso ? diverseSpec : fullSpec;
-      // Gera TODAS as imagens em paralelo com retry POR SLIDE — nenhum slide pode faltar.
-      const genSlideResilient = async (s: typeof slidesSpec[number], idx: number): Promise<{ publicUrl: string; signedUrl: string }> => {
-        const prompt = withVisual(
-          isEstudantes
-            ? studentImagePrompt(tema, s, data.especialidade)
-            : isChico
-              ? chicoImagePrompt(tema, s, false, data.especialidade)
-              : imageSystemPrompt(tema, data.rede, nivel, s, data.especialidade),
-          idx,
+    let imagemErro: string | undefined;
+    try {
+      if (isChico) {
+        const texts = formato === "Carrossel" ? slideNarratives : [legendaSemHook];
+        const uploads = await Promise.all(
+          texts.map((texto, slideIndex) => {
+            const brief = {
+              postId,
+              slideIndex,
+              total: texts.length,
+              tema,
+              titulo: (formato === "Carrossel" ? texto : headlineLegenda)
+                .split(/\r?\n/)[0]
+                .replace(/\*+/g, "")
+                .trim(),
+              texto,
+              objetivo: isDiverso
+                ? "Informar sobre o tema editorial"
+                : nivel === "ig-conversao"
+                  ? "Educar e favorecer identificação sem prometer resultados"
+                  : "Explicar com precisão e orientar cuidado seguro",
+              publico:
+                data.rede === "linkedin" ? "Profissionais de saúde" : "Público leigo brasileiro",
+              contexto: `${data.especialidade}; ${data.rede}; ${formato}. ${isDiverso ? "Tema não clínico: não incluir elementos médicos." : "CTBMF e Odontologia Hospitalar; anatomia correta, sem diagnóstico individual ou procedimentos invasivos."}`,
+              identidade:
+                brandOneLiner +
+                " Fotografia plausível ou anatomia editorial realista; azul petróleo, ciano, branco e preto. Vermelho apenas para dor. Sans-serif bold, padrão hospitalar premium.",
+            };
+            return generateBoundImage(
+              brief,
+              async (prompt) => {
+                const digest = await crypto.subtle.digest(
+                  "SHA-256",
+                  new TextEncoder().encode(prompt),
+                );
+                const briefHash = Array.from(new Uint8Array(digest))
+                  .map((n) => n.toString(16).padStart(2, "0"))
+                  .join("");
+                console.info("[contextual-image-request]", {
+                  postId,
+                  slideIndex,
+                  provider: data.modeloImagem.split("/")[0],
+                  model: data.modeloImagem,
+                  briefHash,
+                  briefSummary: {
+                    objetivo: brief.objetivo,
+                    textLength: texto.length,
+                    promptLength: prompt.length,
+                  },
+                  semanticVerification: "not-performed",
+                });
+                return generateImageWithRetry(prompt);
+              },
+              async (b64, expectedPostId, expectedSlide) => {
+                if (expectedPostId !== postId) throw new Error("Post incorreto no upload.");
+                const result = await uploadOne(
+                  await applyOverlay(await ensureJpegB64(b64)),
+                  expectedSlide,
+                );
+                console.info("[contextual-image-upload]", {
+                  postId,
+                  slideIndex: expectedSlide,
+                  origin: "fresh-provider-image",
+                  storageObject: new URL(result.publicUrl).pathname.split("/").slice(-2).join("/"),
+                });
+                return result;
+              },
+            );
+          }),
         );
-        return genAndUpload(prompt, idx);
-      };
-      const uploads = await Promise.all(slidesSpec.map((s, idx) => genSlideResilient(s, idx)));
-      if (uploads.length !== slidesSpec.length || uploads.some((u) => !u?.publicUrl)) {
-        throw new Error(`Carrossel incompleto: ${uploads.filter((u) => u?.publicUrl).length}/${slidesSpec.length} slides gerados.`);
+        const bound = validateImageBindings(postId, texts.length, uploads);
+        urlImagem = bound[0].publicUrl;
+        urlImagemCache = bound[0].signedUrl;
+        if (formato === "Carrossel") {
+          imagensCarrossel = bound.map((r) => r.publicUrl);
+          imagensCarrosselCache = bound.map((r) => r.signedUrl);
+        }
+      } else if (formato === "Carrossel") {
+        const fullSpec = [
+          {
+            n: 1,
+            total: 5,
+            papel: `CAPA sobre o TEMA "${tema}": GANCHO ULTRA FORTE de conversão obrigatório em tipografia gigante (3-6 palavras, bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre navy luminoso) — pergunta direta de dor real, dado de impacto ou frase-choque relacionada EXCLUSIVAMENTE ao tema "${tema}" (ex.: 'DOR NO SISO?', 'SEU MAXILAR TRAVA?', 'RONCO PODE MATAR', 'ESSE CHEIRO NÃO É NORMAL', 'PERDEU UM DENTE?'). PT-BR impecável, acentuação correta, SEM palavras duplicadas, SEM inglês, SEM texto inventado. O gancho fala DIRETO ao paciente sobre o TEMA — NÃO menciona '@drfranciscomenezes', nome do profissional, marca, clínica ou consultório (a assinatura entra como overlay do sistema). Layout impactante de capa de revista médica, hierarquia visual brutal, ZERO bibliografia, ZERO logo desenhada.`,
+          },
+          {
+            n: 2,
+            total: 5,
+            papel: `PROBLEMA do TEMA "${tema}": aprofunda a dor em linguagem leiga, faz a pessoa se identificar. SEM anatomia clínica interna. NÃO mude de assunto — permaneça em "${tema}". PT-BR sem erros.`,
+          },
+          {
+            n: 3,
+            total: 5,
+            papel: `MECANISMO do TEMA "${tema}": explica COMO o problema acontece com analogia visual simples. Reforço de autoridade hospitalar. Sem trocar de patologia. PT-BR sem erros.`,
+          },
+          {
+            n: 4,
+            total: 5,
+            papel: `SOLUÇÃO/GANHO do TEMA "${tema}": como o cirurgião resolve ESTE tema. Foco no GANHO CONCRETO do paciente (dormir bem, mastigar sem dor, voltar a sorrir, respirar melhor). PT-BR sem erros.`,
+          },
+          {
+            n: 5,
+            total: 5,
+            papel: `FECHAMENTO PREMIUM do TEMA "${tema}" com CTA FORTE: tipografia grande 'LINK NA BIO' centralizada + ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat oficial, canto inferior direito) + número '+55 11 94768-4004' em tipografia pequena ao lado do ícone. Hierarquia editorial impecável estilo capa de revista médica top de linha. PT-BR impecável. É o slide mais bonito do carrossel.`,
+          },
+        ];
+        const xSpec = [
+          {
+            n: 1,
+            total: 3,
+            papel: `TWEET 1 sobre "${tema}": gancho/pergunta forte com assinatura. PT-BR sem erros.`,
+          },
+          {
+            n: 2,
+            total: 3,
+            papel: `TWEET 2 sobre "${tema}": explicação científica curta. Sem mudar de tema. PT-BR sem erros.`,
+          },
+          {
+            n: 3,
+            total: 3,
+            papel: `TWEET 3 sobre "${tema}": CTA WhatsApp/Link na Bio + assinatura. PT-BR sem erros.`,
+          },
+        ];
+        const diverseSpec = [
+          {
+            n: 1,
+            total: 5,
+            papel: `CAPA editorial sobre "${tema}" (FORA da saúde): headline curto 2-6 palavras em PT-BR coerente com o tema (ex.: homenagem, data, símbolo). Composição impactante, sem elementos clínicos.`,
+          },
+          {
+            n: 2,
+            total: 5,
+            papel: `CONTEXTO/HISTÓRIA de "${tema}": cena/objeto/símbolo representando o tema. Sem texto ou máx. 3 palavras.`,
+          },
+          {
+            n: 3,
+            total: 5,
+            papel: `DETALHE/CURIOSIDADE de "${tema}": composição editorial reforçando o assunto. Sem texto.`,
+          },
+          {
+            n: 4,
+            total: 5,
+            papel: `MOMENTO EMOCIONAL de "${tema}": reforça a mensagem central do tema. Sem texto.`,
+          },
+          {
+            n: 5,
+            total: 5,
+            papel: `FECHAMENTO editorial de "${tema}" com CTA coerente com o tema (ex.: "COMPARTILHE", "LEMBRE-SE"). Sem WhatsApp de consultório, sem menção a saúde.`,
+          },
+        ];
+        const slidesSpec = data.rede === "estilo-x" ? xSpec : isDiverso ? diverseSpec : fullSpec;
+        // Gera TODAS as imagens em paralelo com retry POR SLIDE — nenhum slide pode faltar.
+        const genSlideResilient = async (
+          s: (typeof slidesSpec)[number],
+          idx: number,
+        ): Promise<{ publicUrl: string; signedUrl: string }> => {
+          const prompt = withVisual(
+            isEstudantes
+              ? studentImagePrompt(tema, s, data.especialidade)
+              : isChico
+                ? chicoImagePrompt(tema, s, false, data.especialidade)
+                : imageSystemPrompt(tema, data.rede, nivel, s, data.especialidade),
+            idx,
+          );
+          return genAndUpload(prompt, idx);
+        };
+        const uploads = await Promise.all(slidesSpec.map((s, idx) => genSlideResilient(s, idx)));
+        if (uploads.length !== slidesSpec.length || uploads.some((u) => !u?.publicUrl)) {
+          throw new Error(
+            `Carrossel incompleto: ${uploads.filter((u) => u?.publicUrl).length}/${slidesSpec.length} slides gerados.`,
+          );
+        }
+        urlImagem = uploads[0].publicUrl;
+        urlImagemCache = uploads[0].signedUrl;
+        imagensCarrossel = uploads.map((u) => u.publicUrl);
+        imagensCarrosselCache = uploads.map((u) => u.signedUrl);
+      } else {
+        const upload = await genAndUpload(
+          withVisual(
+            isEstudantes
+              ? studentImagePrompt(tema, undefined, data.especialidade)
+              : isChico
+                ? chicoImagePrompt(tema, undefined, isStory, data.especialidade)
+                : imageSystemPrompt(tema, data.rede, nivel, undefined, data.especialidade),
+          ),
+        );
+        urlImagem = upload.publicUrl;
+        urlImagemCache = upload.signedUrl;
       }
-      urlImagem = uploads[0].publicUrl;
-      urlImagemCache = uploads[0].signedUrl;
-      imagensCarrossel = uploads.map((u) => u.publicUrl);
-      imagensCarrosselCache = uploads.map((u) => u.signedUrl);
-    } else {
-      const upload = await genAndUpload(withVisual(
-        isEstudantes
-          ? studentImagePrompt(tema, undefined, data.especialidade)
-          : isChico
-            ? chicoImagePrompt(tema, undefined, isStory, data.especialidade)
-            : imageSystemPrompt(tema, data.rede, nivel, undefined, data.especialidade)
-      ));
-      urlImagem = upload.publicUrl;
-      urlImagemCache = upload.signedUrl;
+    } catch (e) {
+      // Planejar semana: o texto é salvo e o erro de imagem fica visível no slot ("Tentar novamente").
+      // Nunca substitui por imagem genérica/procedural nem marca o post como completo.
+      if (!data.salvarTextoSeImagemFalhar) throw e;
+      imagemErro = e instanceof Error ? e.message : String(e);
+      console.warn("[image-failed-text-saved]", { postId, erro: imagemErro });
+      urlImagem = "";
+      urlImagemCache = null;
+      imagensCarrossel = [];
+      imagensCarrosselCache = [];
     }
 
     const legenda = legendaSemHook;
-
 
     const tipoPost = formato === "Carrossel" ? "Carrossel" : "Post Único";
 
     // Roteamento de conta Instagram — sem isto o publicador cai no default
     // (@drfranciscomenezes) e Liga/Chico saem na conta errada.
-    const instagramConta = isEstudantes
-      ? "lactbmf.anhanguerasbo"
-      : "drfranciscomenezes";
+    const instagramConta = isEstudantes ? "lactbmf.anhanguerasbo" : "drfranciscomenezes";
 
     // Recheque imediatamente antes do insert: posts salvos DURANTE esta geração (outro planner,
     // outra aba ou item concorrente) também contam. Nunca salva duplicata silenciosamente.
     try {
       const desdeRecente = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      const { data: recem } = await supabaseAdmin.from("posts").select("id, prompt_ia, legenda, created_at, data_agendamento, status").eq("user_id", context.userId).neq("status", "Erro").gte("created_at", desdeRecente).limit(100);
-      const assinaturaNova: AssinaturaPost = { tema, titulo: titleOf(legenda), corpo: legenda.slice(0, 1500), quando: quandoRef, objetivo: data.objetivo };
+      const { data: recem } = await supabaseAdmin
+        .from("posts")
+        .select("id, prompt_ia, legenda, created_at, data_agendamento, status")
+        .eq("user_id", context.userId)
+        .neq("status", "Erro")
+        .gte("created_at", desdeRecente)
+        .limit(100);
+      const assinaturaNova: AssinaturaPost = {
+        tema,
+        titulo: titleOf(legenda),
+        corpo: legenda.slice(0, 1500),
+        quando: quandoRef,
+        objetivo: data.objetivo,
+      };
       const colisao = acharConflito(
         assinaturaNova,
-        (recem ?? []).map((r: any) => ({ tema: r.prompt_ia || "", titulo: r.legenda ? titleOf(r.legenda) : "", corpo: (r.legenda || "").slice(0, 1500), quando: r.data_agendamento ?? null, status: r.status })),
+        (recem ?? []).map((r: any) => ({
+          tema: r.prompt_ia || "",
+          titulo: r.legenda ? titleOf(r.legenda) : "",
+          corpo: (r.legenda || "").slice(0, 1500),
+          quando: r.data_agendamento ?? null,
+          status: r.status,
+        })),
         optsConflito,
       );
       if (colisao) {
-        console.warn("[dedup] colisão com post salvo durante a geração", { postId, motivo: colisao.motivo });
-        throw new Error(`Outro post salvo durante esta geração tem o mesmo assunto/texto. ${mensagemConflito(colisao)} Nada foi duplicado.`);
+        console.warn("[dedup] colisão com post salvo durante a geração", {
+          postId,
+          motivo: colisao.motivo,
+        });
+        throw new Error(
+          `Outro post salvo durante esta geração tem o mesmo assunto/texto. ${mensagemConflito(colisao)} Nada foi duplicado.`,
+        );
       }
     } catch (e) {
       if (e instanceof Error && e.message.startsWith("Outro post")) throw e;
@@ -2113,15 +2741,24 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         id: postId,
         user_id: context.userId,
         tipo_post: tipoPost,
-        estilo_layout: data.rede === "estilo-x" ? "Estilo X" : data.rede === "google" ? "Google Business" : "Padrão",
+        estilo_layout:
+          data.rede === "estilo-x"
+            ? "Estilo X"
+            : data.rede === "google"
+              ? "Google Business"
+              : "Padrão",
         formato_midia: formato === "Story" ? "Story" : "Imagem",
         legenda,
-        url_imagem: urlImagem,
+        url_imagem: urlImagem || null,
         url_imagem_cache: urlImagemCache,
-        url_imagem_cache_expires_at: urlImagemCache ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString() : null,
+        url_imagem_cache_expires_at: urlImagemCache
+          ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString()
+          : null,
         imagens_carrossel: imagensCarrossel,
         imagens_carrossel_cache: imagensCarrosselCache,
-        imagens_carrossel_cache_expires_at: imagensCarrosselCache.length ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString() : null,
+        imagens_carrossel_cache_expires_at: imagensCarrosselCache.length
+          ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString()
+          : null,
         // Um post = uma rede. "Todas as redes" NUNCA replica o mesmo post: cada rede tem seus
         // próprios horários e conteúdo inédito (Instagram, LinkedIn e Google Business).
         postar_instagram: data.rede === "instagram" || data.rede === "estilo-x",
@@ -2138,22 +2775,49 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       .single();
     if (insErr && (insErr as any).code === "23505") {
       // Duplo clique/retry concorrente: outro pedido idêntico já salvou. Não duplica.
-      const { data: existente } = await supabaseAdmin.from("posts").select("id, legenda, url_imagem, url_imagem_cache").eq("user_id", context.userId).eq("content_key", chaveConteudo).maybeSingle();
+      const { data: existente } = await supabaseAdmin
+        .from("posts")
+        .select("id, legenda, url_imagem, url_imagem_cache")
+        .eq("user_id", context.userId)
+        .eq("content_key", chaveConteudo)
+        .maybeSingle();
       if (existente) {
         console.info("[dedup] insert idempotente: post já existia", { postId: existente.id });
         const u = (existente as any).url_imagem_cache || (existente as any).url_imagem;
-        return { id: existente.id, url: u, legenda: existente.legenda, slides: 1, urls: [u].filter(Boolean), slideLegendas: [] as string[], reaproveitado: true };
+        return {
+          id: existente.id,
+          url: u,
+          legenda: existente.legenda,
+          slides: 1,
+          urls: [u].filter(Boolean),
+          slideLegendas: [] as string[],
+          reaproveitado: true,
+        };
       }
     }
     if (insErr) throw new Error(`DB: ${insErr.message}`);
 
-    console.info("[contextual-image-saved]", { postId, slideCount, model: data.modeloImagem, origin: "fresh-provider-image" });
+    if (!imagemErro)
+      console.info("[contextual-image-saved]", {
+        postId,
+        slideCount,
+        model: data.modeloImagem,
+        origin: "fresh-provider-image",
+      });
     // URLs públicas e assinadas apontam para o mesmo objeto recém-gerado.
     // fallback para a URL pública caso a assinada não exista.
     const urls = imagensCarrosselCache.length
       ? imagensCarrosselCache
       : [urlImagemCache || urlImagem];
-    return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.length, urls, slideLegendas: slideNarratives.slice(0, urls.length) };
+    return {
+      id: (inserted as any).id,
+      url: urlImagemCache || urlImagem,
+      legenda,
+      slides: urls.filter(Boolean).length,
+      urls: urls.filter(Boolean) as string[],
+      slideLegendas: slideNarratives.slice(0, urls.length),
+      imagemErro,
+    };
   });
 
 // Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado gerado.
@@ -2171,10 +2835,12 @@ export const discardPost = createServerFn({ method: "POST" })
 export const approvePost = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      acao: z.enum(["arquivar", "agendar", "publicar"]).default("arquivar"),
-    }).parse(d),
+    z
+      .object({
+        id: z.string().uuid(),
+        acao: z.enum(["arquivar", "agendar", "publicar"]).default("arquivar"),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -2193,7 +2859,11 @@ export const approvePost = createServerFn({ method: "POST" })
       if (post?.postar_linkedin) {
         try {
           const { publishLinkedInPostById } = await import("@/lib/social/linkedin-publish.server");
-          const r = await publishLinkedInPostById({ supabaseAdmin, postId: data.id, userId: publishUserId });
+          const r = await publishLinkedInPostById({
+            supabaseAdmin,
+            postId: data.id,
+            userId: publishUserId,
+          });
           results.linkedin = r;
         } catch (err: any) {
           warnings.push(`LinkedIn: ${err?.message || err}`);
@@ -2202,8 +2872,13 @@ export const approvePost = createServerFn({ method: "POST" })
 
       if (post?.postar_instagram) {
         try {
-          const { publishInstagramPostById } = await import("@/lib/social/instagram-publish.server");
-          const r = await publishInstagramPostById({ supabaseAdmin, postId: data.id, userId: publishUserId });
+          const { publishInstagramPostById } =
+            await import("@/lib/social/instagram-publish.server");
+          const r = await publishInstagramPostById({
+            supabaseAdmin,
+            postId: data.id,
+            userId: publishUserId,
+          });
           results.instagram = r;
         } catch (err: any) {
           const msg = String(err?.message || "");
@@ -2217,11 +2892,17 @@ export const approvePost = createServerFn({ method: "POST" })
 
       // Se nada publicou, marca como Agendado para retry.
       if (!results.linkedin && !results.instagram) {
-        await supabaseAdmin.from("posts").update({ status: "Erro", user_id: publishUserId }).eq("id", data.id);
+        await supabaseAdmin
+          .from("posts")
+          .update({ status: "Erro", user_id: publishUserId })
+          .eq("id", data.id);
         results.status = "Erro";
       } else {
         const nextStatus = "Publicado";
-        await supabaseAdmin.from("posts").update({ status: nextStatus, user_id: publishUserId }).eq("id", data.id);
+        await supabaseAdmin
+          .from("posts")
+          .update({ status: nextStatus, user_id: publishUserId })
+          .eq("id", data.id);
         results.status = nextStatus;
       }
 
@@ -2236,7 +2917,10 @@ export const approvePost = createServerFn({ method: "POST" })
       .select("instagram_conta")
       .eq("id", data.id)
       .maybeSingle();
-    const contaMeta = String((postMeta as any)?.instagram_conta || "").trim().replace(/^@+/, "").toLowerCase();
+    const contaMeta = String((postMeta as any)?.instagram_conta || "")
+      .trim()
+      .replace(/^@+/, "")
+      .toLowerCase();
     const status = data.acao === "agendar" ? "Agendado" : "Rascunho";
     const patch: any = { status };
     const { error } = await supabaseAdmin.from("posts").update(patch).eq("id", data.id);
@@ -2250,7 +2934,9 @@ const CaptionOnlyInput = z.object({
   tema: z.string().min(2, "Informe um tema."),
   rede: z.enum(["instagram", "linkedin", "estilo-x", "google"]).default("instagram"),
   formato: z.enum(["Carrossel", "Story", "Post Único"]).default("Post Único"),
-  especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("CTBMF"),
+  especialidade: z
+    .enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"])
+    .default("CTBMF"),
   audiencia: z.enum(["geral", "estudantes-graduacao", "chico-drfm"]).default("chico-drfm"),
   nivel: NivelEnum.optional().default("auto"),
   modelo: ModeloLocalInput,
@@ -2265,10 +2951,15 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
     const captionModel = data.modelo === "local/sem-custo" ? "openai/gpt-5.5" : data.modelo;
     const isChico = data.audiencia === "chico-drfm";
     const isEstudantes = data.audiencia === "estudantes-graduacao";
-    const local = () => buildLocalCaption({
-      tema, rede: data.rede, formato: data.formato,
-      especialidade: data.especialidade, nivel, audiencia: data.audiencia,
-    });
+    const local = () =>
+      buildLocalCaption({
+        tema,
+        rede: data.rede,
+        formato: data.formato,
+        especialidade: data.especialidade,
+        nivel,
+        audiencia: data.audiencia,
+      });
     if (!process.env.LOVABLE_API_KEY) {
       return { legenda: local(), via: "local" as const };
     }
@@ -2285,15 +2976,18 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
       const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}`;
       const contrato = clinicalContract(tema, data.audiencia);
       const prompt = `${contrato}\n\nTema sugerido pelo usuário: ${tema}\nRede: ${data.rede}\nFormato: ${data.formato}\nEspecialidade: ${data.especialidade}\n\nTAREFA: escreva APENAS a legenda final pronta para publicação, mencionando O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA.\n\nResponda apenas em PT-BR. Sem comentários meta, sem aspas envolvendo o texto.`;
-      const txt = await generateTextAI({ system, prompt, model: captionModel, maxTokens: data.rede === "linkedin" ? 1700 : data.formato === "Carrossel" ? 1200 : 950 });
+      const txt = await generateTextAI({
+        system,
+        prompt,
+        model: captionModel,
+        maxTokens: data.rede === "linkedin" ? 1700 : data.formato === "Carrossel" ? 1200 : 950,
+      });
       return { legenda: (txt || local()).trim(), via: (txt ? "ia" : "local") as "ia" | "local" };
     } catch (err) {
       console.warn("[caption-only] fallback local:", err instanceof Error ? err.message : err);
       return { legenda: local(), via: "local" as const };
     }
   });
-
-
 
 export const generateWeekThemes = createServerFn({ method: "POST" })
   .middleware([])
@@ -2306,39 +3000,50 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
     const temaGuia = (data.temaGuia || "").trim();
     const temasBase = temaGuia
       ? [
-        temaGuia,
-        `${temaGuia}: contexto que merece atenção`,
-        `${temaGuia}: mito, verdade e ponto principal`,
-        `${temaGuia}: o que muita gente ainda não percebe`,
-        `${temaGuia}: bastidores, história ou curiosidade`,
-        `${temaGuia}: mensagem para salvar e compartilhar`,
-        `${temaGuia}: fechamento da semana com reflexão prática`,
-      ]
+          temaGuia,
+          `${temaGuia}: contexto que merece atenção`,
+          `${temaGuia}: mito, verdade e ponto principal`,
+          `${temaGuia}: o que muita gente ainda não percebe`,
+          `${temaGuia}: bastidores, história ou curiosidade`,
+          `${temaGuia}: mensagem para salvar e compartilhar`,
+          `${temaGuia}: fechamento da semana com reflexão prática`,
+        ]
       : data.especialidade === "Odontologia Hospitalar"
-      ? [
-        "Como a higiene oral reduz riscos em pacientes internados",
-        "Quando a odontologia hospitalar entra no cuidado multiprofissional",
-        "Por que infecções bucais podem impactar tratamentos médicos",
-        "Como avaliar a boca antes de cirurgias e terapias sistêmicas",
-        "Quando lesões orais exigem atenção dentro do hospital",
-        "Por que pacientes oncológicos precisam de cuidado oral planejado",
-        "Como o dentista atua na segurança do paciente crítico",
-      ]
-      : data.especialidade === "Temas Diversos"
-        ? TEMAS_DIVERSOS
-        : TEMAS_GERAIS;
+        ? [
+            "Como a higiene oral reduz riscos em pacientes internados",
+            "Quando a odontologia hospitalar entra no cuidado multiprofissional",
+            "Por que infecções bucais podem impactar tratamentos médicos",
+            "Como avaliar a boca antes de cirurgias e terapias sistêmicas",
+            "Quando lesões orais exigem atenção dentro do hospital",
+            "Por que pacientes oncológicos precisam de cuidado oral planejado",
+            "Como o dentista atua na segurança do paciente crítico",
+          ]
+        : data.especialidade === "Temas Diversos"
+          ? TEMAS_DIVERSOS
+          : TEMAS_GERAIS;
 
     // Um tema inédito por slot (todas as redes); stories NÃO herdam o tema do feed.
     const { distribuirTemas } = await import("@/lib/week-themes");
     let historico: string[] = [];
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: rec } = await supabaseAdmin.from("posts").select("prompt_ia").eq("user_id", TEMP_USER_ID).neq("status", "Erro").or(filtroHistorico()).limit(400);
-      historico = (rec ?? []).map((r: { prompt_ia: string | null }) => r.prompt_ia || "").filter(Boolean);
+      const { data: rec } = await supabaseAdmin
+        .from("posts")
+        .select("prompt_ia")
+        .eq("user_id", TEMP_USER_ID)
+        .neq("status", "Erro")
+        .or(filtroHistorico())
+        .limit(400);
+      historico = (rec ?? [])
+        .map((r: { prompt_ia: string | null }) => r.prompt_ia || "")
+        .filter(Boolean);
     } catch (e) {
       console.warn("[week-themes] histórico indisponível:", e instanceof Error ? e.message : e);
     }
-    const temas = distribuirTemas(slots, temasBase, historico).map((t, i) => ({ dia: i + 1, ...t }));
+    const temas = distribuirTemas(slots, temasBase, historico).map((t, i) => ({
+      dia: i + 1,
+      ...t,
+    }));
     return { temas };
   });
 
@@ -2346,19 +3051,31 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
 // depois, uma vez por post, para legenda e imagens).
 export const getWeekTopics = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({
-      especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("Ambas"),
-      temaGuia: z.string().optional().default(""),
-      quantidade: z.number().int().min(1).max(60).default(7),
-      // Início (ISO) da semana planejada — assuntos usados perto dessas datas ficam bloqueados.
-      inicioSemana: z.string().datetime().optional(),
-      // Planner usando o escritor local (sem IA): só temas com roteiro clínico próprio.
-      escritorLocal: z.boolean().optional().default(false),
-    }).parse(d),
+    z
+      .object({
+        especialidade: z
+          .enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"])
+          .default("Ambas"),
+        temaGuia: z.string().optional().default(""),
+        quantidade: z.number().int().min(1).max(60).default(7),
+        // Início (ISO) da semana planejada — assuntos usados perto dessas datas ficam bloqueados.
+        inicioSemana: z.string().datetime().optional(),
+        // Planner usando o escritor local (sem IA): só temas com roteiro clínico próprio.
+        escritorLocal: z.boolean().optional().default(false),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const guia = data.temaGuia.trim();
-    const angulos = ["visão geral", "sinais de alerta", "mito e verdade", "como é o tratamento", "cuidados e prevenção", "dúvidas frequentes", "quando procurar ajuda"];
+    const angulos = [
+      "visão geral",
+      "sinais de alerta",
+      "mito e verdade",
+      "como é o tratamento",
+      "cuidados e prevenção",
+      "dúvidas frequentes",
+      "quando procurar ajuda",
+    ];
     const lista = guia
       ? [...angulos, ...ANGULOS_EDITORIAIS].map((a) => `${guia}: ${a}`)
       : [...(data.especialidade === "Temas Diversos" ? TEMAS_DIVERSOS : TEMAS_GERAIS)];
@@ -2380,7 +3097,14 @@ export const getWeekTopics = createServerFn({ method: "POST" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const desde = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
       const desdeAgenda = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const { data: rec, error } = await supabaseAdmin.from("posts").select("prompt_ia, created_at, data_agendamento, status").eq("user_id", TEMP_USER_ID).neq("status", "Erro").or(`created_at.gte.${desde},data_agendamento.gte.${desdeAgenda}`).not("prompt_ia", "is", null).limit(400);
+      const { data: rec, error } = await supabaseAdmin
+        .from("posts")
+        .select("prompt_ia, created_at, data_agendamento, status")
+        .eq("user_id", TEMP_USER_ID)
+        .neq("status", "Erro")
+        .or(`created_at.gte.${desde},data_agendamento.gte.${desdeAgenda}`)
+        .not("prompt_ia", "is", null)
+        .limit(400);
       if (error) throw error;
       historico = (rec ?? []).map((r: any) => r.prompt_ia as string);
       // Mesmo assunto-raiz não pode cair a menos de JANELA_ASSUNTO_DIAS de um post já existente
@@ -2392,7 +3116,8 @@ export const getWeekTopics = createServerFn({ method: "POST" })
       for (const r of rec ?? []) {
         if ((r as any).status === "Arquivado" || !(r as any).data_agendamento) continue;
         const quando = new Date((r as any).data_agendamento).getTime();
-        if (quando >= de && quando <= ate) assuntosBloqueados.push(assuntoPrincipal((r as any).prompt_ia));
+        if (quando >= de && quando <= ate)
+          assuntosBloqueados.push(assuntoPrincipal((r as any).prompt_ia));
       }
     } catch (e) {
       historicoOk = false;
@@ -2405,14 +3130,27 @@ export const getWeekTopics = createServerFn({ method: "POST" })
     // geral completa os slots restantes (nunca cópia).
     let temas = guia
       ? planDistinctTopics(lista, historico, data.quantidade, ANGULOS_EDITORIAIS)
-      : planDistinctTopics(lista, historico, data.quantidade, ANGULOS_EDITORIAIS, { assuntosBloqueados });
+      : planDistinctTopics(lista, historico, data.quantidade, ANGULOS_EDITORIAIS, {
+          assuntosBloqueados,
+        });
     if (temas.length < data.quantidade) {
       const extra = [...(data.especialidade === "Temas Diversos" ? TEMAS_DIVERSOS : TEMAS_GERAIS)];
-      temas = [...temas, ...planDistinctTopics(extra, [...historico, ...temas], data.quantidade - temas.length, ANGULOS_EDITORIAIS)];
+      temas = [
+        ...temas,
+        ...planDistinctTopics(
+          extra,
+          [...historico, ...temas],
+          data.quantidade - temas.length,
+          ANGULOS_EDITORIAIS,
+        ),
+      ];
     }
-    const aviso = temas.length < data.quantidade
-      ? `Só ${temas.length} assuntos realmente diferentes estão livres nesta semana (cada post precisa de um assunto próprio e sem repetir posts próximos). Clique em "Gerar novos temas" para tentar outra combinação.`
-      : historicoOk ? undefined : "Histórico indisponível: a verificação contra posts antigos será feita na geração.";
+    const aviso =
+      temas.length < data.quantidade
+        ? `Só ${temas.length} assuntos realmente diferentes estão livres nesta semana (cada post precisa de um assunto próprio e sem repetir posts próximos). Clique em "Gerar novos temas" para tentar outra combinação.`
+        : historicoOk
+          ? undefined
+          : "Histórico indisponível: a verificação contra posts antigos será feita na geração.";
     while (temas.length < data.quantidade) temas.push("");
     return { temas, aviso };
   });

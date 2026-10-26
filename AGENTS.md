@@ -12,3 +12,4 @@
 - Approval requires an opened preview: PostReviewActions and ApproveAllReview gate on podeAprovar (src/lib/post-review.ts); media/text problems need explicit ignore, batch duplicates are never approvable.
 - Carousel slide count comes only from quantidadeSlides (src/lib/carousel-slides.ts); preview/approval flag Instagram feed carousels off the default and block repeated slides.
 - Fixed-schedule topics come from distribuirTemas/planDistinctTopics: distinct root subjects first, then an editorial matrix (subject x angle, never a repeated pair from batch or history) fills every slot; a remaining shortfall shows a "Gerar novos temas" action, never silent copies.
+- Posts 7 dias runs through src/lib/week-run.ts (executarSemana): one click plans and generates every slot, state persists in localStorage for resume, retries reuse operacaoId+slotKey, and image failures save text with salvarTextoSeImagemFalhar so a slot is never reported complete without media.

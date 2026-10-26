@@ -756,19 +756,20 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
             </div>
 
             <Posts7Dias
+        idRetomada="chico"
               especialidade={especialidade}
               temaGuia={tema}
               escritorLocal={modelo === "local/sem-custo"}
               gerar={async (item, formato, ctx) => {
                 const out = await genSingle({ data: {
-                  operacaoId: ctx.operacaoId, slotKey: ctx.slotKey, objetivo: ctx.objetivo, assuntoGuiado: ctx.assuntoGuiado,
+                  operacaoId: ctx.operacaoId, slotKey: ctx.slotKey, objetivo: ctx.objetivo, assuntoGuiado: ctx.assuntoGuiado, salvarTextoSeImagemFalhar: ctx.salvarTextoSeImagemFalhar,
                   tema: item.tema, especialidade, rede: item.rede ?? "instagram", status: GENERATED_POST_STATUS,
                   tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando,
                   ambasRedes: false, audiencia: effectiveAudiencia, modelo, modeloImagem, logoKeys,
                 } as any });
                 await marcarConta(out.id);
                 await carregar();
-                return { id: out.id, urls: out.urls, legenda: out.legenda };
+                return { id: out.id, urls: out.urls, legenda: out.legenda, imagemErro: (out as any).imagemErro };
               }}
             />
 
