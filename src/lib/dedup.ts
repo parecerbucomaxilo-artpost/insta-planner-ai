@@ -166,7 +166,9 @@ export function planDistinctTopics(
         if ((usoPorAssunto.get(as) ?? 0) >= rodada) continue;
         const cand = `${raw} — ${ang}`;
         if (pares.has(`${as}|${normalizeText(ang)}`)) continue;
-        if (findDuplicate(cand, bloqueados)) continue;
+        // Mesmo tema com outro angulo e parecido por definicao: o par assunto+angulo (acima)
+        // ja impede a repeticao real; aqui so a copia exata.
+        if (bloqueados.includes(cand)) continue;
         escolhidos.push(cand);
         bloqueados.push(cand);
         pares.add(`${as}|${normalizeText(ang)}`);
@@ -386,8 +388,9 @@ export function conflitoSemantico(
     ) {
       const angA = anguloDe(cand.tema);
       const angB = anguloDe(hist.tema);
-      // Mesmo assunto com ângulo explicitamente diferente só é aceito em semana guiada.
-      if (!(opts.assuntoGuiado && angA && angB && angA !== angB)) return { motivo: "tema", com };
+      // Mesmo tema com angulo explicitamente diferente (mito/verdade, FAQ, sinais de alerta...)
+      // e outra publicacao; o mesmo dia ainda e barrado pela janela abaixo.
+      if (!(angA && angB && angA !== angB)) return { motivo: "tema", com };
     }
     const aA = assuntoPrincipal(cand.tema);
     const aB = assuntoPrincipal(hist.tema);
