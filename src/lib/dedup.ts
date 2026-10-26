@@ -469,7 +469,7 @@ export function mensagemConflito(c: ConflitoPost): string {
 export function espalharTemas(temas: string[], quandos: string[], opts: OpcoesConflito = {}): string[] {
   const restantes = temas.filter((t) => t.trim());
   const aceitos: AssinaturaPost[] = [];
-  return quandos.map((quando) => {
+  const out = quandos.map((quando) => {
     if (!restantes.length) return "";
     let idx = restantes.findIndex((t) => !acharConflito({ tema: t, quando }, aceitos, opts));
     if (idx < 0) idx = 0;
@@ -477,4 +477,19 @@ export function espalharTemas(temas: string[], quandos: string[], opts: OpcoesCo
     aceitos.push({ tema, quando });
     return tema;
   });
+  // Sobras do guloso: troca com outro slot quando isso reduz os conflitos do lote.
+  const n = (arr: string[]) => conflitosNoLote(arr.map((tema, i) => ({ tema, quando: quandos[i] })), opts).length;
+  let atual = n(out);
+  for (let volta = 0; volta < 3 && atual > 0; volta++) {
+    for (const j of conflitosNoLote(out.map((tema, i) => ({ tema, quando: quandos[i] })), opts)) {
+      for (let i = 0; i < out.length && atual > 0; i++) {
+        if (i === j) continue;
+        [out[i], out[j]] = [out[j], out[i]];
+        const novo = n(out);
+        if (novo < atual) { atual = novo; break; }
+        [out[i], out[j]] = [out[j], out[i]];
+      }
+    }
+  }
+  return out;
 }
