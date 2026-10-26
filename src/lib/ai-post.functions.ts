@@ -2290,6 +2290,26 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const conflito = conflitoTexto(legendaBaseResolvida);
       if (!conflito) break;
       console.warn("[dedup] texto repetido", { postId, tentativa, motivo: conflito.motivo });
+      // Reescritas com o mesmo tema não bastaram: troca o ÂNGULO (novo conceito) e reescreve;
+      // imagem e brief usam o tema novo, então texto e imagem continuam correspondendo.
+      if (!usaEscritorLocal && tentativa > 2 && tentativa <= 4) {
+        const ref = reformularTema(
+          tema,
+          (t) => (t === tema ? ({ motivo: conflito.motivo, com: conflito.com } as any) : temaDup(t)),
+          () => null,
+          { maxTentativas: 12 },
+        );
+        if (ref && ref.tema !== tema) {
+          console.info("[dedup] texto regenerado com novo ângulo", { postId, tentativa, motivo: conflito.motivo });
+          tema = ref.tema;
+          legendaBaseResolvida = completar(
+            await escreverLegenda(
+              `\n\nNOVO CONCEITO OBRIGATÓRIO: escreva sobre "${tema}". A abordagem anterior ficou parecida com um post existente; mude intenção, gancho, título, estrutura, exemplos e CTA. Não reutilize frases.`,
+            ),
+          );
+          continue;
+        }
+      }
       if (usaEscritorLocal || tentativa > 2) {
         throw new Error(
           `${mensagemConflito(conflito)} ${usaEscritorLocal ? "O escritor local não consegue variar este texto" : `Tentamos ${tentativa} abordagens diferentes`}. Nada foi salvo — revise o tema deste horário.`,
