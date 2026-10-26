@@ -144,7 +144,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     } finally {
       setSaving(false);
     }
-  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated, dataAgendada, horaAgendada, publishIg]);
+  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated, dataAgendada, horaAgendada, publishIg, gbpStatus]);
 
   const handleGenerateCaption = useCallback(async () => {
     const tema = temaLegenda.trim();
@@ -202,7 +202,19 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       {/* Redes — botões separados com ícones e cores */}
       <div className="space-y-2">
         <Label>Publicar em</Label>
-        <div className="grid grid-cols-3 gap-3">
+        {networks.includes("google") && gbp && (
+          <p role="status" className={cn("text-xs font-medium", gbp.conectado ? "text-emerald-700" : "text-destructive")}>
+            {gbp.mensagem}
+          </p>
+        )}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <NetworkButton
+            active={todasSelecionadas(networks)}
+            onClick={() => setNetworks(alternarTodas(networks))}
+            icon={<><Instagram className="w-4 h-4" /><Linkedin className="w-4 h-4" /><Globe className="w-4 h-4" /></>}
+            label="Todas as redes"
+            activeClass="bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white border-transparent shadow-md"
+          />
           <NetworkButton
             active={networks.includes("instagram")}
             onClick={() => toggleNetwork("instagram")}
@@ -331,6 +343,11 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
               onChange={(e) => setHoraAgendada(e.target.value)}
               className="w-[130px]"
             />
+            {networks.includes("google") && HORARIOS_GOOGLE.map((h) => (
+              <Button key={h} type="button" size="sm" variant={horaAgendada === h ? "default" : "outline"} onClick={() => setHoraAgendada(h)}>
+                Google {h}
+              </Button>
+            ))}
           </div>
         )}
       </div>
