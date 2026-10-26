@@ -621,7 +621,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         temaGuia={tema}
         escritorLocal={modelo === "local/sem-custo"}
         gerar={async (item, formato, ctx) => {
-          const out = await genSingle({ data: { tema: item.tema, especialidade, rede: item.rede ?? "instagram", tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando, modelo, modeloImagem, ambasRedes, operacaoId: ctx.operacaoId, slotKey: ctx.slotKey, objetivo: ctx.objetivo, assuntoGuiado: ctx.assuntoGuiado } });
+          const out = await genSingle({ data: { tema: item.tema, especialidade, rede: item.rede ?? "instagram", tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando, modelo, modeloImagem, ambasRedes: item.rede ? false : ambasRedes, operacaoId: ctx.operacaoId, slotKey: ctx.slotKey, objetivo: ctx.objetivo, assuntoGuiado: ctx.assuntoGuiado } });
           return { id: out.id, urls: out.urls, legenda: out.legenda };
         }}
       />
