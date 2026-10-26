@@ -2,7 +2,9 @@ import { Posts7Dias } from "@/components/Posts7Dias";
 import { salvarPostInedito } from "@/lib/post-guard";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import { startGenerationProgress } from "@/lib/generation-progress";
-import { useState, useCallback, useRef, type ChangeEvent } from "react";
+import { useState, useCallback, useRef, useEffect, type ChangeEvent } from "react";
+import { alternarRede, alternarTodas, todasSelecionadas, flagsDeRede, statusInicial, HORARIOS_GOOGLE } from "@/lib/networks";
+import { googleBusinessStatus } from "@/lib/google-business.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -56,10 +58,15 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const [horaAgendada, setHoraAgendada] = useState("09:00");
 
 
+  const gbpStatus = useServerFn(googleBusinessStatus);
+  const [gbp, setGbp] = useState<{ conectado: boolean; mensagem: string } | null>(null);
+  useEffect(() => {
+    if (networks.includes("google") && !gbp) gbpStatus().then(setGbp).catch(() => setGbp({ conectado: false, mensagem: "Não foi possível verificar a conexão do Google Business." }));
+  }, [networks, gbp, gbpStatus]);
   const toggleNetwork = (n: Network) => {
-    setNetworks((prev) =>
-      prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n],
-    );
+    const next = alternarRede(networks, n);
+    if (next.length === 1 && next[0] === "google") setHoraAgendada(HORARIOS_GOOGLE[0]);
+    setNetworks(next);
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
