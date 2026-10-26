@@ -2,7 +2,12 @@
 // Determinístico, sem IA: a IA só é chamada depois, uma vez por post (legenda + imagens).
 // Horários vêm de HORARIOS_POSTAGEM (09:00, 14:00, 18:00, 21:00) no fuso local do navegador.
 
-import { FORMATO_POR_HORARIO_IG, horariosDoDia, parseHorario, type HorarioPostagem } from "./post-slots";
+import {
+  FORMATO_POR_HORARIO_IG,
+  horariosDoDia,
+  parseHorario,
+  type HorarioPostagem,
+} from "./post-slots";
 
 export const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 export { HORARIOS_POSTAGEM } from "./post-slots";
@@ -27,7 +32,11 @@ export type ItemSemana = {
 export type RedeSemana = "instagram" | "google" | "linkedin";
 
 /** Cronograma global por rede (horário local): fonte única do "Planejar semana". */
-export const CRONOGRAMA_GLOBAL: { rede: RedeSemana; horario: string; formato: ItemSemana["formato"] }[] = [
+export const CRONOGRAMA_GLOBAL: {
+  rede: RedeSemana;
+  horario: string;
+  formato: ItemSemana["formato"];
+}[] = [
   { rede: "instagram", horario: "09:00", formato: "Story" },
   { rede: "linkedin", horario: "09:00", formato: "Post Único" },
   { rede: "google", horario: "10:00", formato: "Post Único" },
@@ -39,7 +48,11 @@ export const CRONOGRAMA_GLOBAL: { rede: RedeSemana; horario: string; formato: It
 ];
 export const SLOTS_POR_SEMANA = CRONOGRAMA_GLOBAL.length * 7; // 56
 
-const REDE_LABEL: Record<RedeSemana, string> = { instagram: "Instagram", google: "Google Business", linkedin: "LinkedIn" };
+const REDE_LABEL: Record<RedeSemana, string> = {
+  instagram: "Instagram",
+  google: "Google Business",
+  linkedin: "LinkedIn",
+};
 export const rotuloRede = (r?: RedeSemana) => REDE_LABEL[r ?? "instagram"];
 
 /** Semana completa do cronograma global: 7 dias × 8 slots (IG 4, Google 2, LinkedIn 2). */

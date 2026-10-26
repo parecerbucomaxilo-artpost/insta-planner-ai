@@ -37,13 +37,16 @@ const TEMAS_GERAIS = [
 const agora = new Date(2026, 9, 25, 12, 0, 0); // domingo
 
 describe("Planejar semana — cronograma global completo", () => {
-  const temas = planDistinctTopics([...TEMAS_GERAIS], [], SLOTS_POR_SEMANA, ANGULOS_EDITORIAIS);
+  const temas = planDistinctTopics([...TEMAS_GERAIS], [], SLOTS_POR_SEMANA + 4, ANGULOS_EDITORIAIS);
   const bruto = montarSemanaCronograma(temas, agora);
-  const ordem = espalharTemas(bruto.map((i) => i.tema), bruto.map((i) => i.quando));
+  const ordem = espalharTemas(
+    temas,
+    bruto.map((i) => i.quando),
+  );
   const plano = bruto.map((i, k) => ({ ...i, tema: ordem[k] }));
 
   it("gera 56 temas, não 2", () => {
-    expect(temas).toHaveLength(56);
+    expect(temas.length).toBeGreaterThanOrEqual(56);
     expect(plano).toHaveLength(56);
     expect(plano.every((i) => i.tema.length > 0)).toBe(true);
   });
@@ -56,8 +59,16 @@ describe("Planejar semana — cronograma global completo", () => {
   });
 
   it("horários e formatos por rede", () => {
-    const h = (r: string) => [...new Set(plano.filter((i) => i.rede === r).map((i) => `${i.horario} ${i.formato}`))].sort();
-    expect(h("instagram")).toEqual(["09:00 Story", "14:00 Carrossel", "18:00 Story", "21:00 Carrossel"]);
+    const h = (r: string) =>
+      [
+        ...new Set(plano.filter((i) => i.rede === r).map((i) => `${i.horario} ${i.formato}`)),
+      ].sort();
+    expect(h("instagram")).toEqual([
+      "09:00 Story",
+      "14:00 Carrossel",
+      "18:00 Story",
+      "21:00 Carrossel",
+    ]);
     expect(h("google")).toEqual(["10:00 Post Único", "15:00 Post Único"]);
     expect(h("linkedin")).toEqual(["09:00 Post Único", "13:00 Post Único"]);
   });
@@ -72,7 +83,10 @@ describe("Planejar semana — cronograma global completo", () => {
     const guia = ["visão geral", "sinais de alerta"].map((a) => `Siso: ${a}`);
     const hist = guia.map((g) => `${g} — mito e verdade`);
     let t = planDistinctTopics(guia, hist, 56, ANGULOS_EDITORIAIS);
-    t = [...t, ...planDistinctTopics([...TEMAS_GERAIS], [...hist, ...t], 56 - t.length, ANGULOS_EDITORIAIS)];
+    t = [
+      ...t,
+      ...planDistinctTopics([...TEMAS_GERAIS], [...hist, ...t], 56 - t.length, ANGULOS_EDITORIAIS),
+    ];
     expect(t).toHaveLength(56);
     expect(new Set(t).size).toBe(56);
   });

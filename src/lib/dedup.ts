@@ -466,7 +466,11 @@ export function mensagemConflito(c: ConflitoPost): string {
  * slots ("Mesmo assunto de outro horário") — a semana saía com só parte dos posts gerados.
  * Guloso: para cada slot, o primeiro tema restante sem conflito; se nenhum servir, o próximo.
  */
-export function espalharTemas(temas: string[], quandos: string[], opts: OpcoesConflito = {}): string[] {
+export function espalharTemas(
+  temas: string[],
+  quandos: string[],
+  opts: OpcoesConflito = {},
+): string[] {
   const restantes = temas.filter((t) => t.trim());
   const aceitos: AssinaturaPost[] = [];
   const out = quandos.map((quando) => {
@@ -477,16 +481,39 @@ export function espalharTemas(temas: string[], quandos: string[], opts: OpcoesCo
     aceitos.push({ tema, quando });
     return tema;
   });
-  // Sobras do guloso: troca com outro slot quando isso reduz os conflitos do lote.
-  const n = (arr: string[]) => conflitosNoLote(arr.map((tema, i) => ({ tema, quando: quandos[i] })), opts).length;
+  // Sobras do guloso: troca também com temas de reserva não usados; senão com outro slot.
+  for (const j of conflitosNoLote(
+    out.map((tema, i) => ({ tema, quando: quandos[i] })),
+    opts,
+  )) {
+    const outros = out
+      .filter((_, i) => i !== j)
+      .map((tema, i) => ({ tema, quando: quandos[i >= j ? i + 1 : i] }));
+    const r = restantes.findIndex(
+      (t) => !acharConflito({ tema: t, quando: quandos[j] }, outros, opts),
+    );
+    if (r >= 0) out[j] = restantes.splice(r, 1, out[j])[0];
+  }
+  // Troca com outro slot quando isso reduz os conflitos do lote.
+  const n = (arr: string[]) =>
+    conflitosNoLote(
+      arr.map((tema, i) => ({ tema, quando: quandos[i] })),
+      opts,
+    ).length;
   let atual = n(out);
   for (let volta = 0; volta < 3 && atual > 0; volta++) {
-    for (const j of conflitosNoLote(out.map((tema, i) => ({ tema, quando: quandos[i] })), opts)) {
+    for (const j of conflitosNoLote(
+      out.map((tema, i) => ({ tema, quando: quandos[i] })),
+      opts,
+    )) {
       for (let i = 0; i < out.length && atual > 0; i++) {
         if (i === j) continue;
         [out[i], out[j]] = [out[j], out[i]];
         const novo = n(out);
-        if (novo < atual) { atual = novo; break; }
+        if (novo < atual) {
+          atual = novo;
+          break;
+        }
         [out[i], out[j]] = [out[j], out[i]];
       }
     }
