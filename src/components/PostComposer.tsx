@@ -98,19 +98,21 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         dataAgendamentoIso = d.toISOString();
       }
 
-      const initialStatus = quando === "agora" && networks.includes("instagram")
-        ? "Agendado"
-        : quando === "agora"
-          ? "Publicado"
-          : "Agendado";
+      if (networks.includes("google")) {
+        const st = await gbpStatus();
+        if (!st.conectado) throw new Error(st.mensagem);
+      }
+      const initialStatus = statusInicial(networks, quando);
+      // Google "agora": entra na fila do despachante já vencida (sem simular publicado).
+      if (quando === "agora" && networks.includes("google") && !dataAgendamentoIso) {
+        dataAgendamentoIso = new Date().toISOString();
+      }
 
       const salvo = await salvarPostInedito(supabase, userId, {
         tipo_post: tipoDb,
         legenda,
         url_imagem: publicUrl,
-        postar_instagram: networks.includes("instagram"),
-        postar_linkedin: networks.includes("linkedin"),
-        postar_google: networks.includes("google"),
+        ...flagsDeRede(networks),
         status: initialStatus,
         data_agendamento: dataAgendamentoIso,
         estilo_layout: formato === "Estilo X" ? "Estilo X" : "Padrão",
@@ -124,7 +126,8 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         }
       }
 
-      toast.success(quando === "agora" ? "Post publicado pela Meta." : "Post agendado!", { id: tId });
+      const gTxt = networks.includes("google") ? " Google Business: na fila de envio (confirma em até 5 min)." : "";
+      toast.success((quando === "agora" && networks.includes("instagram") ? "Post publicado pela Meta." : quando === "agora" ? "Post salvo." : "Post agendado!") + gTxt, { id: tId });
       setLegenda(""); setImagem(null); setFileToUpload(null); setFileName(null);
       setDataAgendada(undefined);
       onCreated();
