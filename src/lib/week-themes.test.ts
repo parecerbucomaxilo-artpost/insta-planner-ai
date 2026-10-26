@@ -55,6 +55,7 @@ describe("cronograma global: slots, formatos e unicidade", () => {
     const r = distribuirTemas(buildScheduleSlots(terca, 1), base, ["Siso incluso: quando extrair"]);
     expect(r.some((d) => d.tema.startsWith("Siso incluso"))).toBe(false);
   });
+});
 
 describe("semana cheia não é esvaziada pela dedup", () => {
   it("7 dias × (IG 4 + Google 2 + LinkedIn 2) = 56 slots, todos com tema distinto", () => {
