@@ -93,8 +93,22 @@ export function Posts7Dias(props: {
             escritorLocal: Boolean(props.escritorLocal),
           },
         });
-        temas = r.temas;
-        if (r.aviso)
+        temas = r.temas.filter((t) => t.trim());
+        // Pauta sempre completa: se o banco do tema guiado esgotou, a IA repõe com temas gerais.
+        if (temas.length < qtd) {
+          const r2 = await fetchTopics({
+            data: {
+              especialidade: props.especialidade ?? "Ambas",
+              temaGuia: "",
+              quantidade: 60,
+              inicioSemana: proximaSegunda().toISOString(),
+              escritorLocal: Boolean(props.escritorLocal),
+            },
+          });
+          const vistos = new Set(temas);
+          temas = [...temas, ...r2.temas.filter((t) => t.trim() && !vistos.has(t))];
+        }
+        if (r.aviso && temas.length < qtd)
           toast.warning(r.aviso, {
             action: {
               label: "Gerar novos temas",
@@ -125,76 +139,164 @@ export function Posts7Dias(props: {
   };
 
   const assuntoGuiado = Boolean(props.temaGuia?.trim()) && !props.temasFixos?.length;
+
+  /** Pede à IA temas inéditos novos (histórico do backend) que não estejam já no plano. */
+  const temasNovos = async (n: number, jaUsados: string[]): Promise<string[]> => {
+    if (n <= 0) return [];
+    const usados = new Set(jaUsados.map((t) => t.trim().toLowerCase()));
+    const base = props.temasFixos?.length
+      ? props.temasFixos
+      : (
+          await fetchTopics({
+            data: {
+              especialidade: props.especialidade ?? "Ambas",
+              temaGuia: "", // reposição: banco geral + matriz editorial, sem depender do tema digitado
+              quantidade: Math.min(60, n + 8),
+              inicioSemana: proximaSegunda().toISOString(),
+              escritorLocal: Boolean(props.escritorLocal),
+            },
+          })
+        ).temas;
+    return base.filter((t) => t.trim() && !usados.has(t.trim().toLowerCase())).slice(0, n);
+  };
+
+  /** Erro de conteúdo repetido/sem tema: a própria ferramenta troca o tema e tenta de novo. */
+  const ehConteudo = (msg: string) =>
+    /repet|duplic|parecid|mesmo assunto|inédit|igual|sem tema|nada foi salvo/i.test(msg);
+  const TENTATIVAS_POR_SLOT = 3;
+
+  const gerarSlot = async (item: ItemSemana, operacaoId: string, usados: string[]) => {
+    let atual = item;
+    let ultimoErro = "Falha";
+    for (let t = 0; t < TENTATIVAS_POR_SLOT; t++) {
+      setEstados((s) => ({ ...s, [item.key]: { status: "gerando" } }));
+      try {
+        const res = await props.gerar(
+          atual,
+          (formato === "Cronograma" ? atual.formato : formato) as FormatoSemana,
+          {
+            operacaoId,
+            slotKey: t === 0 ? item.key : `${item.key}#${t}`,
+            objetivo: atual.objetivo,
+            assuntoGuiado,
+          },
+        );
+        setEstados((s) => ({ ...s, [item.key]: { status: "ok", res } }));
+        return true;
+      } catch (e: any) {
+        ultimoErro = e?.message || "Falha";
+        if (!ehConteudo(ultimoErro) || t === TENTATIVAS_POR_SLOT - 1) break;
+        const [novo] = await temasNovos(1, usados).catch(() => [] as string[]);
+        if (!novo) break;
+        usados.push(novo);
+        atual = { ...atual, tema: novo };
+        setPlano((p) => p?.map((x) => (x.key === item.key ? { ...x, tema: novo } : x)) ?? null);
+      }
+    }
+    setEstados((s) => ({ ...s, [item.key]: { status: "erro", erro: ultimoErro } }));
+    return false;
+  };
+
   const gerarSemana = async () => {
     if (!plano || travaRef.current) return;
     travaRef.current = true;
     setBusy(true);
+    const tid = "posts-7-dias";
     try {
-      // Dedup dentro do lote ANTES de gerar: repetidos/vazios ficam pendentes para edição.
-      // Semântico: mesmo assunto-raiz na semana conta como repetido, mesmo com título diferente.
-      const dupIdx = new Set(
+      // 1) Pauta automática: horários vazios ou que repetem assunto do lote recebem tema da IA.
+      const itens = [...plano];
+      const conflito = new Set(
         conflitosNoLote(
-          plano.map((i) => ({ tema: i.tema, quando: i.quando })),
+          itens.map((i) => ({ tema: i.tema, quando: i.quando })),
           { assuntoGuiado },
         ),
       );
-      const bloqueados: Record<string, Estado> = {};
-      plano.forEach((i, idx) => {
-        if (estados[i.key]?.status === "ok") return;
-        if (!i.tema.trim())
-          bloqueados[i.key] = {
-            status: "erro",
-            erro: "Sem tema inédito — escreva um tema para este horário.",
-          };
-        else if (dupIdx.has(idx))
-          bloqueados[i.key] = {
-            status: "erro",
-            erro: "Mesmo assunto de outro horário desta semana — escreva um assunto diferente.",
-          };
-      });
-      if (Object.keys(bloqueados).length)
-        toast.warning(
-          `${Object.keys(bloqueados).length} item(ns) repetido(s) ou vazio(s) não foram gerados. Edite e gere de novo.`,
+      const trocar = itens
+        .map((i, idx) => ({ i, idx }))
+        .filter(
+          ({ i, idx }) => estados[i.key]?.status !== "ok" && (!i.tema.trim() || conflito.has(idx)),
         );
-      const pendentes = plano.filter((i) => estados[i.key]?.status !== "ok" && !bloqueados[i.key]);
+      if (trocar.length) {
+        toast.loading(`Escolhendo ${trocar.length} tema(s) inédito(s) automaticamente…`, {
+          id: tid,
+        });
+        const fixos = itens
+          .filter((_, idx) => !trocar.some((x) => x.idx === idx))
+          .map((i) => i.tema);
+        const novos = await temasNovos(trocar.length + 4, fixos);
+        const quandos = trocar.map(({ i }) => i.quando);
+        const ordem = espalharTemas(novos, quandos, { assuntoGuiado: false });
+        trocar.forEach(({ idx }, k) => {
+          itens[idx] = { ...itens[idx], tema: ordem[k] ?? "" };
+        });
+        setPlano(itens);
+      }
+      const usados = itens.map((i) => i.tema);
+      const pendentes = itens.filter((i) => estados[i.key]?.status !== "ok");
       setEstados((s) => ({
         ...s,
-        ...bloqueados,
         ...Object.fromEntries(pendentes.map((i) => [i.key, { status: "fila" } as Estado])),
       }));
       if (!pendentes.length) return;
-      const tid = "posts-7-dias";
       let feitos = 0;
+      let falhas = 0;
       toast.loading(`Posts 7 dias: 0/${pendentes.length} prontos…`, { id: tid });
       const operacaoId = operacaoRef.current;
-      // 1 por vez: cada post é comparado ao histórico já salvo, incluindo os anteriores do lote.
+      // 2) 1 por vez: cada post é comparado ao histórico já salvo, incluindo os anteriores do lote.
       await emParalelo(pendentes, 1, async (item) => {
-        setEstados((s) => ({ ...s, [item.key]: { status: "gerando" } }));
-        try {
-          const res = await props.gerar(
-            item,
-            (formato === "Cronograma" ? item.formato : formato) as FormatoSemana,
-            {
-              operacaoId,
-              slotKey: item.key,
-              objetivo: item.objetivo,
-              assuntoGuiado,
-            },
-          );
-          setEstados((s) => ({ ...s, [item.key]: { status: "ok", res } }));
-        } catch (e: any) {
+        if (!item.tema.trim()) {
+          falhas++;
           setEstados((s) => ({
             ...s,
-            [item.key]: { status: "erro", erro: e?.message || "Falha" },
+            [item.key]: {
+              status: "erro",
+              erro: "A IA não encontrou tema inédito para este horário.",
+            },
           }));
+          return;
         }
-        feitos++;
+        const ok = await gerarSlot(item, operacaoId, usados);
+        if (ok) feitos++;
+        else falhas++;
         toast.loading(`Posts 7 dias: ${feitos}/${pendentes.length} prontos…`, { id: tid });
       });
-      toast.success(
-        "Semana gerada. Os posts ficam aguardando sua aprovação no painel, já com data.",
-        { id: tid },
-      );
+      // 3) Nunca alegar sucesso com calendário incompleto.
+      if (falhas)
+        toast.error(
+          `${feitos} de ${pendentes.length} posts gerados. ${falhas} horário(s) falharam — veja o motivo em cada um e use "Tentar de novo".`,
+          { id: tid, duration: 20000 },
+        );
+      else
+        toast.success(
+          `Semana completa: ${feitos} posts gerados, aguardando sua aprovação no painel, já com data.`,
+          { id: tid },
+        );
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao montar a pauta automática.", { id: tid });
+    } finally {
+      travaRef.current = false;
+      setBusy(false);
+    }
+  };
+
+  const tentarSlot = async (item: ItemSemana) => {
+    if (travaRef.current) return;
+    travaRef.current = true;
+    setBusy(true);
+    try {
+      const usados = (plano ?? []).map((i) => i.tema);
+      let alvo = item;
+      if (!alvo.tema.trim()) {
+        const [novo] = await temasNovos(1, usados);
+        if (!novo) throw new Error("A IA não encontrou tema inédito para este horário.");
+        alvo = { ...alvo, tema: novo };
+        usados.push(novo);
+        setPlano((p) => p?.map((x) => (x.key === item.key ? alvo : x)) ?? null);
+      }
+      const ok = await gerarSlot(alvo, novaOperacao(), usados);
+      if (ok) toast.success(`${item.diaSemana} ${item.dataLabel}: post gerado.`);
+    } catch (e: any) {
+      setEstados((s) => ({ ...s, [item.key]: { status: "erro", erro: e?.message || "Falha" } }));
     } finally {
       travaRef.current = false;
       setBusy(false);
@@ -298,7 +400,7 @@ export function Posts7Dias(props: {
                     value={item.tema}
                     disabled={busy || st?.status === "ok"}
                     className="h-8 text-xs"
-                    placeholder="Escreva um tema inédito"
+                    placeholder="Opcional — a IA escolhe um tema inédito"
                     aria-label={`Tema de ${item.diaSemana} ${item.dataLabel}`}
                     onChange={(e) =>
                       setPlano(
@@ -317,7 +419,20 @@ export function Posts7Dias(props: {
                   {st?.status === "ok" && <Check className="h-4 w-4 text-primary shrink-0" />}
                   {st?.status === "erro" && <X className="h-4 w-4 text-destructive shrink-0" />}
                 </div>
-                {st?.status === "erro" && <p className="text-destructive">{st.erro}</p>}
+                {st?.status === "erro" && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-destructive">{st.erro}</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      disabled={busy}
+                      onClick={() => void tentarSlot(item)}
+                    >
+                      Tentar de novo
+                    </Button>
+                  </div>
+                )}
                 {st?.res && (
                   <>
                     <PostReviewActions key={st.res.id} id={st.res.id} />
