@@ -53,6 +53,8 @@ const SingleInput = z.object({
   /** Quantidade de slides pedida explicitamente; sem pedido, Feed do IG = 5. */
   slides: z.number().int().min(2).max(10).optional(),
   quando: z.string().datetime().optional(),
+  // Posts 7 dias: se a imagem falhar, salva o texto (sem imagem) e devolve `imagemErro`.
+  salvarTextoSeImagemFalhar: z.boolean().optional().default(false),
   // Aceita qualquer valor legado vindo de abas antigas, mas ignora e usa sempre o gerador local.
   modelo: ModeloLocalInput,
   modeloImagem: ModeloImagemLocalInput,
@@ -1988,92 +1990,102 @@ export const generateSinglePost = createServerFn({ method: "POST" })
 
 
 
-    let urlImagem: string;
+    let urlImagem = "";
     let imagensCarrossel: string[] = [];
     let urlImagemCache: string | null = null;
     let imagensCarrosselCache: string[] = [];
 
-    if (isChico) {
-      const texts = formato === "Carrossel" ? slideNarratives : [legendaSemHook];
-      const uploads = await Promise.all(texts.map((texto, slideIndex) => {
-        const brief = {
-          postId, slideIndex, total: texts.length, tema,
-          titulo: (formato === "Carrossel" ? texto : headlineLegenda).split(/\r?\n/)[0].replace(/\*+/g, "").trim(),
-          texto, objetivo: isDiverso ? "Informar sobre o tema editorial" : nivel === "ig-conversao" ? "Educar e favorecer identificação sem prometer resultados" : "Explicar com precisão e orientar cuidado seguro",
-          publico: data.rede === "linkedin" ? "Profissionais de saúde" : "Público leigo brasileiro",
-          contexto: `${data.especialidade}; ${data.rede}; ${formato}. ${isDiverso ? "Tema não clínico: não incluir elementos médicos." : "CTBMF e Odontologia Hospitalar; anatomia correta, sem diagnóstico individual ou procedimentos invasivos."}`,
-          identidade: brandOneLiner + " Fotografia plausível ou anatomia editorial realista; azul petróleo, ciano, branco e preto. Vermelho apenas para dor. Sans-serif bold, padrão hospitalar premium.",
+    let imagemErro: string | undefined;
+    try {
+      if (isChico) {
+        const texts = formato === "Carrossel" ? slideNarratives : [legendaSemHook];
+        const uploads = await Promise.all(texts.map((texto, slideIndex) => {
+          const brief = {
+            postId, slideIndex, total: texts.length, tema,
+            titulo: (formato === "Carrossel" ? texto : headlineLegenda).split(/\r?\n/)[0].replace(/\*+/g, "").trim(),
+            texto, objetivo: isDiverso ? "Informar sobre o tema editorial" : nivel === "ig-conversao" ? "Educar e favorecer identificação sem prometer resultados" : "Explicar com precisão e orientar cuidado seguro",
+            publico: data.rede === "linkedin" ? "Profissionais de saúde" : "Público leigo brasileiro",
+            contexto: `${data.especialidade}; ${data.rede}; ${formato}. ${isDiverso ? "Tema não clínico: não incluir elementos médicos." : "CTBMF e Odontologia Hospitalar; anatomia correta, sem diagnóstico individual ou procedimentos invasivos."}`,
+            identidade: brandOneLiner + " Fotografia plausível ou anatomia editorial realista; azul petróleo, ciano, branco e preto. Vermelho apenas para dor. Sans-serif bold, padrão hospitalar premium.",
+          };
+          return generateBoundImage(brief, async (prompt) => {
+            const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(prompt));
+            const briefHash = Array.from(new Uint8Array(digest)).map((n) => n.toString(16).padStart(2, "0")).join("");
+            console.info("[contextual-image-request]", { postId, slideIndex, provider: data.modeloImagem.split("/")[0], model: data.modeloImagem, briefHash, briefSummary: { objetivo: brief.objetivo, textLength: texto.length, promptLength: prompt.length }, semanticVerification: "not-performed" });
+            return generateImageWithRetry(prompt);
+          }, async (b64, expectedPostId, expectedSlide) => {
+            if (expectedPostId !== postId) throw new Error("Post incorreto no upload.");
+            const result = await uploadOne(await applyOverlay(await ensureJpegB64(b64)), expectedSlide);
+            console.info("[contextual-image-upload]", { postId, slideIndex: expectedSlide, origin: "fresh-provider-image", storageObject: new URL(result.publicUrl).pathname.split("/").slice(-2).join("/") });
+            return result;
+          });
+        }));
+        const bound = validateImageBindings(postId, texts.length, uploads);
+        urlImagem = bound[0].publicUrl;
+        urlImagemCache = bound[0].signedUrl;
+        if (formato === "Carrossel") {
+          imagensCarrossel = bound.map((r) => r.publicUrl);
+          imagensCarrosselCache = bound.map((r) => r.signedUrl);
+        }
+      } else     if (formato === "Carrossel") {
+        const fullSpec = [
+          { n: 1, total: 5, papel: `CAPA sobre o TEMA "${tema}": GANCHO ULTRA FORTE de conversão obrigatório em tipografia gigante (3-6 palavras, bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre navy luminoso) — pergunta direta de dor real, dado de impacto ou frase-choque relacionada EXCLUSIVAMENTE ao tema "${tema}" (ex.: 'DOR NO SISO?', 'SEU MAXILAR TRAVA?', 'RONCO PODE MATAR', 'ESSE CHEIRO NÃO É NORMAL', 'PERDEU UM DENTE?'). PT-BR impecável, acentuação correta, SEM palavras duplicadas, SEM inglês, SEM texto inventado. O gancho fala DIRETO ao paciente sobre o TEMA — NÃO menciona '@drfranciscomenezes', nome do profissional, marca, clínica ou consultório (a assinatura entra como overlay do sistema). Layout impactante de capa de revista médica, hierarquia visual brutal, ZERO bibliografia, ZERO logo desenhada.` },
+          { n: 2, total: 5, papel: `PROBLEMA do TEMA "${tema}": aprofunda a dor em linguagem leiga, faz a pessoa se identificar. SEM anatomia clínica interna. NÃO mude de assunto — permaneça em "${tema}". PT-BR sem erros.` },
+          { n: 3, total: 5, papel: `MECANISMO do TEMA "${tema}": explica COMO o problema acontece com analogia visual simples. Reforço de autoridade hospitalar. Sem trocar de patologia. PT-BR sem erros.` },
+          { n: 4, total: 5, papel: `SOLUÇÃO/GANHO do TEMA "${tema}": como o cirurgião resolve ESTE tema. Foco no GANHO CONCRETO do paciente (dormir bem, mastigar sem dor, voltar a sorrir, respirar melhor). PT-BR sem erros.` },
+          { n: 5, total: 5, papel: `FECHAMENTO PREMIUM do TEMA "${tema}" com CTA FORTE: tipografia grande 'LINK NA BIO' centralizada + ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat oficial, canto inferior direito) + número '+55 11 94768-4004' em tipografia pequena ao lado do ícone. Hierarquia editorial impecável estilo capa de revista médica top de linha. PT-BR impecável. É o slide mais bonito do carrossel.` },
+        ];
+        const xSpec = [
+          { n: 1, total: 3, papel: `TWEET 1 sobre "${tema}": gancho/pergunta forte com assinatura. PT-BR sem erros.` },
+          { n: 2, total: 3, papel: `TWEET 2 sobre "${tema}": explicação científica curta. Sem mudar de tema. PT-BR sem erros.` },
+          { n: 3, total: 3, papel: `TWEET 3 sobre "${tema}": CTA WhatsApp/Link na Bio + assinatura. PT-BR sem erros.` },
+        ];
+        const diverseSpec = [
+          { n: 1, total: 5, papel: `CAPA editorial sobre "${tema}" (FORA da saúde): headline curto 2-6 palavras em PT-BR coerente com o tema (ex.: homenagem, data, símbolo). Composição impactante, sem elementos clínicos.` },
+          { n: 2, total: 5, papel: `CONTEXTO/HISTÓRIA de "${tema}": cena/objeto/símbolo representando o tema. Sem texto ou máx. 3 palavras.` },
+          { n: 3, total: 5, papel: `DETALHE/CURIOSIDADE de "${tema}": composição editorial reforçando o assunto. Sem texto.` },
+          { n: 4, total: 5, papel: `MOMENTO EMOCIONAL de "${tema}": reforça a mensagem central do tema. Sem texto.` },
+          { n: 5, total: 5, papel: `FECHAMENTO editorial de "${tema}" com CTA coerente com o tema (ex.: "COMPARTILHE", "LEMBRE-SE"). Sem WhatsApp de consultório, sem menção a saúde.` },
+        ];
+        const slidesSpec = data.rede === "estilo-x" ? xSpec : isDiverso ? diverseSpec : fullSpec;
+        // Gera TODAS as imagens em paralelo com retry POR SLIDE — nenhum slide pode faltar.
+        const genSlideResilient = async (s: typeof slidesSpec[number], idx: number): Promise<{ publicUrl: string; signedUrl: string }> => {
+          const prompt = withVisual(
+            isEstudantes
+              ? studentImagePrompt(tema, s, data.especialidade)
+              : isChico
+                ? chicoImagePrompt(tema, s, false, data.especialidade)
+                : imageSystemPrompt(tema, data.rede, nivel, s, data.especialidade),
+            idx,
+          );
+          return genAndUpload(prompt, idx);
         };
-        return generateBoundImage(brief, async (prompt) => {
-          const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(prompt));
-          const briefHash = Array.from(new Uint8Array(digest)).map((n) => n.toString(16).padStart(2, "0")).join("");
-          console.info("[contextual-image-request]", { postId, slideIndex, provider: data.modeloImagem.split("/")[0], model: data.modeloImagem, briefHash, briefSummary: { objetivo: brief.objetivo, textLength: texto.length, promptLength: prompt.length }, semanticVerification: "not-performed" });
-          return generateImageWithRetry(prompt);
-        }, async (b64, expectedPostId, expectedSlide) => {
-          if (expectedPostId !== postId) throw new Error("Post incorreto no upload.");
-          const result = await uploadOne(await applyOverlay(await ensureJpegB64(b64)), expectedSlide);
-          console.info("[contextual-image-upload]", { postId, slideIndex: expectedSlide, origin: "fresh-provider-image", storageObject: new URL(result.publicUrl).pathname.split("/").slice(-2).join("/") });
-          return result;
-        });
-      }));
-      const bound = validateImageBindings(postId, texts.length, uploads);
-      urlImagem = bound[0].publicUrl;
-      urlImagemCache = bound[0].signedUrl;
-      if (formato === "Carrossel") {
-        imagensCarrossel = bound.map((r) => r.publicUrl);
-        imagensCarrosselCache = bound.map((r) => r.signedUrl);
-      }
-    } else     if (formato === "Carrossel") {
-      const fullSpec = [
-        { n: 1, total: 5, papel: `CAPA sobre o TEMA "${tema}": GANCHO ULTRA FORTE de conversão obrigatório em tipografia gigante (3-6 palavras, bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre navy luminoso) — pergunta direta de dor real, dado de impacto ou frase-choque relacionada EXCLUSIVAMENTE ao tema "${tema}" (ex.: 'DOR NO SISO?', 'SEU MAXILAR TRAVA?', 'RONCO PODE MATAR', 'ESSE CHEIRO NÃO É NORMAL', 'PERDEU UM DENTE?'). PT-BR impecável, acentuação correta, SEM palavras duplicadas, SEM inglês, SEM texto inventado. O gancho fala DIRETO ao paciente sobre o TEMA — NÃO menciona '@drfranciscomenezes', nome do profissional, marca, clínica ou consultório (a assinatura entra como overlay do sistema). Layout impactante de capa de revista médica, hierarquia visual brutal, ZERO bibliografia, ZERO logo desenhada.` },
-        { n: 2, total: 5, papel: `PROBLEMA do TEMA "${tema}": aprofunda a dor em linguagem leiga, faz a pessoa se identificar. SEM anatomia clínica interna. NÃO mude de assunto — permaneça em "${tema}". PT-BR sem erros.` },
-        { n: 3, total: 5, papel: `MECANISMO do TEMA "${tema}": explica COMO o problema acontece com analogia visual simples. Reforço de autoridade hospitalar. Sem trocar de patologia. PT-BR sem erros.` },
-        { n: 4, total: 5, papel: `SOLUÇÃO/GANHO do TEMA "${tema}": como o cirurgião resolve ESTE tema. Foco no GANHO CONCRETO do paciente (dormir bem, mastigar sem dor, voltar a sorrir, respirar melhor). PT-BR sem erros.` },
-        { n: 5, total: 5, papel: `FECHAMENTO PREMIUM do TEMA "${tema}" com CTA FORTE: tipografia grande 'LINK NA BIO' centralizada + ÍCONE oficial do WHATSAPP (balão verde #25D366 com fone branco, estilo flat oficial, canto inferior direito) + número '+55 11 94768-4004' em tipografia pequena ao lado do ícone. Hierarquia editorial impecável estilo capa de revista médica top de linha. PT-BR impecável. É o slide mais bonito do carrossel.` },
-      ];
-      const xSpec = [
-        { n: 1, total: 3, papel: `TWEET 1 sobre "${tema}": gancho/pergunta forte com assinatura. PT-BR sem erros.` },
-        { n: 2, total: 3, papel: `TWEET 2 sobre "${tema}": explicação científica curta. Sem mudar de tema. PT-BR sem erros.` },
-        { n: 3, total: 3, papel: `TWEET 3 sobre "${tema}": CTA WhatsApp/Link na Bio + assinatura. PT-BR sem erros.` },
-      ];
-      const diverseSpec = [
-        { n: 1, total: 5, papel: `CAPA editorial sobre "${tema}" (FORA da saúde): headline curto 2-6 palavras em PT-BR coerente com o tema (ex.: homenagem, data, símbolo). Composição impactante, sem elementos clínicos.` },
-        { n: 2, total: 5, papel: `CONTEXTO/HISTÓRIA de "${tema}": cena/objeto/símbolo representando o tema. Sem texto ou máx. 3 palavras.` },
-        { n: 3, total: 5, papel: `DETALHE/CURIOSIDADE de "${tema}": composição editorial reforçando o assunto. Sem texto.` },
-        { n: 4, total: 5, papel: `MOMENTO EMOCIONAL de "${tema}": reforça a mensagem central do tema. Sem texto.` },
-        { n: 5, total: 5, papel: `FECHAMENTO editorial de "${tema}" com CTA coerente com o tema (ex.: "COMPARTILHE", "LEMBRE-SE"). Sem WhatsApp de consultório, sem menção a saúde.` },
-      ];
-      const slidesSpec = data.rede === "estilo-x" ? xSpec : isDiverso ? diverseSpec : fullSpec;
-      // Gera TODAS as imagens em paralelo com retry POR SLIDE — nenhum slide pode faltar.
-      const genSlideResilient = async (s: typeof slidesSpec[number], idx: number): Promise<{ publicUrl: string; signedUrl: string }> => {
-        const prompt = withVisual(
+        const uploads = await Promise.all(slidesSpec.map((s, idx) => genSlideResilient(s, idx)));
+        if (uploads.length !== slidesSpec.length || uploads.some((u) => !u?.publicUrl)) {
+          throw new Error(`Carrossel incompleto: ${uploads.filter((u) => u?.publicUrl).length}/${slidesSpec.length} slides gerados.`);
+        }
+        urlImagem = uploads[0].publicUrl;
+        urlImagemCache = uploads[0].signedUrl;
+        imagensCarrossel = uploads.map((u) => u.publicUrl);
+        imagensCarrosselCache = uploads.map((u) => u.signedUrl);
+      } else {
+        const upload = await genAndUpload(withVisual(
           isEstudantes
-            ? studentImagePrompt(tema, s, data.especialidade)
+            ? studentImagePrompt(tema, undefined, data.especialidade)
             : isChico
-              ? chicoImagePrompt(tema, s, false, data.especialidade)
-              : imageSystemPrompt(tema, data.rede, nivel, s, data.especialidade),
-          idx,
-        );
-        return genAndUpload(prompt, idx);
-      };
-      const uploads = await Promise.all(slidesSpec.map((s, idx) => genSlideResilient(s, idx)));
-      if (uploads.length !== slidesSpec.length || uploads.some((u) => !u?.publicUrl)) {
-        throw new Error(`Carrossel incompleto: ${uploads.filter((u) => u?.publicUrl).length}/${slidesSpec.length} slides gerados.`);
+              ? chicoImagePrompt(tema, undefined, isStory, data.especialidade)
+              : imageSystemPrompt(tema, data.rede, nivel, undefined, data.especialidade)
+        ));
+        urlImagem = upload.publicUrl;
+        urlImagemCache = upload.signedUrl;
       }
-      urlImagem = uploads[0].publicUrl;
-      urlImagemCache = uploads[0].signedUrl;
-      imagensCarrossel = uploads.map((u) => u.publicUrl);
-      imagensCarrosselCache = uploads.map((u) => u.signedUrl);
-    } else {
-      const upload = await genAndUpload(withVisual(
-        isEstudantes
-          ? studentImagePrompt(tema, undefined, data.especialidade)
-          : isChico
-            ? chicoImagePrompt(tema, undefined, isStory, data.especialidade)
-            : imageSystemPrompt(tema, data.rede, nivel, undefined, data.especialidade)
-      ));
-      urlImagem = upload.publicUrl;
-      urlImagemCache = upload.signedUrl;
+    } catch (e) {
+      // Planejar semana: o texto é salvo e o erro de imagem fica visível no slot ("Tentar novamente").
+      // Nunca substitui por imagem genérica/procedural nem marca o post como completo.
+      if (!data.salvarTextoSeImagemFalhar) throw e;
+      imagemErro = e instanceof Error ? e.message : String(e);
+      console.warn("[image-failed-text-saved]", { postId, erro: imagemErro });
+      urlImagem = ""; urlImagemCache = null; imagensCarrossel = []; imagensCarrosselCache = [];
     }
 
     const legenda = legendaSemHook;
@@ -2116,7 +2128,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         estilo_layout: data.rede === "estilo-x" ? "Estilo X" : data.rede === "google" ? "Google Business" : "Padrão",
         formato_midia: formato === "Story" ? "Story" : "Imagem",
         legenda,
-        url_imagem: urlImagem,
+        url_imagem: urlImagem || null,
         url_imagem_cache: urlImagemCache,
         url_imagem_cache_expires_at: urlImagemCache ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString() : null,
         imagens_carrossel: imagensCarrossel,
@@ -2147,13 +2159,13 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     }
     if (insErr) throw new Error(`DB: ${insErr.message}`);
 
-    console.info("[contextual-image-saved]", { postId, slideCount, model: data.modeloImagem, origin: "fresh-provider-image" });
+    if (!imagemErro) console.info("[contextual-image-saved]", { postId, slideCount, model: data.modeloImagem, origin: "fresh-provider-image" });
     // URLs públicas e assinadas apontam para o mesmo objeto recém-gerado.
     // fallback para a URL pública caso a assinada não exista.
     const urls = imagensCarrosselCache.length
       ? imagensCarrosselCache
       : [urlImagemCache || urlImagem];
-    return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.length, urls, slideLegendas: slideNarratives.slice(0, urls.length) };
+    return { id: (inserted as any).id, url: urlImagemCache || urlImagem, legenda, slides: urls.filter(Boolean).length, urls: urls.filter(Boolean) as string[], slideLegendas: slideNarratives.slice(0, urls.length), imagemErro };
   });
 
 // Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado gerado.
