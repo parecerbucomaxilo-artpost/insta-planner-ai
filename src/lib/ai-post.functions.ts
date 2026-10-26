@@ -2107,8 +2107,10 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         imagens_carrossel: imagensCarrossel,
         imagens_carrossel_cache: imagensCarrosselCache,
         imagens_carrossel_cache_expires_at: imagensCarrosselCache.length ? new Date(Date.now() + 60 * 60 * 24 * 7 * 1000).toISOString() : null,
-        postar_instagram: data.rede === "google" ? false : (data.ambasRedes || data.rede !== "linkedin"),
-        postar_linkedin: data.rede === "google" ? false : (data.ambasRedes || data.rede === "linkedin"),
+        // Um post = uma rede. "Todas as redes" NUNCA replica o mesmo post: cada rede tem seus
+        // próprios horários e conteúdo inédito (Instagram, LinkedIn e Google Business).
+        postar_instagram: data.rede === "instagram" || data.rede === "estilo-x",
+        postar_linkedin: data.rede === "linkedin",
         postar_google: data.rede === "google",
         status: data.status,
         data_agendamento: data.quando ?? null,
