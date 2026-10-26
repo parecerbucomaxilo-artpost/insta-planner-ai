@@ -648,12 +648,17 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
 
       <div className="space-y-1.5">
         <Label className="text-xs">Publicar em</Label>
+        {ambasRedes && (
+          <p className="text-[11px] text-muted-foreground">
+            Todas as redes = Instagram, LinkedIn e Google Business, cada uma com conteúdo próprio e inédito nos seus horários (use o cronograma fixo). Nenhum post é copiado entre redes.
+          </p>
+        )}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {([
             { id: "instagram", label: "Instagram", icon: <Instagram className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-fuchsia-500 via-pink-500 to-orange-400 text-white shadow-sm" },
             { id: "linkedin", label: "LinkedIn", icon: <Linkedin className="w-4 h-4" />, activeClass: "border-transparent bg-[#0a66c2] text-white shadow-sm" },
             { id: "google", label: "Google Business", icon: <Globe className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white shadow-sm" },
-            { id: "ambas", label: "Todas as redes", icon: (<><Instagram className="w-4 h-4" /><Linkedin className="w-4 h-4" /></>), activeClass: "border-transparent bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white shadow-sm" },
+            { id: "ambas", label: "Todas as redes", icon: (<><Instagram className="w-4 h-4" /><Linkedin className="w-4 h-4" /><Globe className="w-4 h-4" /></>), activeClass: "border-transparent bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white shadow-sm" },
           ] as const).map((opt) => {
             const active = opt.id === "ambas" ? ambasRedes : !ambasRedes && rede === opt.id;
             return (

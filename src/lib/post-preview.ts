@@ -1,12 +1,13 @@
 import type { PostRow } from "@/lib/posts-types";
 import { FUSO_PADRAO } from "@/lib/post-slots";
 
-export type PreviewPlatform = "instagram" | "linkedin";
+export type PreviewPlatform = "instagram" | "linkedin" | "google";
 
 export function previewPlatforms(post: PostRow): PreviewPlatform[] {
   return [
     ...(post.postar_instagram ? ["instagram" as const] : []),
     ...(post.postar_linkedin ? ["linkedin" as const] : []),
+    ...((post as { postar_google?: boolean }).postar_google ? ["google" as const] : []),
   ];
 }
 
