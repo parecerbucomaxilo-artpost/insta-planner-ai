@@ -325,7 +325,7 @@ export function PostReviewActions({
               {!post && (loadError ? "Erro ao carregar" : "Carregando dados reais do post…")}
               {post && `${post.tipo_post} · ${post.formato_midia}`}
               {post &&
-                ` · ${platforms.map((p) => (p === "instagram" ? "Instagram" : "LinkedIn")).join(" / ") || "Plataforma não definida"}`}
+                ` · ${platforms.map((p) => (p === "instagram" ? "Instagram" : p === "google" ? "Google Business" : "LinkedIn")).join(" / ") || "Plataforma não definida"}`}
               {post && ` · ${formatPreviewDate(post.data_agendamento)}`}
             </DialogDescription>
           </DialogHeader>
@@ -414,7 +414,7 @@ export function PostReviewActions({
               {platforms.map((p) => (
                 <label key={p} className="block space-y-1">
                   <span className="text-sm font-semibold">
-                    Legenda {p === "instagram" ? "Instagram" : "LinkedIn"} e hashtags
+                    Legenda {p === "instagram" ? "Instagram" : p === "google" ? "Google Business" : "LinkedIn"} e hashtags
                   </span>
                   <Textarea
                     rows={6}
@@ -480,7 +480,7 @@ export function PostReviewActions({
                       aria-pressed={platform === p}
                       onClick={() => setPlatform(p)}
                     >
-                      {p === "instagram" ? "Instagram" : "LinkedIn"}
+                      {p === "instagram" ? "Instagram" : p === "google" ? "Google Business" : "LinkedIn"}
                     </Button>
                   ))}
                 </div>
@@ -559,7 +559,7 @@ export function PostReviewActions({
               <section>
                 <h3 className="font-semibold">
                   Legenda e hashtags
-                  {platform ? ` — ${platform === "instagram" ? "Instagram" : "LinkedIn"}` : ""}
+                  {platform ? ` — ${platform === "instagram" ? "Instagram" : platform === "google" ? "Google Business" : "LinkedIn"}` : ""}
                 </h3>
                 <p className="text-sm whitespace-pre-wrap break-words">
                   {caption || "Sem legenda disponível."}

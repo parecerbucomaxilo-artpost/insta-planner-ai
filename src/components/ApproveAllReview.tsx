@@ -260,7 +260,7 @@ export function ApproveAllReview({
               <p className="text-xs text-muted-foreground">
                 {post.tipo_post} · {post.formato_midia} ·{" "}
                 {previewPlatforms(post)
-                  .map((p) => (p === "instagram" ? "Instagram" : "LinkedIn"))
+                  .map((p) => (p === "instagram" ? "Instagram" : p === "google" ? "Google Business" : "LinkedIn"))
                   .join(" / ") || "Plataforma não definida"}{" "}
                 · {formatPreviewDate(post.data_agendamento)}
               </p>
