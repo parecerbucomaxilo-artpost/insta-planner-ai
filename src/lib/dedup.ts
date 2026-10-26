@@ -459,3 +459,22 @@ export function mensagemConflito(c: ConflitoPost): string {
       return `Texto essencialmente igual a ${alvo}.`;
   }
 }
+
+/**
+ * Reordena temas entre os slots para que mesmo assunto-raiz não caia no mesmo dia/janela:
+ * a matriz editorial devolve o mesmo assunto em ângulos seguidos, e o lote barrava esses
+ * slots ("Mesmo assunto de outro horário") — a semana saía com só parte dos posts gerados.
+ * Guloso: para cada slot, o primeiro tema restante sem conflito; se nenhum servir, o próximo.
+ */
+export function espalharTemas(temas: string[], quandos: string[], opts: OpcoesConflito = {}): string[] {
+  const restantes = temas.filter((t) => t.trim());
+  const aceitos: AssinaturaPost[] = [];
+  return quandos.map((quando) => {
+    if (!restantes.length) return "";
+    let idx = restantes.findIndex((t) => !acharConflito({ tema: t, quando }, aceitos, opts));
+    if (idx < 0) idx = 0;
+    const [tema] = restantes.splice(idx, 1);
+    aceitos.push({ tema, quando });
+    return tema;
+  });
+}

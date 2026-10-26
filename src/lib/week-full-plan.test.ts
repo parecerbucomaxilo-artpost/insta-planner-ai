@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { montarSemanaCronograma, SLOTS_POR_SEMANA } from "./week-plan";
-import { planDistinctTopics, conflitosNoLote, ANGULOS_EDITORIAIS } from "./dedup";
+import { planDistinctTopics, conflitosNoLote, espalharTemas, ANGULOS_EDITORIAIS } from "./dedup";
 const TEMAS_GERAIS = [
   "Por que o siso incluso pode causar dor que irradia para o ouvido",
   "Como o bruxismo noturno pode sobrecarregar dentes e articulações",
@@ -16,7 +16,9 @@ const agora = new Date(2026, 9, 25, 12, 0, 0); // domingo
 
 describe("Planejar semana — cronograma global completo", () => {
   const temas = planDistinctTopics([...TEMAS_GERAIS], [], SLOTS_POR_SEMANA, ANGULOS_EDITORIAIS);
-  const plano = montarSemanaCronograma(temas, agora);
+  const bruto = montarSemanaCronograma(temas, agora);
+  const ordem = espalharTemas(bruto.map((i) => i.tema), bruto.map((i) => i.quando));
+  const plano = bruto.map((i, k) => ({ ...i, tema: ordem[k] }));
 
   it("gera 56 temas, não 2", () => {
     expect(temas).toHaveLength(56);

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { getWeekTopics } from "@/lib/ai-post.functions";
 import { montarSemana, montarSemanaCronograma, SLOTS_POR_SEMANA, rotuloRede, emParalelo, proximaSegunda, type ItemSemana } from "@/lib/week-plan";
 import { horariosDoDia, POSTS_POR_DIA_PADRAO } from "@/lib/post-slots";
-import { conflitosNoLote } from "@/lib/dedup";
+import { conflitosNoLote, espalharTemas } from "@/lib/dedup";
 import { cn } from "@/lib/utils";
 import { PostReviewActions } from "@/components/PostReviewActions";
 
@@ -96,7 +96,11 @@ export function Posts7Dias(props: {
             duration: 15000,
           });
       }
-      setPlano(temCronograma ? montarSemanaCronograma(temas) : montarSemana(temas, porDia));
+      const base = temCronograma ? montarSemanaCronograma(temas) : montarSemana(temas, porDia);
+      const ordem = espalharTemas(base.map((i) => i.tema), base.map((i) => i.quando), {
+        assuntoGuiado: Boolean(props.temaGuia?.trim()) && !props.temasFixos?.length,
+      });
+      setPlano(base.map((i, k) => ({ ...i, tema: ordem[k] ?? "" })));
       setEstados({});
       operacaoRef.current = novaOperacao(); // novo plano = nova operação
     } catch (e: any) {
