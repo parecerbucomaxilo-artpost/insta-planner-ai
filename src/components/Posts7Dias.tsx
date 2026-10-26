@@ -16,12 +16,19 @@ import { PostReviewActions } from "@/components/PostReviewActions";
 export type FormatoSemana = "Post Único" | "Carrossel" | "Story";
 export type ResultadoPost = { id: string; urls: string[]; legenda: string };
 /** Contexto de idempotência: mesma operação + mesmo slot nunca cria um segundo post. */
-export type ContextoSlot = { operacaoId: string; slotKey: string; objetivo?: string; assuntoGuiado?: boolean };
+export type ContextoSlot = {
+  operacaoId: string;
+  slotKey: string;
+  objetivo?: string;
+  assuntoGuiado?: boolean;
+};
 
 type Estado = { status: "fila" | "gerando" | "ok" | "erro"; res?: ResultadoPost; erro?: string };
 
 function novaOperacao() {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `op-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `op-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 /**
@@ -45,9 +52,12 @@ export function Posts7Dias(props: {
   const fetchTopics = useServerFn(getWeekTopics);
   const formatos = props.formatos ?? ["Post Único", "Carrossel", "Story"];
   const [porDia, setPorDia] = useState(props.postsPorDiaInicial ?? POSTS_POR_DIA_PADRAO);
-  const temCronograma = !props.postsPorDiaInicial && formatos.includes("Story") && formatos.includes("Carrossel");
+  const temCronograma =
+    !props.postsPorDiaInicial && formatos.includes("Story") && formatos.includes("Carrossel");
   // "Cronograma" = formato de cada horário (09h/18h story, 14h/21h carrossel de 5 slides).
-  const [formato, setFormato] = useState<FormatoSemana | "Cronograma">(temCronograma ? "Cronograma" : formatos[0]);
+  const [formato, setFormato] = useState<FormatoSemana | "Cronograma">(
+    temCronograma ? "Cronograma" : formatos[0],
+  );
   const [plano, setPlano] = useState<ItemSemana[] | null>(null);
   const [estados, setEstados] = useState<Record<string, Estado>>({});
   const [busy, setBusy] = useState(false);
@@ -65,9 +75,26 @@ export function Posts7Dias(props: {
       let temas: string[];
       if (props.temasFixos?.length) temas = props.temasFixos;
       else {
-        const r = await fetchTopics({ data: { especialidade: props.especialidade ?? "Ambas", temaGuia: props.temaGuia ?? "", quantidade: qtd, inicioSemana: proximaSegunda().toISOString(), escritorLocal: Boolean(props.escritorLocal) } });
+        const r = await fetchTopics({
+          data: {
+            especialidade: props.especialidade ?? "Ambas",
+            temaGuia: props.temaGuia ?? "",
+            quantidade: qtd,
+            inicioSemana: proximaSegunda().toISOString(),
+            escritorLocal: Boolean(props.escritorLocal),
+          },
+        });
         temas = r.temas;
-        if (r.aviso) toast.warning(r.aviso, { action: { label: "Gerar novos temas", onClick: () => { void planejar(); } }, duration: 15000 });
+        if (r.aviso)
+          toast.warning(r.aviso, {
+            action: {
+              label: "Gerar novos temas",
+              onClick: () => {
+                void planejar();
+              },
+            },
+            duration: 15000,
+          });
       }
       setPlano(montarSemana(temas, porDia));
       setEstados({});
@@ -88,16 +115,36 @@ export function Posts7Dias(props: {
     try {
       // Dedup dentro do lote ANTES de gerar: repetidos/vazios ficam pendentes para edição.
       // Semântico: mesmo assunto-raiz na semana conta como repetido, mesmo com título diferente.
-      const dupIdx = new Set(conflitosNoLote(plano.map((i) => ({ tema: i.tema, quando: i.quando })), { assuntoGuiado }));
+      const dupIdx = new Set(
+        conflitosNoLote(
+          plano.map((i) => ({ tema: i.tema, quando: i.quando })),
+          { assuntoGuiado },
+        ),
+      );
       const bloqueados: Record<string, Estado> = {};
       plano.forEach((i, idx) => {
         if (estados[i.key]?.status === "ok") return;
-        if (!i.tema.trim()) bloqueados[i.key] = { status: "erro", erro: "Sem tema inédito — escreva um tema para este horário." };
-        else if (dupIdx.has(idx)) bloqueados[i.key] = { status: "erro", erro: "Mesmo assunto de outro horário desta semana — escreva um assunto diferente." };
+        if (!i.tema.trim())
+          bloqueados[i.key] = {
+            status: "erro",
+            erro: "Sem tema inédito — escreva um tema para este horário.",
+          };
+        else if (dupIdx.has(idx))
+          bloqueados[i.key] = {
+            status: "erro",
+            erro: "Mesmo assunto de outro horário desta semana — escreva um assunto diferente.",
+          };
       });
-      if (Object.keys(bloqueados).length) toast.warning(`${Object.keys(bloqueados).length} item(ns) repetido(s) ou vazio(s) não foram gerados. Edite e gere de novo.`);
+      if (Object.keys(bloqueados).length)
+        toast.warning(
+          `${Object.keys(bloqueados).length} item(ns) repetido(s) ou vazio(s) não foram gerados. Edite e gere de novo.`,
+        );
       const pendentes = plano.filter((i) => estados[i.key]?.status !== "ok" && !bloqueados[i.key]);
-      setEstados((s) => ({ ...s, ...bloqueados, ...Object.fromEntries(pendentes.map((i) => [i.key, { status: "fila" } as Estado])) }));
+      setEstados((s) => ({
+        ...s,
+        ...bloqueados,
+        ...Object.fromEntries(pendentes.map((i) => [i.key, { status: "fila" } as Estado])),
+      }));
       if (!pendentes.length) return;
       const tid = "posts-7-dias";
       let feitos = 0;
@@ -107,15 +154,26 @@ export function Posts7Dias(props: {
       await emParalelo(pendentes, 1, async (item) => {
         setEstados((s) => ({ ...s, [item.key]: { status: "gerando" } }));
         try {
-          const res = await props.gerar(item, formato === "Cronograma" ? item.formato : formato, { operacaoId, slotKey: item.key, objetivo: item.objetivo, assuntoGuiado });
+          const res = await props.gerar(item, formato === "Cronograma" ? item.formato : formato, {
+            operacaoId,
+            slotKey: item.key,
+            objetivo: item.objetivo,
+            assuntoGuiado,
+          });
           setEstados((s) => ({ ...s, [item.key]: { status: "ok", res } }));
         } catch (e: any) {
-          setEstados((s) => ({ ...s, [item.key]: { status: "erro", erro: e?.message || "Falha" } }));
+          setEstados((s) => ({
+            ...s,
+            [item.key]: { status: "erro", erro: e?.message || "Falha" },
+          }));
         }
         feitos++;
         toast.loading(`Posts 7 dias: ${feitos}/${pendentes.length} prontos…`, { id: tid });
       });
-      toast.success("Semana gerada. Os posts ficam aguardando sua aprovação no painel, já com data.", { id: tid });
+      toast.success(
+        "Semana gerada. Os posts ficam aguardando sua aprovação no painel, já com data.",
+        { id: tid },
+      );
     } finally {
       travaRef.current = false;
       setBusy(false);
@@ -130,39 +188,72 @@ export function Posts7Dias(props: {
       </div>
       <div className="flex flex-wrap items-end gap-3">
         {/* Planners de conteúdo seguem o cronograma global: sem escolha de quantidade/formato aqui. */}
-        {!temCronograma && (<>
-        <div className="space-y-1">
-          <Label className="text-xs">Posts por dia</Label>
-          <div className="flex gap-1">
-            {[1, 2, 3, 4].map((n) => (
-              <button key={n} type="button" onClick={() => setPorDia(n)} disabled={busy}
-                className={cn("px-3 py-1.5 rounded-md text-xs font-semibold border", porDia === n ? "bg-primary text-primary-foreground border-primary" : "border-border")}>
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Formato</Label>
-          <div className="flex gap-1">
-            {(temCronograma ? (["Cronograma", ...formatos] as const) : formatos).map((f) => (
-              <button key={f} type="button" onClick={() => setFormato(f)} disabled={busy}
-                className={cn("px-3 py-1.5 rounded-md text-xs font-semibold border", formato === f ? "bg-primary text-primary-foreground border-primary" : "border-border")}>
-                {f}
-              </button>
-            ))}
-          </div>
-        </div>
-        </>)}
-        <Button size="sm" variant="outline" onClick={planejar} disabled={busy}>Planejar semana</Button>
-        {plano && <Button size="sm" onClick={gerarSemana} disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gerar os posts da semana"}</Button>}
+        {!temCronograma && (
+          <>
+            <div className="space-y-1">
+              <Label className="text-xs">Posts por dia</Label>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setPorDia(n)}
+                    disabled={busy}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md text-xs font-semibold border",
+                      porDia === n
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border",
+                    )}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Formato</Label>
+              <div className="flex gap-1">
+                {(temCronograma ? (["Cronograma", ...formatos] as const) : formatos).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setFormato(f)}
+                    disabled={busy}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md text-xs font-semibold border",
+                      formato === f
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border",
+                    )}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+        <Button size="sm" variant="outline" onClick={planejar} disabled={busy}>
+          Planejar semana
+        </Button>
+        {plano && (
+          <Button size="sm" onClick={gerarSemana} disabled={busy}>
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gerar os posts da semana"}
+          </Button>
+        )}
       </div>
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Clock className="h-3.5 w-3.5" />
-        Horários (seu fuso local): <strong className="text-foreground">{horariosDoDia(porDia).join(" · ")}</strong>
-        {temCronograma
-          ? <span>— Instagram: 09h Story · 14h Carrossel (5 slides) · 18h Story · 21h Carrossel (5 slides)</span>
-          : <span className="hidden sm:inline">— padrão completo: 09:00 · 14:00 · 18:00 · 21:00</span>}
+        Horários (seu fuso local):{" "}
+        <strong className="text-foreground">{horariosDoDia(porDia).join(" · ")}</strong>
+        {temCronograma ? (
+          <span>
+            — Instagram: 09h Story · 14h Carrossel (5 slides) · 18h Story · 21h Carrossel (5 slides)
+          </span>
+        ) : (
+          <span className="hidden sm:inline">— padrão completo: 09:00 · 14:00 · 18:00 · 21:00</span>
+        )}
       </p>
       {plano && (
         <ul className="space-y-2">
@@ -171,12 +262,29 @@ export function Posts7Dias(props: {
             return (
               <li key={item.key} className="border rounded-md p-2 text-xs space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold w-32 shrink-0">{item.diaSemana} {item.dataLabel}</span>
-                  <Input value={item.tema} disabled={busy || st?.status === "ok"} className="h-8 text-xs" placeholder="Escreva um tema inédito"
+                  <span className="font-semibold w-32 shrink-0">
+                    {item.diaSemana} {item.dataLabel}
+                  </span>
+                  <Input
+                    value={item.tema}
+                    disabled={busy || st?.status === "ok"}
+                    className="h-8 text-xs"
+                    placeholder="Escreva um tema inédito"
                     aria-label={`Tema de ${item.diaSemana} ${item.dataLabel}`}
-                    onChange={(e) => setPlano((p) => p?.map((x, i) => (i === idx ? { ...x, tema: e.target.value } : x)) ?? null)} />
-                  <span className="hidden sm:inline shrink-0 text-muted-foreground">{item.objetivo}</span>
-                  {st?.status === "gerando" && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
+                    onChange={(e) =>
+                      setPlano(
+                        (p) =>
+                          p?.map((x, i) => (i === idx ? { ...x, tema: e.target.value } : x)) ??
+                          null,
+                      )
+                    }
+                  />
+                  <span className="hidden sm:inline shrink-0 text-muted-foreground">
+                    {item.objetivo}
+                  </span>
+                  {st?.status === "gerando" && (
+                    <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                  )}
                   {st?.status === "ok" && <Check className="h-4 w-4 text-primary shrink-0" />}
                   {st?.status === "erro" && <X className="h-4 w-4 text-destructive shrink-0" />}
                 </div>
@@ -186,9 +294,18 @@ export function Posts7Dias(props: {
                     <PostReviewActions key={st.res.id} id={st.res.id} />
                     <div className="flex flex-wrap gap-2 min-w-0">
                       <div className="flex gap-1 shrink-0">
-                        {st.res.urls.slice(0, 5).map((u) => <img key={u} src={u} alt={`Imagem do post de ${item.diaSemana}`} className="h-16 w-12 object-cover rounded" />)}
+                        {st.res.urls.slice(0, 5).map((u) => (
+                          <img
+                            key={u}
+                            src={u}
+                            alt={`Imagem do post de ${item.diaSemana}`}
+                            className="h-16 w-12 object-cover rounded"
+                          />
+                        ))}
                       </div>
-                      <p className="text-muted-foreground line-clamp-3 whitespace-pre-line">{st.res.legenda}</p>
+                      <p className="text-muted-foreground line-clamp-3 whitespace-pre-line">
+                        {st.res.legenda}
+                      </p>
                     </div>
                   </>
                 )}
