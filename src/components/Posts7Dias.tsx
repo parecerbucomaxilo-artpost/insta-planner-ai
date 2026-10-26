@@ -170,7 +170,6 @@ export function Posts7Dias(props: {
     setPlano(run.plano);
     setEstados(run.estados);
     operacaoRef.current = run.operacaoId;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chave]);
   useEffect(() => {
     if (typeof window === "undefined" || !plano) return;
@@ -233,14 +232,21 @@ export function Posts7Dias(props: {
       deveParar: () => pararRef.current,
     });
     if (r.interrompido)
-      toast.error(`Geração pausada: ${r.interrompido}. Nada foi simulado; os horários restantes ficaram pendentes.`, { id: tid, duration: 30000 });
+      toast.error(
+        `Geração pausada: ${r.interrompido}. Nada foi simulado; os horários restantes ficaram pendentes.`,
+        { id: tid, duration: 30000 },
+      );
     else if (r.erro || r.imagem)
       toast.error(
         `${r.ok} post(s) completos, ${r.imagem} com texto salvo mas imagem pendente, ${r.erro} com falha. Veja cada horário e use "Tentar novamente".`,
         { id: tid, duration: 30000 },
       );
     else if (pararRef.current) toast.info(`Geração pausada: ${r.ok} post(s) prontos.`, { id: tid });
-    else toast.success(`Semana completa: ${r.ok} posts com texto e imagem, aguardando sua aprovação.`, { id: tid });
+    else
+      toast.success(
+        `Semana completa: ${r.ok} posts com texto e imagem, aguardando sua aprovação.`,
+        { id: tid },
+      );
   };
 
   const gerarSemana = async (planoAtual = plano, estadosAtuais = estados) => {
@@ -252,18 +258,26 @@ export function Posts7Dias(props: {
       // Pauta automática: horários vazios ou que repetem assunto do lote recebem tema da IA.
       const itens = [...planoAtual];
       const conflito = new Set(
-        conflitosNoLote(itens.map((i) => ({ tema: i.tema, quando: i.quando })), { assuntoGuiado }),
+        conflitosNoLote(
+          itens.map((i) => ({ tema: i.tema, quando: i.quando })),
+          { assuntoGuiado },
+        ),
       );
       const trocar = itens
         .map((i, idx) => ({ i, idx }))
         .filter(
-          ({ i, idx }) =>
-            !estadosAtuais[i.key]?.res && (!i.tema.trim() || conflito.has(idx)),
+          ({ i, idx }) => !estadosAtuais[i.key]?.res && (!i.tema.trim() || conflito.has(idx)),
         );
       if (trocar.length) {
-        const fixos = itens.filter((_, idx) => !trocar.some((x) => x.idx === idx)).map((i) => i.tema);
+        const fixos = itens
+          .filter((_, idx) => !trocar.some((x) => x.idx === idx))
+          .map((i) => i.tema);
         const novos = await temasNovos(trocar.length + 4, fixos);
-        const ordem = espalharTemas(novos, trocar.map(({ i }) => i.quando), { assuntoGuiado: false });
+        const ordem = espalharTemas(
+          novos,
+          trocar.map(({ i }) => i.quando),
+          { assuntoGuiado: false },
+        );
         trocar.forEach(({ idx }, k) => {
           itens[idx] = { ...itens[idx], tema: ordem[k] ?? "" };
         });
@@ -396,12 +410,14 @@ export function Posts7Dias(props: {
           <div className="h-2 w-full rounded bg-muted overflow-hidden">
             <div
               className="h-full bg-primary transition-all"
-              style={{ width: `${((prog.total - prog.pendentes) / Math.max(1, prog.total)) * 100}%` }}
+              style={{
+                width: `${((prog.total - prog.pendentes) / Math.max(1, prog.total)) * 100}%`,
+              }}
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            {prog.ok}/{prog.total} completos · {prog.imagem} com imagem pendente · {prog.erro} com falha ·{" "}
-            {prog.pendentes} na fila
+            {prog.ok}/{prog.total} completos · {prog.imagem} com imagem pendente · {prog.erro} com
+            falha · {prog.pendentes} na fila
             {!busy && temPendente && " — clique em “Continuar geração” para retomar sem duplicar."}
           </p>
         </div>
@@ -445,7 +461,9 @@ export function Posts7Dias(props: {
                   {(st?.status === "erro" || st?.status === "imagem") && (
                     <X className="h-4 w-4 text-destructive shrink-0" />
                   )}
-                  {st?.status === "fila" && <Clock className="h-4 w-4 text-muted-foreground shrink-0" />}
+                  {st?.status === "fila" && (
+                    <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                  )}
                 </div>
                 {(st?.status === "erro" || st?.status === "imagem") && (
                   <div className="flex flex-wrap items-center gap-2">

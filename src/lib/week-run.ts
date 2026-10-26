@@ -48,7 +48,12 @@ export function progresso(plano: ItemSemana[], estados: Estados) {
 
 // ---------- persistência (retomada após recarregar/fechar a aba) ----------
 
-export type RunSalvo = { plano: ItemSemana[]; estados: Estados; operacaoId: string; salvoEm: number };
+export type RunSalvo = {
+  plano: ItemSemana[];
+  estados: Estados;
+  operacaoId: string;
+  salvoEm: number;
+};
 type Storage = Pick<globalThis.Storage, "getItem" | "setItem" | "removeItem">;
 
 export function salvarRun(storage: Storage, chave: string, run: Omit<RunSalvo, "salvoEm">) {
@@ -60,12 +65,17 @@ export function salvarRun(storage: Storage, chave: string, run: Omit<RunSalvo, "
 }
 
 /** Carrega o run salvo; slots que estavam "gerando" voltam para a fila (serão retomados). */
-export function carregarRun(storage: Storage, chave: string, maxIdadeMs = 7 * 864e5): RunSalvo | null {
+export function carregarRun(
+  storage: Storage,
+  chave: string,
+  maxIdadeMs = 7 * 864e5,
+): RunSalvo | null {
   try {
     const raw = storage.getItem(chave);
     if (!raw) return null;
     const run = JSON.parse(raw) as RunSalvo;
-    if (!Array.isArray(run.plano) || !run.operacaoId || Date.now() - run.salvoEm > maxIdadeMs) return null;
+    if (!Array.isArray(run.plano) || !run.operacaoId || Date.now() - run.salvoEm > maxIdadeMs)
+      return null;
     const estados: Estados = {};
     for (const [k, v] of Object.entries(run.estados ?? {}))
       estados[k] = v.status === "gerando" ? { status: "fila" } : v;
@@ -83,10 +93,14 @@ export const ehErroDeConteudo = (msg: string) =>
   !ehErroTransitorio(msg);
 /** Limite momentâneo / rede: espera e tenta de novo. */
 export const ehErroTransitorio = (msg: string) =>
-  /\b429\b|rate.?limit|too many|tempor|timeout|timed out|\b50[234]\b|network|failed to fetch|econnreset/i.test(msg);
+  /\b429\b|rate.?limit|too many|tempor|timeout|timed out|\b50[234]\b|network|failed to fetch|econnreset/i.test(
+    msg,
+  );
 /** Créditos/permissão: parar o lote inteiro (não adianta insistir). */
 export const ehErroBloqueante = (msg: string) =>
-  /\b402\b|\b403\b|crédit|credit|payment|insufficient|não autorizado|unauthorized|permission/i.test(msg);
+  /\b402\b|\b403\b|crédit|credit|payment|insufficient|não autorizado|unauthorized|permission/i.test(
+    msg,
+  );
 
 // ---------- execução ----------
 
@@ -129,7 +143,11 @@ export async function executarSemana(o: OpcoesExecucao): Promise<ResumoExecucao>
       if (!atual.tema.trim()) {
         const t = await o.novoTema(usados).catch(() => undefined);
         if (!t) {
-          o.onEstado(item.key, { status: "erro", erro: "A IA não encontrou tema inédito para este horário." }, atual);
+          o.onEstado(
+            item.key,
+            { status: "erro", erro: "A IA não encontrou tema inédito para este horário." },
+            atual,
+          );
           r.erro++;
           return;
         }
@@ -146,8 +164,8 @@ export async function executarSemana(o: OpcoesExecucao): Promise<ResumoExecucao>
         if (e.status === "ok") r.ok++;
         else r.imagem++;
         return;
-      } catch (err: any) {
-        const msg = String(err?.message || err || "Falha desconhecida");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err || "Falha desconhecida");
         if (ehErroBloqueante(msg)) {
           r.interrompido = msg;
           o.onEstado(item.key, { status: "erro", erro: msg }, atual);
