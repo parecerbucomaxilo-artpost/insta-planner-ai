@@ -5,10 +5,18 @@ import { conflitosNoLote } from "./dedup";
 import { quantidadeSlides } from "./carousel-slides";
 
 const base = [
-  "Siso incluso: quando extrair", "Bruxismo noturno e desgaste", "Fratura de mandíbula em acidentes",
-  "Higiene oral no paciente internado", "Disfunção da ATM e estalos", "Cirurgia ortognática e respiração",
-  "Lesões na boca que não cicatrizam", "Implante após perda dentária", "Cisto na mandíbula descoberto no raio-x",
-  "Anestesia local: mitos e verdades", "Pacientes anticoagulados e extração", "Trauma dental em crianças",
+  "Siso incluso: quando extrair",
+  "Bruxismo noturno e desgaste",
+  "Fratura de mandíbula em acidentes",
+  "Higiene oral no paciente internado",
+  "Disfunção da ATM e estalos",
+  "Cirurgia ortognática e respiração",
+  "Lesões na boca que não cicatrizam",
+  "Implante após perda dentária",
+  "Cisto na mandíbula descoberto no raio-x",
+  "Anestesia local: mitos e verdades",
+  "Pacientes anticoagulados e extração",
+  "Trauma dental em crianças",
 ];
 const terca = new Date("2026-10-27T03:30:00Z");
 
@@ -23,8 +31,12 @@ describe("cronograma global: slots, formatos e unicidade", () => {
   it("formatos: stories 09h/18h; feed 14h/21h carrossel de 5 slides; Google/LinkedIn post único", () => {
     const ig = dia.filter((d) => d.rede === "instagram").map((d) => d.formato);
     expect(ig).toEqual(["Story", "Carrossel", "Story", "Carrossel"]);
-    dia.filter((d) => d.formato === "Carrossel").forEach((d) => expect(quantidadeSlides({ rede: d.rede, formato: d.formato })).toBe(5));
-    expect(dia.filter((d) => d.rede !== "instagram").every((d) => d.formato === "Post Único")).toBe(true);
+    dia
+      .filter((d) => d.formato === "Carrossel")
+      .forEach((d) => expect(quantidadeSlides({ rede: d.rede, formato: d.formato })).toBe(5));
+    expect(dia.filter((d) => d.rede !== "instagram").every((d) => d.formato === "Post Único")).toBe(
+      true,
+    );
   });
   it("todos os slots têm temas distintos, inclusive story x feed e entre redes", () => {
     const temas = dia.map((d) => d.tema);

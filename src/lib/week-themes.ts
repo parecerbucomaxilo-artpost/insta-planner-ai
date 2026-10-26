@@ -37,7 +37,9 @@ export function distribuirTemas(
       quando: s.quando.toISOString(),
       formato,
       tema,
-      gancho: tema ? `${formato === "Story" ? "Story" : formato === "Carrossel" ? "Carrossel" : s.rede === "google" ? "Google" : "LinkedIn"}: ${tema}` : "",
+      gancho: tema
+        ? `${formato === "Story" ? "Story" : formato === "Carrossel" ? "Carrossel" : s.rede === "google" ? "Google" : "LinkedIn"}: ${tema}`
+        : "",
     };
   });
 }

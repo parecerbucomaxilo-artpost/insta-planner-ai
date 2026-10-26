@@ -11,3 +11,4 @@
 - New posts from any creation path (AI generator or manual save) go through src/lib/post-guard.ts (shared history, semantic dedup, content_key idempotency); never insert into posts directly from a component.
 - Approval requires an opened preview: PostReviewActions and ApproveAllReview gate on podeAprovar (src/lib/post-review.ts); media/text problems need explicit ignore, batch duplicates are never approvable.
 - Carousel slide count comes only from quantidadeSlides (src/lib/carousel-slides.ts); preview/approval flag Instagram feed carousels off the default and block repeated slides.
+- Fixed-schedule topics come from distribuirTemas (src/lib/week-themes.ts): one distinct root subject per slot across all networks; unfilled slots stay empty, never cycled or copied.
