@@ -142,6 +142,41 @@ export function planDistinctTopics(
     bloqueados.push(cand);
     if (assunto) assuntosUsados.add(assunto);
   }
+  if (escolhidos.length >= quantidade) return escolhidos;
+  // FASE 2 - matriz editorial. Antes a funcao parava aqui: com 4 posts/dia + LinkedIn + Google
+  // e ~30 assuntos-raiz quase todos usados perto da semana, sobravam 2 temas e o resto ficava
+  // em branco. Agora o mesmo assunto pode voltar com ANGULO diferente (mito/verdade, sinais de
+  // alerta, FAQ, prevencao...), nunca o mesmo par assunto+angulo do lote ou do historico, e
+  // espalhando: um assunto so repete depois que os outros ganharam o mesmo numero de angulos.
+  const pares = new Set<string>();
+  const usoPorAssunto = new Map<string, number>();
+  const chaveAssunto = (t: string) => assuntoPrincipal(t) || normalizeText(t);
+  for (const e of escolhidos) {
+    const as = chaveAssunto(e);
+    pares.add(`${as}|${anguloDe(e)}`);
+    usoPorAssunto.set(as, (usoPorAssunto.get(as) ?? 0) + 1);
+  }
+  for (const h of historico) pares.add(`${chaveAssunto(h)}|${anguloDe(h)}`);
+  const candidatos = [...new Set(base.map((t) => t.trim()).filter(Boolean))];
+  for (let rodada = 1; rodada <= angulos.length && escolhidos.length < quantidade; rodada++) {
+    for (const ang of angulos) {
+      for (const raw of candidatos) {
+        if (escolhidos.length >= quantidade) break;
+        const as = chaveAssunto(raw);
+        if ((usoPorAssunto.get(as) ?? 0) >= rodada) continue;
+        const cand = `${raw} — ${ang}`;
+        if (pares.has(`${as}|${normalizeText(ang)}`)) continue;
+        // Mesmo tema com outro angulo e parecido por definicao: o par assunto+angulo (acima)
+        // ja impede a repeticao real; aqui so a copia exata.
+        if (bloqueados.includes(cand)) continue;
+        escolhidos.push(cand);
+        bloqueados.push(cand);
+        pares.add(`${as}|${normalizeText(ang)}`);
+        usoPorAssunto.set(as, (usoPorAssunto.get(as) ?? 0) + 1);
+        break;
+      }
+    }
+  }
   return escolhidos;
 }
 
@@ -353,8 +388,9 @@ export function conflitoSemantico(
     ) {
       const angA = anguloDe(cand.tema);
       const angB = anguloDe(hist.tema);
-      // Mesmo assunto com ângulo explicitamente diferente só é aceito em semana guiada.
-      if (!(opts.assuntoGuiado && angA && angB && angA !== angB)) return { motivo: "tema", com };
+      // Mesmo tema com angulo explicitamente diferente (mito/verdade, FAQ, sinais de alerta...)
+      // e outra publicacao; o mesmo dia ainda e barrado pela janela abaixo.
+      if (!(angA && angB && angA !== angB)) return { motivo: "tema", com };
     }
     const aA = assuntoPrincipal(cand.tema);
     const aB = assuntoPrincipal(hist.tema);
@@ -362,10 +398,13 @@ export function conflitoSemantico(
       const angA = anguloDe(cand.tema);
       const angB = anguloDe(hist.tema);
       if (angA && angA === angB) return { motivo: "assunto-e-angulo", com };
+      // Mesmo assunto com angulos explicitos e diferentes e outro post, desde que nao no mesmo
+      // dia (titulo/corpo ainda precisam ser originais). Sem angulo, vale a janela inteira.
+      const angulosDiferentes = Boolean(angA && angB);
       if (
         !opts.assuntoGuiado &&
         hist.status !== "Arquivado" &&
-        dentroDaJanela(cand.quando, hist.quando, opts.janelaDias)
+        dentroDaJanela(cand.quando, hist.quando, angulosDiferentes ? 1 : opts.janelaDias)
       )
         return { motivo: "assunto-na-janela", com };
     }

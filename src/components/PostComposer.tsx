@@ -504,7 +504,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       const unicos = out.temas.filter((t) => t.tema);
       setTemas(unicos as any);
       const faltam = out.temas.length - unicos.length;
-      toast.success(`${unicos.length} temas inéditos, um por horário.${faltam ? ` ${faltam} horários ficaram sem tema novo (nada será copiado).` : ""}`, { id: tid });
+      if (faltam) toast.warning(`${unicos.length} temas inéditos; ${faltam} horários sem tema novo (nada será copiado).`, { id: tid, duration: 15000, action: { label: "Gerar novos temas", onClick: () => { void handleWeek(); } } });
+      else toast.success(`${unicos.length} temas inéditos, um por horário.`, { id: tid });
     } catch (e: any) {
       if (ctrl.signal.aborted || e?.name === "AbortError") {
         toast.dismiss(tid);

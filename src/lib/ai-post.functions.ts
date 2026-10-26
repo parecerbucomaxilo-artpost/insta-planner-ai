@@ -2403,7 +2403,7 @@ export const getWeekTopics = createServerFn({ method: "POST" })
       ? lista.filter((t) => !findDuplicate(t, historico)).slice(0, data.quantidade)
       : planDistinctTopics(lista, historico, data.quantidade, ANGULOS_EDITORIAIS, { assuntosBloqueados });
     const aviso = temas.length < data.quantidade
-      ? `Só ${temas.length} assuntos realmente diferentes estão livres nesta semana (cada post precisa de um assunto próprio e sem repetir posts próximos). Os demais horários ficaram em branco para você escrever um tema novo.`
+      ? `Só ${temas.length} assuntos realmente diferentes estão livres nesta semana (cada post precisa de um assunto próprio e sem repetir posts próximos). Clique em "Gerar novos temas" para tentar outra combinação.`
       : historicoOk ? undefined : "Histórico indisponível: a verificação contra posts antigos será feita na geração.";
     while (temas.length < data.quantidade) temas.push("");
     return { temas, aviso };

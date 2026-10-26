@@ -44,13 +44,44 @@ describe("cronograma global: slots, formatos e unicidade", () => {
     expect(new Set(temas).size).toBe(8);
     expect(conflitosNoLote(temas.map((tema) => ({ tema })))).toEqual([]);
   });
-  it("sem temas inéditos suficientes, slots ficam vazios — nunca copia", () => {
+  it("poucos assuntos: completa todos os slots com ângulos diferentes, sem copiar", () => {
     const poucos = distribuirTemas(buildScheduleSlots(terca, 1), base.slice(0, 3));
-    expect(poucos.filter((d) => d.tema)).toHaveLength(3);
-    expect(new Set(poucos.filter((d) => d.tema).map((d) => d.tema)).size).toBe(3);
+    const t = poucos.map((d) => d.tema);
+    expect(t.every(Boolean)).toBe(true);
+    expect(new Set(t).size).toBe(8);
+    expect(conflitosNoLote(t.map((tema) => ({ tema })))).toEqual([]);
   });
   it("tema do histórico não é reutilizado", () => {
     const r = distribuirTemas(buildScheduleSlots(terca, 1), base, ["Siso incluso: quando extrair"]);
     expect(r.some((d) => d.tema.startsWith("Siso incluso"))).toBe(false);
+  });
+});
+
+describe("semana cheia não é esvaziada pela dedup", () => {
+  it("semana inteira (IG 4/dia + Google + LinkedIn): todos os slots com tema distinto", () => {
+    const hist = base.map((t) => `${t} — mito ou verdade`);
+    const slots = buildScheduleSlots(terca, 7);
+    const semana = distribuirTemas(slots, base, hist);
+    const t = semana.map((d) => d.tema);
+    expect(semana.length).toBe(slots.length);
+    expect(semana.length).toBeGreaterThanOrEqual(48);
+    expect(t.every(Boolean)).toBe(true);
+    expect(new Set(t).size).toBe(slots.length);
+    expect(conflitosNoLote(t.map((tema) => ({ tema })))).toEqual([]);
+    expect(t.some((x) => hist.includes(x))).toBe(false);
+  });
+  it("mesmo assunto com ângulos diferentes é aceito; mesmo ângulo é recusado", () => {
+    expect(
+      conflitosNoLote([
+        { tema: "Bruxismo — mito ou verdade" },
+        { tema: "Bruxismo — sinais de alerta que muita gente ignora" },
+      ]),
+    ).toEqual([]);
+    expect(
+      conflitosNoLote([
+        { tema: "Bruxismo — mito ou verdade" },
+        { tema: "Bruxismo noturno — mito ou verdade" },
+      ]),
+    ).toEqual([1]);
   });
 });
