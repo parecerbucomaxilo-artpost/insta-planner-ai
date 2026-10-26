@@ -129,6 +129,8 @@ export function Posts7Dias(props: {
         <h3 className="font-bold text-sm">Posts 7 dias — semana completa (segunda a domingo)</h3>
       </div>
       <div className="flex flex-wrap items-end gap-3">
+        {/* Planners de conteúdo seguem o cronograma global: sem escolha de quantidade/formato aqui. */}
+        {!temCronograma && (<>
         <div className="space-y-1">
           <Label className="text-xs">Posts por dia</Label>
           <div className="flex gap-1">
@@ -151,13 +153,16 @@ export function Posts7Dias(props: {
             ))}
           </div>
         </div>
+        </>)}
         <Button size="sm" variant="outline" onClick={planejar} disabled={busy}>Planejar semana</Button>
         {plano && <Button size="sm" onClick={gerarSemana} disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gerar os posts da semana"}</Button>}
       </div>
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Clock className="h-3.5 w-3.5" />
         Horários (seu fuso local): <strong className="text-foreground">{horariosDoDia(porDia).join(" · ")}</strong>
-        <span className="hidden sm:inline">— padrão completo: 09:00 · 14:00 · 18:00 · 21:00</span>
+        {temCronograma
+          ? <span>— Instagram: 09h Story · 14h Carrossel (5 slides) · 18h Story · 21h Carrossel (5 slides)</span>
+          : <span className="hidden sm:inline">— padrão completo: 09:00 · 14:00 · 18:00 · 21:00</span>}
       </p>
       {plano && (
         <ul className="space-y-2">
