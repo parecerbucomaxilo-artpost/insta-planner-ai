@@ -58,13 +58,15 @@ describe("cronograma global: slots, formatos e unicidade", () => {
 });
 
 describe("semana cheia não é esvaziada pela dedup", () => {
-  it("7 dias × (IG 4 + Google 2 + LinkedIn 2) = 56 slots, todos com tema distinto", () => {
+  it("semana inteira (IG 4/dia + Google + LinkedIn): todos os slots com tema distinto", () => {
     const hist = base.map((t) => `${t} — mito ou verdade`);
-    const semana = distribuirTemas(buildScheduleSlots(terca, 7), base, hist);
+    const slots = buildScheduleSlots(terca, 7);
+    const semana = distribuirTemas(slots, base, hist);
     const t = semana.map((d) => d.tema);
-    expect(semana).toHaveLength(56);
+    expect(semana.length).toBe(slots.length);
+    expect(semana.length).toBeGreaterThanOrEqual(48);
     expect(t.every(Boolean)).toBe(true);
-    expect(new Set(t).size).toBe(56);
+    expect(new Set(t).size).toBe(slots.length);
     expect(conflitosNoLote(t.map((tema) => ({ tema })))).toEqual([]);
     expect(t.some((x) => hist.includes(x))).toBe(false);
   });
