@@ -233,7 +233,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
             active={networks.includes("google")}
             onClick={() => toggleNetwork("google")}
             icon={<Globe className="w-5 h-5" />}
-            label="Google Business"
+            label="Google Business Profile"
             activeClass="bg-gradient-to-tr from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white border-transparent shadow-md"
           />
         </div>
@@ -677,17 +677,17 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         <Label className="text-xs">Publicar em</Label>
         {ambasRedes && (
           <p className="text-[11px] text-muted-foreground">
-            Todas as redes = Instagram, LinkedIn e Google Business, cada uma com conteúdo próprio e inédito nos seus horários (use o cronograma fixo). Nenhum post é copiado entre redes.
+            Todas as redes = Instagram, LinkedIn e Google Business Profile (Perfil da Empresa no Google, 10h e 15h), cada uma com conteúdo próprio e inédito nos seus horários (use o cronograma fixo). Nenhum post é copiado entre redes.
           </p>
         )}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {([
             { id: "instagram", label: "Instagram", icon: <Instagram className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-fuchsia-500 via-pink-500 to-orange-400 text-white shadow-sm" },
             { id: "linkedin", label: "LinkedIn", icon: <Linkedin className="w-4 h-4" />, activeClass: "border-transparent bg-[#0a66c2] text-white shadow-sm" },
-            { id: "google", label: "Google Business", icon: <Globe className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white shadow-sm" },
+            { id: "google", label: "Google Business Profile", icon: <Globe className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white shadow-sm" },
             { id: "ambas", label: "Todas as redes", icon: (<><Instagram className="w-4 h-4" /><Linkedin className="w-4 h-4" /><Globe className="w-4 h-4" /></>), activeClass: "border-transparent bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white shadow-sm" },
           ] as const).map((opt) => {
-            const active = opt.id === "ambas" ? ambasRedes : !ambasRedes && rede === opt.id;
+            const active = opt.id === "ambas" ? ambasRedes : ambasRedes || rede === opt.id;
             return (
               <button
                 key={opt.id}
