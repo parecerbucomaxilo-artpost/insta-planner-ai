@@ -520,3 +520,51 @@ export function espalharTemas(
   }
   return out;
 }
+
+export type Reformulacao = {
+  tema: string;
+  /** "original" | "novo-angulo" | "novo-assunto" */
+  via: "original" | "novo-angulo" | "novo-assunto";
+  tentativas: number;
+  rejeitados: { tema: string; motivo: string }[];
+};
+
+/**
+ * Originalidade automática (todos os planners): se o tema colide com o histórico/lote,
+ * tenta primeiro o MESMO assunto com outro ângulo editorial (mesmo nicho é aceito quando a
+ * abordagem muda) e, depois, assuntos alternativos. Limite finito; retorna null se nada passar.
+ */
+export function reformularTema(
+  tema: string,
+  conflito: (t: string) => ConflitoPost | null,
+  alternativos: () => string | null,
+  opts: { angulos?: string[]; maxTentativas?: number } = {},
+): Reformulacao | null {
+  const angulos = opts.angulos ?? ANGULOS_EDITORIAIS;
+  const max = opts.maxTentativas ?? 24;
+  const rejeitados: Reformulacao["rejeitados"] = [];
+  const c0 = conflito(tema);
+  if (!c0) return { tema, via: "original", tentativas: 0, rejeitados };
+  rejeitados.push({ tema, motivo: c0.motivo });
+  const base = (tema || "").split(" — ")[0].trim();
+  const atual = anguloDe(tema);
+  let n = 0;
+  for (const a of angulos) {
+    if (n >= max) break;
+    if (normalizeText(a) === atual) continue;
+    const cand = `${base} — ${a}`;
+    n++;
+    const c = conflito(cand);
+    if (!c) return { tema: cand, via: "novo-angulo", tentativas: n, rejeitados };
+    rejeitados.push({ tema: cand, motivo: c.motivo });
+  }
+  while (n < max) {
+    const cand = alternativos();
+    if (!cand) break;
+    n++;
+    const c = conflito(cand);
+    if (!c) return { tema: cand, via: "novo-assunto", tentativas: n, rejeitados };
+    rejeitados.push({ tema: cand, motivo: c.motivo });
+  }
+  return null;
+}
