@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getWeekTopics } from "@/lib/ai-post.functions";
-import { montarSemana, emParalelo, proximaSegunda, type ItemSemana } from "@/lib/week-plan";
+import { montarSemana, montarSemanaCronograma, SLOTS_POR_SEMANA, rotuloRede, emParalelo, proximaSegunda, type ItemSemana } from "@/lib/week-plan";
 import { horariosDoDia, POSTS_POR_DIA_PADRAO } from "@/lib/post-slots";
 import { conflitosNoLote } from "@/lib/dedup";
 import { cn } from "@/lib/utils";
@@ -71,7 +71,7 @@ export function Posts7Dias(props: {
     travaRef.current = true;
     setBusy(true);
     try {
-      const qtd = 7 * porDia;
+      const qtd = temCronograma ? SLOTS_POR_SEMANA : 7 * porDia;
       let temas: string[];
       if (props.temasFixos?.length) temas = props.temasFixos;
       else {
@@ -96,7 +96,7 @@ export function Posts7Dias(props: {
             duration: 15000,
           });
       }
-      setPlano(montarSemana(temas, porDia));
+      setPlano(temCronograma ? montarSemanaCronograma(temas) : montarSemana(temas, porDia));
       setEstados({});
       operacaoRef.current = novaOperacao(); // novo plano = nova operação
     } catch (e: any) {
@@ -154,7 +154,7 @@ export function Posts7Dias(props: {
       await emParalelo(pendentes, 1, async (item) => {
         setEstados((s) => ({ ...s, [item.key]: { status: "gerando" } }));
         try {
-          const res = await props.gerar(item, formato === "Cronograma" ? item.formato : formato, {
+          const res = await props.gerar(item, (formato === "Cronograma" ? item.formato : formato) as FormatoSemana, {
             operacaoId,
             slotKey: item.key,
             objetivo: item.objetivo,
@@ -246,10 +246,11 @@ export function Posts7Dias(props: {
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Clock className="h-3.5 w-3.5" />
         Horários (seu fuso local):{" "}
-        <strong className="text-foreground">{horariosDoDia(porDia).join(" · ")}</strong>
+        {!temCronograma && <strong className="text-foreground">{horariosDoDia(porDia).join(" · ")}</strong>}
         {temCronograma ? (
           <span>
-            — Instagram: 09h Story · 14h Carrossel (5 slides) · 18h Story · 21h Carrossel (5 slides)
+            — Instagram: 09h Story · 14h Carrossel (5 slides) · 18h Story · 21h Carrossel (5 slides) ·
+            Google Business: 10h · 15h · LinkedIn: 09h · 13h ({SLOTS_POR_SEMANA} posts na semana)
           </span>
         ) : (
           <span className="hidden sm:inline">— padrão completo: 09:00 · 14:00 · 18:00 · 21:00</span>
@@ -264,6 +265,7 @@ export function Posts7Dias(props: {
                 <div className="flex items-center gap-2">
                   <span className="font-semibold w-32 shrink-0">
                     {item.diaSemana} {item.dataLabel}
+                    {item.rede && <span className="block font-normal text-muted-foreground">{rotuloRede(item.rede)} · {item.formato}</span>}
                   </span>
                   <Input
                     value={item.tema}

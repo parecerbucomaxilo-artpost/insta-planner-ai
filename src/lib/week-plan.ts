@@ -18,9 +18,59 @@ export type ItemSemana = {
   quando: string; // ISO (UTC) do horário local escolhido
   tema: string;
   objetivo: string;
-  /** Formato do cronograma para este horário (09h/18h story, 14h/21h carrossel). */
-  formato: "Story" | "Carrossel";
+  /** Formato do cronograma para este horário (09h/18h story, 14h/21h carrossel; Google/LinkedIn post único). */
+  formato: "Story" | "Carrossel" | "Post Único";
+  /** Rede de destino do slot. Ausente = instagram (planners antigos). */
+  rede?: RedeSemana;
 };
+
+export type RedeSemana = "instagram" | "google" | "linkedin";
+
+/** Cronograma global por rede (horário local): fonte única do "Planejar semana". */
+export const CRONOGRAMA_GLOBAL: { rede: RedeSemana; horario: string; formato: ItemSemana["formato"] }[] = [
+  { rede: "instagram", horario: "09:00", formato: "Story" },
+  { rede: "linkedin", horario: "09:00", formato: "Post Único" },
+  { rede: "google", horario: "10:00", formato: "Post Único" },
+  { rede: "linkedin", horario: "13:00", formato: "Post Único" },
+  { rede: "instagram", horario: "14:00", formato: "Carrossel" },
+  { rede: "google", horario: "15:00", formato: "Post Único" },
+  { rede: "instagram", horario: "18:00", formato: "Story" },
+  { rede: "instagram", horario: "21:00", formato: "Carrossel" },
+];
+export const SLOTS_POR_SEMANA = CRONOGRAMA_GLOBAL.length * 7; // 56
+
+const REDE_LABEL: Record<RedeSemana, string> = { instagram: "Instagram", google: "Google Business", linkedin: "LinkedIn" };
+export const rotuloRede = (r?: RedeSemana) => REDE_LABEL[r ?? "instagram"];
+
+/** Semana completa do cronograma global: 7 dias × 8 slots (IG 4, Google 2, LinkedIn 2). */
+export function montarSemanaCronograma(temas: string[], agora: Date = new Date()): ItemSemana[] {
+  const inicio = proximaSegunda(agora);
+  const itens: ItemSemana[] = [];
+  let k = 0;
+  for (let dia = 0; dia < 7; dia++) {
+    for (const slot of CRONOGRAMA_GLOBAL) {
+      const { hora, minuto } = parseHorario(slot.horario);
+      const d = new Date(inicio);
+      d.setDate(inicio.getDate() + dia);
+      d.setHours(hora, minuto, 0, 0);
+      if (d.getTime() < agora.getTime()) d.setDate(d.getDate() + 7);
+      const data = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      itens.push({
+        key: `${data}T${slot.horario}@${slot.rede}`,
+        diaSemana: DIAS_SEMANA[d.getDay()],
+        dataLabel: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")} ${slot.horario}`,
+        horario: slot.horario as HorarioPostagem,
+        quando: d.toISOString(),
+        tema: (temas[k] ?? "").trim(),
+        objetivo: OBJETIVOS[k % OBJETIVOS.length],
+        formato: slot.formato,
+        rede: slot.rede,
+      });
+      k++;
+    }
+  }
+  return itens;
+}
 
 /** Próxima segunda-feira às 00:00 (hoje, se for segunda). */
 export function proximaSegunda(agora: Date = new Date()): Date {
