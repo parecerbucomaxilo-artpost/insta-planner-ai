@@ -71,7 +71,17 @@ describe("semana cheia não é esvaziada pela dedup", () => {
     expect(t.some((x) => hist.includes(x))).toBe(false);
   });
   it("mesmo assunto com ângulos diferentes é aceito; mesmo ângulo é recusado", () => {
-    expect(conflitosNoLote([{ tema: "Bruxismo — mito ou verdade" }, { tema: "Bruxismo — sinais de alerta que muita gente ignora" }])).toEqual([]);
-    expect(conflitosNoLote([{ tema: "Bruxismo — mito ou verdade" }, { tema: "Bruxismo noturno — mito ou verdade" }])).toEqual([1]);
+    expect(
+      conflitosNoLote([
+        { tema: "Bruxismo — mito ou verdade" },
+        { tema: "Bruxismo — sinais de alerta que muita gente ignora" },
+      ]),
+    ).toEqual([]);
+    expect(
+      conflitosNoLote([
+        { tema: "Bruxismo — mito ou verdade" },
+        { tema: "Bruxismo noturno — mito ou verdade" },
+      ]),
+    ).toEqual([1]);
   });
 });

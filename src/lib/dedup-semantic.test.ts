@@ -53,7 +53,11 @@ describe("dedup semântico — assunto-raiz", () => {
     );
     expect(acharConflito({ tema: ORTO[2], quando: "2026-10-30T12:00:00.000Z" }, hist)).toBeNull();
     // Sem ângulo explícito, vale a janela inteira.
-    expect(acharConflito({ tema: "Cirurgia ortognática", quando: "2026-10-30T12:00:00.000Z" }, [{ tema: "Mordida cruzada", quando: "2026-10-28T12:00:00.000Z" }])?.motivo).toBe("assunto-na-janela");
+    expect(
+      acharConflito({ tema: "Cirurgia ortognática", quando: "2026-10-30T12:00:00.000Z" }, [
+        { tema: "Mordida cruzada", quando: "2026-10-28T12:00:00.000Z" },
+      ])?.motivo,
+    ).toBe("assunto-na-janela");
     expect(acharConflito({ tema: ORTO[2], quando: "2026-11-10T12:00:00.000Z" }, hist)).toBeNull();
     expect(
       acharConflito({ tema: ORTO[2], quando: "2026-10-30T12:00:00.000Z" }, [
