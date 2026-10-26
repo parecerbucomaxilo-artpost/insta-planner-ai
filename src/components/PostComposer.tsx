@@ -2,7 +2,9 @@ import { Posts7Dias } from "@/components/Posts7Dias";
 import { salvarPostInedito } from "@/lib/post-guard";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import { startGenerationProgress } from "@/lib/generation-progress";
-import { useState, useCallback, useRef, type ChangeEvent } from "react";
+import { useState, useCallback, useRef, useEffect, type ChangeEvent } from "react";
+import { alternarRede, alternarTodas, todasSelecionadas, flagsDeRede, statusInicial, HORARIOS_GOOGLE } from "@/lib/networks";
+import { googleBusinessStatus } from "@/lib/google-business.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -56,10 +58,15 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const [horaAgendada, setHoraAgendada] = useState("09:00");
 
 
+  const gbpStatus = useServerFn(googleBusinessStatus);
+  const [gbp, setGbp] = useState<{ conectado: boolean; mensagem: string } | null>(null);
+  useEffect(() => {
+    if (networks.includes("google") && !gbp) gbpStatus().then(setGbp).catch(() => setGbp({ conectado: false, mensagem: "Não foi possível verificar a conexão do Google Business." }));
+  }, [networks, gbp, gbpStatus]);
   const toggleNetwork = (n: Network) => {
-    setNetworks((prev) =>
-      prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n],
-    );
+    const next = alternarRede(networks, n);
+    if (next.length === 1 && next[0] === "google") setHoraAgendada(HORARIOS_GOOGLE[0]);
+    setNetworks(next);
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -98,19 +105,21 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         dataAgendamentoIso = d.toISOString();
       }
 
-      const initialStatus = quando === "agora" && networks.includes("instagram")
-        ? "Agendado"
-        : quando === "agora"
-          ? "Publicado"
-          : "Agendado";
+      if (networks.includes("google")) {
+        const st = await gbpStatus();
+        if (!st.conectado) throw new Error(st.mensagem);
+      }
+      const initialStatus = statusInicial(networks, quando);
+      // Google "agora": entra na fila do despachante já vencida (sem simular publicado).
+      if (quando === "agora" && networks.includes("google") && !dataAgendamentoIso) {
+        dataAgendamentoIso = new Date().toISOString();
+      }
 
       const salvo = await salvarPostInedito(supabase, userId, {
         tipo_post: tipoDb,
         legenda,
         url_imagem: publicUrl,
-        postar_instagram: networks.includes("instagram"),
-        postar_linkedin: networks.includes("linkedin"),
-        postar_google: networks.includes("google"),
+        ...flagsDeRede(networks),
         status: initialStatus,
         data_agendamento: dataAgendamentoIso,
         estilo_layout: formato === "Estilo X" ? "Estilo X" : "Padrão",
@@ -124,7 +133,8 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         }
       }
 
-      toast.success(quando === "agora" ? "Post publicado pela Meta." : "Post agendado!", { id: tId });
+      const gTxt = networks.includes("google") ? " Google Business: na fila de envio (confirma em até 5 min)." : "";
+      toast.success((quando === "agora" && networks.includes("instagram") ? "Post publicado pela Meta." : quando === "agora" ? "Post salvo." : "Post agendado!") + gTxt, { id: tId });
       setLegenda(""); setImagem(null); setFileToUpload(null); setFileName(null);
       setDataAgendada(undefined);
       onCreated();
@@ -134,7 +144,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     } finally {
       setSaving(false);
     }
-  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated, dataAgendada, horaAgendada, publishIg]);
+  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated, dataAgendada, horaAgendada, publishIg, gbpStatus]);
 
   const handleGenerateCaption = useCallback(async () => {
     const tema = temaLegenda.trim();
@@ -192,7 +202,19 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       {/* Redes — botões separados com ícones e cores */}
       <div className="space-y-2">
         <Label>Publicar em</Label>
-        <div className="grid grid-cols-3 gap-3">
+        {networks.includes("google") && gbp && (
+          <p role="status" className={cn("text-xs font-medium", gbp.conectado ? "text-emerald-700" : "text-destructive")}>
+            {gbp.mensagem}
+          </p>
+        )}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <NetworkButton
+            active={todasSelecionadas(networks)}
+            onClick={() => setNetworks(alternarTodas(networks))}
+            icon={<><Instagram className="w-4 h-4" /><Linkedin className="w-4 h-4" /><Globe className="w-4 h-4" /></>}
+            label="Todas as redes"
+            activeClass="bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white border-transparent shadow-md"
+          />
           <NetworkButton
             active={networks.includes("instagram")}
             onClick={() => toggleNetwork("instagram")}
@@ -211,7 +233,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
             active={networks.includes("google")}
             onClick={() => toggleNetwork("google")}
             icon={<Globe className="w-5 h-5" />}
-            label="Google Business"
+            label="Google Business Profile"
             activeClass="bg-gradient-to-tr from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white border-transparent shadow-md"
           />
         </div>
@@ -321,6 +343,11 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
               onChange={(e) => setHoraAgendada(e.target.value)}
               className="w-[130px]"
             />
+            {networks.includes("google") && HORARIOS_GOOGLE.map((h) => (
+              <Button key={h} type="button" size="sm" variant={horaAgendada === h ? "default" : "outline"} onClick={() => setHoraAgendada(h)}>
+                Google {h}
+              </Button>
+            ))}
           </div>
         )}
       </div>
@@ -650,17 +677,17 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         <Label className="text-xs">Publicar em</Label>
         {ambasRedes && (
           <p className="text-[11px] text-muted-foreground">
-            Todas as redes = Instagram, LinkedIn e Google Business, cada uma com conteúdo próprio e inédito nos seus horários (use o cronograma fixo). Nenhum post é copiado entre redes.
+            Todas as redes = Instagram, LinkedIn e Google Business Profile (Perfil da Empresa no Google, 10h e 15h), cada uma com conteúdo próprio e inédito nos seus horários (use o cronograma fixo). Nenhum post é copiado entre redes.
           </p>
         )}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {([
             { id: "instagram", label: "Instagram", icon: <Instagram className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-fuchsia-500 via-pink-500 to-orange-400 text-white shadow-sm" },
             { id: "linkedin", label: "LinkedIn", icon: <Linkedin className="w-4 h-4" />, activeClass: "border-transparent bg-[#0a66c2] text-white shadow-sm" },
-            { id: "google", label: "Google Business", icon: <Globe className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white shadow-sm" },
+            { id: "google", label: "Google Business Profile", icon: <Globe className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white shadow-sm" },
             { id: "ambas", label: "Todas as redes", icon: (<><Instagram className="w-4 h-4" /><Linkedin className="w-4 h-4" /><Globe className="w-4 h-4" /></>), activeClass: "border-transparent bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white shadow-sm" },
           ] as const).map((opt) => {
-            const active = opt.id === "ambas" ? ambasRedes : !ambasRedes && rede === opt.id;
+            const active = opt.id === "ambas" ? ambasRedes : ambasRedes || rede === opt.id;
             return (
               <button
                 key={opt.id}
