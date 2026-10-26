@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- dublê de teste */
 import { describe, it, expect } from "vitest";
 import { previewPlatforms } from "./post-preview";
 import { buildScheduleSlots } from "./schedule-config";
