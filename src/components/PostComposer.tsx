@@ -474,8 +474,10 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     abortRef.current = ctrl;
     try {
       const out = await genWeek({ data: { especialidade, modelo }, signal: ctrl.signal });
-      setTemas(out.temas as any);
-      toast.success(`${out.temas.length} temas gerados. Aprove para criar imagem e agendar.`, { id: tid });
+      const unicos = out.temas.filter((t) => t.tema);
+      setTemas(unicos as any);
+      const faltam = out.temas.length - unicos.length;
+      toast.success(`${unicos.length} temas inéditos, um por horário.${faltam ? ` ${faltam} horários ficaram sem tema novo (nada será copiado).` : ""}`, { id: tid });
     } catch (e: any) {
       if (ctrl.signal.aborted || e?.name === "AbortError") {
         toast.dismiss(tid);
