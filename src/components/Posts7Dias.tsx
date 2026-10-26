@@ -93,8 +93,22 @@ export function Posts7Dias(props: {
             escritorLocal: Boolean(props.escritorLocal),
           },
         });
-        temas = r.temas;
-        if (r.aviso)
+        temas = r.temas.filter((t) => t.trim());
+        // Pauta sempre completa: se o banco do tema guiado esgotou, a IA repõe com temas gerais.
+        if (temas.length < qtd) {
+          const r2 = await fetchTopics({
+            data: {
+              especialidade: props.especialidade ?? "Ambas",
+              temaGuia: "",
+              quantidade: 60,
+              inicioSemana: proximaSegunda().toISOString(),
+              escritorLocal: Boolean(props.escritorLocal),
+            },
+          });
+          const vistos = new Set(temas);
+          temas = [...temas, ...r2.temas.filter((t) => t.trim() && !vistos.has(t))];
+        }
+        if (r.aviso && temas.length < qtd)
           toast.warning(r.aviso, {
             action: {
               label: "Gerar novos temas",
@@ -160,7 +174,12 @@ export function Posts7Dias(props: {
         const res = await props.gerar(
           atual,
           (formato === "Cronograma" ? atual.formato : formato) as FormatoSemana,
-          { operacaoId, slotKey: t === 0 ? item.key : `${item.key}#${t}`, objetivo: atual.objetivo, assuntoGuiado },
+          {
+            operacaoId,
+            slotKey: t === 0 ? item.key : `${item.key}#${t}`,
+            objetivo: atual.objetivo,
+            assuntoGuiado,
+          },
         );
         setEstados((s) => ({ ...s, [item.key]: { status: "ok", res } }));
         return true;
@@ -185,16 +204,25 @@ export function Posts7Dias(props: {
     const tid = "posts-7-dias";
     try {
       // 1) Pauta automática: horários vazios ou que repetem assunto do lote recebem tema da IA.
-      let itens = [...plano];
+      const itens = [...plano];
       const conflito = new Set(
-        conflitosNoLote(itens.map((i) => ({ tema: i.tema, quando: i.quando })), { assuntoGuiado }),
+        conflitosNoLote(
+          itens.map((i) => ({ tema: i.tema, quando: i.quando })),
+          { assuntoGuiado },
+        ),
       );
       const trocar = itens
         .map((i, idx) => ({ i, idx }))
-        .filter(({ i, idx }) => estados[i.key]?.status !== "ok" && (!i.tema.trim() || conflito.has(idx)));
+        .filter(
+          ({ i, idx }) => estados[i.key]?.status !== "ok" && (!i.tema.trim() || conflito.has(idx)),
+        );
       if (trocar.length) {
-        toast.loading(`Escolhendo ${trocar.length} tema(s) inédito(s) automaticamente…`, { id: tid });
-        const fixos = itens.filter((_, idx) => !trocar.some((x) => x.idx === idx)).map((i) => i.tema);
+        toast.loading(`Escolhendo ${trocar.length} tema(s) inédito(s) automaticamente…`, {
+          id: tid,
+        });
+        const fixos = itens
+          .filter((_, idx) => !trocar.some((x) => x.idx === idx))
+          .map((i) => i.tema);
         const novos = await temasNovos(trocar.length + 4, fixos);
         const quandos = trocar.map(({ i }) => i.quando);
         const ordem = espalharTemas(novos, quandos, { assuntoGuiado: false });
@@ -218,7 +246,13 @@ export function Posts7Dias(props: {
       await emParalelo(pendentes, 1, async (item) => {
         if (!item.tema.trim()) {
           falhas++;
-          setEstados((s) => ({ ...s, [item.key]: { status: "erro", erro: "A IA não encontrou tema inédito para este horário." } }));
+          setEstados((s) => ({
+            ...s,
+            [item.key]: {
+              status: "erro",
+              erro: "A IA não encontrou tema inédito para este horário.",
+            },
+          }));
           return;
         }
         const ok = await gerarSlot(item, operacaoId, usados);
@@ -388,7 +422,13 @@ export function Posts7Dias(props: {
                 {st?.status === "erro" && (
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-destructive">{st.erro}</p>
-                    <Button size="sm" variant="outline" className="h-7 text-xs" disabled={busy} onClick={() => void tentarSlot(item)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      disabled={busy}
+                      onClick={() => void tentarSlot(item)}
+                    >
                       Tentar de novo
                     </Button>
                   </div>

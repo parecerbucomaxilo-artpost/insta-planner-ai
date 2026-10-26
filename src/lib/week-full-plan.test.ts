@@ -91,3 +91,24 @@ describe("Planejar semana — cronograma global completo", () => {
     expect(new Set(t).size).toBe(56);
   });
 });
+
+describe("Pauta automática — slots vazios", () => {
+  it("horários sem tema recebem tema inédito da reposição, sem deixar vazio", () => {
+    const plano = montarSemanaCronograma([], agora);
+    expect(plano.every((i) => i.tema === "")).toBe(true);
+    const novos = planDistinctTopics([...TEMAS_GERAIS], [], 60, ANGULOS_EDITORIAIS);
+    const ordem = espalharTemas(
+      novos,
+      plano.map((i) => i.quando),
+    );
+    expect(ordem.filter((t) => t.trim())).toHaveLength(56);
+    expect(new Set(ordem).size).toBe(56);
+  });
+
+  it("temas do histórico recente não voltam na pauta", () => {
+    const hist = planDistinctTopics([...TEMAS_GERAIS], [], 10, ANGULOS_EDITORIAIS);
+    const nova = planDistinctTopics([...TEMAS_GERAIS], hist, 56, ANGULOS_EDITORIAIS);
+    expect(nova).toHaveLength(56);
+    expect(nova.some((t) => hist.includes(t))).toBe(false);
+  });
+});
