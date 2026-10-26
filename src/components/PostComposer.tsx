@@ -617,12 +617,13 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       </div>
 
       <Posts7Dias
+        idRetomada="composer"
         especialidade={especialidade}
         temaGuia={tema}
         escritorLocal={modelo === "local/sem-custo"}
         gerar={async (item, formato, ctx) => {
-          const out = await genSingle({ data: { tema: item.tema, especialidade, rede: item.rede ?? "instagram", tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando, modelo, modeloImagem, ambasRedes: item.rede ? false : ambasRedes, operacaoId: ctx.operacaoId, slotKey: ctx.slotKey, objetivo: ctx.objetivo, assuntoGuiado: ctx.assuntoGuiado } });
-          return { id: out.id, urls: out.urls, legenda: out.legenda };
+          const out = await genSingle({ data: { tema: item.tema, especialidade, rede: item.rede ?? "instagram", tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando, modelo, modeloImagem, ambasRedes: item.rede ? false : ambasRedes, operacaoId: ctx.operacaoId, slotKey: ctx.slotKey, objetivo: ctx.objetivo, assuntoGuiado: ctx.assuntoGuiado, salvarTextoSeImagemFalhar: ctx.salvarTextoSeImagemFalhar } });
+          return { id: out.id, urls: out.urls, legenda: out.legenda, imagemErro: (out as any).imagemErro };
         }}
       />
 
