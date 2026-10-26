@@ -58,7 +58,7 @@ describe("Originalidade automática", () => {
     let chamadas = 0;
     const r = reformularTema(
       "X",
-      () => ({ motivo: "tema", com: "y" }) as any,
+      () => ({ motivo: "tema" as const, com: "y" }),
       () => `alt ${chamadas++}`,
       { maxTentativas: 5 },
     );
@@ -75,7 +75,11 @@ describe("Originalidade automática", () => {
     ];
     expect(conflito(lote)(lote[0].tema)).not.toBeNull();
     // Mesmo assunto no mesmo dia não passa nem com outro ângulo: troca de assunto.
-    const r = reformularTema(lote[0].tema, conflito(lote), () => "Neuralgia do trigêmeo: dor facial não dentária");
+    const r = reformularTema(
+      lote[0].tema,
+      conflito(lote),
+      () => "Neuralgia do trigêmeo: dor facial não dentária",
+    );
     expect(r?.via).toBe("novo-assunto");
     expect(conflito(lote)(r!.tema)).toBeNull();
   });
