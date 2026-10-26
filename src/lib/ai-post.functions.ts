@@ -1404,7 +1404,7 @@ function buildDiverseLocalCaption(tema: string, rede: "instagram" | "linkedin" |
   return `${tema}\n\nUm registro especial sobre este tema. Compartilhe com quem se identifica.\n\n${tag}`;
 }
 
-function completeCaptionIfNeeded(params: {
+export function completeCaptionIfNeeded(params: {
   legenda: string;
   tema: string;
   rede: "instagram" | "linkedin" | "estilo-x" | "google";
@@ -1429,7 +1429,9 @@ function completeCaptionIfNeeded(params: {
   if (!tooShort && hasConduta && hasWhy && hasAlert && hasGanho) return raw;
   // Texto completo escrito para o tema + guia genérico: não anexar parágrafos de preenchimento
   // idênticos aos de outros posts (só o fechamento oficial, se faltar).
-  if (!tooShort && isGenericGuidance(g)) {
+  // Guia genérico NUNCA completa com parágrafos fixos (curto ou longo): eram idênticos em todo
+  // post, a dedup recusava as 3 tentativas e nada era salvo ("o app não gera nada").
+  if (isGenericGuidance(g)) {
     if (params.rede === "linkedin" || params.formato === "Story" || /link da bio|link na bio/i.test(raw)) return raw;
     return `${raw}\n\n${params.audiencia === "estudantes-graduacao" ? "Salve para revisar e compare com sua conduta na clínica." : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`}`;
   }
@@ -1476,6 +1478,19 @@ function buildSlideNarratives(tema: string, audiencia: z.infer<typeof SingleInpu
     `Slide 4 — Ganho concreto: ${g.ganho}. Traduzir o tratamento em benefício de vida real.`,
     `Slide 5 — CTA: ${g.alerta}. Link na bio / WhatsApp com fechamento elegante e seguro.`
   ];
+}
+
+/** Slides fora do Chico: usa os blocos "Slide N" escritos pela IA; o roteiro fixo só vale para
+ * temas com guia clínico próprio (o guia genérico geraria slides idênticos entre posts). */
+export function slidesNaoChico(legenda: string, tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"], total: number): string[] {
+  try {
+    return extractFinalSlides(legenda, total);
+  } catch (e) {
+    if (isGenericGuidance(topicGuidance(tema))) {
+      throw new Error(`A IA não escreveu ${total} slides distintos para "${tema.slice(0, 60)}". Nada foi salvo — gere novamente ou detalhe melhor o tema.`);
+    }
+    return buildSlideNarratives(tema, audiencia);
+  }
 }
 
 function ensureCarouselCaption(base: string, slideNarratives: string[], audiencia: z.infer<typeof SingleInput>["audiencia"]) {
@@ -1859,7 +1874,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // Chico: texto final completo, sem trocar/truncar blocos por narrativas genéricas.
     const slideNarratives = formato === "Carrossel"
       ? isChico ? extractFinalSlides(legendaBaseResolvida, slideCount)
-        : buildSlideNarratives(tema, data.audiencia)
+        : slidesNaoChico(legendaBaseResolvida, tema, data.audiencia, slideCount)
       : [];
     // Carrossel: slides progressivos dentro do mesmo tema — slide que repete outro bloqueia o salvamento.
     if (formato === "Carrossel" && isChico) {
