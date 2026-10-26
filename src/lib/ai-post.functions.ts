@@ -2349,7 +2349,7 @@ export const getWeekTopics = createServerFn({ method: "POST" })
     z.object({
       especialidade: z.enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"]).default("Ambas"),
       temaGuia: z.string().optional().default(""),
-      quantidade: z.number().int().min(1).max(28).default(7),
+      quantidade: z.number().int().min(1).max(60).default(7),
       // Início (ISO) da semana planejada — assuntos usados perto dessas datas ficam bloqueados.
       inicioSemana: z.string().datetime().optional(),
       // Planner usando o escritor local (sem IA): só temas com roteiro clínico próprio.
@@ -2399,9 +2399,17 @@ export const getWeekTopics = createServerFn({ method: "POST" })
       console.warn("[dedup] getWeekTopics sem histórico:", e instanceof Error ? e.message : e);
     }
     // Tema guiado: o usuário escolheu o assunto da semana — ângulos distintos, mesmo assunto.
-    const temas = guia
-      ? lista.filter((t) => !findDuplicate(t, historico)).slice(0, data.quantidade)
+    // Antes: com tema guiado, cada "guia: ângulo" era comparado por texto ao histórico — como todos
+    // compartilham o mesmo assunto, quase tudo era descartado e só ~2 itens sobravam ("gera 2 posts").
+    // Agora: ângulos do guia que não repetem par assunto+ângulo, depois a matriz editorial do banco
+    // geral completa os slots restantes (nunca cópia).
+    let temas = guia
+      ? planDistinctTopics(lista, historico, data.quantidade, ANGULOS_EDITORIAIS)
       : planDistinctTopics(lista, historico, data.quantidade, ANGULOS_EDITORIAIS, { assuntosBloqueados });
+    if (temas.length < data.quantidade) {
+      const extra = [...(data.especialidade === "Temas Diversos" ? TEMAS_DIVERSOS : TEMAS_GERAIS)];
+      temas = [...temas, ...planDistinctTopics(extra, [...historico, ...temas], data.quantidade - temas.length, ANGULOS_EDITORIAIS)];
+    }
     const aviso = temas.length < data.quantidade
       ? `Só ${temas.length} assuntos realmente diferentes estão livres nesta semana (cada post precisa de um assunto próprio e sem repetir posts próximos). Clique em "Gerar novos temas" para tentar outra combinação.`
       : historicoOk ? undefined : "Histórico indisponível: a verificação contra posts antigos será feita na geração.";
