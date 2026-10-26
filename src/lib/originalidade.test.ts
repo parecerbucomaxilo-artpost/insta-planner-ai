@@ -74,7 +74,9 @@ describe("Originalidade automática", () => {
       },
     ];
     expect(conflito(lote)(lote[0].tema)).not.toBeNull();
-    const r = reformularTema(lote[0].tema, conflito(lote), () => null);
-    expect(r?.via).toBe("novo-angulo");
+    // Mesmo assunto no mesmo dia não passa nem com outro ângulo: troca de assunto.
+    const r = reformularTema(lote[0].tema, conflito(lote), () => "Neuralgia do trigêmeo: dor facial não dentária");
+    expect(r?.via).toBe("novo-assunto");
+    expect(conflito(lote)(r!.tema)).toBeNull();
   });
 });
