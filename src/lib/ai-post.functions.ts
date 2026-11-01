@@ -1017,7 +1017,7 @@ function chicoImagePrompt(
   (e) ILUSTRAÇÃO ANATÔMICA HIPER-REALISTA estilo Netter/Sobotta — mandíbula/maxila/ATM/nervo alveolar com precisão de atlas médico.
   PROIBIDO absolutamente: cenas fictícias, personagens estilizados, próteses cartunizadas, "dente feliz", pacientes sorrindo genéricos de banco de imagens, dentes desenhados sem raízes, radiografias inventadas que não parecem radiografias reais, mandíbulas com formato errado, TC que parece pintura.
 - CRIATIVIDADE OBRIGATÓRIA (jamais repetir composição): a cada post escolha ALEATORIAMENTE um ângulo/registro diferente — [radiografia panorâmica em close] · [TC corte sagital] · [reconstrução 3D vista oblíqua] · [foto clínica intraoral com afastador] · [perfil facial em silhueta] · [close macro de instrumental cirúrgico esterilizado sobre campo azul] · [mão do cirurgião com luva segurando radiografia negatoscopiada] · [ilustração anatômica em corte com transparência] · [comparativo antes/depois em imagem de exame]. Nunca repita o mesmo ângulo do post anterior do mesmo tema.
-- ESTILO EDITORIAL: fotografia editorial médica sóbria OU imagem de exame real OU ilustração anatômica realista limpa. Sem clipart, sem flat design, sem cartoon, sem 3D infantil, sem banco de imagens genérico, sem "dente com olhos".
+- ESTILO EDITORIAL: fotografia editorial médica sóbria OU imagem de exame real (ilustração anatômica só quando o pedido exigir explicitamente). Sem clipart, sem flat design, sem cartoon, sem 3D infantil, sem banco de imagens genérico, sem "dente com olhos".
 - PALETA RIGOROSA — APENAS estas 3 cores (descumprir = rejeitado):
   • FUNDO DOMINANTE: AZUL MARINHO ESCURO ${CHICO_NAVY} (cobertura ~70-85% da composição, podendo ter leve gradiente sutil).
   • TEXTO PRINCIPAL: BRANCO #FFFFFF puro.
