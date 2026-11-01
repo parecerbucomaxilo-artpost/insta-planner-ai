@@ -1,3 +1,4 @@
+import { plainLanguageRule } from "@/lib/plain-language";
 import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
@@ -2065,7 +2066,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
         const system = diverseCaptionSystem(data.rede, formato);
         const prompt = `${isChico && formato === "Carrossel" ? `Inclua ${quantidadeSlides({ rede: data.rede, formato, tipo: data.tipo, pedido: data.slides })} blocos distintos completos marcados Slide 1, Slide 2 etc. Cada bloco contém título e texto final específico.\n` : ""}Tema do post: ${tema}\nRede: ${data.rede}\nFormato: ${formato}${objetivoLinha}${novaAbordagem}\n\nTAREFA: escreva a legenda final pronta para publicação sobre EXCLUSIVAMENTE este tema. É PROIBIDO qualquer menção a saúde, odontologia, medicina, clínica, consultório, hospital, pacientes, tratamento, cirurgia, dente, boca, sorriso, dor. NÃO force relação com odontologia. Responda apenas em pt-BR, sem aspas envolvendo o texto, sem comentários meta.`;
         const txt = await generateTextAI({
-          system,
+          system: system + plainLanguageRule({ audiencia: data.audiencia, nivel: typeof nivel === "string" ? nivel : undefined }),
           prompt,
           model: data.modelo,
           maxTokens: data.rede === "linkedin" ? 1400 : formato === "Carrossel" ? 1100 : 800,
@@ -2090,7 +2091,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           : "";
       const prompt = `${contrato}\n\nTema: ${tema}\nRede: ${data.rede}\nFormato: ${formato}\nEspecialidade: ${data.especialidade}\nAudiência: ${data.audiencia}${objetivoLinha}${roteiroCarrossel}${novaAbordagem}\n\nTAREFA: escreva a legenda final pronta para publicação. Ela só será aceita se mencionar explicitamente O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA. Não termine antes da conduta/tratamento.\n\nIMPORTANTE: responda APENAS em Português do Brasil (pt-BR). Não use NENHUMA palavra em inglês (inclusive em hashtags — use #CirurgiaBucal, não #OralSurgery). Sem comentários meta, sem traduções, sem aspas envolvendo o texto.`;
       const txt = await generateTextAI({
-        system,
+        system: system + plainLanguageRule({ audiencia: data.audiencia, nivel: typeof nivel === "string" ? nivel : undefined }),
         prompt,
         model: data.modelo,
         maxTokens: data.rede === "linkedin" ? 1700 : formato === "Carrossel" ? 1200 : 950,
@@ -2927,7 +2928,7 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
     const contrato = clinicalContract(tema, data.audiencia);
     const prompt = `${contrato}\n\nTema sugerido pelo usuário: ${tema}\nRede: ${data.rede}\nFormato: ${data.formato}\nEspecialidade: ${data.especialidade}\n\nTAREFA: escreva APENAS a legenda final pronta para publicação, mencionando O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA.\n\nResponda apenas em PT-BR. Sem comentários meta, sem aspas envolvendo o texto.`;
     const txt = await generateTextAI({
-      system,
+      system: system + plainLanguageRule({ audiencia: data.audiencia, nivel }),
       prompt,
       model: captionModel,
       maxTokens: data.rede === "linkedin" ? 1700 : data.formato === "Carrossel" ? 1200 : 950,
