@@ -81,6 +81,7 @@ export function Posts7Dias(props: {
   );
   const [plano, setPlano] = useState<ItemSemana[] | null>(null);
   const [estados, setEstados] = useState<Record<string, Estado>>({});
+  const [ultimoGerado, setUltimoGerado] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // Trava síncrona: o estado `busy` só muda no próximo render, então um duplo clique rápido
   // disparava duas gerações completas da semana (causa de posts duplicados/triplicados).
