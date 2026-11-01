@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Auditar e atualizar modelos de IA verificados, remover simulação silenciosa e configuração insegura; validar sem geração real.
 - [x] Limpar registros e histórico do Chico no app — 38 posts removidos, zero restantes; outras contas e configurações verificadas intactas. Cache do navegador do usuário não acessível.
 - [x] Validar semana real de 56 slots no Chico e entregar auditoria por slot, sem publicação externa — execução reprovou: 7 completos e 49 falhas.
 - [x] Preview real com erros claros
