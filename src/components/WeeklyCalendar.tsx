@@ -269,6 +269,7 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
             imagens: result.urls,
             status: "pronto",
           } : item));
+          setUltimoGerado(result.id);
           ok++;
         } catch (e) {
           console.error("[WeeklyCalendar] gerar falhou", e);
@@ -484,7 +485,7 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
                           </p>
                         </Card>
                       </button>
-                      {p.postId && <div className="mt-2"><PostReviewActions id={p.postId} status={p.reviewStatus} disabled={loading} onChange={(status) => {
+                      {p.postId && <div className="mt-2"><PostReviewActions id={p.postId} autoOpen={p.postId === ultimoGerado} status={p.reviewStatus} disabled={loading} onChange={(status) => {
                         setPosts((items) => items.map((item, index) => index === globalIdx ? { ...item, reviewStatus: status } : item));
                         onCreated();
                       }} /></div>}
