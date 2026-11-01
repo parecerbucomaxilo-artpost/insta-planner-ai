@@ -782,7 +782,7 @@ function diverseImagePrompt(
     : "";
   const brandPalette =
     brand === "student"
-      ? `PALETA: fundo grafite #2D2C32 dominante, texto branco #FBFBFB, destaque âmbar #DD8E3C. Sem outras cores fortes.`
+      ? `PALETA: fundo preto #000000 ou grafite #545454 dominante, texto branco #FFFFFF, destaque vermelho anatômico #C92E28. Sem azul/ciano nem outras cores fortes.`
       : `PALETA: fundo azul marinho #0c2340 dominante (leve gradiente para ciano #2dd4ff nos cantos), texto branco puro, destaques em ciano #2dd4ff. Sem outras cores fortes.`;
   const logoReserva =
     brand === "student"
