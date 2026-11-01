@@ -1,4 +1,6 @@
 # Architecture rules
+- AI model options, defaults, legacy validation and provider routing live in src/lib/ai-models.ts; only catalog-verified stable IDs are offered, explicit legacy choices are preserved or rejected without substitution, and generation failures never return local simulated content.
+- Anthropic is explicitly unconnected; its former browser-key UI removes the obsolete localStorage entry without reading it, because the project has no native Claude generation path.
 - Generated-post review uses the shared PostReviewActions component and existing posts statuses through the authenticated browser client, so RLS applies and internal approval never invokes publishing.
 - Keep review actions before long slide/caption content and expose saved pending posts through visible navigation; generation refreshes persisted lists without auto-scheduling.
 - Parent previews remain mounted after internal review so the shared modal can display the saved decision; calendars expose undated pending posts separately instead of filtering them away.
