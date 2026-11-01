@@ -1,3 +1,4 @@
+import { withRealism } from "@/lib/image-realism";
 // Lovable AI Gateway — catalog-verified models, no provider fallback.
 // A geração preserva o provedor selecionado e nunca retorna uma imagem substituta.
 
@@ -180,6 +181,7 @@ export async function generateImageBase64(opts: {
   const model = opts.model || DEFAULT_IMAGE_MODEL;
 
   if (!opts.prompt.trim()) throw new Error("Brief visual vazio; geração bloqueada.");
+  opts = { ...opts, prompt: withRealism(opts.prompt) };
   if (model === "local/sem-custo") {
     throw new Error(
       "O modelo local não gera imagens contextuais. Selecione um dos geradores de imagem existentes para continuar; nenhuma imagem genérica foi criada.",

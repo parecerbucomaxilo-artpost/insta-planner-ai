@@ -702,9 +702,9 @@ function imageSystemPrompt(
 
   // === Estilo visual: prioriza FOTOGRAFIA REALISTA premium. Quadrinho/colagem/infográfico foram REMOVIDOS por produzirem resultados ruins. ===
   const estilosPossiveis = [
-    "ILUSTRAÇÃO MÉDICA HIPER-REALISTA ANATÔMICA estilo Netter / Gray's Anatomy / Frank Netter / Atlas de Sobotta: renderização semi-3D de estruturas anatômicas reais (mandíbula, ATM, dentes, nervo alveolar, seios, músculos), proporções cientificamente corretas, sombreamento volumétrico, textura realista de osso/mucosa/dentina, qualidade de atlas médico premium — NÃO é desenho infantil, NÃO é cartoon, NÃO é flat design",
-    "ILUSTRAÇÃO MÉDICA HIPER-REALISTA ANATÔMICA estilo Netter / Gray's Anatomy: corte sagital ou coronal de cabeça/mandíbula com transparências realistas mostrando osso + dente + nervo, cores naturais de tecido (osso bege-marfim, mucosa rosada, esmalte branco-perolado), iluminação científica, fundo navy luminoso",
-    "RENDER 3D MÉDICO ULTRA-REALISTA tipo BioDigital / Visible Body / Zygote: anatomia bucomaxilofacial fotorrealista, materiais PBR (osso poroso real, esmalte translúcido, gengiva com subsurface scattering), profundidade cirúrgica, qualidade de simulador médico premium",
+    "FOTOGRAFIA CLÍNICA REALISTA de exame real: radiografia panorâmica ou tomografia de feixe cônico autêntica exibida em negatoscópio ou monitor, tons de cinza fiéis, estrutura do tema destacada por luz/enquadramento, sem rótulos inventados",
+    "FOTOGRAFIA EDITORIAL REALISTA de consulta: profissional e paciente com expressões naturais em consultório ou hospital reais, pele com textura real, luz natural/clínica plausível",
+    "FOTOGRAFIA DOCUMENTAL REALISTA de centro cirúrgico ou consultório: instrumental real em bandeja, mãos com luvas em proporção correta, sem anatomia exposta inventada",
     "FOTOGRAFIA EDITORIAL HIPER-REALISTA estilo Mayo/Cleveland Clinic: cena clínica autêntica, iluminação cinematográfica, instrumental cirúrgico real, mãos com luvas, ambiente premium — qualidade de capa de revista médica internacional",
   ];
   const estiloEscolhido = estilosPossiveis[Math.floor(Math.random() * estilosPossiveis.length)];
@@ -793,7 +793,7 @@ function diverseImagePrompt(
   return `IMAGEM EDITORIAL PREMIUM sobre o tema "${tema}" — pode estar TOTALMENTE FORA da área médica/odontológica (data comemorativa, evento, curiosidade, hobby, cotidiano, cultura, esporte, natureza, tecnologia, comida, música, etc.).
 - ${dimensoes}
 - REPRESENTE LITERALMENTE o tema "${tema}" com uma cena/objeto/símbolo reconhecível (ex.: Dia da Mulher → símbolos femininos elegantes; café → xícara em macro premium; caminhada → tênis em parque; leitura → livro aberto com luz suave; gratidão → mão escrevendo carta; Natal → detalhe minimalista natalino; aniversário da cidade → skyline estilizado).
-- ESTILO: fotografia editorial cinematográfica OU ilustração vetorial minimalista sofisticada OU still life premium. Sem clipart, sem cartoon infantil, sem banco de imagens genérico, sem "cara de IA".
+- ESTILO: fotografia editorial cinematográfica OU still life fotográfico realista (ilustração/infográfico só quando o pedido exigir explicitamente). Sem clipart, sem cartoon infantil, sem banco de imagens genérico, sem "cara de IA".
 - ${brandPalette}
 - TIPOGRAFIA: se houver texto, apenas 1 headline curto de 2-6 palavras em PT-BR com acentuação perfeita, bold sans-serif, cor da paleta. Sem parágrafos, sem listas, sem inglês, sem watermark. Em slides intermediários de carrossel: sem texto.
 - COMPOSIÇÃO: hierarquia limpa, muito espaço negativo, iluminação editorial premium, qualidade 8K.${logoReserva}${slideInfo}
@@ -817,7 +817,7 @@ function studentImagePrompt(
     : "FORMATO vertical 4:5 (1024x1280) — Instagram Feed/Carrossel padrão.";
   const conceitosCriativos = [
     "FOTOGRAFIA CLÍNICA HIPER-REALISTA com anatomia bucomaxilofacial cientificamente correta: instrumental cirúrgico real (fórceps, porta-agulhas, seringa carpule, bisturi nº 15, descolador de Molt) em macro, profundidade rasa, foco preciso, iluminação cinematográfica de centro cirúrgico.",
-    "RENDERIZAÇÃO MÉDICA 3D HIPER-REALISTA estilo Netter/Sobotta digital: corte sagital ou coronal mostrando anatomia exata (alvéolo, canal mandibular, nervo alveolar inferior, forame mentual, dente impactado), proporções científicas perfeitas, destaques visuais sem letras, números ou rótulos.",
+    "FOTOGRAFIA REALISTA DE ATLAS/PEÇA ANATÔMICA de laboratório (crânio/mandíbula reais de ensino) com iluminação de estúdio, anatomia exata, sem letras, números ou rótulos.",
     "IMAGEM RADIOGRÁFICA OU TOMOGRÁFICA REALISTA (panorâmica, periapical ou TC de feixe cônico) de alta resolução, tons de cinza fiéis ao exame, com a estrutura do tema em destaque sutil por luz/contorno, sem anotações escritas.",
     "MACROFOTOGRAFIA CIRÚRGICA estilo National Geographic médico: close extremo de campo operatório real (sutura em mucosa, exodontia, biópsia, frenectomia), tecidos com cor e textura fiéis, iluminação dramática vinda de cima.",
   ];
@@ -829,7 +829,7 @@ function studentImagePrompt(
 - ${formato}
 - REALISMO ANATÔMICO OBRIGATÓRIO: todas as estruturas (dentes, ossos, nervos, mucosas, instrumentos) devem ser anatomicamente corretas e cientificamente verificáveis. PROIBIDO inventar estruturas, fantasiar anatomia, criar instrumentos inexistentes ou estilizar de forma infantil/cartoon.
 - TEMA LITERAL "${tema}": represente a cena clínica exata — exodontia → fórceps + dente no alvéolo; anestesia → seringa carpule + ponto de punção anatômico; sutura → porta-agulhas + ponto em mucosa; frenectomia → freio labial/lingual + bisturi; biópsia → bisturi + tecido; alveoloplastia → lima/cinzel de osso; fratura mandibular → linha de fratura + fixação com placa de titânio.
-- QUALIDADE TÉCNICA: renderização 8K ultra-detalhada (Octane Render / Unreal Engine 5 / Ray Tracing), texturas nítidas, equivalente a Canon EOS R5 + macro 100mm f/2.8 ISO 100.
+- QUALIDADE TÉCNICA: fotografia real em alta resolução, equivalente a Canon EOS R5 + macro 100mm f/2.8 ISO 100, texturas reais, sem aparência de render 3D/CGI.
 - ANATOMIA CORRETA: estruturas bucomaxilofaciais (mandíbula, maxila, ATM, dentes, nervos, músculos, seios) com proporção, posição, lado (direito/esquerdo) e relação topográfica cientificamente exatas, conforme Terminologia Anatômica oficial (TA2/SBA) e atlas (Netter, Sobotta, Madeira). Instrumental cirúrgico apenas em uso clinicamente correto para o tema (ex.: fórceps nº 18L só em molar inferior esquerdo). Proibido: dentes em posição errada, número de raízes incorreto, nervo cruzando estrutura errada, instrumento aplicado fora da indicação.
 - PALETA RIGOROSA (identidade da logo da Liga): fundo dominante #000000 preto OU #545454 cinza grafite. Tipografia e contraste em #FFFFFF branco. Destaque/CTA/ponto de interesse (linha de fratura, seta, contorno) em VERMELHO ANATÔMICO PROFUNDO #C92E28. Grafite #545454 para elementos de apoio. PROIBIDO azul, ciano, navy, verde, roxo, rosa, laranja, âmbar — exceto cor de sinalização científica indispensável ao conteúdo.
  - TEXTO NA IMAGEM — REGRA ABSOLUTA: NÃO renderize NENHUMA letra, palavra, número, sigla, símbolo tipográfico, legenda, rótulo, watermark, headline, badge ou cartaz com escrita dentro da imagem. ZERO texto. Nem em primeiro plano, nem em fundo, nem em jalecos, crachás, placas, livros, telas, monitores, radiografias, embalagens, etiquetas, instrumentos, paredes. A composição deve ser PURAMENTE VISUAL (cena clínica/anatômica). Todo e qualquer texto (headline, enquete, dica) será aplicado depois pelo sistema como overlay tipográfico — você NÃO precisa e NÃO deve tentar escrever nada. Se a cena naturalmente teria texto (ex.: tela de tomografia), substitua por formas abstratas, gráficos sem letras ou borrão suave. Qualquer letra renderizada será considerada erro grave.
@@ -1017,7 +1017,7 @@ function chicoImagePrompt(
   (e) ILUSTRAÇÃO ANATÔMICA HIPER-REALISTA estilo Netter/Sobotta — mandíbula/maxila/ATM/nervo alveolar com precisão de atlas médico.
   PROIBIDO absolutamente: cenas fictícias, personagens estilizados, próteses cartunizadas, "dente feliz", pacientes sorrindo genéricos de banco de imagens, dentes desenhados sem raízes, radiografias inventadas que não parecem radiografias reais, mandíbulas com formato errado, TC que parece pintura.
 - CRIATIVIDADE OBRIGATÓRIA (jamais repetir composição): a cada post escolha ALEATORIAMENTE um ângulo/registro diferente — [radiografia panorâmica em close] · [TC corte sagital] · [reconstrução 3D vista oblíqua] · [foto clínica intraoral com afastador] · [perfil facial em silhueta] · [close macro de instrumental cirúrgico esterilizado sobre campo azul] · [mão do cirurgião com luva segurando radiografia negatoscopiada] · [ilustração anatômica em corte com transparência] · [comparativo antes/depois em imagem de exame]. Nunca repita o mesmo ângulo do post anterior do mesmo tema.
-- ESTILO EDITORIAL: fotografia editorial médica sóbria OU imagem de exame real OU ilustração anatômica realista limpa. Sem clipart, sem flat design, sem cartoon, sem 3D infantil, sem banco de imagens genérico, sem "dente com olhos".
+- ESTILO EDITORIAL: fotografia editorial médica sóbria OU imagem de exame real (ilustração anatômica só quando o pedido exigir explicitamente). Sem clipart, sem flat design, sem cartoon, sem 3D infantil, sem banco de imagens genérico, sem "dente com olhos".
 - PALETA RIGOROSA — APENAS estas 3 cores (descumprir = rejeitado):
   • FUNDO DOMINANTE: AZUL MARINHO ESCURO ${CHICO_NAVY} (cobertura ~70-85% da composição, podendo ter leve gradiente sutil).
   • TEXTO PRINCIPAL: BRANCO #FFFFFF puro.

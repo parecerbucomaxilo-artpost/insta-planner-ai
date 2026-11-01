@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { generateImageBase64 } from "./ai-gateway.server";
+import { withRealism } from "./image-realism";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -18,7 +19,7 @@ describe("Parâmetro real enviado ao provedor", () => {
       (request.mock.calls[0] as unknown as [string, RequestInit])[1].body as string,
     );
     expect(body.model).toBe("google/gemini-3.1-flash-lite-image");
-    expect(body.contents).toEqual([{ role: "user", parts: [{ text: "Cena do slide" }] }]);
+    expect(body.contents).toEqual([{ role: "user", parts: [{ text: withRealism("Cena do slide") }] }]);
     expect(body.generationConfig.responseModalities).toEqual(["TEXT", "IMAGE"]);
     expect(body.messages).toBeUndefined();
     expect(body.quality).toBeUndefined();
@@ -39,10 +40,10 @@ describe("Parâmetro real enviado ao provedor", () => {
       );
       expect(body.model).toBe(model);
       if (model.startsWith("google/")) {
-        expect(body.messages).toEqual([{ role: "user", content: prompt }]);
+        expect(body.messages).toEqual([{ role: "user", content: withRealism(prompt) }]);
         expect(body.modalities).toEqual(["image", "text"]);
         expect(body.prompt).toBeUndefined();
-      } else expect(body.prompt).toBe(prompt);
+      } else expect(body.prompt).toBe(withRealism(prompt));
     },
   );
   it.each([400, 402, 403, 404, 429, 503])(
