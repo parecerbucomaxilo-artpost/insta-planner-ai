@@ -159,6 +159,7 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels" | "Carrossel">("Feed");
   const [loading, setLoading] = useState(false);
+  const [ultimoGerado, setUltimoGerado] = useState<string | null>(null);
   const [generateImages, setGenerateImages] = useState(true);
   const [posts, setPosts] = useState<PostPlano[]>(() =>
     DIAS.flatMap((label, i) => {
@@ -269,6 +270,7 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
             imagens: result.urls,
             status: "pronto",
           } : item));
+          setUltimoGerado(result.id);
           ok++;
         } catch (e) {
           console.error("[WeeklyCalendar] gerar falhou", e);
@@ -484,7 +486,7 @@ export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = fals
                           </p>
                         </Card>
                       </button>
-                      {p.postId && <div className="mt-2"><PostReviewActions id={p.postId} status={p.reviewStatus} disabled={loading} onChange={(status) => {
+                      {p.postId && <div className="mt-2"><PostReviewActions id={p.postId} autoOpen={p.postId === ultimoGerado} status={p.reviewStatus} disabled={loading} onChange={(status) => {
                         setPosts((items) => items.map((item, index) => index === globalIdx ? { ...item, reviewStatus: status } : item));
                         onCreated();
                       }} /></div>}

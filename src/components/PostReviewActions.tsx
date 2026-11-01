@@ -61,8 +61,11 @@ export function PostReviewActions({
   status = "PendenteAprovacao",
   disabled = false,
   onChange,
+  autoOpen = false,
 }: {
   id: string;
+  /** Abre a prévia completa assim que o post é gerado/regenerado. Nunca aprova nem publica. */
+  autoOpen?: boolean;
   status?: PostRow["status"];
   disabled?: boolean;
   onChange?: (status: PostRow["status"]) => void;
@@ -143,6 +146,14 @@ export function PostReviewActions({
       setBusy(null);
     }
   };
+
+  const autoAberto = useRef<string | null>(null);
+  useEffect(() => {
+    if (!autoOpen || autoAberto.current === id) return;
+    autoAberto.current = id;
+    void visualizar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpen, id]);
 
   const salvarEdicao = async () => {
     if (!post || lock.current || !canEditPreview(currentStatus)) return;

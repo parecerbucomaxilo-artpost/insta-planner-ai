@@ -620,7 +620,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           <h3 className="font-semibold text-emerald-900 flex items-center gap-2">
             <Sparkles className="w-4 h-4" /> Pré-visualização
           </h3>
-          <PostReviewActions key={preview.id} id={preview.id} disabled={busy} />
+          <PostReviewActions key={preview.id} id={preview.id} disabled={busy} autoOpen />
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               {preview.urls.length > 1 ? (

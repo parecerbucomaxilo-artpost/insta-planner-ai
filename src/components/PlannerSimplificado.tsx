@@ -1213,6 +1213,7 @@ export function PlannerSimplificado({
               <PostReviewActions
                 key={preview.id}
                 id={preview.id}
+                autoOpen
                 disabled={busy}
                 onChange={() => {
                   carregar();

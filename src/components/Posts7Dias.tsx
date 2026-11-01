@@ -81,6 +81,7 @@ export function Posts7Dias(props: {
   );
   const [plano, setPlano] = useState<ItemSemana[] | null>(null);
   const [estados, setEstados] = useState<Record<string, Estado>>({});
+  const [ultimoGerado, setUltimoGerado] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // Trava síncrona: o estado `busy` só muda no próximo render, então um duplo clique rápido
   // disparava duas gerações completas da semana (causa de posts duplicados/triplicados).
@@ -224,6 +225,9 @@ export function Posts7Dias(props: {
         setPlano((p) => p?.map((x) => (x.key === key ? { ...x, tema } : x)) ?? null),
       onEstado: (key, e) => {
         setEstados((s) => ({ ...s, [key]: e }));
+        // Prévia automática do post mais recente concluído (não aprova nem publica).
+        const rid = (e as { res?: { id?: string } }).res?.id;
+        if (rid && e.status !== "gerando") setUltimoGerado(rid);
         if (e.status !== "gerando") {
           feitos++;
           toast.loading(`Gerando a semana: ${feitos}/${itens.length} horários…`, { id: tid });
@@ -481,7 +485,7 @@ export function Posts7Dias(props: {
                 )}
                 {st?.res && (
                   <>
-                    <PostReviewActions key={st.res.id} id={st.res.id} />
+                    <PostReviewActions key={st.res.id} id={st.res.id} autoOpen={st.res.id === ultimoGerado} />
                     <div className="flex flex-wrap gap-2 min-w-0">
                       <div className="flex gap-1 shrink-0">
                         {st.res.urls.slice(0, 5).map((u) => (

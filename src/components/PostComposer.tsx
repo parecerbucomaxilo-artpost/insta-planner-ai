@@ -1122,6 +1122,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             <PostReviewActions
               key={preview.id}
               id={preview.id}
+              autoOpen
               disabled={discarding || approving !== null}
               onChange={() => {
                 onCreated();
