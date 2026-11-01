@@ -1,3 +1,4 @@
+import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { Posts7Dias } from "@/components/Posts7Dias";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import { useCallback, useEffect, useState } from "react";
@@ -10,7 +11,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarClock, Check, Copy, Download, Loader2, Phone, Sparkles, Stethoscope, Trash2, Wand2, X, Zap } from "lucide-react";
+import {
+  CalendarClock,
+  Check,
+  Copy,
+  Download,
+  Loader2,
+  Phone,
+  Sparkles,
+  Stethoscope,
+  Trash2,
+  Wand2,
+  X,
+  Zap,
+} from "lucide-react";
 import { LOGOS_DISPONIVEIS, type LogoKey } from "@/lib/logos-catalog";
 import {
   generateSinglePost,
@@ -30,16 +44,56 @@ const INSTITUICAO = "Faculdade Anhanguera de Santa Bárbara";
 const SERVICO = "Clínica Escola – Cirurgia Bucal e Biópsias";
 
 const TRATAMENTOS = [
-  { id: "trigemio", label: "Neuralgia do Trigêmeo", tema: "Neuralgia do trigêmeo: dor facial em choque, diagnóstico e tratamento cirúrgico/medicamentoso avaliado na clínica da Liga LACTBMF" },
-  { id: "biopsia", label: "Biópsia de lesões bucais", tema: "Biópsia de lesões suspeitas na boca (bochecha, gengiva, língua, lábio) realizada com segurança pela Liga LACTBMF" },
-  { id: "siso", label: "Extração de sisos inclusos", tema: "Extração de sisos inclusos ou impactados na clínica da Liga LACTBMF com professores da CTBMF supervisionando" },
-  { id: "cisto", label: "Cistos e tumores odontogênicos", tema: "Remoção cirúrgica de cistos e tumores odontogênicos (dentígero, radicular) na Liga LACTBMF" },
-  { id: "frenectomia", label: "Frenectomia lingual/labial", tema: "Frenectomia lingual e labial (liberação de língua presa) na clínica da Liga LACTBMF" },
-  { id: "apicectomia", label: "Apicectomia / cirurgia parendodôntica", tema: "Apicectomia: cirurgia para preservar o dente após tratamento de canal — Liga LACTBMF" },
-  { id: "implante", label: "Avaliação para implantes", tema: "Avaliação inicial para implantes dentários com planejamento cirúrgico na Liga LACTBMF" },
-  { id: "trauma", label: "Trauma bucofacial", tema: "Atendimento de trauma facial (fraturas dentárias, luxações, cortes) triado pela Liga LACTBMF" },
-  { id: "atm", label: "Dor na ATM / bruxismo", tema: "Avaliação da dor na ATM, estalos e bruxismo na Liga LACTBMF" },
-  { id: "alveoloplastia", label: "Alveoloplastia / preparo pré-prótese", tema: "Alveoloplastia e regularização óssea antes de prótese — Liga LACTBMF" },
+  {
+    id: "trigemio",
+    label: "Neuralgia do Trigêmeo",
+    tema: "Neuralgia do trigêmeo: dor facial em choque, diagnóstico e tratamento cirúrgico/medicamentoso avaliado na clínica da Liga LACTBMF",
+  },
+  {
+    id: "biopsia",
+    label: "Biópsia de lesões bucais",
+    tema: "Biópsia de lesões suspeitas na boca (bochecha, gengiva, língua, lábio) realizada com segurança pela Liga LACTBMF",
+  },
+  {
+    id: "siso",
+    label: "Extração de sisos inclusos",
+    tema: "Extração de sisos inclusos ou impactados na clínica da Liga LACTBMF com professores da CTBMF supervisionando",
+  },
+  {
+    id: "cisto",
+    label: "Cistos e tumores odontogênicos",
+    tema: "Remoção cirúrgica de cistos e tumores odontogênicos (dentígero, radicular) na Liga LACTBMF",
+  },
+  {
+    id: "frenectomia",
+    label: "Frenectomia lingual/labial",
+    tema: "Frenectomia lingual e labial (liberação de língua presa) na clínica da Liga LACTBMF",
+  },
+  {
+    id: "apicectomia",
+    label: "Apicectomia / cirurgia parendodôntica",
+    tema: "Apicectomia: cirurgia para preservar o dente após tratamento de canal — Liga LACTBMF",
+  },
+  {
+    id: "implante",
+    label: "Avaliação para implantes",
+    tema: "Avaliação inicial para implantes dentários com planejamento cirúrgico na Liga LACTBMF",
+  },
+  {
+    id: "trauma",
+    label: "Trauma bucofacial",
+    tema: "Atendimento de trauma facial (fraturas dentárias, luxações, cortes) triado pela Liga LACTBMF",
+  },
+  {
+    id: "atm",
+    label: "Dor na ATM / bruxismo",
+    tema: "Avaliação da dor na ATM, estalos e bruxismo na Liga LACTBMF",
+  },
+  {
+    id: "alveoloplastia",
+    label: "Alveoloplastia / preparo pré-prótese",
+    tema: "Alveoloplastia e regularização óssea antes de prótese — Liga LACTBMF",
+  },
 ] as const;
 
 type TratId = (typeof TRATAMENTOS)[number]["id"];
@@ -58,9 +112,7 @@ function buildPatientCaption(params: {
   const tel = params.telefone.trim() || TELEFONE_PADRAO;
   const assuntoTxt = (params.assunto || "").trim();
   const abertura = `📢 ${SERVICO} — ${INSTITUICAO}\n\n👉 ${t.label}`;
-  const anguloBloco = assuntoTxt
-    ? `\n\n🎯 Nesta publicação: ${assuntoTxt}`
-    : "";
+  const anguloBloco = assuntoTxt ? `\n\n🎯 Nesta publicação: ${assuntoTxt}` : "";
   const meio = `\n\nAtendimento supervisionado por professores especialistas em Cirurgia e Traumatologia Bucomaxilofacial. Ambiente seguro, humanizado e acolhedor para pacientes de Santa Bárbara d'Oeste e cidades vizinhas.\n\nQuem pode ser atendido:\n• Pessoas com indicação para ${t.label.toLowerCase()};\n• Quem precisa avaliar lesões na boca (manchas, feridas que não cicatrizam, caroços);\n• Encaminhamentos de dentistas parceiros.\n\n💬 Não deixe lesões sem avaliação — quanto antes você procura, mais simples é o tratamento.`;
   const cta = `\n\n📞 Agende sua avaliação: ${tel}\n(Atendimento em horário comercial.)\n\n#CirurgiaBucal #BiopsiaBucal #SaudeBucal #SantaBarbaraDOeste #Anhanguera #ClinicaEscola #Odontologia #Siso #LesaoBucal #SaudeDaBoca`;
   return `${abertura}${anguloBloco}${meio}${cta}`;
@@ -86,8 +138,9 @@ export function PlannerAgendamentoTratamento() {
   const [quando, setQuando] = useState<"agora" | "data">("agora");
   const [data, setData] = useState("");
   const [hora, setHora] = useState("09:00");
-  const [modelo, setModelo] = useState<(typeof MODELOS_IA)[number]["id"]>("local/sem-custo");
-  const [modeloImagem, setModeloImagem] = useState<(typeof MODELOS_IMAGEM)[number]["id"]>("local/sem-custo");
+  const [modelo, setModelo] = useState<(typeof MODELOS_IA)[number]["id"]>(DEFAULT_TEXT_MODEL);
+  const [modeloImagem, setModeloImagem] =
+    useState<(typeof MODELOS_IMAGEM)[number]["id"]>(DEFAULT_IMAGE_MODEL);
   const [assunto, setAssunto] = useState("");
   const [legendaGerada, setLegendaGerada] = useState("");
   const [logoKeys, setLogoKeys] = useState<LogoKey[]>(["clinica-escola"]);
@@ -99,12 +152,16 @@ export function PlannerAgendamentoTratamento() {
     try {
       const saved = window.localStorage.getItem(LS_PHONE);
       setTelefone(saved && saved.trim() ? saved : TELEFONE_PADRAO);
-    } catch { setTelefone(TELEFONE_PADRAO); }
+    } catch {
+      setTelefone(TELEFONE_PADRAO);
+    }
   }, []);
 
   const salvarTelefone = useCallback((v: string) => {
     setTelefone(v);
-    try { window.localStorage.setItem(LS_PHONE, v); } catch {}
+    try {
+      window.localStorage.setItem(LS_PHONE, v);
+    } catch {}
   }, []);
 
   const buildIso = () => {
@@ -138,19 +195,31 @@ export function PlannerAgendamentoTratamento() {
     }
   };
 
-
-
-  const gerar = async (override?: { trat: TratId; iso: string; formato?: string; operacaoId?: string; slotKey?: string }): Promise<{ id: string; urls: string[]; legenda: string } | undefined> => {
+  const gerar = async (override?: {
+    trat: TratId;
+    iso: string;
+    formato?: string;
+    operacaoId?: string;
+    slotKey?: string;
+  }): Promise<{ id: string; urls: string[]; legenda: string } | undefined> => {
     const tratSel = override?.trat ?? tratamento;
-    if (!tratSel) { toast.error("Escolha primeiro o tipo de tratamento."); return; }
-    if (!telefone.trim()) { toast.error("Informe o telefone de agendamento antes de gerar."); return; }
+    if (!tratSel) {
+      toast.error("Escolha primeiro o tipo de tratamento.");
+      return;
+    }
+    if (!telefone.trim()) {
+      toast.error("Informe o telefone de agendamento antes de gerar.");
+      return;
+    }
     if (!override) setBusy(true);
     const tid = override ? `agend-liga-${override.iso}` : "agend-liga";
     if (!override) toast.loading(`Criando convite: ${tratamentoLabel(tratSel)}...`, { id: tid });
     try {
       const iso = override ? override.iso : buildIso();
       const tratObj = TRATAMENTOS.find((t) => t.id === tratSel)!;
-      const formato = override?.formato ?? (modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único");
+      const formato =
+        override?.formato ??
+        (modo === "carrossel" ? "Carrossel" : modo === "stories" ? "Story" : "Post Único");
       const tipo = formato === "Story" ? "stories" : "feed";
       const assuntoTxt = assunto.trim();
       const capaBrief = `CAPA (1º slide) — IDENTIDADE FIXA OBRIGATÓRIA da Liga LACTBMF:
@@ -162,7 +231,9 @@ export function PlannerAgendamentoTratamento() {
 • PROIBIDO desenhar QUALQUER rodapé, texto institucional, nome de faculdade, "Clínica Escola", "Anhanguera", selo ou logotipo. NÃO reservar canto, faixa, bloco vazio, moldura ou placeholder para logo; a arte deve ocupar a composição normalmente. O sistema aplica por cima apenas a logo real escolhida no dashboard, sem fundo.
 • PERMITIDO usar cores contextuais coerentes com o tema (ex.: tons de pele naturais em rostos, verde clínico em ambiente hospitalar, vermelho suave para alerta de dor) MISTURANDO à paleta institucional grafite/âmbar/off-white — desde que grafite e âmbar continuem dominantes. NÃO usar fundo branco liso, nem ciano, roxo ou rosa.
 TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em português-BR claro, linguagem simples para leigo (evite termos técnicos; se usar, explique em 1 linha). Cada slide traz 1 frase-chave curta em destaque + 2 a 4 bullets objetivos. Ícones simples e pictogramas quando ajudarem o entendimento. Paleta grafite/âmbar/off-white dominante com toques de cor contextual permitidos, tipografia bold, alto contraste. Não crie espaço reservado para logo em nenhum slide; o overlay real será aplicado pelo sistema.`;
-      const assuntoBlock = assuntoTxt ? `\n\nASSUNTO/ÂNGULO ESPECÍFICO desta postagem (priorize sobre o padrão): ${assuntoTxt}` : "";
+      const assuntoBlock = assuntoTxt
+        ? `\n\nASSUNTO/ÂNGULO ESPECÍFICO desta postagem (priorize sobre o padrão): ${assuntoTxt}`
+        : "";
       const diretriz = `\n\n=== DIRETRIZ MESTRA — ${SERVICO} · ${INSTITUICAO} ===\nPÚBLICO: pacientes leigos da região de Santa Bárbara d'Oeste e cidades vizinhas.\nOBJETIVO: informar que existe a oportunidade de fazer o tratamento na Clínica Escola, quebrar medos/mitos ("dói?", "é perigoso?", "demora?"), estimular o agendamento pelo telefone ${telefone.trim() || TELEFONE_PADRAO}.\nMENSAGENS-CHAVE: "Atendimento supervisionado por professores especialistas" · "Ambiente seguro e humanizado" · "Agende sua avaliação" · "Não deixe lesões sem avaliação".\nTOM: acolhedor, tranquilo, confiável, empático com medos e dúvidas. Linguagem simples, sem termos técnicos desnecessários (se usar, explique em 1 linha).\nEVITAR imagens/palavras que assustem (sangue, instrumentos agressivos, cenas invasivas).\nSEMPRE citar o telefone ${telefone.trim() || TELEFONE_PADRAO} e o nome "${SERVICO} — ${INSTITUICAO}".\nHASHTAGS: #CirurgiaBucal #BiopsiaBucal #SaudeBucal #SantaBarbaraDOeste #Anhanguera #ClinicaEscola #Odontologia #Siso #LesaoBucal #SaudeDaBoca\n=== FIM ===`;
       const tema = `${tratObj.tema}. CONVITE PÚBLICO para pacientes agendarem AVALIAÇÃO pelo telefone ${telefone.trim() || TELEFONE_PADRAO} na ${SERVICO} — ${INSTITUICAO}. Público-alvo: PACIENTES LEIGOS. Tom: acolhedor, seguro, humanizado, LINGUAGEM SIMPLES.${assuntoBlock}${diretriz}\n\n${capaBrief}`;
 
@@ -187,16 +258,26 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       // Legenda do convite SEMPRE é a template determinística focada em UM único
       // tratamento — nunca aceitamos texto da IA aqui porque ela drifta entre
       // tratamentos. Só respeitamos legenda 100% manual digitada pelo usuário.
-      const legendaPaciente = !override && legendaGerada.trim()
-        ? legendaGerada.trim()
-        : buildPatientCaption({ tratamento: tratSel, telefone, base: "", assunto });
+      const legendaPaciente =
+        !override && legendaGerada.trim()
+          ? legendaGerada.trim()
+          : buildPatientCaption({ tratamento: tratSel, telefone, base: "", assunto });
       await supabase
         .from("posts")
-        .update({ instagram_conta: LIGA_ACCOUNT, legenda: legendaPaciente, legenda_instagram: legendaPaciente } as any)
+        .update({
+          instagram_conta: LIGA_ACCOUNT,
+          legenda: legendaPaciente,
+          legenda_instagram: legendaPaciente,
+        } as any)
         .eq("id", out.id);
 
       if (override) return { id: out.id, urls: out.urls, legenda: legendaPaciente };
-      setPreview({ id: out.id, legenda: legendaPaciente, urls: out.urls, slideLegendas: (out as any).slideLegendas });
+      setPreview({
+        id: out.id,
+        legenda: legendaPaciente,
+        urls: out.urls,
+        slideLegendas: (out as any).slideLegendas,
+      });
       toast.success("Convite gerado. Revise abaixo.", { id: tid });
     } catch (e: any) {
       if (override) throw e;
@@ -209,7 +290,10 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
   const editarLegenda = async (nova: string) => {
     if (!preview) return;
     setPreview({ ...preview, legenda: nova });
-    await supabase.from("posts").update({ legenda: nova, legenda_instagram: nova } as any).eq("id", preview.id);
+    await supabase
+      .from("posts")
+      .update({ legenda: nova, legenda_instagram: nova } as any)
+      .eq("id", preview.id);
   };
 
   const decidir = async (acao: "publicar" | "agendar" | "arquivar") => {
@@ -220,7 +304,8 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
       if (acao === "publicar") {
         await approveFn({ data: { id: preview.id, acao: "arquivar" } });
         const out = await publishIg({ data: { id: preview.id } });
-        if (out && "ok" in out && out.ok === false) throw new Error(("error" in out ? out.error : "Falha ao publicar."));
+        if (out && "ok" in out && out.ok === false)
+          throw new Error("error" in out ? out.error : "Falha ao publicar.");
         toast.success("Publicado no Instagram @lactbmf.anhanguerasbo.", { id: tid });
       } else {
         await approveFn({ data: { id: preview.id, acao } });
@@ -234,13 +319,20 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
 
   const descartar = async () => {
     if (!preview) return;
-    try { await discardFn({ data: { id: preview.id } }); } catch {}
+    try {
+      await discardFn({ data: { id: preview.id } });
+    } catch {}
     setPreview(null);
     toast.success("Descartado.");
   };
 
   const copiar = async (t: string) => {
-    try { await navigator.clipboard.writeText(t); toast.success("Copiado."); } catch { toast.error("Falha ao copiar."); }
+    try {
+      await navigator.clipboard.writeText(t);
+      toast.success("Copiado.");
+    } catch {
+      toast.error("Falha ao copiar.");
+    }
   };
 
   const toggleLogoKey = (key: LogoKey) => {
@@ -263,8 +355,10 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           <h2 className="font-bold">Agendamento Clínicas Cirurgia e Biópsia — {SERVICO}</h2>
         </div>
         <p className="text-xs text-amber-950">
-          Gera posts convidando pacientes a agendarem cirurgia bucal e biópsias na <strong>{SERVICO}</strong> ({INSTITUICAO}).
-          Telefone padrão: <strong>{TELEFONE_PADRAO}</strong>. Publica em <Badge variant="secondary">@{LIGA_ACCOUNT}</Badge>.
+          Gera posts convidando pacientes a agendarem cirurgia bucal e biópsias na{" "}
+          <strong>{SERVICO}</strong> ({INSTITUICAO}). Telefone padrão:{" "}
+          <strong>{TELEFONE_PADRAO}</strong>. Publica em{" "}
+          <Badge variant="secondary">@{LIGA_ACCOUNT}</Badge>.
         </p>
       </Card>
 
@@ -277,7 +371,9 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           onChange={(e) => salvarTelefone(e.target.value)}
           placeholder="(15) 3333-4444 ou WhatsApp (15) 99999-0000"
         />
-        <p className="text-[11px] text-muted-foreground">Aparece dentro da legenda de todo convite gerado. Fica salvo neste navegador.</p>
+        <p className="text-[11px] text-muted-foreground">
+          Aparece dentro da legenda de todo convite gerado. Fica salvo neste navegador.
+        </p>
       </Card>
 
       <Card className="p-5 space-y-3">
@@ -308,7 +404,10 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
         formatos={["Post Único", "Carrossel", "Story"]}
         gerar={async (item, formato, ctx) => {
           const trat = TRATAMENTOS.find((t) => t.label === item.tema.trim())?.id;
-          if (!trat) throw new Error(`Tratamento não reconhecido: "${item.tema}". Use um dos tratamentos da lista.`);
+          if (!trat)
+            throw new Error(
+              `Tratamento não reconhecido: "${item.tema}". Use um dos tratamentos da lista.`,
+            );
           const r = await gerar({ trat, iso: item.quando, formato, ...ctx });
           if (!r) throw new Error("Preencha o telefone de agendamento.");
           return r;
@@ -325,15 +424,26 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           className="text-sm"
         />
         <p className="text-[11px] text-muted-foreground">
-          Se preenchido, a IA prioriza este ângulo. Textos e imagens vêm em linguagem simples, com frases grandes impressas nos cards para o público leigo entender de imediato.
+          Se preenchido, a IA prioriza este ângulo. Textos e imagens vêm em linguagem simples, com
+          frases grandes impressas nos cards para o público leigo entender de imediato.
         </p>
       </Card>
 
       <Card className="p-5 space-y-3 border-2 border-dashed border-amber-300 bg-amber-50/30">
         <Label className="text-sm font-semibold">Legenda do convite</Label>
-        <Button type="button" variant="secondary" onClick={gerarLegenda} disabled={gerandoLegenda || !telefone.trim()} className="w-full border-amber-300 bg-white text-amber-900 hover:bg-amber-50">
-          {gerandoLegenda ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-          {modelo === "local/sem-custo" ? "App gerar legenda" : "IA gerar legenda"}
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={gerarLegenda}
+          disabled={gerandoLegenda || !telefone.trim()}
+          className="w-full border-amber-300 bg-white text-amber-900 hover:bg-amber-50"
+        >
+          {gerandoLegenda ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : (
+            <Sparkles className="w-4 h-4 mr-2" />
+          )}
+          {false ? "App gerar legenda" : "IA gerar legenda"}
         </Button>
         <Textarea
           value={legendaGerada}
@@ -343,7 +453,6 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           className="text-sm"
         />
       </Card>
-
 
       <Card className="p-5 space-y-3">
         <Label className="text-sm font-semibold">Logos do post</Label>
@@ -357,12 +466,18 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
                 onClick={() => toggleLogoKey(l.key)}
                 className={cn(
                   "flex items-center gap-2 rounded-md border p-2 text-left transition",
-                  active ? "border-amber-500 ring-2 ring-amber-400/30 bg-amber-50" : "border-zinc-200 bg-white/60 hover:bg-amber-50/40",
+                  active
+                    ? "border-amber-500 ring-2 ring-amber-400/30 bg-amber-50"
+                    : "border-zinc-200 bg-white/60 hover:bg-amber-50/40",
                 )}
               >
                 <div className="w-10 h-10 shrink-0 rounded bg-[#0c2340] flex items-center justify-center overflow-hidden">
                   {l.url ? (
-                    <img src={l.url} alt={l.label} className="max-w-full max-h-full object-contain" />
+                    <img
+                      src={l.url}
+                      alt={l.label}
+                      className="max-w-full max-h-full object-contain"
+                    />
                   ) : (
                     <X className="w-4 h-4 text-white/70" />
                   )}
@@ -372,13 +487,17 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
                     {active && <Check className="h-3.5 w-3.5 shrink-0 text-amber-600" />}
                     <span className="truncate">{l.label}</span>
                   </div>
-                  <div className="text-[10px] text-muted-foreground line-clamp-2">{l.description}</div>
+                  <div className="text-[10px] text-muted-foreground line-clamp-2">
+                    {l.description}
+                  </div>
                 </div>
               </button>
             );
           })}
         </div>
-        <p className="text-[11px] text-muted-foreground">Você pode marcar mais de uma logo. "Sem logo" limpa a seleção e publica a arte pura.</p>
+        <p className="text-[11px] text-muted-foreground">
+          Você pode marcar mais de uma logo. "Sem logo" limpa a seleção e publica a arte pura.
+        </p>
       </Card>
 
       <Card className="p-5 space-y-3">
@@ -391,7 +510,9 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
               onClick={() => setModo(m)}
               className={cn(
                 "px-3 py-2 rounded-md text-sm font-semibold border-2 capitalize",
-                modo === m ? "border-amber-500 bg-white text-amber-900" : "border-zinc-200 bg-white/60 text-zinc-600 hover:border-amber-300",
+                modo === m
+                  ? "border-amber-500 bg-white text-amber-900"
+                  : "border-zinc-200 bg-white/60 text-zinc-600 hover:border-amber-300",
               )}
             >
               {m}
@@ -406,13 +527,27 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
           <button
             type="button"
             onClick={() => setQuando("agora")}
-            className={cn("px-3 py-2 rounded-md text-sm font-semibold border-2 flex items-center justify-center gap-1.5", quando === "agora" ? "border-amber-500 bg-white text-amber-900" : "border-zinc-200 bg-white/60 text-zinc-600")}
-          ><Zap className="w-4 h-4" /> Agora</button>
+            className={cn(
+              "px-3 py-2 rounded-md text-sm font-semibold border-2 flex items-center justify-center gap-1.5",
+              quando === "agora"
+                ? "border-amber-500 bg-white text-amber-900"
+                : "border-zinc-200 bg-white/60 text-zinc-600",
+            )}
+          >
+            <Zap className="w-4 h-4" /> Agora
+          </button>
           <button
             type="button"
             onClick={() => setQuando("data")}
-            className={cn("px-3 py-2 rounded-md text-sm font-semibold border-2 flex items-center justify-center gap-1.5", quando === "data" ? "border-amber-500 bg-white text-amber-900" : "border-zinc-200 bg-white/60 text-zinc-600")}
-          ><CalendarClock className="w-4 h-4" /> Calendário</button>
+            className={cn(
+              "px-3 py-2 rounded-md text-sm font-semibold border-2 flex items-center justify-center gap-1.5",
+              quando === "data"
+                ? "border-amber-500 bg-white text-amber-900"
+                : "border-zinc-200 bg-white/60 text-zinc-600",
+            )}
+          >
+            <CalendarClock className="w-4 h-4" /> Calendário
+          </button>
         </div>
         {quando === "data" && (
           <div className="grid grid-cols-2 gap-2 pt-1">
@@ -428,8 +563,19 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
             <Label className="text-xs">Texto</Label>
             <div className="flex flex-wrap gap-1.5">
               {MODELOS_IA.map((m) => (
-                <button key={m.id} type="button" onClick={() => setModelo(m.id)}
-                  className={cn("px-2 py-1 rounded text-[11px] font-semibold border", modelo === m.id ? "bg-amber-600 text-white border-amber-600" : "bg-white border-zinc-200 text-zinc-600")}>{m.label}</button>
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setModelo(m.id)}
+                  className={cn(
+                    "px-2 py-1 rounded text-[11px] font-semibold border",
+                    modelo === m.id
+                      ? "bg-amber-600 text-white border-amber-600"
+                      : "bg-white border-zinc-200 text-zinc-600",
+                  )}
+                >
+                  {m.label}
+                </button>
               ))}
             </div>
           </div>
@@ -437,22 +583,43 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
             <Label className="text-xs">Imagem</Label>
             <div className="flex flex-wrap gap-1.5">
               {MODELOS_IMAGEM.map((m) => (
-                <button key={m.id} type="button" onClick={() => setModeloImagem(m.id)}
-                  className={cn("px-2 py-1 rounded text-[11px] font-semibold border", modeloImagem === m.id ? "bg-fuchsia-600 text-white border-fuchsia-600" : "bg-white border-zinc-200 text-zinc-600")}>{m.label}</button>
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setModeloImagem(m.id)}
+                  className={cn(
+                    "px-2 py-1 rounded text-[11px] font-semibold border",
+                    modeloImagem === m.id
+                      ? "bg-fuchsia-600 text-white border-fuchsia-600"
+                      : "bg-white border-zinc-200 text-zinc-600",
+                  )}
+                >
+                  {m.label}
+                </button>
               ))}
             </div>
           </div>
         </div>
 
-        <Button onClick={() => gerar()} disabled={busy} className="w-full bg-amber-600 hover:bg-amber-700">
-          {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
+        <Button
+          onClick={() => gerar()}
+          disabled={busy}
+          className="w-full bg-amber-600 hover:bg-amber-700"
+        >
+          {busy ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : (
+            <Wand2 className="w-4 h-4 mr-2" />
+          )}
           Gerar convite de agendamento
         </Button>
       </Card>
 
       {preview && (
         <Card className="p-5 space-y-3 border-2 border-emerald-300 bg-emerald-50/30">
-          <h3 className="font-semibold text-emerald-900 flex items-center gap-2"><Sparkles className="w-4 h-4" /> Pré-visualização</h3>
+          <h3 className="font-semibold text-emerald-900 flex items-center gap-2">
+            <Sparkles className="w-4 h-4" /> Pré-visualização
+          </h3>
           <PostReviewActions key={preview.id} id={preview.id} disabled={busy} />
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
@@ -460,15 +627,28 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
                 <div className="flex flex-col gap-4">
                   {preview.urls.map((u, i) => (
                     <div key={i} className="rounded-md border bg-white/80 overflow-hidden">
-                      <img src={u} alt={`Slide ${i + 1}`} className="w-full object-contain max-h-[85vh] bg-slate-50" />
-                      <Button size="sm" variant="ghost" className="w-full h-8 text-xs" onClick={() => window.open(u, "_blank")}>
+                      <img
+                        src={u}
+                        alt={`Slide ${i + 1}`}
+                        className="w-full object-contain max-h-[85vh] bg-slate-50"
+                      />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="w-full h-8 text-xs"
+                        onClick={() => window.open(u, "_blank")}
+                      >
                         <Download className="w-3 h-3 mr-1" /> Abrir slide {i + 1}
                       </Button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <img src={preview.urls[0]} alt="Post" className="w-full rounded-md border object-contain max-h-[85vh] bg-slate-50" />
+                <img
+                  src={preview.urls[0]}
+                  alt="Post"
+                  className="w-full rounded-md border object-contain max-h-[85vh] bg-slate-50"
+                />
               )}
             </div>
             <div className="space-y-2">
@@ -479,15 +659,29 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
                 rows={14}
                 className="text-xs font-mono"
               />
-              <Button size="sm" variant="outline" className="w-full" onClick={() => copiar(preview.legenda)}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => copiar(preview.legenda)}
+              >
                 <Copy className="w-3 h-3 mr-1" /> Copiar legenda
               </Button>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 pt-2">
-            <Button onClick={() => decidir("publicar")} className="bg-emerald-600 hover:bg-emerald-700">Publicar agora</Button>
-            <Button onClick={() => decidir("agendar")} variant="secondary">Salvar/Agendar</Button>
-            <Button onClick={() => decidir("arquivar")} variant="outline">Arquivar</Button>
+            <Button
+              onClick={() => decidir("publicar")}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              Publicar agora
+            </Button>
+            <Button onClick={() => decidir("agendar")} variant="secondary">
+              Salvar/Agendar
+            </Button>
+            <Button onClick={() => decidir("arquivar")} variant="outline">
+              Arquivar
+            </Button>
             <Button onClick={descartar} variant="ghost" className="text-red-600 ml-auto">
               <Trash2 className="w-4 h-4 mr-1" /> Descartar
             </Button>

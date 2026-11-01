@@ -1,3 +1,4 @@
+import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { createFileRoute } from "@tanstack/react-router";
 
 const corsHeaders = {
@@ -178,8 +179,8 @@ export const Route = createFileRoute("/api/public/gerar-proximo")({
               tipo: proximo.tipo,
               formato,
               quando: proximo.quando.toISOString(),
-              modelo: "local/sem-custo",
-              modeloImagem: "local/sem-custo",
+              modelo: DEFAULT_TEXT_MODEL,
+              modeloImagem: DEFAULT_IMAGE_MODEL,
               ambasRedes: false,
               // Aguarda aprovação manual no preview — nunca publica direto.
               status: "PendenteAprovacao",

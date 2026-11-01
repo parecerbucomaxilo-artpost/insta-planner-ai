@@ -4,6 +4,25 @@ import { generateImageBase64 } from "./ai-gateway.server";
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Parâmetro real enviado ao provedor", () => {
+  it("Gemini Flash Lite Image usa o formato nativo confirmado, sem parâmetros OpenAI", async () => {
+    const request = vi.fn(
+      async () => new Response(JSON.stringify({ data: [{ b64_json: "aW1hZ2U=" }] })),
+    );
+    vi.stubGlobal("fetch", request);
+    await generateImageBase64({
+      apiKey: "test-key",
+      prompt: "Cena do slide",
+      model: "google/gemini-3.1-flash-lite-image",
+    });
+    const body = JSON.parse(
+      (request.mock.calls[0] as unknown as [string, RequestInit])[1].body as string,
+    );
+    expect(body.model).toBe("google/gemini-3.1-flash-lite-image");
+    expect(body.contents).toEqual([{ role: "user", parts: [{ text: "Cena do slide" }] }]);
+    expect(body.generationConfig.responseModalities).toEqual(["TEXT", "IMAGE"]);
+    expect(body.messages).toBeUndefined();
+    expect(body.quality).toBeUndefined();
+  });
   it.each(["google/gemini-3.1-flash-image", "openai/gpt-image-2"])(
     "preserva brief e modelo %s no corpo HTTP",
     async (model) => {
