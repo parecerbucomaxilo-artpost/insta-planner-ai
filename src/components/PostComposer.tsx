@@ -1,3 +1,4 @@
+import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { Posts7Dias } from "@/components/Posts7Dias";
 import { salvarPostInedito } from "@/lib/post-guard";
 import { PostReviewActions } from "@/components/PostReviewActions";
@@ -167,7 +168,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           formato: formato === "Carrossel" || formato === "Estilo X" ? "Carrossel" : "Post Único",
           especialidade: "CTBMF",
           audiencia: "chico-drfm",
-          modelo: "openai/gpt-5.5",
+          modelo: DEFAULT_TEXT_MODEL,
         },
       });
       setLegenda(out.legenda);
@@ -431,8 +432,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x" | "google">("instagram");
-  const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
-  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
+  const [modelo, setModelo] = useState<ModeloIA>(DEFAULT_TEXT_MODEL);
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>(DEFAULT_IMAGE_MODEL);
   const [ambasRedes, setAmbasRedes] = useState(false);
   const [busy, setBusy] = useState<null | AiQuickFormat | "week">(null);
   const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
@@ -569,7 +570,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       <div className="flex items-center gap-2">
         <Wand2 className="w-5 h-5 text-indigo-600" />
         <h3 className="font-semibold text-indigo-900">Gerar post completo</h3>
-        <span className="text-xs text-indigo-600/70">Escolha: app/local ou IA</span>
+        <span className="text-xs text-indigo-600/70">IA real · sem respostas simuladas</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -620,7 +621,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         idRetomada="composer"
         especialidade={especialidade}
         temaGuia={tema}
-        escritorLocal={modelo === "local/sem-custo"}
+        escritorLocal={false}
         gerar={async (item, formato, ctx) => {
           const out = await genSingle({ data: { tema: item.tema, especialidade, rede: item.rede ?? "instagram", tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando, modelo, modeloImagem, ambasRedes: item.rede ? false : ambasRedes, operacaoId: ctx.operacaoId, slotKey: ctx.slotKey, objetivo: ctx.objetivo, assuntoGuiado: ctx.assuntoGuiado, salvarTextoSeImagemFalhar: ctx.salvarTextoSeImagemFalhar } });
           return { id: out.id, urls: out.urls, legenda: out.legenda, imagemErro: (out as any).imagemErro };
@@ -647,7 +648,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Selecione Local para o app escrever; selecione GPT/Gemini para a IA escrever.
+          Modelos verificados no Lovable AI.
         </p>
       </div>
 
@@ -671,7 +672,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           ))}
         </div>
         <p className="text-[11px] text-zinc-500">
-          Selecione Local para imagem do app; selecione Gemini/GPT Image para imagem por IA.
+          Cada imagem é criada pelo modelo selecionado.
         </p>
       </div>
 

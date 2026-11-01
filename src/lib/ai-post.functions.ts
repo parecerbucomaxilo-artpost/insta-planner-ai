@@ -19,38 +19,8 @@ import { quantidadeSlides } from "./carousel-slides";
 import { assinaturasDoHistorico, filtroHistorico, slidesRepetidos } from "./post-guard";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
-export const MODELOS_IA = [
-  { id: "local/sem-custo", label: "Local sem custo (texto)" },
-  { id: "openai/gpt-5-mini", label: "GPT-5 mini (texto)" },
-  { id: "openai/gpt-5-nano", label: "GPT-5 nano (texto)" },
-  { id: "openai/gpt-5", label: "GPT-5 (texto)" },
-  { id: "openai/gpt-5.4-mini", label: "GPT-5.4 mini (texto)" },
-  { id: "openai/gpt-5.4", label: "GPT-5.4 (texto)" },
-  { id: "openai/gpt-5.5", label: "GPT-5.5 (texto)" },
-  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (texto)" },
-  { id: "google/gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (texto)" },
-  { id: "google/gemini-3.5-flash", label: "Gemini 3.5 Flash (texto)" },
-  { id: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro (texto)" },
-  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (texto)" },
-  { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro (texto)" },
-] as const;
-const ModeloLocalInput = z
-  .string()
-  .optional()
-  .transform((v) => v || "local/sem-custo");
-
-export const MODELOS_IMAGEM = [
-  { id: "local/sem-custo", label: "Local sem custo (imagem)" },
-  { id: "google/gemini-3.1-flash-image", label: "Gemini Nano Banana 2 (imagem)" },
-  { id: "google/gemini-3-pro-image", label: "Gemini 3 Pro Image (imagem)" },
-  { id: "google/gemini-2.5-flash-image", label: "Gemini Nano Banana (imagem)" },
-  { id: "openai/gpt-image-2", label: "GPT Image 2 (imagem)" },
-  { id: "openai/gpt-image-1-mini", label: "GPT image 1 mini (imagem)" },
-] as const;
-const ModeloImagemLocalInput = z
-  .string()
-  .optional()
-  .transform((v) => v || "local/sem-custo");
+import { TextModelInput as ModeloLocalInput, ImageModelInput as ModeloImagemLocalInput } from "./ai-models";
+export { MODELOS_IA, MODELOS_IMAGEM } from "./ai-models";
 
 const NivelEnum = z.enum([
   "auto",
@@ -75,7 +45,7 @@ const SingleInput = z.object({
   quando: z.string().datetime().optional(),
   // Posts 7 dias: se a imagem falhar, salva o texto (sem imagem) e devolve `imagemErro`.
   salvarTextoSeImagemFalhar: z.boolean().optional().default(false),
-  // Aceita qualquer valor legado vindo de abas antigas, mas ignora e usa sempre o gerador local.
+  // Valida seleção atual ou preferência legada ainda disponível; nunca troca silenciosamente.
   modelo: ModeloLocalInput,
   modeloImagem: ModeloImagemLocalInput,
   // Cross-posting: publica simultaneamente em todas as redes (ignora `rede` para destino).
@@ -2092,7 +2062,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
             nivel,
             audiencia: data.audiencia,
           });
-    const usaEscritorLocal = !process.env.LOVABLE_API_KEY || data.modelo === "local/sem-custo";
+    const usaEscritorLocal = false;
+    if (!process.env.LOVABLE_API_KEY) throw new Error("IA não configurada. Nenhum texto simulado foi gerado.");
     // O escritor local (sem IA) só tem conteúdo próprio para temas com guia clínico específico.
     // Para os demais ele produziria o MESMO corpo genérico em todo post — isso não é inédito.
     if (usaEscritorLocal && !isDiverso && !isEstudantes && isGenericGuidance(topicGuidance(tema))) {
@@ -2121,13 +2092,9 @@ export const generateSinglePost = createServerFn({ method: "POST" })
             model: data.modelo,
             maxTokens: data.rede === "linkedin" ? 1400 : formato === "Carrossel" ? 1100 : 800,
           });
-          return txt || localCaption();
+          return txt;
         } catch (err) {
-          console.warn(
-            "[ai-post] legenda diversa caiu para local:",
-            err instanceof Error ? err.message : err,
-          );
-          return localCaption();
+          throw err;
         }
       }
 
@@ -2154,13 +2121,9 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           model: data.modelo,
           maxTokens: data.rede === "linkedin" ? 1700 : formato === "Carrossel" ? 1200 : 950,
         });
-        return txt || localCaption();
+        return txt;
       } catch (err) {
-        console.warn(
-          "[ai-post] legenda caiu para local:",
-          err instanceof Error ? err.message : err,
-        );
-        return localCaption();
+        throw err;
       }
     };
     const legendaPromise = escreverLegenda();
@@ -2395,7 +2358,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
                 prompt: briefPrompt,
                 model: data.modelo,
                 maxTokens: 140,
-              }).catch(() => "");
+              });
         const cenaIA = ((await cenaPromise) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
         const cenaIANorm = normalizeTema(cenaIA);
         const palavrasTema = normalizeTema(tema)
@@ -2457,15 +2420,12 @@ export const generateSinglePost = createServerFn({ method: "POST" })
               }
             }
           } catch (err) {
-            console.warn(
-              "[ai-post] cenas por slide caíram:",
-              err instanceof Error ? err.message : err,
-            );
+            throw err;
           }
         }
       }
     } catch (err) {
-      console.warn("[ai-post] brief visual caiu:", err instanceof Error ? err.message : err);
+      throw err;
     }
     const briefingNexoBase = [
       headlineLegenda
@@ -2979,7 +2939,7 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const nivel = resolveNivel(data.nivel, data.rede);
     const tema = data.tema.trim();
-    const captionModel = data.modelo === "local/sem-custo" ? "openai/gpt-5.5" : data.modelo;
+    const captionModel = data.modelo;
     const isChico = data.audiencia === "chico-drfm";
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const local = () =>
@@ -2992,7 +2952,7 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
         audiencia: data.audiencia,
       });
     if (!process.env.LOVABLE_API_KEY) {
-      return { legenda: local(), via: "local" as const };
+      throw new Error("IA não configurada. Nenhum texto simulado foi gerado.");
     }
     try {
       const { generateTextAI } = await import("@/lib/ai-gateway.server");
@@ -3013,10 +2973,9 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
         model: captionModel,
         maxTokens: data.rede === "linkedin" ? 1700 : data.formato === "Carrossel" ? 1200 : 950,
       });
-      return { legenda: (txt || local()).trim(), via: (txt ? "ia" : "local") as "ia" | "local" };
+      return { legenda: txt.trim(), via: "ia" as const };
     } catch (err) {
-      console.warn("[caption-only] fallback local:", err instanceof Error ? err.message : err);
-      return { legenda: local(), via: "local" as const };
+      throw err;
     }
   });
 

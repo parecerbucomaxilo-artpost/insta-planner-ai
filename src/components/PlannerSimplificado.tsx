@@ -1,3 +1,4 @@
+import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { Posts7Dias } from "@/components/Posts7Dias";
 import { salvarPostInedito } from "@/lib/post-guard";
 import { PostReviewActions } from "@/components/PostReviewActions";
@@ -68,10 +69,10 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
   const [savingManualToken, setSavingManualToken] = useState(false);
 
 
-  // Geração local sem IA paga
+  // Defaults econômicos verificados no catálogo.
   const [modo, setModo] = useState<Modo>("feed");
-  const [modelo, setModelo] = useState<ModeloIA>("local/sem-custo");
-  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>("local/sem-custo");
+  const [modelo, setModelo] = useState<ModeloIA>(DEFAULT_TEXT_MODEL);
+  const [modeloImagem, setModeloImagem] = useState<ModeloImagem>(DEFAULT_IMAGE_MODEL);
   const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
   const defaultLogoKey: LogoKey = audiencia === "estudantes-graduacao" ? "liga-ctbmf" : "planner";
   const [logoKeys, setLogoKeys] = useState<LogoKey[]>([defaultLogoKey]);
@@ -759,7 +760,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
         idRetomada="chico"
               especialidade={especialidade}
               temaGuia={tema}
-              escritorLocal={modelo === "local/sem-custo"}
+              escritorLocal={false}
               gerar={async (item, formato, ctx) => {
                 const out = await genSingle({ data: {
                   operacaoId: ctx.operacaoId, slotKey: ctx.slotKey, objetivo: ctx.objetivo, assuntoGuiado: ctx.assuntoGuiado, salvarTextoSeImagemFalhar: ctx.salvarTextoSeImagemFalhar,
@@ -826,7 +827,7 @@ export function PlannerSimplificado({ contaFixa, storageKey, audiencia = "estuda
                 )}
                 <Button onClick={() => handleGerar()} disabled={busy} className="w-full">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                  Criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} com imagem + legenda {modelo === "local/sem-custo" ? "pelo app" : "pela IA"}
+                  Criar {modo === "carrossel" ? "carrossel" : modo === "stories" ? "story" : "post"} com imagem + legenda {false ? "pelo app" : "pela IA"}
                 </Button>
                 <Button
                   onClick={() => handleGerar({ forcarEspecialidade: "Odontologia Hospitalar" })}

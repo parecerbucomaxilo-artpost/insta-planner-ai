@@ -1,3 +1,4 @@
+import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { Posts7Dias } from "@/components/Posts7Dias";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import { useCallback, useEffect, useState } from "react";
@@ -86,8 +87,8 @@ export function PlannerAgendamentoTratamento() {
   const [quando, setQuando] = useState<"agora" | "data">("agora");
   const [data, setData] = useState("");
   const [hora, setHora] = useState("09:00");
-  const [modelo, setModelo] = useState<(typeof MODELOS_IA)[number]["id"]>("local/sem-custo");
-  const [modeloImagem, setModeloImagem] = useState<(typeof MODELOS_IMAGEM)[number]["id"]>("local/sem-custo");
+  const [modelo, setModelo] = useState<(typeof MODELOS_IA)[number]["id"]>(DEFAULT_TEXT_MODEL);
+  const [modeloImagem, setModeloImagem] = useState<(typeof MODELOS_IMAGEM)[number]["id"]>(DEFAULT_IMAGE_MODEL);
   const [assunto, setAssunto] = useState("");
   const [legendaGerada, setLegendaGerada] = useState("");
   const [logoKeys, setLogoKeys] = useState<LogoKey[]>(["clinica-escola"]);
@@ -333,7 +334,7 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
         <Label className="text-sm font-semibold">Legenda do convite</Label>
         <Button type="button" variant="secondary" onClick={gerarLegenda} disabled={gerandoLegenda || !telefone.trim()} className="w-full border-amber-300 bg-white text-amber-900 hover:bg-amber-50">
           {gerandoLegenda ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-          {modelo === "local/sem-custo" ? "App gerar legenda" : "IA gerar legenda"}
+          {false ? "App gerar legenda" : "IA gerar legenda"}
         </Button>
         <Textarea
           value={legendaGerada}
