@@ -1,63 +1,101 @@
-## O que será construído
+# Auditoria técnica e plano — Post Planner Pro (05)
 
-### 1. Calendário Editorial Semanal (nova aba "Semana")
-- Nova aba na navegação principal: **Semana**.
-- Grid Seg–Sex (5 colunas) da semana corrente, com setas ‹ › para navegar semanas.
-- Botão proeminente **"Gerar Cronograma da Semana"** que chama o Claude uma única vez pedindo 5 temas distintos de CTBMF e gera, em paralelo, legenda + imagem 1:1 Premium para cada dia.
-- Cada card do dia mostra miniatura + tema + status. Clicar abre um Dialog com edição inline do texto/imagem e botão **"Postar Agora"** ou **"Agendar para este dia"**.
-- Persistência: cada card vira um registro em `posts` com `data_agendamento` = data do dia 09:00 e `status = "Rascunho"`. Regerar substitui o registro daquele dia.
+Somente análise. Nenhum arquivo do app foi alterado e nenhum segredo foi lido. Abaixo aparecem apenas os nomes dos segredos.
 
-### 2. Painel "Perfil do Especialista" (Memória da IA)
-- Substitui a aba **Perfil** atual por uma versão expandida (mantém o que existe e adiciona campos novos):
-  - Nome do Profissional (já existe)
-  - **CRO/UF** (novo)
-  - **Subespecialidades** (novo, chips multi: Ortognática, DTM, Implantes Zigomáticos, Trauma Facial, Patologia Bucal, Oncologia CP, Reconstrução, Implantes Convencionais — com "+ adicionar")
-  - **Tom de voz** (novo, radio: Científico · Humanizado · Editorial)
-- Migração: adiciona colunas `cro_uf TEXT`, `subespecialidades TEXT[]`, `tom_voz TEXT` em `perfil_usuario`.
-- A IA (Claude) recebe um bloco **CONTEXTO DO ESPECIALISTA** com esses dados em todo `suggestIdea` e `weeklyPlan`.
-- A geração de imagem injeta um overlay textual sutil **"Dr(a). Nome · CRO/UF"** no canto inferior da imagem (canvas client-side, mesma técnica do watermark já existente).
+## 1. Arquitetura atual
 
-### 3. Mockup de Feed real (ao lado do resultado)
-- Novo componente `FeedMockup` exibido no painel direito do compositor, dentro de uma moldura de smartphone (frame arredondado, notch sutil).
-- Modo **Instagram**: grid 3×3 — a imagem gerada ocupa a célula superior-esquerda, as 8 restantes vêm dos últimos posts publicados/agendados do usuário (busca em `posts`). Falhando isso, placeholders elegantes.
-- Modo **X (Twitter)**: timeline corrida com 3 tweets — o tweet atual no topo (avatar, @, texto, imagem 16:9), e 2 tweets-fantasma abaixo para dar contexto de feed.
-- O mockup substitui o `PostPreview` atual no compositor (mantemos `PostPreview` para listagens/calendário).
+- Framework web full-stack TanStack Start (React 19 + Vite), rodando em Cloudflare Workers. Não usa Edge Functions do Supabase.
+- Backend Lovable Cloud: banco Postgres com RLS, autenticação e armazenamento privado de imagens.
+- Lógica interna do servidor (`createServerFn`): `src/lib/ai-post.functions.ts` (geração, aprovação, temas da semana), `perfil.functions.ts`, `google-business.functions.ts`, `meta-oauth.functions.ts`, `publication-destination.functions.ts`, `preview-overlay.functions.ts`, `backfill-images.functions.ts`.
+- Rotas públicas (`src/routes/api/public/`): `gerar-proximo` (cron), `publicar-agendados`, `posts-agendados`, `dispatch-gbp`, `dispatch-liga`, `confirmar-publicado`, `backfill-images`, `storage-media`, callbacks OAuth da Meta e do Instagram. As rotas de cron são protegidas com `CRON_SECRET` (`src/lib/cron-auth.server.ts`).
+- Integrações sociais: Meta/Instagram (OAuth e tokens de página), LinkedIn (`src/lib/social/linkedin-publish.server.ts`), Google Business via webhook do Make e Stripe.
+- Regras de domínio: dedup (`dedup.ts`), proteção de posts (`post-guard.ts`), semana de 7 dias (`week-run.ts`, `week-plan.ts`), horários (`post-slots.ts`), slides (`carousel-slides.ts`), sobreposição da logo (`logo-overlay.server.ts`).
 
-### 4. Card "Mensagem de Resposta Rápida (Direct)"
-- Adicionado ao `suggestIdea` (Claude) um novo campo opcional `mensagem_direct` (≤ 400 chars): texto acolhedor e profissional para responder DMs/comentários.
-- Renderizado como Card logo abaixo da legenda gerada, com botão **Copiar** (clipboard) e tooltip de uso.
-- No modo X, também é gerado (resposta curta para responder menções).
+## 2. IAs e provedores
 
-## Detalhes técnicos
+Todos os modelos estão centralizados em `src/lib/ai-models.ts` e passam pelo Lovable AI Gateway (`src/lib/ai-gateway.server.ts`), usando o segredo `LOVABLE_API_KEY`.
 
-### Migração SQL
-```sql
-ALTER TABLE public.perfil_usuario
-  ADD COLUMN IF NOT EXISTS cro_uf TEXT NOT NULL DEFAULT '',
-  ADD COLUMN IF NOT EXISTS subespecialidades TEXT[] NOT NULL DEFAULT '{}',
-  ADD COLUMN IF NOT EXISTS tom_voz TEXT NOT NULL DEFAULT 'Científico';
-```
-(Sem novas tabelas → sem novos GRANT/RLS; `perfil_usuario` já está acessível.)
+| Uso | Modelos oferecidos | Padrão |
+|---|---|---|
+| Texto | `openai/gpt-6-luna`, `openai/gpt-6.1-sol`, `google/gemini-3.1-flash-lite`, `google/gemini-3.8-flash`, `google/gemini-4-argon` | `openai/gpt-6-luna` |
+| Imagem | `google/gemini-3.1-flash-lite-image`, `google/gemini-3-pro-image`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-sunburst` | `google/gemini-3.1-flash-lite-image` |
 
-### Backend
-- `src/lib/ai/suggest-idea.functions.ts`: aceita `perfil?: { nome, cro_uf, subespecialidades[], tom_voz }`, injeta bloco "CONTEXTO DO ESPECIALISTA" no system prompt e adiciona `mensagem_direct` ao schema da tool.
-- Novo `src/lib/ai/weekly-plan.functions.ts` (`createServerFn`) que devolve `{ dias: [{ titulo, prompt_imagem, legenda_instagram, mensagem_direct }] x5 }` em uma única chamada Claude (economiza tokens).
-- `src/lib/ai/generate-image.functions.ts`: já está parametrizado por aspect/conceptual — sem mudança.
-- Watermark estendido em `src/lib/watermark.ts`: nova função `applyDoctorBadge(src, { nome, cro })` que escreve barra inferior sutil "Dr(a). X · CRO 12345/SP" em tipografia serif clara sobre faixa navy translúcida.
+- **OpenAI e Gemini:** já conectados pelo gateway. Texto vai para `/chat/completions`; imagem vai para `/images/generations` ou para o formato nativo do Gemini.
+- **Anthropic/Claude:** não conectado. `AnthropicKeySettings.tsx` apenas avisa e apaga a chave antiga do navegador.
+- **Modelos legados:** continuam aceitos se tiverem sido escolhidos explicitamente antes. Não existe troca silenciosa de provedor nem texto simulado.
 
-### Frontend
-- `src/components/ProfileSettings.tsx`: adiciona os 3 novos campos com componentes shadcn (Input, multi-chip, RadioGroup) e persistência em `perfil_usuario`.
-- `src/components/WeeklyCalendar.tsx` (novo): grid 5 colunas, navegação semanal, botão de geração, Dialog de edição.
-- `src/components/FeedMockup.tsx` (novo): frame de smartphone + tabs internas Instagram/X.
-- `src/components/DirectReplyCard.tsx` (novo): card "Mensagem de Resposta Rápida (Direct)" com botão copiar.
-- `src/components/PostComposer.tsx`: substitui `PostPreview` por `FeedMockup`, monta `DirectReplyCard` abaixo da legenda em ambos os modos (padrão e X), e injeta `perfil` em todas as chamadas `genIdea`.
-- `src/routes/index.tsx`: adiciona aba **Semana** ao lado de **Criar**.
+### Quais funções dependem de cada IA
 
-### Estética
-- Mantém paleta navy/slate/branco já definida em `src/styles.css`.
-- Bordas `rounded-2xl`, sombras `shadow-elegant`/`shadow-elevated`, transições suaves já globais via `:root`.
+- **IA de texto:** `generateSinglePost`, `generateCaptionOnly`, `generateWeekThemes`/`getWeekTopics`, `reformularTema` (dedup) e o cron `gerar-proximo`.
+- **IA de imagem:** slides e cards (`contextual-image.ts`) e `backfill-images`.
+- **Telas que acionam a IA:** `PostComposer`, `PlannerSimplificado`, `PlannerAgendamentoTratamento`, `Posts7Dias`, `planner-clinica-escola`, `WeeklyCalendar`.
 
-## Fora de escopo desta entrega
-- Publicação real no X (continua sem integração — o estilo X é só de composição/preview).
-- Drag-and-drop entre dias do calendário (apenas clique-editar nesta primeira versão).
-- Tradução automática para outros idiomas além de pt-BR.
+## 3. Chaves e segredos
+
+Todos ficam no servidor (`process.env`, lido dentro dos handlers):
+- IA: `LOVABLE_API_KEY`
+- Backend: `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`
+- Redes sociais: `META_APP_ID/SECRET`, `META_INSTAGRAM_APP_ID/SECRET`, `META_FRANCISCO_ACCESS_TOKEN`, `META_LIGA_ACCESS_TOKEN`, `LINKEDIN_API_KEY`, `MAKE_GBP_WEBHOOK_URL`
+- Pagamentos: `STRIPE_SECRET_KEY`
+- Cron: `CRON_SECRET`
+
+O navegador recebe somente a URL e a chave pública do backend. Nenhuma chave de IA fica no navegador.
+
+## 4. Riscos e falhas aparentes
+
+1. **Segurança:**
+   - O bucket `post-images` é público por decisão registrada, o que entra em conflito com a regra de URLs assinadas da pré-visualização. Qualquer pessoa com o link vê as imagens.
+   - Os tokens fixos da Meta em segredos expiram, e a publicação falha sem aviso prévio.
+   - Rotas `/api/public/*` sem `CRON_SECRET` precisam de revisão uma a uma.
+   - O servidor usa a service role; é preciso confirmar que só a carrega depois de verificar quem chamou.
+2. **Custos:**
+   - Uma semana tem 56 posts, e cada carrossel gera 5 imagens. As imagens são o maior gasto.
+   - Novas tentativas e reformulações de dedup multiplicam as chamadas.
+   - Os créditos são do workspace; não existe limite de gasto definido no app.
+3. **Limites:**
+   - Respostas 429/402 do gateway interrompem slots.
+   - O Worker tem limite de tempo por requisição, por isso a semana roda em sequência.
+4. **Falhas observadas:**
+   - Teste real anterior: 49 de 56 slots falharam por dedup excessiva.
+   - Imagens saíram com "LOGO" escrito e erros de digitação.
+   - O histórico de dedup não filtra por conta (a Liga influencia o Chico).
+   - Avisos de API depreciada (`inputValidator`) e ausência de middleware CSRF nas server functions.
+   - 81 erros de lint e uma suíte de testes vazia que quebra a execução completa.
+
+## 5. Plano A — ChatGPT/assistente trabalhando no código
+
+O Lovable sincroniza o código com um repositório GitHub novo e privado, nos dois sentidos, sempre pelo branch configurado.
+
+Configuração manual pelo proprietário:
+1. Em Configurações do projeto → Git, conectar o GitHub. Isso cria o repositório.
+2. No ChatGPT, ativar o conector GitHub (ou Codex) e dar acesso **apenas** a esse repositório.
+3. Proteger o branch principal e pedir que o ChatGPT trabalhe em branches separados com Pull Requests. O proprietário revisa e faz o merge, e o Lovable puxa a mudança.
+
+Regras de segurança:
+- Nunca enviar segredos ao repositório. Eles continuam em Configurações → Secrets.
+- Migrações de banco não são aplicadas pelo Git; devem ser aplicadas pelo chat do Lovable.
+- Pushes forçados ou rebase do branch principal podem substituir trabalho feito no Lovable.
+- O `AGENTS.md` já documenta as regras de arquitetura para o assistente externo.
+
+## 6. Plano B — OpenAI API como opção no Planner
+
+Os modelos OpenAI já estão disponíveis pelo gateway. A nova opção será uma rota "OpenAI direta (chave própria)", sem remover nenhum provedor.
+
+Configuração manual: o proprietário adiciona `OPENAI_API_KEY` em Configurações → Secrets. Ela só será pedida depois da aprovação deste plano.
+
+Etapas:
+1. `src/lib/ai-models.ts`: adicionar o provedor `openai-direct` com IDs confirmados em `GET https://api.openai.com/v1/models`, usando a chave apenas no servidor. Rótulo: "OpenAI (sua chave)".
+2. `src/lib/ai-gateway.server.ts`: criar um roteador por provedor. `openai-direct` chama `https://api.openai.com/v1/chat/completions` e `/v1/images/generations`. Se `OPENAI_API_KEY` não existir, mostrar um erro claro, sem cair para outro provedor.
+3. Seletores de texto e imagem (`PostComposer`, planners, `Posts7Dias`): incluir as novas opções e manter a escolha atual do usuário.
+4. Validação: a chave é lida somente dentro dos handlers e nunca é registrada em log nem devolvida ao navegador. Tratar 401/429/402 com mensagens em português.
+5. Testes: IDs permitidos, roteamento para api.openai.com, erro quando a chave falta, ausência de fallback e um modelo de gateway preservado. Nenhuma geração real.
+6. Atualizar `AGENTS.md` com a regra de roteamento.
+
+Observação de custo: a rota direta cobra na conta OpenAI do proprietário e perde os logs e limites do painel de IA do Lovable. Os mesmos modelos já existem no gateway pelo preço de tabela do provedor.
+
+## Exige ação do proprietário
+
+- Conectar o GitHub e autorizar o ChatGPT a acessar só esse repositório.
+- Proteger o branch principal.
+- Adicionar `OPENAI_API_KEY`, apenas se quiser usar a rota direta.
+- Decidir sobre o bucket público e a renovação dos tokens da Meta.
