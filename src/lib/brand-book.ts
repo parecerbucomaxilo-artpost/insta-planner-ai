@@ -75,12 +75,12 @@ export const BRAND_BOOK: Record<BrandKey, BrandSpec> = {
     objetivo: "Atrair estudantes, fortalecer a Liga, divulgar eventos, ensinar.",
     publico: "Acadêmicos, professores, residentes, cirurgiões-dentistas.",
     paleta: {
-      primary: "#2D2C32",
-      secondary: "#DD8E3C",
-      support: "#D6403A",
+      primary: "#000000", // preto
+      secondary: "#C92E28", // vermelho anatômico profundo (destaque)
+      support: "#545454", // cinza grafite (apoio)
       bg: "#000000",
-      text: "#FBFBFB",
-      light: "#FBFBFB",
+      text: "#FFFFFF",
+      light: "#FFFFFF",
     },
     logo: { file: "logo-liga-ctbmf.png", position: "bottom_right" },
     tipografia: { title: "Sans-serif bold condensada", body: "Sans-serif regular" },
@@ -108,6 +108,20 @@ export const BRAND_BOOK: Record<BrandKey, BrandSpec> = {
 export function pickBrand(audiencia?: string): BrandKey {
   return audiencia === "estudantes-graduacao" ? "lactbmf" : "drfranciscomenezes";
 }
+
+/** Trechos visuais por marca usados nos prompts de imagem compartilhados. */
+export const BRAND_IMAGE_STYLE: Record<BrandKey, { headline: string; identidade: string }> = {
+  drfranciscomenezes: {
+    headline: "BRANCO ou CIANO #2dd4ff sobre o fundo navy luminoso",
+    identidade:
+      "azul petróleo, ciano, branco e preto. Vermelho apenas para dor. Sans-serif bold, padrão hospitalar premium.",
+  },
+  lactbmf: {
+    headline: "BRANCO #FFFFFF com palavra-chave em VERMELHO #C92E28 sobre fundo preto #000000 ou grafite #545454",
+    identidade:
+      "preto #000000 e branco #FFFFFF para contraste, cinza grafite #545454 de apoio, vermelho anatômico #C92E28 como destaque. Sem azul/ciano (salvo sinalização científica indispensável). Sans-serif bold, padrão acadêmico científico.",
+  },
+};
 
 export function brandBookPrompt(audiencia?: string): string {
   const key = pickBrand(audiencia);

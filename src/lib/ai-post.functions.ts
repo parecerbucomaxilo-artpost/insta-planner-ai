@@ -782,7 +782,7 @@ function diverseImagePrompt(
     : "";
   const brandPalette =
     brand === "student"
-      ? `PALETA: fundo grafite #2D2C32 dominante, texto branco #FBFBFB, destaque âmbar #DD8E3C. Sem outras cores fortes.`
+      ? `PALETA: fundo preto #000000 ou grafite #545454 dominante, texto branco #FFFFFF, destaque vermelho anatômico #C92E28. Sem azul/ciano nem outras cores fortes.`
       : `PALETA: fundo azul marinho #0c2340 dominante (leve gradiente para ciano #2dd4ff nos cantos), texto branco puro, destaques em ciano #2dd4ff. Sem outras cores fortes.`;
   const logoReserva =
     brand === "student"
@@ -831,7 +831,7 @@ function studentImagePrompt(
 - TEMA LITERAL "${tema}": represente a cena clínica exata — exodontia → fórceps + dente no alvéolo; anestesia → seringa carpule + ponto de punção anatômico; sutura → porta-agulhas + ponto em mucosa; frenectomia → freio labial/lingual + bisturi; biópsia → bisturi + tecido; alveoloplastia → lima/cinzel de osso; fratura mandibular → linha de fratura + fixação com placa de titânio.
 - QUALIDADE TÉCNICA: renderização 8K ultra-detalhada (Octane Render / Unreal Engine 5 / Ray Tracing), texturas nítidas, equivalente a Canon EOS R5 + macro 100mm f/2.8 ISO 100.
 - ANATOMIA CORRETA: estruturas bucomaxilofaciais (mandíbula, maxila, ATM, dentes, nervos, músculos, seios) com proporção, posição, lado (direito/esquerdo) e relação topográfica cientificamente exatas, conforme Terminologia Anatômica oficial (TA2/SBA) e atlas (Netter, Sobotta, Madeira). Instrumental cirúrgico apenas em uso clinicamente correto para o tema (ex.: fórceps nº 18L só em molar inferior esquerdo). Proibido: dentes em posição errada, número de raízes incorreto, nervo cruzando estrutura errada, instrumento aplicado fora da indicação.
-- PALETA RIGOROSA: fundo dominante #2D2C32 grafite OU #000000 preto. Tipografia principal #FBFBFB off-white. Destaque/CTA #DD8E3C âmbar. Acentos ANHANGUERA permitidos apenas em pequenos detalhes (linha de fratura, seta de destaque, contorno do ponto de interesse): vermelho-Anhanguera #CE000C e laranja-Anhanguera #F05A22. Vermelho-alerta #D6403A apenas para alerta/dor. PROIBIDO qualquer outro hex — sem ciano, sem navy, sem azul, sem verde, sem roxo, sem rosa, sem branco puro #FFFFFF.
+- PALETA RIGOROSA (identidade da logo da Liga): fundo dominante #000000 preto OU #545454 cinza grafite. Tipografia e contraste em #FFFFFF branco. Destaque/CTA/ponto de interesse (linha de fratura, seta, contorno) em VERMELHO ANATÔMICO PROFUNDO #C92E28. Grafite #545454 para elementos de apoio. PROIBIDO azul, ciano, navy, verde, roxo, rosa, laranja, âmbar — exceto cor de sinalização científica indispensável ao conteúdo.
  - TEXTO NA IMAGEM — REGRA ABSOLUTA: NÃO renderize NENHUMA letra, palavra, número, sigla, símbolo tipográfico, legenda, rótulo, watermark, headline, badge ou cartaz com escrita dentro da imagem. ZERO texto. Nem em primeiro plano, nem em fundo, nem em jalecos, crachás, placas, livros, telas, monitores, radiografias, embalagens, etiquetas, instrumentos, paredes. A composição deve ser PURAMENTE VISUAL (cena clínica/anatômica). Todo e qualquer texto (headline, enquete, dica) será aplicado depois pelo sistema como overlay tipográfico — você NÃO precisa e NÃO deve tentar escrever nada. Se a cena naturalmente teria texto (ex.: tela de tomografia), substitua por formas abstratas, gráficos sem letras ou borrão suave. Qualquer letra renderizada será considerada erro grave.
 - LOGO: NÃO desenhe, redesenhe, parafraseie ou invente logos, marcas, escudos, brasões, monogramas ou siglas. NÃO reserve faixa inferior, canto limpo, bloco vazio, moldura, quadrado ou placeholder. A arte deve ocupar a composição normalmente; a logo REAL da LACTBMF será sobreposta pelo sistema, sem fundo.
 - Iluminação editorial premium, hierarquia limpa, espaço negativo generoso na cor de fundo, sem ruído visual.
@@ -2186,9 +2186,10 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     // gigantes — eles diluem o TEMA e a IA desenha algo genérico "sobre a marca"
     // em vez do assunto pedido. Enviamos apenas o prompt visual (que já contém
     // paleta, estilo, cena e o tema) com uma linha curta de marca.
-    const { pickBrand: pickBrandImg, BRAND_BOOK: BRAND_BOOK_IMG } =
+    const { pickBrand: pickBrandImg, BRAND_BOOK: BRAND_BOOK_IMG, BRAND_IMAGE_STYLE } =
       await import("@/lib/brand-book");
     const brandKeyImg = pickBrandImg(data.audiencia);
+    const BRAND_STYLE_IMG = BRAND_IMAGE_STYLE[brandKeyImg];
     const b = BRAND_BOOK_IMG[brandKeyImg];
     const brandOneLiner = `MARCA (${b.instagram}): paleta ${b.paleta.primary} · ${b.paleta.secondary} · ${b.paleta.bg} · ${b.paleta.text}. Estilo: ${b.estilo} Nunca desenhar/imitar logo — o sistema aplica overlay real.`;
     const genAndUpload = (prompt: string, slideIndex = 0) => {
@@ -2418,7 +2419,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const isCapa = slideIndex === 0 || typeof slideIndex === "undefined";
       const hookBloco =
         isCapa && hookImagem
-          ? `TEXTO OBRIGATÓRIO NA IMAGEM (renderize EXATAMENTE esta frase como tipografia gigante bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre o fundo navy luminoso, 3-6 palavras, PT-BR com acentuação perfeita, centralizado na parte superior/central da arte): "${hookImagem}". NÃO altere, NÃO traduza, NÃO adicione outras palavras, NÃO escreva nome de profissional/clínica/marca. É o ÚNICO texto permitido na imagem.`
+          ? `TEXTO OBRIGATÓRIO NA IMAGEM (renderize EXATAMENTE esta frase como tipografia gigante bold sans-serif condensada, ${BRAND_STYLE_IMG.headline}, 3-6 palavras, PT-BR com acentuação perfeita, centralizado na parte superior/central da arte): "${hookImagem}". NÃO altere, NÃO traduza, NÃO adicione outras palavras, NÃO escreva nome de profissional/clínica/marca. É o ÚNICO texto permitido na imagem.`
           : "";
       const blocos = [
         contrato,
@@ -2469,7 +2470,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
               contexto: `${data.especialidade}; ${data.rede}; ${formato}. ${isDiverso ? "Tema não clínico: não incluir elementos médicos." : "CTBMF e Odontologia Hospitalar; anatomia correta, sem diagnóstico individual ou procedimentos invasivos."}`,
               identidade:
                 brandOneLiner +
-                " Fotografia plausível ou anatomia editorial realista; azul petróleo, ciano, branco e preto. Vermelho apenas para dor. Sans-serif bold, padrão hospitalar premium.",
+                " Fotografia plausível ou anatomia editorial realista; " + BRAND_STYLE_IMG.identidade,
             };
             return generateBoundImage(
               brief,
@@ -2525,7 +2526,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           {
             n: 1,
             total: 5,
-            papel: `CAPA sobre o TEMA "${tema}": GANCHO ULTRA FORTE de conversão obrigatório em tipografia gigante (3-6 palavras, bold sans-serif condensada, BRANCO ou CIANO #2dd4ff sobre navy luminoso) — pergunta direta de dor real, dado de impacto ou frase-choque relacionada EXCLUSIVAMENTE ao tema "${tema}" (ex.: 'DOR NO SISO?', 'SEU MAXILAR TRAVA?', 'RONCO PODE MATAR', 'ESSE CHEIRO NÃO É NORMAL', 'PERDEU UM DENTE?'). PT-BR impecável, acentuação correta, SEM palavras duplicadas, SEM inglês, SEM texto inventado. O gancho fala DIRETO ao paciente sobre o TEMA — NÃO menciona '@drfranciscomenezes', nome do profissional, marca, clínica ou consultório (a assinatura entra como overlay do sistema). Layout impactante de capa de revista médica, hierarquia visual brutal, ZERO bibliografia, ZERO logo desenhada.`,
+            papel: `CAPA sobre o TEMA "${tema}": GANCHO ULTRA FORTE de conversão obrigatório em tipografia gigante (3-6 palavras, bold sans-serif condensada, ${BRAND_STYLE_IMG.headline}) — pergunta direta de dor real, dado de impacto ou frase-choque relacionada EXCLUSIVAMENTE ao tema "${tema}" (ex.: 'DOR NO SISO?', 'SEU MAXILAR TRAVA?', 'RONCO PODE MATAR', 'ESSE CHEIRO NÃO É NORMAL', 'PERDEU UM DENTE?'). PT-BR impecável, acentuação correta, SEM palavras duplicadas, SEM inglês, SEM texto inventado. O gancho fala DIRETO ao paciente sobre o TEMA — NÃO menciona '@drfranciscomenezes', nome do profissional, marca, clínica ou consultório (a assinatura entra como overlay do sistema). Layout impactante de capa de revista médica, hierarquia visual brutal, ZERO bibliografia, ZERO logo desenhada.`,
           },
           {
             n: 2,
