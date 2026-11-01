@@ -32,10 +32,16 @@ export async function generateTextAI(opts: {
         ...(opts.system ? [{ role: "system", content: opts.system }] : []),
         { role: "user", content: opts.prompt },
       ],
-      ...(model.startsWith("openai/") ? { reasoning_effort: "none" } : {}),
+      ...(model === "openai/gpt-6-luna" ? { reasoning_effort: "none" } : {}),
       // Model upgrades omit optional legacy output caps. Legacy preferences retain theirs.
-      ...(!["openai/gpt-6-luna", "openai/gpt-6.1-sol", "google/gemini-3.8-flash", "google/gemini-4-argon"].includes(model) && opts.maxTokens
-        ? { [model.startsWith("openai/") ? "max_completion_tokens" : "max_tokens"]: opts.maxTokens } : {}),
+      ...(![
+        "openai/gpt-6-luna",
+        "openai/gpt-6.1-sol",
+        "google/gemini-3.8-flash",
+        "google/gemini-4-argon",
+      ].includes(model) && opts.maxTokens
+        ? { [model.startsWith("openai/") ? "max_completion_tokens" : "max_tokens"]: opts.maxTokens }
+        : {}),
     }),
   });
 
@@ -44,9 +50,14 @@ export async function generateTextAI(opts: {
     throw new Error(`Lovable AI texto ${res.status}: ${body.slice(0, 240)}`);
   }
   const json: any = await res.json();
-  if (json?.choices?.[0]?.message?.refusal || json?.choices?.[0]?.finish_reason === "content_filter") throw new Error("O provedor recusou a geração do texto. Solicitação encerrada.");
+  if (
+    json?.choices?.[0]?.message?.refusal ||
+    json?.choices?.[0]?.finish_reason === "content_filter"
+  )
+    throw new Error("O provedor recusou a geração do texto. Solicitação encerrada.");
   const text = json?.choices?.[0]?.message?.content?.toString().trim();
-  if (!text) throw new Error("Lovable AI texto: resposta vazia; nenhum conteúdo simulado foi criado.");
+  if (!text)
+    throw new Error("Lovable AI texto: resposta vazia; nenhum conteúdo simulado foi criado.");
   return text;
 }
 
@@ -69,7 +80,11 @@ async function generateImageGateway(opts: {
   };
 
   const extractImageB64 = async (json: any): Promise<string> => {
-    if (json?.error || json?.choices?.[0]?.finish_reason === "content_filter" || json?.choices?.[0]?.message?.refusal) {
+    if (
+      json?.error ||
+      json?.choices?.[0]?.finish_reason === "content_filter" ||
+      json?.choices?.[0]?.message?.refusal
+    ) {
       throw new Error("O provedor recusou a geração da imagem. A solicitação foi encerrada.");
     }
     const first = json?.data?.[0];
@@ -80,8 +95,12 @@ async function generateImageGateway(opts: {
     }
     const url = first?.url || first?.image_url?.url || first?.image_url;
     if (typeof url === "string" && url.trim()) {
-      if (!url.startsWith("data:") && !url.startsWith("https://")) throw new Error("Origem da imagem inválida.");
-      console.info("[image-response]", { model: opts.model, origin: url.startsWith("data:") ? "provider-inline" : new URL(url).origin });
+      if (!url.startsWith("data:") && !url.startsWith("https://"))
+        throw new Error("Origem da imagem inválida.");
+      console.info("[image-response]", {
+        model: opts.model,
+        origin: url.startsWith("data:") ? "provider-inline" : new URL(url).origin,
+      });
       return url.startsWith("data:") ? url.split(",")[1] || "" : fetchUrlAsB64(url);
     }
     throw new Error("Lovable AI imagem: resposta sem b64/url");
@@ -134,7 +153,9 @@ async function generateImageGateway(opts: {
             generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
           }
         : {
-            messages: [{ role: "user", content: userContent.length === 1 ? opts.prompt : userContent }],
+            messages: [
+              { role: "user", content: userContent.length === 1 ? opts.prompt : userContent },
+            ],
             modalities: ["image", "text"],
           }),
     }),
@@ -160,9 +181,18 @@ export async function generateImageBase64(opts: {
 
   if (!opts.prompt.trim()) throw new Error("Brief visual vazio; geração bloqueada.");
   if (model === "local/sem-custo") {
-    throw new Error("O modelo local não gera imagens contextuais. Selecione um dos geradores de imagem existentes para continuar; nenhuma imagem genérica foi criada.");
+    throw new Error(
+      "O modelo local não gera imagens contextuais. Selecione um dos geradores de imagem existentes para continuar; nenhuma imagem genérica foi criada.",
+    );
   }
   validateModel(model, "image");
-  if (!apiKey) throw new Error("Gerador de imagem não configurado; nenhuma imagem substituta foi criada.");
-  return generateImageGateway({ apiKey, prompt: opts.prompt, model, size, referenceImageUrls: opts.referenceImageUrls });
+  if (!apiKey)
+    throw new Error("Gerador de imagem não configurado; nenhuma imagem substituta foi criada.");
+  return generateImageGateway({
+    apiKey,
+    prompt: opts.prompt,
+    model,
+    size,
+    referenceImageUrls: opts.referenceImageUrls,
+  });
 }

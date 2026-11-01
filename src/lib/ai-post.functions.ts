@@ -19,7 +19,10 @@ import { quantidadeSlides } from "./carousel-slides";
 import { assinaturasDoHistorico, filtroHistorico, slidesRepetidos } from "./post-guard";
 import { extractFinalSlides, generateBoundImage, validateImageBindings } from "./contextual-image";
 
-import { TextModelInput as ModeloLocalInput, ImageModelInput as ModeloImagemLocalInput } from "./ai-models";
+import {
+  TextModelInput as ModeloLocalInput,
+  ImageModelInput as ModeloImagemLocalInput,
+} from "./ai-models";
 export { MODELOS_IA, MODELOS_IMAGEM } from "./ai-models";
 
 const NivelEnum = z.enum([
@@ -2051,35 +2054,11 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const isEstudantes = data.audiencia === "estudantes-graduacao";
     const isChico = data.audiencia === "chico-drfm";
     const isDiverso = data.especialidade === "Temas Diversos";
-    const localCaption = () =>
-      isDiverso
-        ? buildDiverseLocalCaption(tema, data.rede, formato)
-        : buildLocalCaption({
-            tema,
-            rede: data.rede,
-            formato,
-            especialidade: data.especialidade,
-            nivel,
-            audiencia: data.audiencia,
-          });
     const usaEscritorLocal = false;
-    if (!process.env.LOVABLE_API_KEY) throw new Error("IA não configurada. Nenhum texto simulado foi gerado.");
-    // O escritor local (sem IA) só tem conteúdo próprio para temas com guia clínico específico.
-    // Para os demais ele produziria o MESMO corpo genérico em todo post — isso não é inédito.
-    if (usaEscritorLocal && !isDiverso && !isEstudantes && isGenericGuidance(topicGuidance(tema))) {
-      throw new Error(
-        `O escritor local não tem texto próprio para "${tema.slice(0, 70)}" e repetiria o mesmo conteúdo de outros posts. Escolha um gerador de texto (GPT/Gemini) ou outro tema. Nada foi salvo.`,
-      );
-    }
+    if (!process.env.LOVABLE_API_KEY)
+      throw new Error("IA não configurada. Nenhum texto simulado foi gerado.");
     const objetivoLinha = data.objetivo ? `\nObjetivo editorial deste post: ${data.objetivo}` : "";
     const escreverLegenda = async (novaAbordagem = ""): Promise<string> => {
-      if (usaEscritorLocal) {
-        if (isChico && isDiverso && formato === "Carrossel")
-          throw new Error(
-            "Finalize os textos individuais com um modelo de texto antes de gerar este carrossel editorial.",
-          );
-        return localCaption();
-      }
       // TEMAS DIVERSOS: prompt totalmente fora da saúde.
       if (isDiverso) {
         try {
@@ -2258,12 +2237,17 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       if (!usaEscritorLocal && tentativa > 2 && tentativa <= 4) {
         const ref = reformularTema(
           tema,
-          (t) => (t === tema ? ({ motivo: conflito.motivo, com: conflito.com } as any) : temaDup(t)),
+          (t) =>
+            t === tema ? ({ motivo: conflito.motivo, com: conflito.com } as any) : temaDup(t),
           () => null,
           { maxTentativas: 12 },
         );
         if (ref && ref.tema !== tema) {
-          console.info("[dedup] texto regenerado com novo ângulo", { postId, tentativa, motivo: conflito.motivo });
+          console.info("[dedup] texto regenerado com novo ângulo", {
+            postId,
+            tentativa,
+            motivo: conflito.motivo,
+          });
           tema = ref.tema;
           legendaBaseResolvida = completar(
             await escreverLegenda(
@@ -2942,15 +2926,6 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
     const captionModel = data.modelo;
     const isChico = data.audiencia === "chico-drfm";
     const isEstudantes = data.audiencia === "estudantes-graduacao";
-    const local = () =>
-      buildLocalCaption({
-        tema,
-        rede: data.rede,
-        formato: data.formato,
-        especialidade: data.especialidade,
-        nivel,
-        audiencia: data.audiencia,
-      });
     if (!process.env.LOVABLE_API_KEY) {
       throw new Error("IA não configurada. Nenhum texto simulado foi gerado.");
     }
