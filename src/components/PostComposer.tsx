@@ -4,7 +4,14 @@ import { salvarPostInedito } from "@/lib/post-guard";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import { startGenerationProgress } from "@/lib/generation-progress";
 import { useState, useCallback, useRef, useEffect, type ChangeEvent } from "react";
-import { alternarRede, alternarTodas, todasSelecionadas, flagsDeRede, statusInicial, HORARIOS_GOOGLE } from "@/lib/networks";
+import {
+  alternarRede,
+  alternarTodas,
+  todasSelecionadas,
+  flagsDeRede,
+  statusInicial,
+  HORARIOS_GOOGLE,
+} from "@/lib/networks";
 import { googleBusinessStatus } from "@/lib/google-business.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -15,15 +22,50 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Sparkles, Loader2, Image as ImageIcon, Send, Check, Instagram, Linkedin, Layers, Square, Clock, Zap, MessageCircle, Wand2, CalendarDays, CalendarIcon, ChevronLeft, ChevronRight, Globe, Smartphone } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Sparkles,
+  Loader2,
+  Image as ImageIcon,
+  Send,
+  Check,
+  Instagram,
+  Linkedin,
+  Layers,
+  Square,
+  Clock,
+  Zap,
+  MessageCircle,
+  Wand2,
+  CalendarDays,
+  CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Globe,
+  Smartphone,
+} from "lucide-react";
 import { toast } from "sonner";
 import { uploadPostImage } from "@/lib/storage-utils";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { XStyleIcon } from "@/components/icons/XStyleIcon";
 import { BRANDING } from "@/lib/branding";
 import { cn } from "@/lib/utils";
-import { generateSinglePost, generateWeekThemes, generateCaptionOnly, discardPost, approvePost, MODELOS_IA, MODELOS_IMAGEM } from "@/lib/ai-post.functions";
+import {
+  generateSinglePost,
+  generateWeekThemes,
+  generateCaptionOnly,
+  discardPost,
+  approvePost,
+  MODELOS_IA,
+  MODELOS_IMAGEM,
+} from "@/lib/ai-post.functions";
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 type ModeloIA = (typeof MODELOS_IA)[number]["id"];
 type ModeloImagem = (typeof MODELOS_IMAGEM)[number]["id"];
@@ -35,8 +77,12 @@ type Formato = "Post Único" | "Carrossel" | "Estilo X";
 type Quando = "agora" | "7dias" | "data";
 type AiQuickFormat = "story" | "feed" | "carrossel";
 
-
-const FORMATOS: { id: Formato; label: string; icon: React.ComponentType<{ className?: string }>; desc: string }[] = [
+const FORMATOS: {
+  id: Formato;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  desc: string;
+}[] = [
   { id: "Post Único", label: "Post Único", icon: Square, desc: "1 imagem" },
   { id: "Carrossel", label: "Carrossel", icon: Layers, desc: "Até 10 slides" },
   { id: "Estilo X", label: "Estilo X", icon: XStyleIcon, desc: "Tweet visual (1-3 slides 16:9)" },
@@ -58,11 +104,18 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const [dataAgendada, setDataAgendada] = useState<Date | undefined>(undefined);
   const [horaAgendada, setHoraAgendada] = useState("09:00");
 
-
   const gbpStatus = useServerFn(googleBusinessStatus);
   const [gbp, setGbp] = useState<{ conectado: boolean; mensagem: string } | null>(null);
   useEffect(() => {
-    if (networks.includes("google") && !gbp) gbpStatus().then(setGbp).catch(() => setGbp({ conectado: false, mensagem: "Não foi possível verificar a conexão do Google Business." }));
+    if (networks.includes("google") && !gbp)
+      gbpStatus()
+        .then(setGbp)
+        .catch(() =>
+          setGbp({
+            conectado: false,
+            mensagem: "Não foi possível verificar a conexão do Google Business.",
+          }),
+        );
   }, [networks, gbp, gbpStatus]);
   const toggleNetwork = (n: Network) => {
     const next = alternarRede(networks, n);
@@ -125,7 +178,11 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         data_agendamento: dataAgendamentoIso,
         estilo_layout: formato === "Estilo X" ? "Estilo X" : "Padrão",
       });
-      if (salvo.existente) { toast.info("Este post já estava salvo — nenhuma cópia criada.", { id: tId }); onCreated(); return; }
+      if (salvo.existente) {
+        toast.info("Este post já estava salvo — nenhuma cópia criada.", { id: tId });
+        onCreated();
+        return;
+      }
       const inserted = { id: salvo.id };
       if (quando === "agora" && networks.includes("instagram") && inserted?.id) {
         const out = await publishIg({ data: { id: inserted.id } });
@@ -134,9 +191,21 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         }
       }
 
-      const gTxt = networks.includes("google") ? " Google Business: na fila de envio (confirma em até 5 min)." : "";
-      toast.success((quando === "agora" && networks.includes("instagram") ? "Post publicado pela Meta." : quando === "agora" ? "Post salvo." : "Post agendado!") + gTxt, { id: tId });
-      setLegenda(""); setImagem(null); setFileToUpload(null); setFileName(null);
+      const gTxt = networks.includes("google")
+        ? " Google Business: na fila de envio (confirma em até 5 min)."
+        : "";
+      toast.success(
+        (quando === "agora" && networks.includes("instagram")
+          ? "Post publicado pela Meta."
+          : quando === "agora"
+            ? "Post salvo."
+            : "Post agendado!") + gTxt,
+        { id: tId },
+      );
+      setLegenda("");
+      setImagem(null);
+      setFileToUpload(null);
+      setFileName(null);
       setDataAgendada(undefined);
       onCreated();
     } catch (e: any) {
@@ -145,7 +214,19 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     } finally {
       setSaving(false);
     }
-  }, [legenda, fileToUpload, networks, formato, quando, saving, onCreated, dataAgendada, horaAgendada, publishIg, gbpStatus]);
+  }, [
+    legenda,
+    fileToUpload,
+    networks,
+    formato,
+    quando,
+    saving,
+    onCreated,
+    dataAgendada,
+    horaAgendada,
+    publishIg,
+    gbpStatus,
+  ]);
 
   const handleGenerateCaption = useCallback(async () => {
     const tema = temaLegenda.trim();
@@ -154,13 +235,14 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     const tid = "post-composer-caption";
     toast.loading("IA escrevendo a legenda...", { id: tid });
     try {
-      const rede = formato === "Estilo X"
-        ? "estilo-x"
-        : networks.includes("linkedin") && !networks.includes("instagram")
-          ? "linkedin"
-          : networks.includes("google") && !networks.includes("instagram")
-            ? "google"
-            : "instagram";
+      const rede =
+        formato === "Estilo X"
+          ? "estilo-x"
+          : networks.includes("linkedin") && !networks.includes("instagram")
+            ? "linkedin"
+            : networks.includes("google") && !networks.includes("instagram")
+              ? "google"
+              : "instagram";
       const out = await genCaption({
         data: {
           tema,
@@ -172,14 +254,16 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         },
       });
       setLegenda(out.legenda);
-      toast.success(out.via === "ia" ? "Legenda criada pela IA." : "Legenda criada pelo gerador local.", { id: tid });
+      toast.success(
+        out.via === "ia" ? "Legenda criada pela IA." : "Legenda criada pelo gerador local.",
+        { id: tid },
+      );
     } catch (e: any) {
       toast.error(e?.message || "Falha ao criar legenda.", { id: tid });
     } finally {
       setGerandoLegenda(false);
     }
   }, [formato, genCaption, networks, temaLegenda]);
-
 
   return (
     <Card className="p-6 space-y-6 max-w-4xl mx-auto border-zinc-200 shadow-sm">
@@ -188,23 +272,35 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           <Sparkles className="w-5 h-5 text-indigo-500" />
           Novo Post
         </h2>
-        <p className="text-xs text-zinc-500">{BRANDING.nome} — {BRANDING.cro}</p>
+        <p className="text-xs text-zinc-500">
+          {BRANDING.nome} — {BRANDING.cro}
+        </p>
       </div>
 
       <AiGenerationPanel onCreated={onCreated} />
 
       <div className="relative">
-        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-200" /></div>
-        <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-zinc-400 uppercase tracking-wider">ou crie manualmente</span></div>
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-zinc-200" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-white px-3 text-xs text-zinc-400 uppercase tracking-wider">
+            ou crie manualmente
+          </span>
+        </div>
       </div>
-
-
 
       {/* Redes — botões separados com ícones e cores */}
       <div className="space-y-2">
         <Label>Publicar em</Label>
         {networks.includes("google") && gbp && (
-          <p role="status" className={cn("text-xs font-medium", gbp.conectado ? "text-emerald-700" : "text-destructive")}>
+          <p
+            role="status"
+            className={cn(
+              "text-xs font-medium",
+              gbp.conectado ? "text-emerald-700" : "text-destructive",
+            )}
+          >
             {gbp.mensagem}
           </p>
         )}
@@ -212,7 +308,13 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
           <NetworkButton
             active={todasSelecionadas(networks)}
             onClick={() => setNetworks(alternarTodas(networks))}
-            icon={<><Instagram className="w-4 h-4" /><Linkedin className="w-4 h-4" /><Globe className="w-4 h-4" /></>}
+            icon={
+              <>
+                <Instagram className="w-4 h-4" />
+                <Linkedin className="w-4 h-4" />
+                <Globe className="w-4 h-4" />
+              </>
+            }
             label="Todas as redes"
             activeClass="bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white border-transparent shadow-md"
           />
@@ -344,15 +446,21 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
               onChange={(e) => setHoraAgendada(e.target.value)}
               className="w-[130px]"
             />
-            {networks.includes("google") && HORARIOS_GOOGLE.map((h) => (
-              <Button key={h} type="button" size="sm" variant={horaAgendada === h ? "default" : "outline"} onClick={() => setHoraAgendada(h)}>
-                Google {h}
-              </Button>
-            ))}
+            {networks.includes("google") &&
+              HORARIOS_GOOGLE.map((h) => (
+                <Button
+                  key={h}
+                  type="button"
+                  size="sm"
+                  variant={horaAgendada === h ? "default" : "outline"}
+                  onClick={() => setHoraAgendada(h)}
+                >
+                  Google {h}
+                </Button>
+              ))}
           </div>
         )}
       </div>
-
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
@@ -364,8 +472,20 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
                 onChange={(e) => setTemaLegenda(e.target.value)}
                 placeholder="Ex.: dor no siso, ATM travada, ronco..."
               />
-              <Button type="button" variant="secondary" onClick={handleGenerateCaption} disabled={gerandoLegenda || !temaLegenda.trim()}>
-                {gerandoLegenda ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4 mr-1" />IA</>}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleGenerateCaption}
+                disabled={gerandoLegenda || !temaLegenda.trim()}
+              >
+                {gerandoLegenda ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-1" />
+                    IA
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -378,7 +498,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
               onChange={(e) => setLegenda(e.target.value)}
             />
             <p className="text-[11px] text-zinc-500 flex items-center gap-1">
-              <MessageCircle className="w-3 h-3" /> CTA padrão: <span className="font-medium">{BRANDING.ctaInstagram}</span> · WhatsApp {BRANDING.whatsappNumero}
+              <MessageCircle className="w-3 h-3" /> CTA padrão:{" "}
+              <span className="font-medium">{BRANDING.ctaInstagram}</span> · WhatsApp{" "}
+              {BRANDING.whatsappNumero}
             </p>
           </div>
 
@@ -418,9 +540,15 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-zinc-100">
-        <Button variant="outline" onClick={() => onCreated()}>Cancelar</Button>
+        <Button variant="outline" onClick={() => onCreated()}>
+          Cancelar
+        </Button>
         <Button onClick={handleSave} disabled={saving} className="min-w-[180px]">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+          {saving ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : (
+            <Send className="w-4 h-4 mr-2" />
+          )}
           {quando === "agora" ? "Publicar Agora" : "Agendar"}
         </Button>
       </div>
@@ -430,14 +558,26 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
 function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [tema, setTema] = useState("");
-  const [especialidade, setEspecialidade] = useState<"CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos">("CTBMF");
+  const [especialidade, setEspecialidade] = useState<
+    "CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos"
+  >("CTBMF");
   const [rede, setRede] = useState<"instagram" | "linkedin" | "estilo-x" | "google">("instagram");
   const [modelo, setModelo] = useState<ModeloIA>(DEFAULT_TEXT_MODEL);
   const [modeloImagem, setModeloImagem] = useState<ModeloImagem>(DEFAULT_IMAGE_MODEL);
   const [ambasRedes, setAmbasRedes] = useState(false);
   const [busy, setBusy] = useState<null | AiQuickFormat | "week">(null);
-  const [temas, setTemas] = useState<Array<{ dia: number; rede: string; tipo?: string; formato?: string; quando?: string; tema: string; gancho: string }> | null>(null);
-  const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[] } | null>(null);
+  const [temas, setTemas] = useState<Array<{
+    dia: number;
+    rede: string;
+    tipo?: string;
+    formato?: string;
+    quando?: string;
+    tema: string;
+    gancho: string;
+  }> | null>(null);
+  const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[] } | null>(
+    null,
+  );
   const [previewIdx, setPreviewIdx] = useState(0);
   const previewScrollerRef = useRef<HTMLDivElement | null>(null);
   const [discarding, setDiscarding] = useState(false);
@@ -456,26 +596,42 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     setBusy(null);
   };
 
-
-
   const handleSingle = async (quickFormat: AiQuickFormat = "feed") => {
     const temaTrim = tema.trim();
     const config = {
       story: { tipo: "stories" as const, formato: "Story" as const, label: "story único" },
       feed: { tipo: "feed" as const, formato: "Post Único" as const, label: "post único feed" },
-      carrossel: { tipo: "feed" as const, formato: "Carrossel" as const, label: "carrossel com 6 imagens" },
+      carrossel: {
+        tipo: "feed" as const,
+        formato: "Carrossel" as const,
+        label: "carrossel com 6 imagens",
+      },
     }[quickFormat];
     setBusy(quickFormat);
     const tid = `local-${quickFormat}`;
     toast.loading(
-      temaTrim ? `Gerador local criando ${config.label}...` : `Gerador local escolhendo tema e criando ${config.label}...`,
+      temaTrim
+        ? `Gerador local criando ${config.label}...`
+        : `Gerador local escolhendo tema e criando ${config.label}...`,
       { id: tid },
     );
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     try {
       const stopP = startGenerationProgress(tid, "Gerando post", config.formato === "Carrossel");
-      const out = await genSingle({ data: { tema: temaTrim, especialidade, rede: "instagram", tipo: config.tipo, formato: config.formato, modelo, modeloImagem, ambasRedes: false }, signal: ctrl.signal }).finally(stopP);
+      const out = await genSingle({
+        data: {
+          tema: temaTrim,
+          especialidade,
+          rede: "instagram",
+          tipo: config.tipo,
+          formato: config.formato,
+          modelo,
+          modeloImagem,
+          ambasRedes: false,
+        },
+        signal: ctrl.signal,
+      }).finally(stopP);
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
@@ -493,7 +649,6 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     }
   };
 
-
   const handleWeek = async () => {
     setBusy("week");
     const tid = "local-week";
@@ -505,7 +660,20 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       const unicos = out.temas.filter((t) => t.tema);
       setTemas(unicos as any);
       const faltam = out.temas.length - unicos.length;
-      if (faltam) toast.warning(`${unicos.length} temas inéditos; ${faltam} horários sem tema novo (nada será copiado).`, { id: tid, duration: 15000, action: { label: "Gerar novos temas", onClick: () => { void handleWeek(); } } });
+      if (faltam)
+        toast.warning(
+          `${unicos.length} temas inéditos; ${faltam} horários sem tema novo (nada será copiado).`,
+          {
+            id: tid,
+            duration: 15000,
+            action: {
+              label: "Gerar novos temas",
+              onClick: () => {
+                void handleWeek();
+              },
+            },
+          },
+        );
       else toast.success(`${unicos.length} temas inéditos, um por horário.`, { id: tid });
     } catch (e: any) {
       if (ctrl.signal.aborted || e?.name === "AbortError") {
@@ -520,24 +688,62 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   };
 
   const temasEmGeracao = useRef(new Set<string>());
-  const approveTheme = async (t: { rede: string; tipo?: string; formato?: string; quando?: string; tema: string }) => {
+  const approveTheme = async (t: {
+    rede: string;
+    tipo?: string;
+    formato?: string;
+    quando?: string;
+    tema: string;
+  }) => {
     // Duplo clique no mesmo tema não dispara uma 2ª geração (o backend também é idempotente).
     const chaveTema = `${t.tema}|${t.quando ?? ""}|${t.rede}`;
     if (temasEmGeracao.current.has(chaveTema)) return;
     temasEmGeracao.current.add(chaveTema);
-    try { await approveThemeInterno(t); } finally { temasEmGeracao.current.delete(chaveTema); }
+    try {
+      await approveThemeInterno(t);
+    } finally {
+      temasEmGeracao.current.delete(chaveTema);
+    }
   };
-  const approveThemeInterno = async (t: { rede: string; tipo?: string; formato?: string; quando?: string; tema: string }) => {
-    const r = (t.rede === "linkedin" ? "linkedin" : t.rede === "estilo-x" ? "estilo-x" : t.rede === "google" ? "google" : "instagram") as
-      | "instagram" | "linkedin" | "estilo-x" | "google";
+  const approveThemeInterno = async (t: {
+    rede: string;
+    tipo?: string;
+    formato?: string;
+    quando?: string;
+    tema: string;
+  }) => {
+    const r = (
+      t.rede === "linkedin"
+        ? "linkedin"
+        : t.rede === "estilo-x"
+          ? "estilo-x"
+          : t.rede === "google"
+            ? "google"
+            : "instagram"
+    ) as "instagram" | "linkedin" | "estilo-x" | "google";
     const tid = `local-approve-${t.tema}`;
     toast.loading(`Gerando: ${t.tema.slice(0, 40)}...`, { id: tid });
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     try {
       const stopP = startGenerationProgress(tid, "Gerando post", t.formato === "Carrossel");
-      const out = await genSingle({ data: { tema: t.tema, especialidade, rede: r, tipo: t.tipo as any, formato: t.formato as any, quando: t.quando, modelo, modeloImagem, ambasRedes }, signal: ctrl.signal }).finally(stopP);
-      toast.success("Post gerado. Aguardando aprovação; não foi agendado nem publicado.", { id: tid });
+      const out = await genSingle({
+        data: {
+          tema: t.tema,
+          especialidade,
+          rede: r,
+          tipo: t.tipo as any,
+          formato: t.formato as any,
+          quando: t.quando,
+          modelo,
+          modeloImagem,
+          ambasRedes,
+        },
+        signal: ctrl.signal,
+      }).finally(stopP);
+      toast.success("Post gerado. Aguardando aprovação; não foi agendado nem publicado.", {
+        id: tid,
+      });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
       setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
@@ -552,7 +758,6 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       if (abortRef.current === ctrl) abortRef.current = null;
     }
   };
-
 
   const approveAll = async () => {
     if (!temas) return;
@@ -576,10 +781,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="md:col-span-2 space-y-1">
           <Label className="text-xs">Tema do post</Label>
-          <Input
-            value={tema}
-            onChange={(e) => setTema(e.target.value)}
-          />
+          <Input value={tema} onChange={(e) => setTema(e.target.value)} />
         </div>
 
         <div className="space-y-1">
@@ -605,14 +807,22 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             onClick={() => setRede(r)}
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-semibold border flex items-center gap-1.5",
-              rede === r ? "bg-indigo-600 text-white border-indigo-600" : "bg-white border-zinc-200 text-zinc-600",
+              rede === r
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white border-zinc-200 text-zinc-600",
             )}
           >
             {r === "instagram" && <Instagram className="w-3.5 h-3.5" />}
             {r === "linkedin" && <Linkedin className="w-3.5 h-3.5" />}
             {r === "estilo-x" && <XStyleIcon className="w-3.5 h-3.5" />}
             {r === "google" && <Globe className="w-3.5 h-3.5" />}
-            {r === "estilo-x" ? "Estilo X" : r === "linkedin" ? "LinkedIn" : r === "google" ? "Google Business" : "Instagram"}
+            {r === "estilo-x"
+              ? "Estilo X"
+              : r === "linkedin"
+                ? "LinkedIn"
+                : r === "google"
+                  ? "Google Business"
+                  : "Instagram"}
           </button>
         ))}
       </div>
@@ -623,13 +833,35 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         temaGuia={tema}
         escritorLocal={false}
         gerar={async (item, formato, ctx) => {
-          const out = await genSingle({ data: { tema: item.tema, especialidade, rede: item.rede ?? "instagram", tipo: formato === "Story" ? "stories" : "feed", formato, quando: item.quando, modelo, modeloImagem, ambasRedes: item.rede ? false : ambasRedes, operacaoId: ctx.operacaoId, slotKey: ctx.slotKey, objetivo: ctx.objetivo, assuntoGuiado: ctx.assuntoGuiado, salvarTextoSeImagemFalhar: ctx.salvarTextoSeImagemFalhar } });
-          return { id: out.id, urls: out.urls, legenda: out.legenda, imagemErro: (out as any).imagemErro };
+          const out = await genSingle({
+            data: {
+              tema: item.tema,
+              especialidade,
+              rede: item.rede ?? "instagram",
+              tipo: formato === "Story" ? "stories" : "feed",
+              formato,
+              quando: item.quando,
+              modelo,
+              modeloImagem,
+              ambasRedes: item.rede ? false : ambasRedes,
+              operacaoId: ctx.operacaoId,
+              slotKey: ctx.slotKey,
+              objetivo: ctx.objetivo,
+              assuntoGuiado: ctx.assuntoGuiado,
+              salvarTextoSeImagemFalhar: ctx.salvarTextoSeImagemFalhar,
+            },
+          });
+          return {
+            id: out.id,
+            urls: out.urls,
+            legenda: out.legenda,
+            imagemErro: (out as any).imagemErro,
+          };
         }}
       />
 
       <div className="space-y-1.5">
-          <Label className="text-xs">Gerador de texto</Label>
+        <Label className="text-xs">Gerador de texto</Label>
         <div className="flex flex-wrap gap-2">
           {MODELOS_IA.map((m) => (
             <button
@@ -647,9 +879,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             </button>
           ))}
         </div>
-        <p className="text-[11px] text-zinc-500">
-          Modelos verificados no Lovable AI.
-        </p>
+        <p className="text-[11px] text-zinc-500">Modelos verificados no Lovable AI.</p>
       </div>
 
       <div className="space-y-1.5">
@@ -671,25 +901,56 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             </button>
           ))}
         </div>
-        <p className="text-[11px] text-zinc-500">
-          Cada imagem é criada pelo modelo selecionado.
-        </p>
+        <p className="text-[11px] text-zinc-500">Cada imagem é criada pelo modelo selecionado.</p>
       </div>
 
       <div className="space-y-1.5">
         <Label className="text-xs">Publicar em</Label>
         {ambasRedes && (
           <p className="text-[11px] text-muted-foreground">
-            Todas as redes = Instagram, LinkedIn e Google Business Profile (Perfil da Empresa no Google, 10h e 15h), cada uma com conteúdo próprio e inédito nos seus horários (use o cronograma fixo). Nenhum post é copiado entre redes.
+            Todas as redes = Instagram, LinkedIn e Google Business Profile (Perfil da Empresa no
+            Google, 10h e 15h), cada uma com conteúdo próprio e inédito nos seus horários (use o
+            cronograma fixo). Nenhum post é copiado entre redes.
           </p>
         )}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {([
-            { id: "instagram", label: "Instagram", icon: <Instagram className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-fuchsia-500 via-pink-500 to-orange-400 text-white shadow-sm" },
-            { id: "linkedin", label: "LinkedIn", icon: <Linkedin className="w-4 h-4" />, activeClass: "border-transparent bg-[#0a66c2] text-white shadow-sm" },
-            { id: "google", label: "Google Business Profile", icon: <Globe className="w-4 h-4" />, activeClass: "border-transparent bg-gradient-to-tr from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white shadow-sm" },
-            { id: "ambas", label: "Todas as redes", icon: (<><Instagram className="w-4 h-4" /><Linkedin className="w-4 h-4" /><Globe className="w-4 h-4" /></>), activeClass: "border-transparent bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white shadow-sm" },
-          ] as const).map((opt) => {
+          {(
+            [
+              {
+                id: "instagram",
+                label: "Instagram",
+                icon: <Instagram className="w-4 h-4" />,
+                activeClass:
+                  "border-transparent bg-gradient-to-tr from-fuchsia-500 via-pink-500 to-orange-400 text-white shadow-sm",
+              },
+              {
+                id: "linkedin",
+                label: "LinkedIn",
+                icon: <Linkedin className="w-4 h-4" />,
+                activeClass: "border-transparent bg-[#0a66c2] text-white shadow-sm",
+              },
+              {
+                id: "google",
+                label: "Google Business Profile",
+                icon: <Globe className="w-4 h-4" />,
+                activeClass:
+                  "border-transparent bg-gradient-to-tr from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white shadow-sm",
+              },
+              {
+                id: "ambas",
+                label: "Todas as redes",
+                icon: (
+                  <>
+                    <Instagram className="w-4 h-4" />
+                    <Linkedin className="w-4 h-4" />
+                    <Globe className="w-4 h-4" />
+                  </>
+                ),
+                activeClass:
+                  "border-transparent bg-gradient-to-r from-fuchsia-500 via-pink-500 to-[#0a66c2] text-white shadow-sm",
+              },
+            ] as const
+          ).map((opt) => {
             const active = opt.id === "ambas" ? ambasRedes : ambasRedes || rede === opt.id;
             return (
               <button
@@ -705,7 +966,9 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                 }}
                 className={cn(
                   "flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-md border-2 font-semibold text-sm transition-all",
-                  active ? opt.activeClass : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
+                  active
+                    ? opt.activeClass
+                    : "border-zinc-200 text-zinc-600 hover:border-zinc-300 bg-white",
                 )}
               >
                 {opt.icon}
@@ -717,19 +980,17 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         </div>
       </div>
 
-
-
-
-
-
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
         <Button
           onClick={() => handleSingle("story")}
           disabled={busy !== null}
           className="font-semibold"
         >
-          {busy === "story" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Smartphone className="w-4 h-4 mr-2" />}
+          {busy === "story" ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : (
+            <Smartphone className="w-4 h-4 mr-2" />
+          )}
           Post único Story
         </Button>
         <Button
@@ -737,7 +998,11 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           disabled={busy !== null}
           className="font-semibold"
         >
-          {busy === "feed" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Square className="w-4 h-4 mr-2" />}
+          {busy === "feed" ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : (
+            <Square className="w-4 h-4 mr-2" />
+          )}
           Post único Feed
         </Button>
         <Button
@@ -745,7 +1010,11 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           disabled={busy !== null}
           className="font-semibold"
         >
-          {busy === "carrossel" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Layers className="w-4 h-4 mr-2" />}
+          {busy === "carrossel" ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : (
+            <Layers className="w-4 h-4 mr-2" />
+          )}
           Carrossel com 5 imagens
         </Button>
       </div>
@@ -756,24 +1025,25 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
           variant="outline"
           className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
         >
-          {busy === "week" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CalendarDays className="w-4 h-4 mr-2" />}
+          {busy === "week" ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : (
+            <CalendarDays className="w-4 h-4 mr-2" />
+          )}
           Programar 7 dias sem custo de IA
         </Button>
       </div>
       {busy !== null && (
         <div className="grid grid-cols-1 pt-1">
-          <Button
-            onClick={cancelarGeracao}
-            variant="destructive"
-            className="font-semibold"
-          >
+          <Button onClick={cancelarGeracao} variant="destructive" className="font-semibold">
             Cancelar criação da postagem
           </Button>
         </div>
       )}
 
       <p className="text-[11px] text-indigo-700/80 bg-indigo-50/60 rounded-md p-2 leading-relaxed">
-        <strong>Cronograma fixo (seg-sáb):</strong> Instagram 09h story · 14h feed (carrossel 5 slides) · 18h story · 21h feed (carrossel 5 slides) · Google 10h e 15h · LinkedIn 09h e 13h.
+        <strong>Cronograma fixo (seg-sáb):</strong> Instagram 09h story · 14h feed (carrossel 5
+        slides) · 18h story · 21h feed (carrossel 5 slides) · Google 10h e 15h · LinkedIn 09h e 13h.
         <br />
         <strong>Domingo:</strong> mensagem especial automática (IG 10h + story 9h · LinkedIn 11h).
       </p>
@@ -782,23 +1052,42 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         <div className="space-y-2 pt-3 border-t border-indigo-200">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-indigo-900">
-              {temas.length} slots no cronograma fixo — cada um gera um post separado que vai para revisão (pré-visualize antes de aprovar):
+              {temas.length} slots no cronograma fixo — cada um gera um post separado que vai para
+              revisão (pré-visualize antes de aprovar):
             </p>
-            <Button size="sm" variant="default" onClick={approveAll} disabled={busy !== null} className="bg-emerald-600 hover:bg-emerald-700">
-              {busy === "week" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
+            <Button
+              size="sm"
+              variant="default"
+              onClick={approveAll}
+              disabled={busy !== null}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {busy === "week" ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              ) : (
+                <Check className="w-4 h-4 mr-1" />
+              )}
               Gerar todos para revisão
             </Button>
           </div>
           <div className="max-h-80 overflow-y-auto space-y-1.5">
             {temas.map((t) => {
               const dt = t.quando ? new Date(t.quando) : null;
-              const dow = dt ? ["dom","seg","ter","qua","qui","sex","sáb"][dt.getDay()] : "";
-              const hhmm = dt ? `${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}` : "";
+              const dow = dt ? ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"][dt.getDay()] : "";
+              const hhmm = dt
+                ? `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`
+                : "";
               return (
-                <div key={`${t.dia}-${t.tema}`} className="flex items-start gap-2 p-2 bg-white rounded-md border border-indigo-100">
+                <div
+                  key={`${t.dia}-${t.tema}`}
+                  className="flex items-start gap-2 p-2 bg-white rounded-md border border-indigo-100"
+                >
                   <span className="text-[10px] font-bold text-indigo-600 w-20 leading-tight uppercase">
-                    {dow} {hhmm}<br />
-                    <span className="text-zinc-500 font-medium normal-case">{t.rede} {t.tipo}</span>
+                    {dow} {hhmm}
+                    <br />
+                    <span className="text-zinc-500 font-medium normal-case">
+                      {t.rede} {t.tipo}
+                    </span>
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{t.tema}</p>
@@ -814,114 +1103,157 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
         </div>
       )}
 
-      <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null); }}>
+      <Dialog
+        open={!!preview}
+        onOpenChange={(o) => {
+          if (!o) setPreview(null);
+        }}
+      >
         <DialogContent className="max-w-xl w-[92vw] sm:w-auto max-h-[85vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Pré-visualização do post</DialogTitle>
             <DialogDescription>
-              Confira a legenda e {preview && preview.urls.length > 1 ? `os ${preview.urls.length} cards` : "a imagem"} antes de publicar. Você pode descartar e gerar novamente.
+              Confira a legenda e{" "}
+              {preview && preview.urls.length > 1 ? `os ${preview.urls.length} cards` : "a imagem"}{" "}
+              antes de publicar. Você pode descartar e gerar novamente.
             </DialogDescription>
           </DialogHeader>
-          {preview && <PostReviewActions key={preview.id} id={preview.id} disabled={discarding || approving !== null} onChange={() => { onCreated(); }} />}
-          {preview && (() => {
-            const total = preview.urls.length;
-            const safeIdx = Math.min(previewIdx, total - 1);
-            const scrollerRef = previewScrollerRef;
-            const scrollToIdx = (i: number) => {
-              const el = scrollerRef.current;
-              if (!el) return;
-              const w = el.clientWidth;
-              el.scrollTo({ left: i * w, behavior: "smooth" });
-            };
-            const goPrev = () => { const n = (safeIdx - 1 + total) % total; setPreviewIdx(n); scrollToIdx(n); };
-            const goNext = () => { const n = (safeIdx + 1) % total; setPreviewIdx(n); scrollToIdx(n); };
-            return (
-              <div className="grid sm:grid-cols-2 gap-3 max-w-full">
-                <div className="space-y-2">
-                  <div className="relative rounded-md overflow-hidden border bg-zinc-100 aspect-square max-w-[280px] mx-auto w-full">
-                    <div
-                      ref={scrollerRef}
-                      onScroll={(e) => {
-                        const el = e.currentTarget;
-                        const i = Math.round(el.scrollLeft / el.clientWidth);
-                        if (i !== safeIdx) setPreviewIdx(i);
-                      }}
-                      className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
-                        if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
-                      }}
-                    >
-                      {preview.urls.map((u, i) => (
-                        <img
-                          key={i}
-                          src={u}
-                          alt={`Slide ${i + 1} de ${total}`}
-                          draggable={false}
-                          className="w-full h-full flex-shrink-0 snap-center object-contain select-none"
-                        />
-                      ))}
+          {preview && (
+            <PostReviewActions
+              key={preview.id}
+              id={preview.id}
+              disabled={discarding || approving !== null}
+              onChange={() => {
+                onCreated();
+              }}
+            />
+          )}
+          {preview &&
+            (() => {
+              const total = preview.urls.length;
+              const safeIdx = Math.min(previewIdx, total - 1);
+              const scrollerRef = previewScrollerRef;
+              const scrollToIdx = (i: number) => {
+                const el = scrollerRef.current;
+                if (!el) return;
+                const w = el.clientWidth;
+                el.scrollTo({ left: i * w, behavior: "smooth" });
+              };
+              const goPrev = () => {
+                const n = (safeIdx - 1 + total) % total;
+                setPreviewIdx(n);
+                scrollToIdx(n);
+              };
+              const goNext = () => {
+                const n = (safeIdx + 1) % total;
+                setPreviewIdx(n);
+                scrollToIdx(n);
+              };
+              return (
+                <div className="grid sm:grid-cols-2 gap-3 max-w-full">
+                  <div className="space-y-2">
+                    <div className="relative rounded-md overflow-hidden border bg-zinc-100 aspect-square max-w-[280px] mx-auto w-full">
+                      <div
+                        ref={scrollerRef}
+                        onScroll={(e) => {
+                          const el = e.currentTarget;
+                          const i = Math.round(el.scrollLeft / el.clientWidth);
+                          if (i !== safeIdx) setPreviewIdx(i);
+                        }}
+                        className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowLeft") {
+                            e.preventDefault();
+                            goPrev();
+                          }
+                          if (e.key === "ArrowRight") {
+                            e.preventDefault();
+                            goNext();
+                          }
+                        }}
+                      >
+                        {preview.urls.map((u, i) => (
+                          <img
+                            key={i}
+                            src={u}
+                            alt={`Slide ${i + 1} de ${total}`}
+                            draggable={false}
+                            className="w-full h-full flex-shrink-0 snap-center object-contain select-none"
+                          />
+                        ))}
+                      </div>
+                      <span className="pointer-events-none absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-0.5 rounded">
+                        {safeIdx + 1}/{total}
+                      </span>
+                      {total > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={goPrev}
+                            aria-label="Página anterior"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm"
+                          >
+                            <ChevronLeft className="h-5 w-5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={goNext}
+                            aria-label="Próxima página"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm"
+                          >
+                            <ChevronRight className="h-5 w-5" />
+                          </button>
+                          <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                            {preview.urls.map((_, i) => (
+                              <span
+                                key={i}
+                                className={`h-2 w-2 rounded-full transition ${i === safeIdx ? "bg-white" : "bg-white/50"}`}
+                              />
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </div>
-                    <span className="pointer-events-none absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-0.5 rounded">
-                      {safeIdx + 1}/{total}
-                    </span>
                     {total > 1 && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={goPrev}
-                          aria-label="Página anterior"
-                          className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm"
-                        >
-                          <ChevronLeft className="h-5 w-5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={goNext}
-                          aria-label="Próxima página"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm"
-                        >
-                          <ChevronRight className="h-5 w-5" />
-                        </button>
-                        <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-                          {preview.urls.map((_, i) => (
-                            <span
-                              key={i}
-                              className={`h-2 w-2 rounded-full transition ${i === safeIdx ? "bg-white" : "bg-white/50"}`}
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {preview.urls.map((u, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              setPreviewIdx(i);
+                              scrollToIdx(i);
+                            }}
+                            className={`relative rounded overflow-hidden border-2 transition ${i === safeIdx ? "border-indigo-500" : "border-transparent opacity-70 hover:opacity-100"}`}
+                          >
+                            <img
+                              src={u}
+                              alt={`Miniatura da página ${i + 1}`}
+                              className="w-full h-full object-cover aspect-square"
                             />
-                          ))}
-                        </div>
-                      </>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {total > 1 && (
+                      <p className="text-[11px] text-muted-foreground text-center">
+                        Arraste para o lado, use as setas do teclado ou toque nas miniaturas.
+                      </p>
                     )}
                   </div>
-                  {total > 1 && (
-                    <div className="grid grid-cols-5 gap-1.5">
-                      {preview.urls.map((u, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => { setPreviewIdx(i); scrollToIdx(i); }}
-                          className={`relative rounded overflow-hidden border-2 transition ${i === safeIdx ? "border-indigo-500" : "border-transparent opacity-70 hover:opacity-100"}`}
-                        >
-                          <img src={u} alt={`Miniatura da página ${i + 1}`} className="w-full h-full object-cover aspect-square" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {total > 1 && (
-                    <p className="text-[11px] text-muted-foreground text-center">
-                      Arraste para o lado, use as setas do teclado ou toque nas miniaturas.
-                    </p>
-                  )}
+                  <div className="space-y-2">
+                    <Label className="text-xs">Legenda</Label>
+                    <Textarea
+                      value={preview.legenda}
+                      readOnly
+                      rows={8}
+                      className="text-sm resize-none"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Legenda</Label>
-                  <Textarea value={preview.legenda} readOnly rows={8} className="text-sm resize-none" />
-                </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
           <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
             <Button
               variant="destructive"
@@ -953,11 +1285,14 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                   try {
                     const out = await approveFn({ data: { id: preview.id, acao } });
                     if ((out as any)?.warning) toast.warning((out as any).warning);
-                    else toast.success(
-                      acao === "publicar"
-                        ? "Publicado!"
-                        : acao === "agendar" ? "Agendado!" : "Arquivado em Rascunho.",
-                    );
+                    else
+                      toast.success(
+                        acao === "publicar"
+                          ? "Publicado!"
+                          : acao === "agendar"
+                            ? "Agendado!"
+                            : "Arquivado em Rascunho.",
+                      );
                     setPreview(null);
                     onCreated();
                   } catch (e: any) {
@@ -975,21 +1310,33 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
                 }
               >
                 {approving === acao ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {acao === "arquivar" ? "Arquivar (rascunho)" : acao === "agendar" ? "Agendar" : "Publicar agora"}
+                {acao === "arquivar"
+                  ? "Arquivar (rascunho)"
+                  : acao === "agendar"
+                    ? "Agendar"
+                    : "Publicar agora"}
               </Button>
             ))}
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
-
   );
 }
 
-
 function NetworkButton({
-  active, onClick, icon, label, activeClass,
-}: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; activeClass: string }) {
+  active,
+  onClick,
+  icon,
+  label,
+  activeClass,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  activeClass: string;
+}) {
   return (
     <button
       type="button"
