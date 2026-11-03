@@ -5,12 +5,12 @@ import type { PlannerTemas } from "@/lib/free-studio";
  * Perfis do Estúdio (Gratuito e IA Avançada). Cada perfil carrega SOMENTE os dados
  * já configurados no projeto; campos não configurados ficam vazios e editáveis.
  */
-export type PerfilId = "chico" | "cirurgia-biopsias" | "clinica-escola";
+export type PerfilId = "chico" | "cirurgia-biopsias" | "clinica-escola" | "liga";
 
 export type Perfil = {
   id: PerfilId;
   nome: string;
-  audiencia: "chico-drfm" | "geral";
+  audiencia: "chico-drfm" | "geral" | "estudantes-graduacao";
   temas: PlannerTemas;
   logo: LogoKey;
   publico: string;
@@ -88,6 +88,22 @@ export const PERFIS: Record<PerfilId, Perfil> = {
     visual: "Paleta neutra preto, grafite e branco (paleta própria ainda não configurada). Ambiente institucional de clínica-escola odontológica, acolhedor. Não usar azul petróleo/ciano, âmbar nem vermelho de outros perfis.",
     faltando: ["paleta de cores própria", "telefone de contato", "chamada (CTA) padrão"],
   },
+  liga: {
+    id: "liga",
+    nome: "Planner Liga",
+    audiencia: "estudantes-graduacao",
+    temas: "liga",
+    logo: "liga-ctbmf",
+    publico: "Estudantes e profissionais de Odontologia (@lactbmf.anhanguerasbo)",
+    nivel: "tecnico",
+    paleta: { fundo1: "#000000", fundo2: "#545454", destaque: "#c92e28", texto: "#ffffff", confirmada: true },
+    assinatura: "Liga Acadêmica de CTBMF",
+    telefone: "",
+    ctaPadrao: "",
+    regras: "LIGA",
+    visual: "LIGA",
+    faltando: [],
+  },
 };
 
 export const PERFIS_IDS = Object.keys(PERFIS) as PerfilId[];
@@ -104,6 +120,10 @@ export function lerPerfilSalvo(v: string | null | undefined): PerfilId {
 export function legendaDoPerfil(texto: string, id: PerfilId, telefone?: string): string {
   const p = PERFIS[id];
   if (id === "chico") return texto;
+  if (id === "liga") {
+    const l = texto.split("\n").filter((x) => !/wa\.me|whatsapp|francisco|crosp/i.test(x)).join("\n").trim();
+    return `${l}\n\n${p.assinatura}`;
+  }
   const limpo = texto
     .split("\n")
     .filter((l) => !/link da bio|link na bio|link do perfil|wa\.me|whatsapp|francisco|crosp/i.test(l))

@@ -19,7 +19,13 @@ export const gerarTextoAvancado = createServerFn({ method: "POST" })
     const ctas = b.rede === "linkedin" ? p.CTAS_PERMITIDOS_LI : p.CTAS_PERMITIDOS_IG;
     const system = [
       "Você é editor-chefe de conteúdo em Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar. Escreva em português brasileiro impecável.",
-      ...(isChico
+      ...(b.marca === "liga"
+        ? [
+            brandBookPrompt(audiencia),
+            "Perfil @lactbmf.anhanguerasbo (Liga Acadêmica de CTBMF): tom acadêmico, científico e institucional para estudantes e profissionais. Não use assinatura, CROSP, cidades, WhatsApp ou CTA do perfil @drfranciscomenezes, nem dados da Clínica Escola ou de Cirurgia e Biópsias.",
+            `Assinatura do perfil: "${perfil.assinatura}".`,
+          ]
+        : isChico
         ? [
             brandBookPrompt(audiencia),
             `Perfil @drfranciscomenezes: tom humanizado, premium e acessível para pacientes. ${p.LOCALIZACAO_OBRIGATORIA} Encerre com "${p.ASSINATURA}" — "${p.ASSINATURA_SUBTITULO}".`,
@@ -45,7 +51,7 @@ export const gerarImagemAvancada = createServerFn({ method: "POST" })
     if (!process.env.LOVABLE_API_KEY) throw new Error("Gerador de imagem não configurado. Nenhuma imagem foi criada.");
     const { generateImageBase64 } = await import("@/lib/ai-gateway.server");
     const { brandBookPrompt } = await import("@/lib/brand-book");
-    const prompt = `${montarPromptImagem(data.briefing, data.formato, data.tipo, data.slide, data.textoSlide)}${data.briefing.marca === "chico" ? `\n\n${brandBookPrompt(MARCAS[data.briefing.marca].audiencia)}` : ""}`;
+    const prompt = `${montarPromptImagem(data.briefing, data.formato, data.tipo, data.slide, data.textoSlide)}${data.briefing.marca === "chico" || data.briefing.marca === "liga" ? `\n\n${brandBookPrompt(MARCAS[data.briefing.marca].audiencia)}` : ""}`;
     const b64 = await generateImageBase64({ prompt, model: data.modelo, size: FORMATOS_IA[data.formato].size });
     return { imagem: b64.startsWith("data:") ? b64 : `data:image/png;base64,${b64}` };
   });
