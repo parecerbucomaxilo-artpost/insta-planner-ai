@@ -28,13 +28,13 @@ describe("perfis do Estúdio", () => {
 describe("IA escolhe o tema", () => {
   const input = SugerirTemasInput.parse({ perfil: "liga", objetivo: "Educar", rede: "instagram" });
   it("chama o gerador real, envia histórico e descarta repetidos", async () => {
-    const gerar = vi.fn(async () => JSON.stringify({ sugestoes: [
+    const gerar = vi.fn(async (_a: { prompt: string }) => JSON.stringify({ sugestoes: [
       { tema: "Fratura de mandíbula em acidentes de moto", motivo: "repetido" },
       { tema: "Terceiros molares inclusos na prova", motivo: "novo", formato: "Carrossel", abordagem: "caiu na prova" },
     ] }));
     const s = await sugerirTemasComIA(input, ["Fratura de mandíbula em acidentes de moto"], gerar);
     expect(gerar).toHaveBeenCalledTimes(1);
-    expect(gerar.mock.calls[0][0].prompt).toContain("Fratura de mandíbula");
+    expect(gerar.mock.calls[0]?.[0].prompt).toContain("Fratura de mandíbula");
     expect(s.map((x) => x.tema)).toEqual(["Terceiros molares inclusos na prova"]);
     expect(s[0].origem).toBe("ia");
   });
