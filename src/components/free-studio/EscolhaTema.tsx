@@ -12,14 +12,13 @@ import { sugerirTemasIA } from "@/lib/advanced-ai.functions";
 import { sugerirTemasLocais, type Sugestao, type RedeTema } from "@/lib/theme-suggest";
 import { PERFIS, type PerfilId } from "@/lib/studio-profiles";
 
-type Props = { perfil: PerfilId; modo: ModoGeracao; aprovado: string; onAprovar: (tema: string) => void };
+type Props = { perfil: PerfilId; modo: ModoGeracao; aprovado: string; objetivo: string; onAprovar: (tema: string) => void };
 
 /** "Quem escolhe o tema?" — nada é gerado antes de o usuário confirmar um tema. */
-export function EscolhaTema({ perfil, modo, aprovado, onAprovar }: Props) {
+export function EscolhaTema({ perfil, modo, aprovado, objetivo, onAprovar }: Props) {
   const sugerirFn = useGuardaIA("Sugerir temas com IA", useServerFn(sugerirTemasIA));
   const [quem, setQuem] = useState<"eu" | "ia">("eu");
-  const [manual, setManual] = useState("");
-  const [objetivo, setObjetivo] = useState("Educar");
+  const [manual, setManual] = useState(aprovado);
   const [rede, setRede] = useState<RedeTema>("instagram");
   const [sugestoes, setSugestoes] = useState<Sugestao[]>([]);
   const [jaSugeridos, setJaSugeridos] = useState<string[]>([]);
@@ -28,6 +27,7 @@ export function EscolhaTema({ perfil, modo, aprovado, onAprovar }: Props) {
 
   const sugerir = async () => {
     setErro("");
+    if (modo === "ia" && !objetivo) { setErro("Escolha o objetivo do material acima."); return; }
     const evitar = [...jaSugeridos, ...(aprovado ? [aprovado] : [])].slice(-30);
     if (modo === "gratuito") {
       const s = sugerirTemasLocais(perfil, rede, evitar);
@@ -65,12 +65,6 @@ export function EscolhaTema({ perfil, modo, aprovado, onAprovar }: Props) {
         <div className="space-y-3">
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="tema-obj">Objetivo</Label>
-              <select id="tema-obj" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={objetivo} onChange={(e) => setObjetivo(e.target.value)}>
-                {["Educar", "Prevenir", "Orientar", "Informar", "Fortalecer autoridade"].map((o) => <option key={o}>{o}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1">
               <Label htmlFor="tema-rede">Rede</Label>
               <select id="tema-rede" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={rede} onChange={(e) => setRede(e.target.value as RedeTema)}>
                 <option value="instagram">Instagram</option><option value="linkedin">LinkedIn</option><option value="google">Google Business</option>
@@ -104,7 +98,7 @@ export function EscolhaTema({ perfil, modo, aprovado, onAprovar }: Props) {
           </ul>
         </div>
       )}
-      <p className="text-sm">Tema confirmado: {aprovado ? <strong>{aprovado}</strong> : <span className="text-muted-foreground">nenhum — confirme um tema antes de gerar.</span>}</p>
+
     </div>
   );
 }

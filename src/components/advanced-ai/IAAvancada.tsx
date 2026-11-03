@@ -1,3 +1,4 @@
+import { useRascunhoStudio, useStudioMaterial } from "@/components/free-studio/StudioMaterial";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -92,15 +93,17 @@ async function copiar(t: string) {
   try { await navigator.clipboard.writeText(t); toast.success("Copiado!"); } catch { toast.error("Não foi possível copiar."); }
 }
 
-export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
+export function IAAvancada({ perfil, tema, objetivo }: { perfil: Marca; tema: string; objetivo: string }) {
   const textoFn = useServerFn(gerarTextoAvancado);
   const imagemFn = useServerFn(gerarImagemAvancada);
-  const [b, setB] = useState<Briefing>({ marca: perfil, telefone: MARCAS[perfil].telefone, tema: "", objetivo: "", contexto: "", rede: "instagram", formato: "Post único", nivel: MARCAS[perfil].nivel, tamanho: "medio", tom: "", cta: "" });
+  const { preencher } = useStudioMaterial();
+  const [rascunhoB, setB] = useRascunhoStudio<Briefing>("ia.briefing", { marca: perfil, telefone: MARCAS[perfil].telefone, tema: "", objetivo: "", contexto: "", rede: "instagram", formato: "Post único", nivel: MARCAS[perfil].nivel, tamanho: "medio", tom: "", cta: "" });
+  const b: Briefing = { ...rascunhoB, tema, objetivo };
   const [variantes, setVariantes] = useState<Variante[]>(["media"]);
   // OpenAI é o provedor principal deste modo; Gemini segue disponível no seletor.
   const [modeloTexto, setModeloTexto] = useState<string>(() => padraoDoProvedor("text", "openai"));
   const [modeloImagem, setModeloImagem] = useState<string>(() => padraoDoProvedor("image", "openai"));
-  const [pacote, setPacote] = useState<PacoteCriacao | null>(null);
+  const [pacote, setPacote] = useRascunhoStudio<PacoteCriacao | null>("ia.pacote", null);
   const emCurso = useRef(false);
   const statusFn = useServerFn(statusOpenAIDireto);
   const [chaveOpenAI, setChaveOpenAI] = useState<boolean | null>(null);
@@ -108,13 +111,13 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   const usaDireto = provedorDoModelo(modeloTexto) === "openai-direto" || provedorDoModelo(modeloImagem) === "openai-direto";
   const bloqueioChave = (m: string) => provedorDoModelo(m) === "openai-direto" && chaveOpenAI !== true;
   const avisoChave = "OpenAI (chave própria) não configurada: adicione o segredo OPENAI_API_KEY nas configurações do projeto (Secrets) ou escolha outro provedor.";
-  const [res, setRes] = useState<Resultado | null>(null);
+  const [res, setRes] = useRascunhoStudio<Resultado | null>("ia.resultado", null);
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [pendente, setPendente] = useState<Pendente | null>(null);
   const [formato, setFormato] = useState<FormatoIA>("feed");
   const [slides, setSlides] = useState(5);
-  const [imgs, setImgs] = useState<Record<string, Img>>({});
+  const [imgs, setImgs] = useRascunhoStudio<Record<string, Img>>("ia.imagens", {});
   const [prontas, setProntas] = useState<Record<string, string>>({});
   const [varianteEnvio, setVarianteEnvio] = useState<string>("media");
   const [midiaEnvio, setMidiaEnvioRaw] = useState<MidiaEnvio>("nenhuma");
@@ -134,7 +137,7 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   useEffect(() => {
     let vivo = true;
     setDash(null); editados.current.clear();
-    setB((s) => ({ ...s, objetivo: "", tom: "", contexto: "" }));
+    
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
@@ -142,15 +145,11 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
       if (!vivo) return;
       const c = contextoDashboard(perfilDashboardDe(data ?? [], perfil, u.user.id));
       setDash(c);
-      setB((s) => aplicarDashboard(s, c, editados.current));
+      preencher({ objetivo: c.objetivo });
+      setB((s) => aplicarDashboard(s, { ...c, objetivo: "" }, editados.current));
     })();
     return () => { vivo = false; };
   }, [perfil]);
-  useEffect(() => {
-    setB((s) => s.marca === perfil ? s : { ...s, marca: perfil, nivel: MARCAS[perfil].nivel, telefone: MARCAS[perfil].telefone, cta: "" });
-    setImgs({}); setRes(null);
-  }, [perfil]);
-  useEffect(() => { setB((s) => ({ ...s, tema })); setRes(null); setPacote(null); }, [tema]);
 
   useEffect(() => {
     let vivo = true;
@@ -208,6 +207,7 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   const gerarImagem = (tipo: "capa" | "unico" | "slide", n?: number) => {
     if (bloqueioChave(modeloImagem)) { toast.error(avisoChave); return; }
     if (b.tema.trim().length < 3) { toast.error("Confirme um tema antes de gerar."); return; }
+    if (!b.objetivo.trim()) { toast.error("Escolha o objetivo do material acima."); return; }
     const chave = tipo === "slide" ? `slide-${n}` : tipo;
     const nome = tipo === "capa" ? "Capa" : tipo === "unico" ? "Post único" : `Slide ${n}`;
     const existe = !!imgs[chave];
@@ -243,21 +243,10 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>Tema confirmado</Label>
-              <p className="text-sm">{b.tema ? <strong>{b.tema}</strong> : <span className="text-muted-foreground">confirme um tema em "Quem escolhe o tema?" acima</span>}</p>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ia-obj">Objetivo</Label>
-              <select id="ia-obj" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={b.objetivo} onChange={(e) => set("objetivo", e.target.value)}>
-                {!["Educar", "Prevenir", "Orientar", "Informar", "Fortalecer autoridade"].includes(b.objetivo) && <option value={b.objetivo}>{b.objetivo || "Selecione o objetivo"}</option>}
-                {["Educar", "Prevenir", "Orientar", "Informar", "Fortalecer autoridade"].map((o) => <option key={o}>{o}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
               <div className="flex flex-wrap items-center justify-between gap-2"><Label htmlFor="ia-ctx">Contexto do Dashboard</Label>
-                <Button type="button" size="sm" variant="outline" disabled={!dash} onClick={() => dash && setB((s) => aplicarDashboard(s, dash, editados.current, true))}>Usar dados do Dashboard</Button></div>
+                <Button type="button" size="sm" variant="outline" disabled={!dash} onClick={() => dash && setB((s) => aplicarDashboard(s, { ...dash, objetivo: "" }, editados.current, true))}>Usar dados do Dashboard</Button></div>
               <Input id="ia-ctx" value={b.contexto} onChange={(e) => set("contexto", e.target.value)} placeholder={dash && !dash.nome && !dash.area ? "Nada cadastrado no Dashboard para este perfil" : "Nome e área de atuação do Dashboard"} />
-              {dash && !dash.objetivo && <p className="text-xs text-muted-foreground">O Dashboard não tem objetivo cadastrado; escolha só o objetivo acima.</p>}
+
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ia-rede">Rede</Label>
