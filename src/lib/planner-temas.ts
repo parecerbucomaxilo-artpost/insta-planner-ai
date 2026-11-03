@@ -153,3 +153,71 @@ export const TEMAS_ESTUDANTES = [
   "Dica de prova: diferença entre biópsia incisional e excisional",
   "Mito ou verdade: todo siso incluso precisa ser removido",
 ];
+
+/** Tratamentos do planner "Cirurgia e Biópsias". */
+export const TRATAMENTOS = [
+  {
+    id: "trigemio",
+    label: "Neuralgia do Trigêmeo",
+    tema: "Neuralgia do trigêmeo: dor facial em choque, diagnóstico e tratamento cirúrgico/medicamentoso avaliado na clínica da Liga LACTBMF",
+  },
+  {
+    id: "biopsia",
+    label: "Biópsia de lesões bucais",
+    tema: "Biópsia de lesões suspeitas na boca (bochecha, gengiva, língua, lábio) realizada com segurança pela Liga LACTBMF",
+  },
+  {
+    id: "siso",
+    label: "Extração de sisos inclusos",
+    tema: "Extração de sisos inclusos ou impactados na clínica da Liga LACTBMF com professores da CTBMF supervisionando",
+  },
+  {
+    id: "cisto",
+    label: "Cistos e tumores odontogênicos",
+    tema: "Remoção cirúrgica de cistos e tumores odontogênicos (dentígero, radicular) na Liga LACTBMF",
+  },
+  {
+    id: "frenectomia",
+    label: "Frenectomia lingual/labial",
+    tema: "Frenectomia lingual e labial (liberação de língua presa) na clínica da Liga LACTBMF",
+  },
+  {
+    id: "apicectomia",
+    label: "Apicectomia / cirurgia parendodôntica",
+    tema: "Apicectomia: cirurgia para preservar o dente após tratamento de canal — Liga LACTBMF",
+  },
+  {
+    id: "implante",
+    label: "Avaliação para implantes",
+    tema: "Avaliação inicial para implantes dentários com planejamento cirúrgico na Liga LACTBMF",
+  },
+  {
+    id: "trauma",
+    label: "Trauma bucofacial",
+    tema: "Atendimento de trauma facial (fraturas dentárias, luxações, cortes) triado pela Liga LACTBMF",
+  },
+  {
+    id: "atm",
+    label: "Dor na ATM / bruxismo",
+    tema: "Avaliação da dor na ATM, estalos e bruxismo na Liga LACTBMF",
+  },
+  {
+    id: "alveoloplastia",
+    label: "Alveoloplastia / preparo pré-prótese",
+    tema: "Alveoloplastia e regularização óssea antes de prótese — Liga LACTBMF",
+  },
+] as const;
+
+/** Temas institucionais do Planner Clínica Escola, baseados nas informações já exibidas no próprio planner. */
+export const TEMAS_CLINICA_ESCOLA = [
+  "Como funciona o atendimento supervisionado na Clínica Escola",
+  "Alunos e professores especialistas: quem cuida de você na Clínica Escola",
+  "Reserva em poucos cliques: como agendar sua avaliação na Clínica Escola",
+  "O que levar no dia da primeira avaliação na Clínica Escola",
+  "Por que o atendimento em clínica escola segue protocolos de segurança",
+  "Etapas do atendimento: da triagem ao acompanhamento",
+  "Como a Clínica Escola contribui para a formação de novos profissionais",
+  "Dúvidas frequentes sobre o atendimento na Clínica Escola",
+  "Confirmação e remarcação: como manter seu horário na Clínica Escola",
+  "Biossegurança na Clínica Escola: cuidados em cada atendimento",
+];

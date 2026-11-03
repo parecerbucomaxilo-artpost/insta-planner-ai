@@ -36,6 +36,7 @@ import {
 } from "@/lib/ai-post.functions";
 import { publishInstagramNow } from "@/lib/social/instagram-publish.functions";
 import { cn } from "@/lib/utils";
+import { TRATAMENTOS } from "@/lib/planner-temas";
 
 const LIGA_ACCOUNT = "lactbmf.anhanguerasbo";
 const LS_PHONE = "planner_agend_liga_phone_v1";
@@ -43,58 +44,6 @@ const TELEFONE_PADRAO = "(19) 99018-0802";
 const INSTITUICAO = "Faculdade Anhanguera de Santa Bárbara";
 const SERVICO = "Clínica Escola – Cirurgia Bucal e Biópsias";
 
-const TRATAMENTOS = [
-  {
-    id: "trigemio",
-    label: "Neuralgia do Trigêmeo",
-    tema: "Neuralgia do trigêmeo: dor facial em choque, diagnóstico e tratamento cirúrgico/medicamentoso avaliado na clínica da Liga LACTBMF",
-  },
-  {
-    id: "biopsia",
-    label: "Biópsia de lesões bucais",
-    tema: "Biópsia de lesões suspeitas na boca (bochecha, gengiva, língua, lábio) realizada com segurança pela Liga LACTBMF",
-  },
-  {
-    id: "siso",
-    label: "Extração de sisos inclusos",
-    tema: "Extração de sisos inclusos ou impactados na clínica da Liga LACTBMF com professores da CTBMF supervisionando",
-  },
-  {
-    id: "cisto",
-    label: "Cistos e tumores odontogênicos",
-    tema: "Remoção cirúrgica de cistos e tumores odontogênicos (dentígero, radicular) na Liga LACTBMF",
-  },
-  {
-    id: "frenectomia",
-    label: "Frenectomia lingual/labial",
-    tema: "Frenectomia lingual e labial (liberação de língua presa) na clínica da Liga LACTBMF",
-  },
-  {
-    id: "apicectomia",
-    label: "Apicectomia / cirurgia parendodôntica",
-    tema: "Apicectomia: cirurgia para preservar o dente após tratamento de canal — Liga LACTBMF",
-  },
-  {
-    id: "implante",
-    label: "Avaliação para implantes",
-    tema: "Avaliação inicial para implantes dentários com planejamento cirúrgico na Liga LACTBMF",
-  },
-  {
-    id: "trauma",
-    label: "Trauma bucofacial",
-    tema: "Atendimento de trauma facial (fraturas dentárias, luxações, cortes) triado pela Liga LACTBMF",
-  },
-  {
-    id: "atm",
-    label: "Dor na ATM / bruxismo",
-    tema: "Avaliação da dor na ATM, estalos e bruxismo na Liga LACTBMF",
-  },
-  {
-    id: "alveoloplastia",
-    label: "Alveoloplastia / preparo pré-prótese",
-    tema: "Alveoloplastia e regularização óssea antes de prótese — Liga LACTBMF",
-  },
-] as const;
 
 type TratId = (typeof TRATAMENTOS)[number]["id"];
 
