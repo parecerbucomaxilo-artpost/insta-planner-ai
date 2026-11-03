@@ -26,3 +26,7 @@ Reutilizar `posts`, `perfil_usuario`, `has_role` e os publicadores existentes. I
 
 ## Correção já realizada nesta revisão
 A descrição visual opcional foi removida: as imagens recebem a legenda e os textos finais reais dos slides, evitando falhas de JSON e chamadas auxiliares, sem simulação nem troca de provedor. Os erros obrigatórios de geração permanecem explícitos.
+## Correção: publicação do Estúdio sem imagem (03/11/2026)
+- Causa: o Estúdio de Texto enviava sempre `imagens: []`; a arte escolhida no Estúdio de Imagens ficava só naquela aba. O diálogo abria "pronto" com 0 imagens e o Instagram bloqueava no fim.
+- Correção: `src/lib/studio-media.ts` guarda em memória a arte selecionada (por perfil, sem cruzar perfis) e o Estúdio de Texto a anexa; `bloqueioAntesDeAbrir` impede abrir Publicar/Agendar sem mídia exigida e orienta; `origemMidia` reaproveita URLs já salvas no armazenamento do app e envia uma vez data/blob; retry reusa o post salvo.
+- Testes: `src/lib/studio-media.test.ts` (sem geração nem publicação real).
