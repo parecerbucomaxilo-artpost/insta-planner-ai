@@ -20,3 +20,4 @@
 - Global image realism directive lives in src/lib/image-realism.ts and is appended inside generateImageBase64 so every image path (single, cover, carousel slide, backfill) gets it; it never carries palettes, which stay per-brand in brand-book.ts.
 - Generated posts auto-open the shared review modal via PostReviewActions autoOpen (latest finished post in batch flows); auto-preview only marks the preview as seen, never approves, schedules or publishes.
 - Text language rule lives in src/lib/plain-language.ts and is appended to every caption system prompt; plain language for the general public, technical level kept only for estudantes-graduacao or linkedin-cientifico.
+- Estúdio Gratuito (src/components/free-studio, rules in src/lib/free-studio.ts) is browser-only: templates/rules and Canvas, no AI, network calls, storage or publishing, so it stays free and never touches the posting flow.
