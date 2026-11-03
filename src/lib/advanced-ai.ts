@@ -153,7 +153,7 @@ export function montarPromptImagem(b: Briefing, formato: FormatoIA, tipo: "capa"
   return [
     `Imagem fotográfica profissional para ${papel}, formato ${f.nome}, perfil ${MARCAS[b.marca].nome}.`,
     ["CHICO", "LIGA"].includes(MARCAS[b.marca].visual) ? "" : MARCAS[b.marca].visual,
-    `Tema exato: ${b.tema}. Objetivo: ${b.objetivo}.`,
+    `Tema exato: ${b.tema}.${b.objetivo ? ` Objetivo: ${b.objetivo}.` : ""}`,
     textoSlide ? `A cena deve ilustrar com precisão esta mensagem do slide: ${textoSlide}` : "",
     "Composição com hierarquia visual clara e uma área calma (terço superior ou inferior) para uma headline que será aplicada depois pelo sistema.",
     "NÃO escreva nenhum texto, letra, número, marca d'água ou logotipo na imagem. Não desenhe logos.",
