@@ -78,3 +78,24 @@ export function modelRoute(value: string, kind: "text" | "image") {
           : "gemini-chat",
   } as const;
 }
+
+// Provedores oferecidos nos seletores. Ambos rodam pelo gateway já conectado
+// (créditos do workspace); nenhum segredo próprio é necessário.
+export const PROVEDORES_IA = { openai: "OpenAI / ChatGPT", google: "Google Gemini" } as const;
+export type ProvedorIA = keyof typeof PROVEDORES_IA;
+
+export function provedorDoModelo(id: string): ProvedorIA {
+  return id.startsWith("openai/") ? "openai" : "google";
+}
+
+export function modelosDoProvedor(kind: "text" | "image", prov: ProvedorIA) {
+  const lista = kind === "text" ? MODELOS_IA : MODELOS_IMAGEM;
+  return lista.filter((m) => provedorDoModelo(m.id) === prov);
+}
+
+/** Padrões econômicos de cada provedor (primeiro do catálogo verificado). */
+export function padraoDoProvedor(kind: "text" | "image", prov: ProvedorIA): string {
+  const m = modelosDoProvedor(kind, prov)[0];
+  if (!m) throw new Error(`Nenhum modelo ${kind === "text" ? "de texto" : "de imagem"} disponível para ${PROVEDORES_IA[prov]}.`);
+  return m.id;
+}
