@@ -169,7 +169,7 @@ export function GeradorLocal() {
           <Label>Planner</Label>
           <div className="flex flex-wrap gap-2">
             {(Object.keys(PLANNERS_TEMAS) as PlannerTemas[]).map((p) => (
-              <Button key={p} size="sm" variant={planner === p ? "secondary" : "outline"} onClick={() => setPlanner(p)}>{PLANNERS_TEMAS[p].nome}</Button>
+              <Button key={p} size="sm" variant={planner === p ? "secondary" : "outline"} onClick={() => { setPlanner(p); setTema(""); }}>{PLANNERS_TEMAS[p].nome}</Button>
             ))}
           </div>
         </div>
