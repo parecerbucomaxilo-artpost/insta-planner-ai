@@ -1,4 +1,5 @@
 # Architecture rules
+- LinkedIn availability is a read-only background status check, never a route/auth/navigation prerequisite; publication and scheduling guards fail closed without modifying credentials or stored destinations.
 - AI model options, defaults, legacy validation and provider routing live in src/lib/ai-models.ts; only catalog-verified stable IDs are offered, explicit legacy choices are preserved or rejected without substitution, and generation failures never return local simulated content.
 - Anthropic is explicitly unconnected; its former browser-key UI removes the obsolete localStorage entry without reading it, because the project has no native Claude generation path.
 - Generated-post review uses the shared PostReviewActions component and existing posts statuses through the authenticated browser client, so RLS applies and internal approval never invokes publishing.

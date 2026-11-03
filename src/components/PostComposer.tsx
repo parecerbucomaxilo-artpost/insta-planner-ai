@@ -1,4 +1,5 @@
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
+import { useLinkedInStatus } from "@/hooks/use-linkedin-status";
 import { Posts7Dias } from "@/components/Posts7Dias";
 import { salvarPostInedito } from "@/lib/post-guard";
 import { PostReviewActions } from "@/components/PostReviewActions";
@@ -89,6 +90,7 @@ const FORMATOS: {
 ];
 
 export function PostComposer({ onCreated }: { onCreated: () => void }) {
+  const linkedIn = useLinkedInStatus();
   const publishIg = useServerFn(publishInstagramNow);
   const genCaption = useServerFn(generateCaptionOnly);
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
@@ -135,6 +137,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const handleSave = useCallback(async () => {
     if (saving) return;
     if (networks.length === 0) return toast.error("Escolha pelo menos uma rede.");
+    if (networks.includes("linkedin") && !linkedIn.connected) return toast.error(linkedIn.message);
     if (!legenda.trim()) return toast.error("Escreva uma legenda primeiro.");
     if (!fileToUpload) return toast.error("Selecione uma imagem primeiro.");
 
@@ -143,6 +146,10 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     toast.loading(quando === "agora" ? "Publicando..." : "Agendando...", { id: tId });
 
     try {
+      if (networks.includes("linkedin")) {
+        const checked = await linkedIn.refresh();
+        if (!checked.data?.connected) throw new Error(linkedIn.message);
+      }
       const userId = await getAuthedUserId();
       if (!userId) throw new Error("Você precisa estar logado.");
       const publicUrl = await uploadPostImage(fileToUpload, userId);
@@ -226,6 +233,9 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     horaAgendada,
     publishIg,
     gbpStatus,
+    linkedIn.connected,
+    linkedIn.message,
+    linkedIn.refresh,
   ]);
 
   const handleGenerateCaption = useCallback(async () => {
@@ -293,6 +303,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
       {/* Redes — botões separados com ícones e cores */}
       <div className="space-y-2">
         <Label>Publicar em</Label>
+        {networks.includes("linkedin") && !linkedIn.connected && <p role="status" className="text-xs text-muted-foreground">{linkedIn.message}</p>}
         {networks.includes("google") && gbp && (
           <p
             role="status"
@@ -543,7 +554,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         <Button variant="outline" onClick={() => onCreated()}>
           Cancelar
         </Button>
-        <Button onClick={handleSave} disabled={saving} className="min-w-[180px]">
+        <Button onClick={handleSave} disabled={saving || (networks.includes("linkedin") && !linkedIn.connected)} className="min-w-[180px]">
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
           ) : (
