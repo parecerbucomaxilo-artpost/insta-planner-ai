@@ -107,7 +107,7 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
 
   return <div className="space-y-2 border-t pt-3">
     <div className="flex flex-wrap gap-2">
-      <Button disabled={busy || (!content.texto.trim() && !content.imagens.length)} onClick={() => void abrir("publicar")}><Send className="mr-1.5 h-4 w-4" />Publicar</Button>
+      <Button disabled={busy || (!content.texto.trim() && !content.imagens.length)} onClick={() => void abrir("publicar")}><Send className="mr-1.5 h-4 w-4" />Publicar agora</Button>
       <Button variant="outline" onClick={() => void abrir("rascunho")} disabled={busy || (!content.texto.trim() && !content.imagens.length)}><Save className="mr-1.5 h-4 w-4" />Salvar rascunho</Button>
       <Button variant="outline" onClick={() => void abrir("agendar")} disabled={busy || (!content.texto.trim() && !content.imagens.length)}><CalendarClock className="mr-1.5 h-4 w-4" />Agendar</Button>
     </div>
