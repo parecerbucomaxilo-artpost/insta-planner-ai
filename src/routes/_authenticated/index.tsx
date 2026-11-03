@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { selecionarItemMenu } from "@/lib/planner-menu";
 import { Menu } from "lucide-react";
 import { SeletorModoGeracao, ConfirmacaoIAHost } from "@/components/GenerationMode";
 import { Toaster } from "@/components/ui/sonner";
@@ -287,7 +288,7 @@ function Dashboard() {
                key={i.v}
                variant={tab === i.v ? "secondary" : "ghost"}
                className="justify-start gap-2"
-               onClick={() => { setTab(i.v); i.onSel?.(); setMenuAberto(false); }}
+               onClick={() => selecionarItemMenu(i, setTab, setMenuAberto)}
              >
                <i.Icon className="h-4 w-4" aria-hidden="true" /> {i.nome}
              </Button>
