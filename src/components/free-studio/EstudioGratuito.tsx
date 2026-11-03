@@ -7,10 +7,16 @@ import { GeradorLocal } from "./GeradorLocal";
 import { IAAvancada } from "@/components/advanced-ai/IAAvancada";
 
 import { useModoGeracao } from "@/components/GenerationMode";
+import { useEffect, useState } from "react";
+import { PERFIS, PERFIS_IDS, PERFIL_STORAGE, lerPerfilSalvo, type PerfilId } from "@/lib/studio-profiles";
 
 /** Dois modos separados: ferramentas locais (sem IA) e IA Avançada (gateway real, pode consumir créditos). */
 export function EstudioGratuito() {
   const [modo, trocar] = useModoGeracao();
+  const [perfil, setPerfil] = useState<PerfilId>("chico");
+  useEffect(() => { setPerfil(lerPerfilSalvo(localStorage.getItem(PERFIL_STORAGE))); }, []);
+  const escolher = (p: PerfilId) => { setPerfil(p); localStorage.setItem(PERFIL_STORAGE, p); };
+  const P = PERFIS[perfil];
 
   return (
     <section className="space-y-4">
@@ -30,19 +36,29 @@ export function EstudioGratuito() {
             : <><Sparkles className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />Modo ativo: IA Avançada. Usa os modelos de IA reais já conectados ao Planner. Cada geração pede confirmação e pode consumir créditos. Nada é publicado ou salvo automaticamente.</>}
         </p>
       </div>
+      <div className="space-y-2 rounded-md border p-3">
+        <p className="text-sm font-medium" id="estudio-perfil">Perfil</p>
+        <div className="flex flex-col gap-2 sm:flex-row" role="radiogroup" aria-labelledby="estudio-perfil">
+          {PERFIS_IDS.map((id) => (
+            <Button key={id} role="radio" aria-checked={perfil === id} variant={perfil === id ? "default" : "outline"} onClick={() => escolher(id)}>{PERFIS[id].nome}</Button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">Público: {P.publico}. Texto, imagens, cores, logo oficial, chamada e assinatura seguem este perfil.</p>
+        {P.faltando.length > 0 && <p className="text-xs text-muted-foreground">Ainda não configurado neste perfil: {P.faltando.join(", ")}. Esses itens ficam em branco até serem informados.</p>}
+      </div>
       {modo === "gratuito" ? (
         <>
-          <GeradorLocal />
+          <GeradorLocal perfil={perfil} />
           <Tabs defaultValue="texto">
             <TabsList>
               <TabsTrigger value="texto">Texto</TabsTrigger>
               <TabsTrigger value="imagem">Imagem</TabsTrigger>
             </TabsList>
-            <TabsContent value="texto" className="mt-4"><TextStudio /></TabsContent>
-            <TabsContent value="imagem" className="mt-4"><ImageStudio /></TabsContent>
+            <TabsContent value="texto" className="mt-4"><TextStudio perfil={perfil} /></TabsContent>
+            <TabsContent value="imagem" className="mt-4"><ImageStudio perfil={perfil} /></TabsContent>
           </Tabs>
         </>
-      ) : <IAAvancada />}
+      ) : <IAAvancada perfil={perfil} />}
     </section>
   );
 }
