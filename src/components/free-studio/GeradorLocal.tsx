@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Wand2, Download, Copy, Shuffle } from "lucide-react";
+import { Wand2, Download, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LOGOS_DISPONIVEIS, type LogoKey } from "@/lib/logos-catalog";
 import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
 import {
-  OBJETIVOS, sortearTema, modeloLegenda, gerarGanchos, sugerirHashtags,
+  OBJETIVOS, modeloLegenda, gerarGanchos, sugerirHashtags,
   type Objetivo, type PlannerTemas, type RedeTexto,
 } from "@/lib/free-studio";
 
@@ -96,7 +96,6 @@ function desenhar(w: number, h: number, cor: Ident, titulo: string, sub: string,
 
 export function GeradorLocal({ perfil, tema }: { perfil: PerfilId; tema: string }) {
   const [tipo, setTipo] = useState<Tipo>("ig-feed");
-  const planner: PlannerTemas = PERFIS[perfil].temas;
   useEffect(() => { setImagens([]); setLegenda(""); }, [perfil, tema]);
   const [objetivo, setObjetivo] = useState<Objetivo>("educativo");
   const [legenda, setLegenda] = useState("");
