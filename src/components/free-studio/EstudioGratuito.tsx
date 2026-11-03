@@ -34,7 +34,7 @@ export function EstudioGratuito() {
         </div>
         <p className="flex items-start gap-2 rounded-md border bg-muted/50 p-3 text-sm text-muted-foreground">
           {modo === "gratuito"
-            ? <><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />Modo ativo: Gratuito. Tudo funciona no seu navegador com modelos e regras fixas — não é inteligência artificial e não usa créditos. Imagens não saem do seu aparelho. Nada é publicado ou salvo no Planner.</>
+            ? <><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />Modo ativo: Gratuito. A criação usa modelos e regras locais, sem IA nem créditos. Somente ao confirmar Salvar rascunho, Agendar ou Publicar, o conteúdo selecionado é enviado ao Planner/conta social.</>
             : <><Sparkles className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />Modo ativo: IA Avançada. Usa os modelos de IA reais já conectados ao Planner. Cada geração pede confirmação e pode consumir créditos. Nada é publicado ou salvo automaticamente.</>}
         </p>
       </div>
@@ -51,17 +51,17 @@ export function EstudioGratuito() {
       <EscolhaTema key={perfil} perfil={perfil} modo={modo} aprovado={tema} onAprovar={setTema} />
       {modo === "gratuito" ? (
         <>
-          <GeradorLocal perfil={perfil} tema={tema} />
+          <GeradorLocal key={perfil} perfil={perfil} tema={tema} />
           <Tabs defaultValue="texto">
             <TabsList>
               <TabsTrigger value="texto">Texto</TabsTrigger>
               <TabsTrigger value="imagem">Imagem</TabsTrigger>
             </TabsList>
-            <TabsContent value="texto" className="mt-4"><TextStudio perfil={perfil} tema={tema} /></TabsContent>
-            <TabsContent value="imagem" className="mt-4"><ImageStudio perfil={perfil} /></TabsContent>
+            <TabsContent value="texto" forceMount className="mt-4 data-[state=inactive]:hidden"><TextStudio key={perfil} perfil={perfil} tema={tema} /></TabsContent>
+            <TabsContent value="imagem" forceMount className="mt-4 data-[state=inactive]:hidden"><ImageStudio key={perfil} perfil={perfil} tema={tema} /></TabsContent>
           </Tabs>
         </>
-      ) : <IAAvancada perfil={perfil} tema={tema} />}
+      ) : <IAAvancada key={perfil} perfil={perfil} tema={tema} />}
     </section>
   );
 }

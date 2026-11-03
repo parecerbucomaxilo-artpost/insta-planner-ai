@@ -1,4 +1,5 @@
 import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
+import { StudioPublishActions } from "./StudioPublishActions";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Copy, Lightbulb, ListChecks, Hash, FileText } from "lucide-react";
@@ -102,6 +103,7 @@ export function TextStudio({ perfil, tema }: { perfil: PerfilId; tema: string })
                   <li key={i} className="flex gap-2"><Badge variant={p.tipo === "marca" ? "destructive" : "outline"}>{p.tipo}</Badge><span>{p.mensagem}</span></li>
                 ))}</ul>}
           </div>
+          <StudioPublishActions content={{ perfil, tema, texto, imagens: [], formato: "Post Único", rede }} />
         </CardContent>
       </Card>
 

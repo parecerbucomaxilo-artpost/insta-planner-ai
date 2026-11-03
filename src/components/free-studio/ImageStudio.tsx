@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LOGOS_DISPONIVEIS } from "@/lib/logos-catalog";
 import { PERFIS, type PerfilId } from "@/lib/studio-profiles";
+import { StudioPublishActions } from "./StudioPublishActions";
+import type { StudioContent } from "@/lib/studio-publication";
 
 const FORMATOS = {
   feed: { nome: "Instagram feed 4:5", w: 1080, h: 1350 },
@@ -61,7 +63,8 @@ function quebrarLinhas(ctx: CanvasRenderingContext2D, texto: string, max: number
   return linhas;
 }
 
-export function ImageStudio({ perfil }: { perfil: PerfilId }) {
+export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: string }) {
+  const [selecionada, setSelecionada] = useState<StudioContent | null>(null);
   const P = PERFIS[perfil];
   const CORES_MARCA = Array.from(new Set([P.paleta.texto, P.paleta.destaque, P.paleta.fundo1, P.paleta.fundo2]));
   const [comLogo, setComLogo] = useState(true);
@@ -148,6 +151,7 @@ export function ImageStudio({ perfil }: { perfil: PerfilId }) {
   }, [a, img, comLogo, logo, P.logo, P.paleta.fundo1]);
 
   useEffect(() => { desenhar(); }, [desenhar]);
+  useEffect(() => { setSelecionada(null); }, [desenhar, tema]);
 
   const carregar = (file: File | undefined) => {
     if (!file) return;
@@ -219,8 +223,15 @@ export function ImageStudio({ perfil }: { perfil: PerfilId }) {
               <Button size="sm" variant={tipo === "image/png" ? "secondary" : "outline"} onClick={() => setTipo("image/png")}>PNG</Button>
             </div>
             <Button variant="default" onClick={baixar} disabled={!img && !a.texto.trim()}><Download className="mr-1.5 h-4 w-4" /> Baixar</Button>
+            <Button variant="outline" disabled={(!img && !a.texto.trim()) || !tema} onClick={() => {
+              try {
+                const src = canvasRef.current?.toDataURL("image/jpeg", 0.92);
+                if (src) setSelecionada({ perfil, tema, texto: "", imagens: [src], formato: a.formato === "stories" ? "Story" : "Post Único", rede: a.formato === "linkedin" ? "linkedin" : a.formato === "google" ? "google" : "instagram" });
+              } catch { toast.error("Não foi possível preparar a imagem selecionada."); }
+            }}>Selecionar arte para publicação</Button>
             <Button variant="ghost" onClick={() => setA({ ...INICIAL, formato: a.formato })}><RotateCcw className="mr-1.5 h-4 w-4" /> Redefinir ajustes</Button>
           </div>
+          {selecionada && <StudioPublishActions content={selecionada} />}
         </CardContent>
       </Card>
 

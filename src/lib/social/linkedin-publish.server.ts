@@ -104,15 +104,10 @@ export async function publishLinkedInPostById({ supabaseAdmin, postId }: Publish
   let media: any[] = [];
   let category: "NONE" | "IMAGE" = "NONE";
   if (imageUrl) {
-    try {
       const { bytes, contentType } = await fetchImageBytes(supabaseAdmin, imageUrl);
       const asset = await uploadImageAsset(ownerUrn, bytes, contentType);
       category = "IMAGE";
       media = [{ status: "READY", media: asset, title: { text: "" }, description: { text: "" } }];
-    } catch (e: any) {
-      // Se falhar upload, publica texto puro em vez de quebrar tudo.
-      console.warn("LinkedIn image upload falhou, publicando só texto:", e?.message);
-    }
   }
 
   const body = {
@@ -141,10 +136,11 @@ export async function publishLinkedInPostById({ supabaseAdmin, postId }: Publish
   const ugcId: string = json?.id || res.headers.get("x-restli-id") || "";
   const shareUrl = ugcId ? `https://www.linkedin.com/feed/update/${encodeURIComponent(ugcId)}/` : "https://www.linkedin.com/feed/";
 
-  await supabaseAdmin
+  const { error: saveError } = await supabaseAdmin
     .from("posts")
     .update({ status: "Publicado", updated_at: new Date().toISOString() })
     .eq("id", postId);
+  if (saveError) throw new Error(`LinkedIn aceitou ${ugcId || "o envio"}, mas o registro falhou. Verifique a rede antes de tentar novamente: ${saveError.message}`);
 
   return { ok: true as const, shareUrl, ugcId };
 }
