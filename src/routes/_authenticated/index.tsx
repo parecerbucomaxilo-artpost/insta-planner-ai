@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { ChevronDown } from "lucide-react";
 import { SeletorModoGeracao, ConfirmacaoIAHost } from "@/components/GenerationMode";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
