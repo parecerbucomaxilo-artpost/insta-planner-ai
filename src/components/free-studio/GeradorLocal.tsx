@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useRascunhoStudio } from "./StudioMaterial";
+import { objetivoLocal } from "@/lib/studio-context";
 import { StudioPublishActions } from "./StudioPublishActions";
 import { toast } from "sonner";
 import { Wand2, Download, Copy } from "lucide-react";
@@ -96,23 +98,24 @@ function desenhar(w: number, h: number, cor: Ident, titulo: string, sub: string,
 }
 
 
-export function GeradorLocal({ perfil, tema }: { perfil: PerfilId; tema: string }) {
-  const [tipo, setTipo] = useState<Tipo>("ig-feed");
-  useEffect(() => { setImagens([]); setLegenda(""); }, [perfil, tema]);
-  const [objetivo, setObjetivo] = useState<Objetivo>("educativo");
-  const [legenda, setLegenda] = useState("");
-  const [imagens, setImagens] = useState<string[]>([]);
+export function GeradorLocal({ perfil, tema, objetivo }: { perfil: PerfilId; tema: string; objetivo: string }) {
+  const [tipo, setTipo] = useRascunhoStudio<Tipo>("local.tipo", "ig-feed");
+
+  const [legenda, setLegenda] = useRascunhoStudio("local.legenda", "");
+  const [imagens, setImagens] = useRascunhoStudio<string[]>("local.imagens", []);
   const [foto, setFoto] = useState<HTMLImageElement | null>(null);
   const [gerando, setGerando] = useState(false);
 
   const gerar = async () => {
+    const o = objetivoLocal(objetivo);
+    if (!o) { toast.error("Escolha o objetivo do material acima."); return; }
     setGerando(true);
     const t = tema.trim();
     if (!t) { setGerando(false); toast.error("Confirme um tema antes de gerar."); return; }
     const cfg = TIPOS[tipo];
     const id = identDe(perfil);
     const tags = sugerirHashtags(t, cfg.rede);
-    setLegenda(legendaDoPerfil(modeloLegenda(objetivo, t, cfg.rede), perfil) + (tags.length && cfg.rede !== "google" ? `\n\n${tags.join(" ")}` : ""));
+    setLegenda(legendaDoPerfil(modeloLegenda(o, t, cfg.rede), perfil) + (tags.length && cfg.rede !== "google" ? `\n\n${tags.join(" ")}` : ""));
     const ganchos = gerarGanchos(t);
     const urlLogo = LOGOS_DISPONIVEIS.find((l) => l.key === id.logo)?.url;
     let logo = urlLogo ? await carregar(urlLogo) : null;
@@ -162,22 +165,13 @@ export function GeradorLocal({ perfil, tema }: { perfil: PerfilId; tema: string 
         </div>
         <p className="text-sm">Perfil: <strong>{PERFIS[perfil].nome}</strong> — cores, {PERFIS[perfil].logo !== "nenhuma" && "logo oficial, "}assinatura e temas deste perfil.</p>
         <div className="space-y-1.5">
-          <Label>Objetivo</Label>
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(OBJETIVOS) as Objetivo[]).map((o) => (
-              <Button key={o} size="sm" variant={objetivo === o ? "secondary" : "outline"} onClick={() => setObjetivo(o)}>{OBJETIVOS[o]}</Button>
-            ))}
-          </div>
-        </div>
-        <p className="text-sm">Tema: {tema ? <strong>{tema}</strong> : <span className="text-muted-foreground">confirme um tema acima</span>}</p>
-        <div className="space-y-1.5">
           <Label htmlFor="gl-foto">Foto de fundo (opcional, fica só no seu navegador)</Label>
           <div className="flex gap-2">
             <Input id="gl-foto" type="file" accept="image/*" onChange={(e) => enviarFoto(e.target.files?.[0])} />
             {foto && <Button variant="ghost" onClick={() => setFoto(null)}>Remover</Button>}
           </div>
         </div>
-        <Button className="w-full" disabled={gerando || !tema} onClick={gerar}><Wand2 className="mr-1.5 h-4 w-4" /> Gerar imagens e legendas</Button>
+        <Button className="w-full" disabled={gerando || !tema || !objetivoLocal(objetivo)} onClick={gerar}><Wand2 className="mr-1.5 h-4 w-4" /> Gerar imagens e legendas</Button>
         <p className="text-xs text-muted-foreground">Gerado por modelos fixos no seu navegador, sem IA e sem créditos. Carrossel do feed = 5 slides. Cores, {PERFIS[perfil].logo !== "nenhuma" && "logo real e "}assinatura seguem o planner escolhido; complete os trechos entre colchetes.</p>
 
         {imagens.length > 0 && (

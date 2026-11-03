@@ -7,7 +7,7 @@ import type { StudioContent } from "./studio-publication";
  * Only persisted storage URLs are kept (memory + sessionStorage), never volatile data URLs,
  * so the art survives tab/profile/mode switches and reloads without crossing accounts.
  */
-export type MidiaEstudio = { userId: string; perfil: PerfilId; tema: string; imagens: string[]; formato: StudioContent["formato"]; rede: StudioContent["rede"] };
+export type MidiaEstudio = { userId: string; perfil: PerfilId; materialId?: string; tema: string; imagens: string[]; formato: StudioContent["formato"]; rede: StudioContent["rede"] };
 
 const PREFIXO = "studio-midia:v2";
 export const chaveMidia = (userId: string, perfil: PerfilId) => `${PREFIXO}:${userId}:${perfil}`;
@@ -54,20 +54,25 @@ export async function persistirArteCanvas(toBlob: () => Promise<Blob | null>, up
   return url;
 }
 
-export function useMidiaEstudio(perfil: PerfilId, userId: string | null) {
+export function useMidiaEstudio(perfil: PerfilId, userId: string | null, materialId?: string) {
   useSyncExternalStore(assinar, lerMidiaEstudio, () => null);
-  return userId ? restaurarMidia(userId, perfil) : null;
+  const m = userId ? restaurarMidia(userId, perfil) : null;
+  return materialId && m?.materialId !== materialId ? null : m;
 }
 
 export function useUsuarioAtual() {
   const [uid, setUid] = useState<string | null>(null);
   useEffect(() => {
     let vivo = true;
+    let sair: (() => void) | undefined;
     void import("@/integrations/supabase/client").then(async ({ supabase }) => {
+      if (!vivo) return;
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { if (vivo) setUid(session?.user.id ?? null); });
+      sair = () => listener.subscription.unsubscribe();
       const { data } = await supabase.auth.getUser();
       if (vivo) setUid(data.user?.id ?? null);
     });
-    return () => { vivo = false; };
+    return () => { vivo = false; sair?.(); };
   }, []);
   return uid;
 }

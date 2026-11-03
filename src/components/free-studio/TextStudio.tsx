@@ -1,3 +1,5 @@
+import { useRascunhoStudio, useStudioMaterial } from "./StudioMaterial";
+import { objetivoLocal } from "@/lib/studio-context";
 import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
 import { StudioPublishActions } from "./StudioPublishActions";
 import { useMidiaEstudio, conteudoComMidia, limparMidiaEstudio, useUsuarioAtual } from "@/lib/studio-media";
@@ -27,16 +29,17 @@ async function copiar(texto: string) {
   }
 }
 
-export function TextStudio({ perfil, tema }: { perfil: PerfilId; tema: string }) {
-  const [texto, setTexto] = useState("");
-  const [rede, setRede] = useState<RedeTexto>("instagram");
-  const [objetivo, setObjetivo] = useState<Objetivo>("educativo");
+export function TextStudio({ perfil, tema, objetivo }: { perfil: PerfilId; tema: string; objetivo: string }) {
+  const { material } = useStudioMaterial();
+  const [texto, setTexto] = useRascunhoStudio("texto.legenda", "");
+  const [rede, setRede] = useRascunhoStudio<RedeTexto>("texto.rede", "instagram");
+
 
   const ganchos = useMemo(() => gerarGanchos(tema), [tema]);
   const hashtags = useMemo(() => sugerirHashtags(tema, rede), [tema, rede]);
   const problemas = useMemo(() => revisarTexto(texto), [texto]);
   const uid = useUsuarioAtual();
-  const midiaSel = useMidiaEstudio(perfil, uid);
+  const midiaSel = useMidiaEstudio(perfil, uid, material.id);
   const midia = midiaSel && midiaSel.rede === rede ? midiaSel : null;
 
   const inserir = (trecho: string, noInicio = false) =>
@@ -49,10 +52,6 @@ export function TextStudio({ perfil, tema }: { perfil: PerfilId; tema: string })
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Tema confirmado</Label>
-              <p className="text-sm">{tema ? <strong>{tema}</strong> : <span className="text-muted-foreground">confirme um tema acima</span>} · Perfil: {PERFIS[perfil].nome}</p>
-            </div>
-            <div className="space-y-1.5">
               <Label>Rede</Label>
               <div className="flex flex-wrap gap-2">
                 {REDES.map((r) => (
@@ -62,18 +61,10 @@ export function TextStudio({ perfil, tema }: { perfil: PerfilId; tema: string })
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Modelo pronto por objetivo</Label>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(OBJETIVOS) as Objetivo[]).map((o) => (
-                <Button key={o} type="button" size="sm" variant={objetivo === o ? "secondary" : "outline"} onClick={() => {
-                  setObjetivo(o);
-                  if (!tema) { toast.error("Confirme um tema antes."); return; }
-                  setTexto(legendaDoPerfil(modeloLegenda(o, tema, rede), perfil));
-                }}>{OBJETIVOS[o]}</Button>
-              ))}
-            </div>
-          </div>
+          <Button type="button" variant="outline" disabled={!tema || !objetivoLocal(objetivo)} onClick={() => {
+            const o = objetivoLocal(objetivo);
+            if (o && tema) setTexto(legendaDoPerfil(modeloLegenda(o, tema, rede), perfil));
+          }}>Aplicar modelo ao objetivo escolhido</Button>
 
           <Textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={14} placeholder="Escreva ou cole sua legenda aqui…" aria-label="Texto da legenda" />
 
