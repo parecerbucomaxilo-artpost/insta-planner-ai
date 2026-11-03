@@ -1,4 +1,5 @@
 import { plainLanguageRule } from "@/lib/plain-language";
+import { visualReferences } from "./visual-references";
 import { checkLinkedInConnection } from "@/lib/social/linkedin-status";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -2100,91 +2101,12 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     if (!isChico) legendaSemHook = enforceHookCoherence(legendaSemHook, hookImagem, tema);
     const headlineLegenda = extractHeadline(legendaSemHook) || hookImagem;
     const altLegenda = extractAlt(legendaSemHook);
-    const guiaTema = topicGuidance(tema);
-    let cenaVisualNexo = visualSceneForTopic(tema, guiaTema, data.audiencia);
-    let cenasPorSlide: string[] = slideNarratives.map((_, i) =>
-      visualSceneForTopic(tema, guiaTema, data.audiencia, i),
+    // Use the final AI text directly: no optional summary request, JSON parser,
+    // silent fallback, provider switch, or extra credit-consuming inference.
+    const { scene: cenaVisualNexo, perSlide: cenasPorSlide } = visualReferences(
+      legendaSemHook,
+      slideNarratives,
     );
-    if (
-      !isChico &&
-      !isDiverso &&
-      process.env.LOVABLE_API_KEY &&
-      data.modelo !== "local/sem-custo"
-    ) {
-      const { generateTextAI } = await import("@/lib/ai-gateway.server");
-      const briefSys = `Você é diretor de arte médico. Use o CONTRATO CLÍNICO como fonte única de verdade e devolva UMA ÚNICA FRASE em PT-BR (máx. 240 caracteres) descrevendo a CENA VISUAL LITERAL que ilustra exatamente tema + conduta. Sem metáforas vagas, sem texto na imagem, sem cor nomeada, sem pessoa real. Se a legenda estiver genérica, siga o contrato.`;
-      const briefPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nResponda só com a frase da cena.`;
-      // Cena única e cenas por slide são independentes → rodam em PARALELO.
-      const cenaPromise =
-        formato === "Carrossel"
-          ? Promise.resolve("")
-          : generateTextAI({
-              system: briefSys,
-              prompt: briefPrompt,
-              model: data.modelo,
-              maxTokens: 140,
-            });
-      const cenaIA = ((await cenaPromise) || "").trim().replace(/^["'`]+|["'`]+$/g, "");
-      const cenaIANorm = normalizeTema(cenaIA);
-      const palavrasTema = normalizeTema(tema)
-        .split(" ")
-        .filter((p) => p.length > 4);
-      const palavrasContrato = normalizeTema(`${guiaTema.oQue} ${guiaTema.conduta}`)
-        .split(" ")
-        .filter((p) => p.length > 5);
-      const cenaAncorada = [...palavrasTema, ...palavrasContrato].some((p) =>
-        cenaIANorm.includes(p),
-      );
-      if (cenaIA && cenaAncorada) cenaVisualNexo = cenaIA;
-
-      // Carrossel: gera 1 cena DISTINTA por slide, ancorada na legenda + papel narrativo.
-      if (formato === "Carrossel") {
-        const papeis =
-          data.rede === "estilo-x"
-            ? [
-                "TWEET 1: gancho/pergunta",
-                "TWEET 2: explicação científica curta",
-                "TWEET 3: CTA fechamento",
-              ]
-            : [
-                "CAPA: GANCHO ULTRA FORTE 3-6 palavras (dor real/pergunta direta sobre o TEMA, sem citar marca ou @drfranciscomenezes)",
-                "PROBLEMA: aprofundar o sintoma em linguagem leiga",
-                "MECANISMO: como o problema acontece (analogia anatômica simples)",
-                "SOLUÇÃO/GANHO: como o cirurgião resolve, foco no ganho do paciente",
-                "FECHAMENTO: CTA premium Link na Bio + WhatsApp",
-              ];
-        const carrosselSys = `Você é diretor de arte médico. Para o tema "${tema}", use o CONTRATO CLÍNICO como fonte única de verdade. Descreva ${papeis.length} CENAS VISUAIS DISTINTAS — uma por slide — na ordem problema → mecanismo → conduta/tratamento → ganho → CTA. Cada cena: 1 frase em PT-BR (máx. 220 caracteres), literal, sujeito + ação + contexto anatômico/clínico. Sem texto na imagem, sem cor nomeada, sem pessoa real. Responda APENAS um JSON array de ${papeis.length} strings.`;
-        const carrosselPrompt = `${clinicalContract(tema, data.audiencia)}\n\nLEGENDA:\n${legendaResolvida.slice(0, 1800)}\n\nROTEIRO TEXTUAL OBRIGATÓRIO POR SLIDE:\n${slideNarratives.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nPAPÉIS DOS SLIDES (na ordem):\n${papeis.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\nResponda só o JSON array.`;
-        const raw = (
-          (await generateTextAI({
-            system: carrosselSys,
-            prompt: carrosselPrompt,
-            model: data.modelo,
-            maxTokens: 600,
-          })) || ""
-        ).trim();
-        const jsonMatch = raw.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          const arr = JSON.parse(jsonMatch[0]);
-          if (Array.isArray(arr) && arr.length >= cenasPorSlide.length) {
-            const parsed = arr.map((s) => String(s || "").trim()).filter(Boolean);
-            // Validação de coerência: cena precisa citar o tema/contrato ou o texto do slide.
-            const ancoraSlide = (cena: string, i: number) => {
-              const n = normalizeTema(cena);
-              const pal = normalizeTema(
-                `${tema} ${guiaTema.oQue} ${guiaTema.conduta} ${slideNarratives[i] || ""}`,
-              )
-                .split(" ")
-                .filter((p) => p.length > 5);
-              return pal.some((p) => n.includes(p));
-            };
-            cenasPorSlide = cenasPorSlide.map((fallback, i) =>
-              parsed[i] && ancoraSlide(parsed[i], i) ? parsed[i] : fallback,
-            );
-          }
-        }
-      }
-    }
     const briefingNexoBase = [
       headlineLegenda
         ? `HEADLINE DA LEGENDA (use como ESPÍRITO da cena, NÃO escreva na imagem): "${headlineLegenda}"`
@@ -2202,7 +2124,6 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const narrativaSlide = typeof slideIndex === "number" ? slideNarratives[slideIndex] : "";
       const cena =
         cenaSlide ||
-        visualSceneForTopic(tema, guiaTema, data.audiencia, slideIndex) ||
         cenaVisualNexo;
       const contrato = clinicalContract(tema, data.audiencia, slideIndex);
       const isCapa = slideIndex === 0 || typeof slideIndex === "undefined";
