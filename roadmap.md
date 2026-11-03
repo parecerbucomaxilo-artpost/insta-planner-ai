@@ -1,6 +1,6 @@
 # Roadmap
 - [ ] Corrigir autorização dos planners — problema confirmado; requer separar identidade autenticada, automação e posts compartilhados sem ampliar permissões; plano para aprovação.
-- [ ] Corrigir descrição visual opcional — usar texto final real como referência de imagem, sem chamada auxiliar frágil nem fallback simulado; validar com mocks sem geração paga.
+- [x] Corrigir descrição visual opcional — texto final real alimenta imagens sem inferência auxiliar nem parser JSON; testes mockados e compilação automática OK, sem geração paga.
 - [x] Corrigir seletor de destino do Estúdio: vazio reproduzido; seletor acessível controlado, verificações de conexão e loading/vazio/erro/retry. Interação com dados mockados conferida desktop/mobile sem envio; contas reais do solicitante não verificáveis sem sessão.
 - [x] Publicação explícita no Estúdio: ações e resumo, conta separada de perfil, serviços reais Instagram/LinkedIn, rascunho/agendamento; Google bloqueado por automação não isolada. Testes mockados e UI isolada desktop/mobile, sem envio/deploy.
 - [ ] Validar salvar/ler rascunho e agendamento na sessão do solicitante — bloqueado: nenhuma conta de autenticação corresponde ao solicitante; não assumir outra conta.
