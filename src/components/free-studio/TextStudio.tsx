@@ -26,13 +26,11 @@ async function copiar(texto: string) {
   }
 }
 
-export function TextStudio({ perfil }: { perfil: PerfilId }) {
+export function TextStudio({ perfil, tema }: { perfil: PerfilId; tema: string }) {
   const [texto, setTexto] = useState("");
-  const [tema, setTema] = useState("");
   const [rede, setRede] = useState<RedeTexto>("instagram");
   const [objetivo, setObjetivo] = useState<Objetivo>("educativo");
   const planner: PlannerTemas = PERFIS[perfil].temas;
-  useEffect(() => { setTema(""); }, [perfil]);
   const [recentes, setRecentes] = useState<string[]>([]);
 
   const escolherParaMim = () => {

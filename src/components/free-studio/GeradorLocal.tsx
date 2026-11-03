@@ -94,12 +94,11 @@ function desenhar(w: number, h: number, cor: Ident, titulo: string, sub: string,
 }
 
 
-export function GeradorLocal({ perfil }: { perfil: PerfilId }) {
+export function GeradorLocal({ perfil, tema }: { perfil: PerfilId; tema: string }) {
   const [tipo, setTipo] = useState<Tipo>("ig-feed");
   const planner: PlannerTemas = PERFIS[perfil].temas;
-  useEffect(() => { setTema(""); setImagens([]); setLegenda(""); }, [perfil]);
+  useEffect(() => { setImagens([]); setLegenda(""); }, [perfil, tema]);
   const [objetivo, setObjetivo] = useState<Objetivo>("educativo");
-  const [tema, setTema] = useState("");
   const [legenda, setLegenda] = useState("");
   const [imagens, setImagens] = useState<string[]>([]);
   const [foto, setFoto] = useState<HTMLImageElement | null>(null);
@@ -107,8 +106,8 @@ export function GeradorLocal({ perfil }: { perfil: PerfilId }) {
 
   const gerar = async () => {
     setGerando(true);
-    const t = tema.trim() || sortearTema(planner, []);
-    setTema(t);
+    const t = tema.trim();
+    if (!t) { setGerando(false); toast.error("Confirme um tema antes de gerar."); return; }
     const cfg = TIPOS[tipo];
     const id = identDe(perfil);
     const tags = sugerirHashtags(t, cfg.rede);
@@ -169,10 +168,7 @@ export function GeradorLocal({ perfil }: { perfil: PerfilId }) {
             ))}
           </div>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Tema (vazio = sorteado do planner)" aria-label="Tema" />
-          <Button variant="outline" onClick={() => setTema(sortearTema(planner, [tema]))}><Shuffle className="mr-1.5 h-4 w-4" /> Sortear tema</Button>
-        </div>
+        <p className="text-sm">Tema: {tema ? <strong>{tema}</strong> : <span className="text-muted-foreground">confirme um tema acima</span>}</p>
         <div className="space-y-1.5">
           <Label htmlFor="gl-foto">Foto de fundo (opcional, fica só no seu navegador)</Label>
           <div className="flex gap-2">
@@ -180,7 +176,7 @@ export function GeradorLocal({ perfil }: { perfil: PerfilId }) {
             {foto && <Button variant="ghost" onClick={() => setFoto(null)}>Remover</Button>}
           </div>
         </div>
-        <Button className="w-full" disabled={gerando} onClick={gerar}><Wand2 className="mr-1.5 h-4 w-4" /> Gerar imagens e legendas</Button>
+        <Button className="w-full" disabled={gerando || !tema} onClick={gerar}><Wand2 className="mr-1.5 h-4 w-4" /> Gerar imagens e legendas</Button>
         <p className="text-xs text-muted-foreground">Gerado por modelos fixos no seu navegador, sem IA e sem créditos. Carrossel do feed = 5 slides. Cores, logo real e assinatura seguem o planner escolhido; complete os trechos entre colchetes.</p>
 
         {imagens.length > 0 && (

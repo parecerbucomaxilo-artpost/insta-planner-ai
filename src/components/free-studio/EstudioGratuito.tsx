@@ -4,6 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TextStudio } from "./TextStudio";
 import { ImageStudio } from "./ImageStudio";
 import { GeradorLocal } from "./GeradorLocal";
+import { EscolhaTema } from "./EscolhaTema";
 import { IAAvancada } from "@/components/advanced-ai/IAAvancada";
 
 import { useModoGeracao } from "@/components/GenerationMode";
@@ -15,7 +16,8 @@ export function EstudioGratuito() {
   const [modo, trocar] = useModoGeracao();
   const [perfil, setPerfil] = useState<PerfilId>("chico");
   useEffect(() => { setPerfil(lerPerfilSalvo(localStorage.getItem(PERFIL_STORAGE))); }, []);
-  const escolher = (p: PerfilId) => { setPerfil(p); localStorage.setItem(PERFIL_STORAGE, p); };
+  const [tema, setTema] = useState("");
+  const escolher = (p: PerfilId) => { setPerfil(p); setTema(""); localStorage.setItem(PERFIL_STORAGE, p); };
   const P = PERFIS[perfil];
 
   return (
@@ -46,19 +48,20 @@ export function EstudioGratuito() {
         <p className="text-xs text-muted-foreground">Público: {P.publico}. Texto, imagens, cores, logo oficial, chamada e assinatura seguem este perfil.</p>
         {P.faltando.length > 0 && <p className="text-xs text-muted-foreground">Ainda não configurado neste perfil: {P.faltando.join(", ")}. Esses itens ficam em branco até serem informados.</p>}
       </div>
+      <EscolhaTema key={perfil} perfil={perfil} modo={modo} aprovado={tema} onAprovar={setTema} />
       {modo === "gratuito" ? (
         <>
-          <GeradorLocal perfil={perfil} />
+          <GeradorLocal perfil={perfil} tema={tema} />
           <Tabs defaultValue="texto">
             <TabsList>
               <TabsTrigger value="texto">Texto</TabsTrigger>
               <TabsTrigger value="imagem">Imagem</TabsTrigger>
             </TabsList>
-            <TabsContent value="texto" className="mt-4"><TextStudio perfil={perfil} /></TabsContent>
+            <TabsContent value="texto" className="mt-4"><TextStudio perfil={perfil} tema={tema} /></TabsContent>
             <TabsContent value="imagem" className="mt-4"><ImageStudio perfil={perfil} /></TabsContent>
           </Tabs>
         </>
-      ) : <IAAvancada perfil={perfil} />}
+      ) : <IAAvancada perfil={perfil} tema={tema} />}
     </section>
   );
 }
