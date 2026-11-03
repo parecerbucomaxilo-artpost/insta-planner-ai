@@ -15,7 +15,7 @@ import { getPublicationDestination } from "@/lib/publication-destination.functio
 import { getLinkedInStatus } from "@/lib/social/linkedin-status.functions";
 import { PERFIS } from "@/lib/studio-profiles";
 import { POST_REVIEW_CHANGED } from "@/lib/post-review";
-import { executarPublicacaoStudio, type StudioContent, type StudioAction, type StudioDestination, type PublishResult } from "@/lib/studio-publication";
+import { executarPublicacaoStudio, bloqueioAntesDeAbrir, origemMidia, type StudioContent, type StudioAction, type StudioDestination, type PublishResult } from "@/lib/studio-publication";
 import { carregarDestinos } from "@/lib/studio-destinations";
 import { StudioDestinationPicker } from "./StudioDestinationPicker";
 
@@ -131,6 +131,7 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
       <Button variant="outline" onClick={() => void abrir("rascunho")} disabled={busy || (!content.texto.trim() && !content.imagens.length)}><Save className="mr-1.5 h-4 w-4" />Salvar rascunho</Button>
       <Button variant="outline" onClick={() => void abrir("agendar")} disabled={busy || (!content.texto.trim() && !content.imagens.length)}><CalendarClock className="mr-1.5 h-4 w-4" />Agendar</Button>
     </div>
+    {aviso && <p role="alert" className="text-sm text-destructive">{aviso}</p>}
     <Dialog open={open} onOpenChange={o => { if (!busy) setOpen(o); }}>
       <DialogContent className="max-h-[90vh] w-[calc(100%-1rem)] min-w-0 overflow-y-auto [&>*]:min-w-0 sm:max-w-2xl">
         <DialogHeader><DialogTitle>{acao === "publicar" ? "Publicar — confirmar envio" : acao === "agendar" ? "Agendar publicação" : "Salvar rascunho"}</DialogTitle><DialogDescription>Perfil editorial: {PERFIS[content.perfil].nome}. A conta de destino é escolhida separadamente. Publicar envia conteúdo visível externamente; agendar autoriza envio futuro. Nenhuma geração envia automaticamente.</DialogDescription></DialogHeader>
