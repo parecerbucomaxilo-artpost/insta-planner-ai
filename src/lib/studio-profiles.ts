@@ -96,3 +96,21 @@ export const PERFIL_STORAGE = "estudio-perfil";
 export function lerPerfilSalvo(v: string | null | undefined): PerfilId {
   return v && (PERFIS_IDS as string[]).includes(v) ? (v as PerfilId) : "chico";
 }
+
+/**
+ * Ajusta uma legenda de modelo fixo ao perfil: fora do Planner Chico remove link da bio,
+ * WhatsApp e dados do Prof. Francisco, e acrescenta a chamada/assinatura do próprio perfil.
+ */
+export function legendaDoPerfil(texto: string, id: PerfilId, telefone?: string): string {
+  const p = PERFIS[id];
+  if (id === "chico") return texto;
+  const limpo = texto
+    .split("\n")
+    .filter((l) => !/link da bio|link na bio|link do perfil|wa\.me|whatsapp|francisco|crosp/i.test(l))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  const tel = (telefone ?? p.telefone).trim();
+  const cta = id === "cirurgia-biopsias" && tel ? `Agende sua avaliação pelo telefone ${tel}` : tel ? `Contato: ${tel}` : "";
+  return [limpo, cta, p.assinatura].filter(Boolean).join("\n\n");
+}
