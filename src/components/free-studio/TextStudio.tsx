@@ -92,12 +92,11 @@ export function TextStudio() {
             <Label>Modelo pronto por objetivo</Label>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(OBJETIVOS) as Objetivo[]).map((o) => (
-                <Button key={o} type="button" size="sm" variant={objetivo === o ? "secondary" : "outline"} onClick={() => setObjetivo(o)}>{OBJETIVOS[o]}</Button>
+                <Button key={o} type="button" size="sm" variant={objetivo === o ? "secondary" : "outline"} onClick={() => {
+                  setObjetivo(o);
+                  setTexto(modeloLegenda(o, tema, rede));
+                }}>{OBJETIVOS[o]}</Button>
               ))}
-              <Button type="button" size="sm" onClick={() => {
-                if (texto.trim() && !window.confirm("Substituir o texto atual pelo modelo?")) return;
-                setTexto(modeloLegenda(objetivo, tema, rede));
-              }}>Usar modelo</Button>
             </div>
           </div>
 
