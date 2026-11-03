@@ -3,7 +3,7 @@ import { openaiDiretoTexto, openaiDiretoImagem, _limparCacheModelos, chaveOpenAI
 import { modelRoute, modelosDoProvedor, provedorDoModelo, validateModel } from "./ai-models";
 
 const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
-const catalogo = ok({ data: [{ id: "gpt-6-luna" }, { id: "gpt-image-2.5-flare" }] });
+const catalogo = () => ok({ data: [{ id: "gpt-6-luna" }, { id: "gpt-image-2.5-flare" }] });
 
 describe("OpenAI com chave própria", () => {
   beforeEach(() => { _limparCacheModelos(); vi.stubEnv("OPENAI_API_KEY", "teste-mock"); });
@@ -18,14 +18,14 @@ describe("OpenAI com chave própria", () => {
   });
 
   it("texto usa o endpoint oficial com o nome oficial do modelo", async () => {
-    const f = vi.fn().mockResolvedValueOnce(catalogo).mockResolvedValueOnce(ok({ choices: [{ message: { content: "Legenda" } }] }));
+    const f = vi.fn().mockResolvedValueOnce(catalogo()).mockResolvedValueOnce(ok({ choices: [{ message: { content: "Legenda" } }] }));
     expect(await openaiDiretoTexto({ model: "openai-direct/gpt-6-luna", prompt: "x" }, f)).toBe("Legenda");
     expect(f.mock.calls[1][0]).toBe("https://api.openai.com/v1/chat/completions");
     expect(JSON.parse(f.mock.calls[1][1].body).model).toBe("gpt-6-luna");
   });
 
   it("imagem usa /images/generations e devolve b64", async () => {
-    const f = vi.fn().mockResolvedValueOnce(catalogo).mockResolvedValueOnce(ok({ data: [{ b64_json: "QUJD" }] }));
+    const f = vi.fn().mockResolvedValueOnce(catalogo()).mockResolvedValueOnce(ok({ data: [{ b64_json: "QUJD" }] }));
     expect(await openaiDiretoImagem({ model: "openai-direct/gpt-image-2.5-flare", prompt: "x", size: "1024x1536" }, f)).toBe("QUJD");
     expect(f.mock.calls[1][0]).toBe("https://api.openai.com/v1/images/generations");
   });
@@ -37,7 +37,7 @@ describe("OpenAI com chave própria", () => {
   });
 
   it("resposta vazia vira erro, sem texto simulado", async () => {
-    const f = vi.fn().mockResolvedValueOnce(catalogo).mockResolvedValueOnce(ok({ choices: [{ message: { content: "" } }] }));
+    const f = vi.fn().mockResolvedValueOnce(catalogo()).mockResolvedValueOnce(ok({ choices: [{ message: { content: "" } }] }));
     await expect(openaiDiretoTexto({ model: "openai-direct/gpt-6-luna", prompt: "x" }, f)).rejects.toThrow(/vazia/);
   });
 
