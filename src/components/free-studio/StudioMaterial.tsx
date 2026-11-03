@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type SetStateAction } from 'react';
 import { alterarContexto, novoMaterial, preencherContexto, restaurarMaterial, salvarMaterial, type MaterialEstudio } from '@/lib/studio-context';
 import type { PerfilId } from '@/lib/studio-profiles';
+import { supabase } from '@/integrations/supabase/client';
+import { contextoDashboard, perfilDashboardDe } from '@/lib/dashboard-context';
 
 type Context = { material: MaterialEstudio; alterar: (campo: 'tema' | 'objetivo', valor: string) => void; preencher: (dados: { tema?: string; objetivo?: string }) => void; novo: () => void; guardar: (chave: string, valor: unknown) => void };
 const MaterialContext = createContext<Context | null>(null);
@@ -10,6 +12,17 @@ export function StudioMaterial({ userId, perfil, children }: { userId: string | 
   const [pronto, setPronto] = useState(false);
   useEffect(() => { setMaterial(restaurarMaterial(userId ?? 'visitante', perfil, userId ? storage() : null)); setPronto(true); }, [userId, perfil]);
   useEffect(() => { if (pronto && userId) salvarMaterial(material, storage()); }, [material, pronto, userId]);
+  useEffect(() => {
+    if (!pronto || !userId) return;
+    let vivo = true;
+    void (async () => {
+      const { data } = await supabase.from('perfil_usuario').select('user_id,nome_profissional,arroba_usuario,instagram_arroba,cro_uf,subespecialidades,tom_voz').eq('user_id', userId);
+      if (!vivo) return;
+      const c = contextoDashboard(perfilDashboardDe(data ?? [], perfil, userId));
+      setMaterial(m => preencherContexto(m, { objetivo: c.objetivo }));
+    })().catch(() => { /* Optional Dashboard defaults must not block local tools. */ });
+    return () => { vivo = false; };
+  }, [pronto, userId, perfil, material.id]);
   if (!pronto) return null;
   return <MaterialContext.Provider value={{ material, alterar: (k, v) => setMaterial(m => alterarContexto(m, k, v)), preencher: d => setMaterial(m => preencherContexto(m, d)), novo: () => { if (userId) salvarMaterial(material, storage()); setMaterial(novoMaterial(userId ?? 'visitante', perfil)); }, guardar: (k, v) => setMaterial(m => ({ ...m, rascunhos: { ...m.rascunhos, [k]: v } })) }}>{children}</MaterialContext.Provider>;
 }

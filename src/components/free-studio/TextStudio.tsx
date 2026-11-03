@@ -1,4 +1,4 @@
-import { useRascunhoStudio } from "./StudioMaterial";
+import { useRascunhoStudio, useStudioMaterial } from "./StudioMaterial";
 import { objetivoLocal } from "@/lib/studio-context";
 import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
 import { StudioPublishActions } from "./StudioPublishActions";
@@ -30,6 +30,7 @@ async function copiar(texto: string) {
 }
 
 export function TextStudio({ perfil, tema, objetivo }: { perfil: PerfilId; tema: string; objetivo: string }) {
+  const { material } = useStudioMaterial();
   const [texto, setTexto] = useRascunhoStudio("texto.legenda", "");
   const [rede, setRede] = useRascunhoStudio<RedeTexto>("texto.rede", "instagram");
 
@@ -38,7 +39,7 @@ export function TextStudio({ perfil, tema, objetivo }: { perfil: PerfilId; tema:
   const hashtags = useMemo(() => sugerirHashtags(tema, rede), [tema, rede]);
   const problemas = useMemo(() => revisarTexto(texto), [texto]);
   const uid = useUsuarioAtual();
-  const midiaSel = useMidiaEstudio(perfil, uid);
+  const midiaSel = useMidiaEstudio(perfil, uid, material.id);
   const midia = midiaSel && midiaSel.rede === rede ? midiaSel : null;
 
   const inserir = (trecho: string, noInicio = false) =>

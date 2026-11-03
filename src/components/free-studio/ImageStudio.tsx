@@ -13,7 +13,7 @@ import { StudioPublishActions } from "./StudioPublishActions";
 import type { StudioContent } from "@/lib/studio-publication";
 import { definirMidiaEstudio, persistirArteCanvas, useUsuarioAtual } from "@/lib/studio-media";
 import { uploadPostImage } from "@/lib/storage-utils";
-import { useRascunhoStudio } from "./StudioMaterial";
+import { useRascunhoStudio, useStudioMaterial } from "./StudioMaterial";
 
 const FORMATOS = {
   feed: { nome: "Instagram feed 4:5", w: 1080, h: 1350 },
@@ -67,6 +67,7 @@ function quebrarLinhas(ctx: CanvasRenderingContext2D, texto: string, max: number
 }
 
 export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: string }) {
+  const { material } = useStudioMaterial();
   const uid = useUsuarioAtual();
   const [salvandoArte, setSalvandoArte] = useState(false);
   const [selecionada, setSelecionada] = useRascunhoStudio<StudioContent | null>("imagem.selecionada", null);
@@ -252,7 +253,7 @@ export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: st
                 const url = await persistirArteCanvas(() => new Promise(r => c.toBlob(r, "image/jpeg", 0.92)), f => uploadPostImage(f, uid));
                 const sel: StudioContent = { perfil, tema, texto: "", imagens: [url], formato: a.formato === "stories" ? "Story" : "Post Único", rede: a.formato === "linkedin" ? "linkedin" : a.formato === "google" ? "google" : "instagram" };
                 setSelecionada(sel);
-                definirMidiaEstudio({ userId: uid, perfil, tema, imagens: sel.imagens, formato: sel.formato, rede: sel.rede });
+                definirMidiaEstudio({ userId: uid, perfil, materialId: material.id, tema, imagens: sel.imagens, formato: sel.formato, rede: sel.rede });
                 toast.success("Arte salva e anexada. Ela também aparece no Estúdio de Texto para publicar com a legenda.");
               } catch (e) { toast.error(e instanceof Error ? e.message : "Não foi possível salvar a arte selecionada."); }
               finally { setSalvandoArte(false); }
