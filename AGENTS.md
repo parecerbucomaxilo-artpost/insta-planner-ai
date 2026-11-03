@@ -3,7 +3,7 @@
 - AI model options, defaults, legacy validation and provider routing live in src/lib/ai-models.ts; only catalog-verified stable IDs are offered, explicit legacy choices are preserved or rejected without substitution, and generation failures never return local simulated content.
 - Anthropic is explicitly unconnected; its former browser-key UI removes the obsolete localStorage entry without reading it, because the project has no native Claude generation path.
 - Generated-post review uses the shared PostReviewActions component and existing posts statuses through the authenticated browser client, so RLS applies and internal approval never invokes publishing.
-- Keep review actions before long slide/caption content and expose saved pending posts through visible navigation; generation refreshes persisted lists without auto-scheduling.
+- Review actions sit before long content; saved pending posts are reachable from navigation; generation never auto-schedules.
 - Parent previews stay mounted after review to show the saved decision; calendars list undated pending posts separately.
 - The shared review modal fetches saved media and platform captions by post ID; slide text is matched by its explicit slide number, and inline caption edits use a status-guarded browser update without publishing.
 - Chico images use finalized slide text through the contextual-image pipeline; generation errors never substitute providers or procedural images, so unrelated imagery cannot be saved as success.
