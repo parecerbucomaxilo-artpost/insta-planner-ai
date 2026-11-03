@@ -99,10 +99,10 @@ export function IAAvancada({ perfil, tema, objetivo }: { perfil: Marca; tema: st
   const { preencher } = useStudioMaterial();
   const [rascunhoB, setB] = useRascunhoStudio<Briefing>("ia.briefing", { marca: perfil, telefone: MARCAS[perfil].telefone, tema: "", objetivo: "", contexto: "", rede: "instagram", formato: "Post único", nivel: MARCAS[perfil].nivel, tamanho: "medio", tom: "", cta: "" });
   const b: Briefing = { ...rascunhoB, tema, objetivo };
-  const [variantes, setVariantes] = useState<Variante[]>(["media"]);
+  const [variantes, setVariantes] = useRascunhoStudio<Variante[]>("ia.variantes", ["media"]);
   // OpenAI é o provedor principal deste modo; Gemini segue disponível no seletor.
-  const [modeloTexto, setModeloTexto] = useState<string>(() => padraoDoProvedor("text", "openai"));
-  const [modeloImagem, setModeloImagem] = useState<string>(() => padraoDoProvedor("image", "openai"));
+  const [modeloTexto, setModeloTexto] = useRascunhoStudio<string>("ia.modeloTexto", padraoDoProvedor("text", "openai"));
+  const [modeloImagem, setModeloImagem] = useRascunhoStudio<string>("ia.modeloImagem", padraoDoProvedor("image", "openai"));
   const [pacote, setPacote] = useRascunhoStudio<PacoteCriacao | null>("ia.pacote", null);
   const emCurso = useRef(false);
   const statusFn = useServerFn(statusOpenAIDireto);
@@ -115,11 +115,11 @@ export function IAAvancada({ perfil, tema, objetivo }: { perfil: Marca; tema: st
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [pendente, setPendente] = useState<Pendente | null>(null);
-  const [formato, setFormato] = useState<FormatoIA>("feed");
-  const [slides, setSlides] = useState(5);
+  const [formato, setFormato] = useRascunhoStudio<FormatoIA>("ia.formatoImagem", "feed");
+  const [slides, setSlides] = useRascunhoStudio("ia.slides", 5);
   const [imgs, setImgs] = useRascunhoStudio<Record<string, Img>>("ia.imagens", {});
   const [prontas, setProntas] = useState<Record<string, string>>({});
-  const [varianteEnvio, setVarianteEnvio] = useState<string>("media");
+  const [varianteEnvio, setVarianteEnvio] = useRascunhoStudio<string>("ia.varianteEnvio", "media");
   const [midiaEnvio, setMidiaEnvioRaw] = useState<MidiaEnvio>("nenhuma");
   const midiaEscolhida = useRef(false);
   const setMidiaEnvio = (m: MidiaEnvio) => { midiaEscolhida.current = true; setMidiaEnvioRaw(m); };
