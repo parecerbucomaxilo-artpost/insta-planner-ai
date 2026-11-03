@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -72,6 +74,7 @@ function Dashboard() {
  const [perfil, setPerfil] = useState<Perfil | null>(null);
  useEffect(() => { const c = readPerfilCache(); if (c) setPerfil(c); }, []);
  const [tab, setTab] = useState("criar");
+ const [menuAberto, setMenuAberto] = useState(false);
  const [autoGenWeekly, setAutoGenWeekly] = useState(false);
  const pendingPosts = posts.filter((post) => post.status === "PendenteAprovacao");
  const [pendingOnly, setPendingOnly] = useState(false);
@@ -248,27 +251,49 @@ function Dashboard() {
  </Button>
  </div>
  <Tabs value={tab} onValueChange={setTab}>
- <div
- className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
- role="tablist"
- aria-label="Seções do planner"
- >
- <TabsList className="w-max">
- <TabsTrigger value="criar"><PlusCircle className="h-4 w-4 mr-1.5" aria-hidden="true" /> Criar</TabsTrigger>
- <TabsTrigger value="simplificado"><Sparkles className="h-4 w-4 mr-1.5" aria-hidden="true" /> Planner Simplificado Liga</TabsTrigger>
- <TabsTrigger value="simplificado-chico"><Sparkles className="h-4 w-4 mr-1.5" aria-hidden="true" /> Planner Simplificado Chico</TabsTrigger>
- <TabsTrigger value="agendamento-liga"><Stethoscope className="h-4 w-4 mr-1.5" aria-hidden="true" /> Cirurgia e Biópsias</TabsTrigger>
- <TabsTrigger value="clinica-escola"><CalendarCheck className="h-4 w-4 mr-1.5" aria-hidden="true" /> Planner Clínica Escola</TabsTrigger>
- <TabsTrigger value="semana"><CalendarDays className="h-4 w-4 mr-1.5" aria-hidden="true" /> Cronograma de 7 dias</TabsTrigger>
- <TabsTrigger value="calendario" onClick={() => { void load(); }}><CalendarIcon className="h-4 w-4 mr-1.5" aria-hidden="true" /> Calendário</TabsTrigger>
- <TabsTrigger value="todos" onClick={() => { setPendingOnly(false); void load(); }}><LayoutGrid className="h-4 w-4 mr-1.5" aria-hidden="true" /> Todas as publicações</TabsTrigger>
- <TabsTrigger value="insights"><TrendingUp className="h-4 w-4 mr-1.5" aria-hidden="true" /> Desempenho</TabsTrigger>
- <TabsTrigger value="perfil"><Settings className="h-4 w-4 mr-1.5" aria-hidden="true" /> Perfil</TabsTrigger>
- <TabsTrigger value="chaves"><KeyRound className="h-4 w-4 mr-1.5" aria-hidden="true" /> Integrações</TabsTrigger>
- <TabsTrigger value="ia"><ClipboardList className="h-4 w-4 mr-1.5" aria-hidden="true" /> Inteligência artificial</TabsTrigger>
- <TabsTrigger value="estudio"><PencilRuler className="h-4 w-4 mr-1.5" aria-hidden="true" /> Estúdio Gratuito</TabsTrigger>
- </TabsList>
- </div>
+ {(() => {
+   const itens: Array<{ v: string; nome: string; Icon: typeof PlusCircle; onSel?: () => void }> = [
+     { v: "criar", nome: "Criar", Icon: PlusCircle },
+     { v: "simplificado", nome: "Planner Simplificado Liga", Icon: Sparkles },
+     { v: "simplificado-chico", nome: "Planner Simplificado Chico", Icon: Sparkles },
+     { v: "agendamento-liga", nome: "Cirurgia e Biópsias", Icon: Stethoscope },
+     { v: "clinica-escola", nome: "Planner Clínica Escola", Icon: CalendarCheck },
+     { v: "semana", nome: "Cronograma de 7 dias", Icon: CalendarDays },
+     { v: "calendario", nome: "Calendário", Icon: CalendarIcon, onSel: () => { void load(); } },
+     { v: "todos", nome: "Todas as publicações", Icon: LayoutGrid, onSel: () => { setPendingOnly(false); void load(); } },
+     { v: "insights", nome: "Desempenho", Icon: TrendingUp },
+     { v: "perfil", nome: "Perfil", Icon: Settings },
+     { v: "chaves", nome: "Integrações", Icon: KeyRound },
+     { v: "ia", nome: "Inteligência artificial", Icon: ClipboardList },
+     { v: "estudio", nome: "Estúdio Gratuito", Icon: PencilRuler },
+   ];
+   const atual = itens.find((i) => i.v === tab) ?? itens[0];
+   return (
+     <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
+       <SheetTrigger asChild>
+         <Button variant="outline" className="w-full justify-start gap-2 sm:w-auto" aria-label="Abrir menu">
+           <Menu className="h-4 w-4" aria-hidden="true" />
+           <atual.Icon className="h-4 w-4" aria-hidden="true" /> {atual.nome}
+         </Button>
+       </SheetTrigger>
+       <SheetContent side="left" className="w-72 overflow-y-auto p-4">
+         <SheetHeader><SheetTitle>Menu</SheetTitle></SheetHeader>
+         <nav className="mt-4 flex flex-col gap-1" aria-label="Seções do planner">
+           {itens.map((i) => (
+             <Button
+               key={i.v}
+               variant={tab === i.v ? "secondary" : "ghost"}
+               className="justify-start gap-2"
+               onClick={() => { setTab(i.v); i.onSel?.(); setMenuAberto(false); }}
+             >
+               <i.Icon className="h-4 w-4" aria-hidden="true" /> {i.nome}
+             </Button>
+           ))}
+         </nav>
+       </SheetContent>
+     </Sheet>
+   );
+ })()}
 
  <TabsContent value="criar" className="mt-6">
  <PostComposer onCreated={() => { load(); setTab("todos"); }} />
