@@ -1,5 +1,5 @@
 import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Copy, Lightbulb, ListChecks, Hash, FileText, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
