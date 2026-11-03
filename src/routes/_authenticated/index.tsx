@@ -33,7 +33,6 @@ import { AutomationKeys } from "@/components/AutomationKeys";
 import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
 import { WeeklyCalendar } from "@/components/WeeklyCalendar";
 import { NotificationsBell } from "@/components/NotificationsBell";
-import logoAsset from "@/assets/logo-planner.png.asset.json";
 import type { PostRow } from "@/lib/posts-types";
 import { signPostMediaUrls } from "@/lib/storage-url";
 import { POST_REVIEW_CHANGED } from "@/lib/post-review";
@@ -161,18 +160,7 @@ function Dashboard() {
  <header className="border-b bg-card/80 backdrop-blur sticky top-0 z-10" style={{ paddingTop: "env(safe-area-inset-top)" }}>
  <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
  <div className="flex min-w-0 items-center gap-3">
- <div className="h-10 w-10 shrink-0 rounded-xl overflow-hidden ring-2 ring-primary/30 bg-white flex items-center justify-center">
- {perfil?.instagram_foto_url || perfil?.url_logo? (
- <img
- src={perfil.instagram_foto_url?? perfil.url_logo?? ""}
- alt="Foto do perfil"
- className="h-full w-full object-cover"
- loading="lazy"
- />
- ): (
- <img src={logoAsset.url} alt="Planner Chico" className="h-full w-full object-contain" />
- )}
- </div>
+ <div className="h-10 w-10 shrink-0 invisible" aria-hidden="true" />
  <div className="min-w-0">
  <h1 className="truncate text-base sm:text-lg font-bold leading-tight">Planner Chico</h1>
  <p className="hidden sm:block text-xs text-muted-foreground truncate">
