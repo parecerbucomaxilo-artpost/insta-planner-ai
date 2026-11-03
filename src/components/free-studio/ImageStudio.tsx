@@ -13,6 +13,7 @@ import { StudioPublishActions } from "./StudioPublishActions";
 import type { StudioContent } from "@/lib/studio-publication";
 import { definirMidiaEstudio, persistirArteCanvas, useUsuarioAtual } from "@/lib/studio-media";
 import { uploadPostImage } from "@/lib/storage-utils";
+import { useRascunhoStudio } from "./StudioMaterial";
 
 const FORMATOS = {
   feed: { nome: "Instagram feed 4:5", w: 1080, h: 1350 },
@@ -68,10 +69,10 @@ function quebrarLinhas(ctx: CanvasRenderingContext2D, texto: string, max: number
 export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: string }) {
   const uid = useUsuarioAtual();
   const [salvandoArte, setSalvandoArte] = useState(false);
-  const [selecionada, setSelecionada] = useState<StudioContent | null>(null);
+  const [selecionada, setSelecionada] = useRascunhoStudio<StudioContent | null>("imagem.selecionada", null);
   const P = PERFIS[perfil];
   const CORES_MARCA = Array.from(new Set([P.paleta.texto, P.paleta.destaque, P.paleta.fundo1, P.paleta.fundo2]));
-  const [comLogo, setComLogo] = useState(true);
+  const [comLogo, setComLogo] = useRascunhoStudio("imagem.logo", true);
   const [logo, setLogo] = useState<HTMLImageElement | null>(null);
   useEffect(() => {
     setLogo(null);
@@ -85,8 +86,17 @@ export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: st
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
-  const [nomeArquivo, setNomeArquivo] = useState("imagem");
-  const [a, setA] = useState<Ajustes>(INICIAL);
+  const [nomeArquivo, setNomeArquivo] = useRascunhoStudio("imagem.nome", "imagem");
+  const [origem, setOrigem] = useRascunhoStudio("imagem.origem", "");
+  useEffect(() => {
+    if (!origem) return;
+    const i = new Image();
+    let vivo = true;
+    i.onload = () => { if (vivo) setImg(i); };
+    i.src = origem;
+    return () => { vivo = false; };
+  }, [origem]);
+  const [a, setA] = useRascunhoStudio<Ajustes>("imagem.ajustes", INICIAL);
   const [hist, setHist] = useState<Ajustes[]>([INICIAL]);
   const [idx, setIdx] = useState(0);
   const [tipo, setTipo] = useState<"image/png" | "image/jpeg">("image/jpeg");
@@ -155,16 +165,21 @@ export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: st
   }, [a, img, comLogo, logo, P.logo, P.paleta.fundo1]);
 
   useEffect(() => { desenhar(); }, [desenhar]);
-  useEffect(() => { setSelecionada(null); }, [desenhar, tema]);
+  const primeiraComposicao = useRef(true);
+  useEffect(() => { if (primeiraComposicao.current) { primeiraComposicao.current = false; return; } setSelecionada(null); }, [a, origem, comLogo]);
 
   const carregar = (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) { toast.error("Escolha um arquivo de imagem."); return; }
-    const url = URL.createObjectURL(file);
-    const novo = new Image();
-    novo.onload = () => { setImg(novo); setNomeArquivo(file.name.replace(/\.[^.]+$/, "") || "imagem"); setA((s) => ({ ...s, zoom: 1, offX: 0, offY: 0 })); };
-    novo.onerror = () => toast.error("Não foi possível abrir esta imagem.");
-    novo.src = url;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") return;
+      setOrigem(reader.result);
+      setNomeArquivo(file.name.replace(/\.[^.]+$/, "") || "imagem");
+      setA((s) => ({ ...s, zoom: 1, offX: 0, offY: 0 }));
+    };
+    reader.onerror = () => toast.error("Não foi possível abrir esta imagem.");
+    reader.readAsDataURL(file);
   };
 
   const baixar = () => {
@@ -244,7 +259,7 @@ export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: st
             }}>{salvandoArte ? "Salvando arte…" : "Selecionar arte para publicação"}</Button>
             <Button variant="ghost" onClick={() => setA({ ...INICIAL, formato: a.formato })}><RotateCcw className="mr-1.5 h-4 w-4" /> Redefinir ajustes</Button>
           </div>
-          {selecionada && <StudioPublishActions content={selecionada} />}
+          {selecionada && <StudioPublishActions content={{ ...selecionada, tema }} />}
         </CardContent>
       </Card>
 
