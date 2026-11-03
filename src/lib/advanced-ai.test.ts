@@ -4,8 +4,8 @@ import { montarPromptTexto, montarPromptImagem, lerResultado, BriefingSchema, MA
 const b = BriefingSchema.parse({ marca: "chico", tema: "fratura de mandíbula", rede: "instagram", nivel: "leigo" });
 
 describe("advanced-ai", () => {
-  it("tem exatamente os três perfis do Estúdio, cada um com seus dados", () => {
-    expect(Object.keys(MARCAS)).toEqual(["chico", "cirurgia-biopsias", "clinica-escola"]);
+  it("tem os quatro perfis do Estúdio, cada um com seus dados", () => {
+    expect(Object.keys(MARCAS)).toEqual(["chico", "cirurgia-biopsias", "clinica-escola", "liga"]);
     expect(MARCAS.chico.nome).toBe("Planner Chico");
     expect(MARCAS.chico.audiencia).toBe("chico-drfm");
     expect(MARCAS.chico.logo).toBe("planner");
