@@ -1,6 +1,7 @@
 import { plainLanguageRule } from "@/lib/plain-language";
 import { checkLinkedInConnection } from "@/lib/social/linkedin-status";
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
@@ -2581,7 +2582,7 @@ export const discardPost = createServerFn({ method: "POST" })
 
 // Aprova um post pendente de revisão — define status final (Rascunho/Agendado/Publicado).
 export const approvePost = createServerFn({ method: "POST" })
-  .middleware([])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -2590,7 +2591,23 @@ export const approvePost = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { data: owned, error: ownershipError } = await context.supabase.from("posts").select("id,user_id,status,instagram_conta,postar_instagram,postar_linkedin,postar_google,tipo_post,formato_midia,legenda,legenda_instagram,legenda_linkedin,url_imagem,imagens_carrossel").eq("id", data.id).eq("user_id", context.userId).maybeSingle();
+    if (ownershipError || !owned) throw new Error("Publicação não autorizada: post ausente ou de outra conta.");
+    if (!["Rascunho", "PendenteAprovacao", "Erro"].includes(owned.status)) throw new Error("Este post já foi enviado/agendado ou não pode ser alterado nesta ação.");
+    if (data.acao === "publicar" || data.acao === "agendar") {
+      if (owned.postar_google) throw new Error("Use o fluxo existente do Google Business; este serviço não publica nesse canal.");
+      const images = Array.isArray(owned.imagens_carrossel) ? owned.imagens_carrossel.filter((s): s is string => typeof s === "string") : [];
+      if (owned.postar_linkedin && (images.length > 1 || /stor/i.test(owned.formato_midia))) throw new Error("LinkedIn aceita texto e uma imagem nesta integração.");
+      if (owned.postar_instagram) {
+        const conta = (owned.instagram_conta ?? "").replace(/^@+/, "").toLowerCase();
+        const { data: profiles, error } = await context.supabase.from("perfil_usuario").select("instagram_arroba,arroba_usuario").eq("user_id", context.userId);
+        if (error || !conta || !profiles?.some(p => [p.instagram_arroba, p.arroba_usuario].some(a => a.replace(/^@+/, "").toLowerCase() === conta))) throw new Error("Conta Instagram não pertence ao usuário autenticado.");
+        if (!owned.url_imagem && !images.length) throw new Error("Instagram exige imagem.");
+        if ((owned.legenda_instagram || owned.legenda).length > 2200) throw new Error("Instagram: legenda acima de 2200 caracteres.");
+      }
+      if (owned.postar_linkedin && (!(owned.legenda_linkedin || owned.legenda).trim() || (owned.legenda_linkedin || owned.legenda).length > 3000)) throw new Error("LinkedIn: texto vazio ou acima de 3000 caracteres.");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (data.acao === "publicar") {
       // Lê post para descobrir destinos.

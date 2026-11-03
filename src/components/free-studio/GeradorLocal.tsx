@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { StudioPublishActions } from "./StudioPublishActions";
 import { toast } from "sonner";
 import { Wand2, Download, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -196,6 +197,7 @@ export function GeradorLocal({ perfil, tema }: { perfil: PerfilId; tema: string 
                 <Copy className="mr-1.5 h-4 w-4" /> Copiar legenda
               </Button>
             </div>
+            <StudioPublishActions content={{ perfil, tema, texto: legenda, imagens, formato: tipo === "ig-feed" ? "Carrossel" : tipo === "ig-stories" ? "Story" : "Post Único", rede: TIPOS[tipo].rede }} />
           </div>
         )}
       </CardContent>

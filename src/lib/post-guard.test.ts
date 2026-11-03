@@ -118,6 +118,14 @@ function fakeClient(rows: any[]) {
 }
 
 describe("salvarPostInedito (post manual em qualquer planner)", () => {
+  it("artes sem legenda não colidem na chave vazia de texto", async () => {
+    const rows: any[] = []; const c = fakeClient(rows);
+    const a = await salvarPostInedito(c, "u", { legenda: "", url_imagem: "https://media.example/a.jpg" });
+    const b = await salvarPostInedito(c, "u", { legenda: "", url_imagem: "https://media.example/b.jpg" });
+    expect(a.id).not.toBe(b.id); expect(rows).toHaveLength(2);
+    const retry = await salvarPostInedito(c, "u", { legenda: "", url_imagem: "https://media.example/a.jpg" });
+    expect(retry).toEqual({ id: a.id, existente: true }); expect(rows).toHaveLength(2);
+  });
   it("double-click não cria cópia e cópia semântica é recusada", async () => {
     const rows: any[] = [];
     const c = fakeClient(rows);

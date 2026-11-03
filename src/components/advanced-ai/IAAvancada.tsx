@@ -19,6 +19,7 @@ import {
   type Marca, type RedeIA, type Variante, type Ajuste, type FormatoIA, type Briefing, type Resultado,
 } from "@/lib/advanced-ai";
 import { gerarTextoAvancado, gerarImagemAvancada } from "@/lib/advanced-ai.functions";
+import { StudioPublishActions } from "@/components/free-studio/StudioPublishActions";
 
 const cores = (m: Marca) => ({ texto: MARCAS[m].paleta.texto, destaque: MARCAS[m].paleta.destaque, sombra: MARCAS[m].paleta.fundo1 });
 
@@ -102,6 +103,8 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   const [slides, setSlides] = useState(5);
   const [imgs, setImgs] = useState<Record<string, Img>>({});
   const [prontas, setProntas] = useState<Record<string, string>>({});
+  const [varianteEnvio, setVarianteEnvio] = useState<string>("media");
+  const [midiaEnvio, setMidiaEnvio] = useState<"nenhuma" | "unico" | "capa" | "carrossel">("nenhuma");
   const fim = useRef<HTMLDivElement>(null);
 
   const set = <K extends keyof Briefing>(k: K, v: Briefing[K]) => setB((s) => ({ ...s, [k]: v }));
@@ -332,6 +335,19 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
           </div>
         </CardContent>
       </Card>
+      <section className="space-y-3 border-t pt-4" aria-label="Conteúdo selecionado para publicação">
+        <h3 className="font-semibold">Conteúdo para publicação</h3>
+        <Label htmlFor="ia-variante-envio">Texto selecionado</Label>
+        <select id="ia-variante-envio" className="h-10 w-full rounded-md border bg-background px-2" value={varianteEnvio} onChange={e => setVarianteEnvio(e.target.value)}>
+          <option value="">Sem texto</option>
+          {res && Object.keys(res.variantes).map(k => <option key={k} value={k}>{VARIANTES[k as Variante] ?? k}</option>)}
+        </select>
+        <Label htmlFor="ia-midia-envio">Imagem selecionada</Label>
+        <select id="ia-midia-envio" className="h-10 w-full rounded-md border bg-background px-2" value={midiaEnvio} onChange={e => setMidiaEnvio(e.target.value as typeof midiaEnvio)}>
+          <option value="nenhuma">Sem imagem</option><option value="unico">Post único</option><option value="capa">Capa</option><option value="carrossel">Carrossel — capa + slides em ordem</option>
+        </select>
+        <StudioPublishActions content={{ perfil, tema, rede: b.rede, texto: (res?.variantes[varianteEnvio as Variante] ?? "") + (res?.variantes[varianteEnvio as Variante] && res.hashtags.length && b.rede !== "google" ? "\n\n" + res.hashtags.join(" ") : ""), imagens: midiaEnvio === "nenhuma" ? [] : midiaEnvio === "carrossel" ? [prontas.capa, ...Array.from({ length: slides - 1 }, (_, i) => prontas[`slide-${i + 2}`])].filter((s): s is string => !!s) : prontas[midiaEnvio] ? [prontas[midiaEnvio]] : [], midiaPendente: midiaEnvio !== "nenhuma" && (midiaEnvio === "carrossel" ? !prontas.capa || Array.from({ length: slides - 1 }, (_, i) => prontas[`slide-${i + 2}`]).some(s => !s) : !prontas[midiaEnvio]), formato: midiaEnvio === "carrossel" ? "Carrossel" : b.formato === "Artigo LinkedIn" ? "Artigo LinkedIn" : formato === "story" ? "Story" : "Post Único" }} />
+      </section>
       <div ref={fim} />
 
       <AlertDialog open={!!pendente} onOpenChange={(o) => !o && setPendente(null)}>
