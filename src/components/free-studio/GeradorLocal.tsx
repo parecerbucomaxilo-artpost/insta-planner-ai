@@ -155,7 +155,7 @@ export function GeradorLocal() {
 
   return (
     <Card>
-      <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Wand2 className="h-4 w-4" /> Gerar imagens e legendas</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Wand2 className="h-4 w-4" /> Gerar imagens e legendas — modelos locais, sem IA</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-1.5">
           <Label>Tipo de postagem</Label>
