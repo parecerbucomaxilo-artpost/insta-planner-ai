@@ -2,6 +2,7 @@ import { ShieldCheck } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TextStudio } from "./TextStudio";
 import { ImageStudio } from "./ImageStudio";
+import { GeradorLocal } from "./GeradorLocal";
 
 /** Ferramentas 100% locais: sem IA, sem chaves, sem envio de arquivos para fora do navegador. */
 export function EstudioGratuito() {
@@ -14,6 +15,7 @@ export function EstudioGratuito() {
           Tudo aqui funciona no seu navegador, sem custo e sem usar créditos de IA. As sugestões vêm de modelos e regras fixas, não de inteligência artificial, e suas imagens não são enviadas para nenhum serviço. Nada é publicado ou salvo no Planner.
         </p>
       </div>
+      <GeradorLocal />
       <Tabs defaultValue="texto">
         <TabsList>
           <TabsTrigger value="texto">Texto</TabsTrigger>
