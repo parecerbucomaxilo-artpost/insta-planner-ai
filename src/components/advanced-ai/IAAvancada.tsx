@@ -333,7 +333,7 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
                 <p><strong>CTA:</strong> {pacote.cta || "incluída na legenda"}</p>
                 <p><strong>Hashtags:</strong> {pacote.hashtags.join(" ") || "—"}</p>
                 <p className="text-muted-foreground">A legenda está abaixo. A imagem não foi gerada: use “Gerar imagem com OpenAI” (pede confirmação de créditos). O texto da arte e a logo entram como camada por cima da imagem.</p>
-                <Button size="sm" disabled={ocupado} onClick={() => gerarImagem("unico")}>Gerar imagem com OpenAI</Button>
+                <Button size="sm" disabled={ocupado} onClick={() => gerarImagem("unico")}>Gerar imagem com {PROVEDORES_IA[provedorDoModelo(modeloImagem)]}</Button>
               </div>
             )}
             {res.precisaFonte && <p className="rounded-md border p-2 text-sm"><AlertTriangle className="mr-1 inline h-4 w-4" />Este tema precisa de fonte verificável antes de publicar. {res.observacoes}</p>}
