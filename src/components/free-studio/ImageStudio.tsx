@@ -11,6 +11,7 @@ import { LOGOS_DISPONIVEIS } from "@/lib/logos-catalog";
 import { PERFIS, type PerfilId } from "@/lib/studio-profiles";
 import { StudioPublishActions } from "./StudioPublishActions";
 import type { StudioContent } from "@/lib/studio-publication";
+import { definirMidiaEstudio } from "@/lib/studio-media";
 
 const FORMATOS = {
   feed: { nome: "Instagram feed 4:5", w: 1080, h: 1350 },
@@ -226,7 +227,12 @@ export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: st
             <Button variant="outline" disabled={(!img && !a.texto.trim()) || !tema} onClick={() => {
               try {
                 const src = canvasRef.current?.toDataURL("image/jpeg", 0.92);
-                if (src) setSelecionada({ perfil, tema, texto: "", imagens: [src], formato: a.formato === "stories" ? "Story" : "Post Único", rede: a.formato === "linkedin" ? "linkedin" : a.formato === "google" ? "google" : "instagram" });
+                if (src) {
+                  const c: StudioContent = { perfil, tema, texto: "", imagens: [src], formato: a.formato === "stories" ? "Story" : "Post Único", rede: a.formato === "linkedin" ? "linkedin" : a.formato === "google" ? "google" : "instagram" };
+                  setSelecionada(c);
+                  definirMidiaEstudio({ perfil, tema, imagens: c.imagens, formato: c.formato, rede: c.rede });
+                  toast.success("Arte anexada. Ela também aparece no Estúdio de Texto para publicar com a legenda.");
+                }
               } catch { toast.error("Não foi possível preparar a imagem selecionada."); }
             }}>Selecionar arte para publicação</Button>
             <Button variant="ghost" onClick={() => setA({ ...INICIAL, formato: a.formato })}><RotateCcw className="mr-1.5 h-4 w-4" /> Redefinir ajustes</Button>

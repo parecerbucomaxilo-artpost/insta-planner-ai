@@ -5,6 +5,22 @@ export type StudioContent = { perfil: PerfilId; tema: string; texto: string; ima
 export type StudioDestination = { canal: Rede; conta: string; conectado: boolean };
 export type StudioAction = "rascunho" | "agendar" | "publicar";
 
+/** Blocks opening Publish/Schedule as "ready" when the network needs media that is not there. Drafts stay allowed. */
+export function bloqueioAntesDeAbrir(c: StudioContent, acao: StudioAction): string | null {
+  if (acao === "rascunho") return null;
+  if (c.midiaPendente) return "A imagem ainda está sendo preparada. Aguarde terminar antes de publicar.";
+  if (c.rede === "instagram" && !c.imagens.length) return "O Instagram exige imagem. Selecione ou gere uma arte (Estúdio de Imagens → “Selecionar arte para publicação”) antes de publicar ou agendar.";
+  if (c.formato === "Carrossel" && c.imagens.length !== 5) return "O carrossel precisa dos cinco slides prontos antes de publicar.";
+  return null;
+}
+
+/** How each media source is uploaded: local files are uploaded once; files already in our storage are reused. */
+export function origemMidia(src: string, storageBase: string): "local" | "persistida" | "invalida" {
+  if (src.startsWith("data:image/") || src.startsWith("blob:")) return "local";
+  if (storageBase && src.startsWith(`${storageBase.replace(/\/$/, "")}/storage/v1/object/public/post-images/`)) return "persistida";
+  return "invalida";
+}
+
 export function validarPublicacao(c: StudioContent, d: StudioDestination, acao: StudioAction, quando?: string, agora = Date.now()) {
   if (!c.tema.trim()) throw new Error("Confirme o tema antes de salvar ou enviar.");
   if (!c.texto.trim() && !c.imagens.length) throw new Error("Selecione texto e/ou imagem do Estúdio.");

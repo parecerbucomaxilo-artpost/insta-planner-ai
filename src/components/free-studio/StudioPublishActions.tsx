@@ -15,7 +15,7 @@ import { getPublicationDestination } from "@/lib/publication-destination.functio
 import { getLinkedInStatus } from "@/lib/social/linkedin-status.functions";
 import { PERFIS } from "@/lib/studio-profiles";
 import { POST_REVIEW_CHANGED } from "@/lib/post-review";
-import { executarPublicacaoStudio, type StudioContent, type StudioAction, type StudioDestination, type PublishResult } from "@/lib/studio-publication";
+import { executarPublicacaoStudio, bloqueioAntesDeAbrir, origemMidia, type StudioContent, type StudioAction, type StudioDestination, type PublishResult } from "@/lib/studio-publication";
 import { carregarDestinos } from "@/lib/studio-destinations";
 import { StudioDestinationPicker } from "./StudioDestinationPicker";
 
@@ -45,8 +45,12 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
   useEffect(() => { setTexto(content.texto); setVisto(false); }, [content.texto]);
   useEffect(() => { setVisto(false); setLoaded([]); }, [mediaFingerprint]);
 
+  const [aviso, setAviso] = useState("");
+  useEffect(() => { setAviso(""); }, [mediaFingerprint, content.rede]);
   const abrir = (a: StudioAction) => {
-    setAcao(a); setOpen(true); setErro(""); setVisto(false); setResultado("");
+    const motivo = bloqueioAntesDeAbrir(content, a);
+    if (motivo) { setAviso(motivo); return; }
+    setAviso(""); setAcao(a); setOpen(true); setErro(""); setVisto(false); setResultado("");
   };
   const carregar = async () => {
     const result = await carregarDestinos({
@@ -92,7 +96,9 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
           return { ...d, conectado: false };
         },
         upload: async (src, i, uid) => {
-          if (!src.startsWith("data:image/") && !src.startsWith("blob:")) throw new Error("Mídia não é uma imagem local selecionada do Estúdio.");
+          const origem = origemMidia(src, import.meta.env.VITE_SUPABASE_URL ?? "");
+          if (origem === "persistida") return src;
+          if (origem !== "local") throw new Error("Mídia não é uma imagem do Estúdio nem um arquivo já salvo no app.");
           const res = await fetch(src);
           if (!res.ok) throw new Error("Não foi possível ler a imagem selecionada.");
           const blob = await res.blob();
@@ -125,6 +131,7 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
       <Button variant="outline" onClick={() => void abrir("rascunho")} disabled={busy || (!content.texto.trim() && !content.imagens.length)}><Save className="mr-1.5 h-4 w-4" />Salvar rascunho</Button>
       <Button variant="outline" onClick={() => void abrir("agendar")} disabled={busy || (!content.texto.trim() && !content.imagens.length)}><CalendarClock className="mr-1.5 h-4 w-4" />Agendar</Button>
     </div>
+    {aviso && <p role="alert" className="text-sm text-destructive">{aviso}</p>}
     <Dialog open={open} onOpenChange={o => { if (!busy) setOpen(o); }}>
       <DialogContent className="max-h-[90vh] w-[calc(100%-1rem)] min-w-0 overflow-y-auto [&>*]:min-w-0 sm:max-w-2xl">
         <DialogHeader><DialogTitle>{acao === "publicar" ? "Publicar — confirmar envio" : acao === "agendar" ? "Agendar publicação" : "Salvar rascunho"}</DialogTitle><DialogDescription>Perfil editorial: {PERFIS[content.perfil].nome}. A conta de destino é escolhida separadamente. Publicar envia conteúdo visível externamente; agendar autoriza envio futuro. Nenhuma geração envia automaticamente.</DialogDescription></DialogHeader>
