@@ -1,29 +1,54 @@
-import { ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ShieldCheck, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TextStudio } from "./TextStudio";
 import { ImageStudio } from "./ImageStudio";
 import { GeradorLocal } from "./GeradorLocal";
+import { IAAvancada } from "@/components/advanced-ai/IAAvancada";
 
-/** Ferramentas 100% locais: sem IA, sem chaves, sem envio de arquivos para fora do navegador. */
+type Modo = "gratuito" | "ia";
+const CHAVE = "estudio-modo";
+
+/** Dois modos separados: ferramentas locais (sem IA) e IA Avançada (gateway real, pode consumir créditos). */
 export function EstudioGratuito() {
+  const [modo, setModo] = useState<Modo>("gratuito");
+  useEffect(() => {
+    if (localStorage.getItem(CHAVE) === "ia") setModo("ia");
+  }, []);
+  const trocar = (m: Modo) => { setModo(m); localStorage.setItem(CHAVE, m); };
+
   return (
     <section className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Estúdio Gratuito</h2>
-        <p className="mt-1 flex items-start gap-2 rounded-md border bg-muted/50 p-3 text-sm text-muted-foreground">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          Tudo aqui funciona no seu navegador, sem custo e sem usar créditos de IA. As sugestões vêm de modelos e regras fixas, não de inteligência artificial, e suas imagens não são enviadas para nenhum serviço. Nada é publicado ou salvo no Planner.
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Estúdio</h2>
+        <div className="flex flex-col gap-2 sm:flex-row" role="radiogroup" aria-label="Modo do estúdio">
+          <Button role="radio" aria-checked={modo === "gratuito"} variant={modo === "gratuito" ? "default" : "outline"} onClick={() => trocar("gratuito")}>
+            <ShieldCheck className="mr-1.5 h-4 w-4" /> Gratuito — sem créditos de IA
+          </Button>
+          <Button role="radio" aria-checked={modo === "ia"} variant={modo === "ia" ? "default" : "outline"} onClick={() => trocar("ia")}>
+            <Sparkles className="mr-1.5 h-4 w-4" /> IA Avançada — pode consumir créditos Lovable AI
+          </Button>
+        </div>
+        <p className="flex items-start gap-2 rounded-md border bg-muted/50 p-3 text-sm text-muted-foreground">
+          {modo === "gratuito"
+            ? <><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />Modo ativo: Gratuito. Tudo funciona no seu navegador com modelos e regras fixas — não é inteligência artificial e não usa créditos. Imagens não saem do seu aparelho. Nada é publicado ou salvo no Planner.</>
+            : <><Sparkles className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />Modo ativo: IA Avançada. Usa os modelos de IA reais já conectados ao Planner. Cada geração pede confirmação e pode consumir créditos. Nada é publicado ou salvo automaticamente.</>}
         </p>
       </div>
-      <GeradorLocal />
-      <Tabs defaultValue="texto">
-        <TabsList>
-          <TabsTrigger value="texto">Texto</TabsTrigger>
-          <TabsTrigger value="imagem">Imagem</TabsTrigger>
-        </TabsList>
-        <TabsContent value="texto" className="mt-4"><TextStudio /></TabsContent>
-        <TabsContent value="imagem" className="mt-4"><ImageStudio /></TabsContent>
-      </Tabs>
+      {modo === "gratuito" ? (
+        <>
+          <GeradorLocal />
+          <Tabs defaultValue="texto">
+            <TabsList>
+              <TabsTrigger value="texto">Texto</TabsTrigger>
+              <TabsTrigger value="imagem">Imagem</TabsTrigger>
+            </TabsList>
+            <TabsContent value="texto" className="mt-4"><TextStudio /></TabsContent>
+            <TabsContent value="imagem" className="mt-4"><ImageStudio /></TabsContent>
+          </Tabs>
+        </>
+      ) : <IAAvancada />}
     </section>
   );
 }
