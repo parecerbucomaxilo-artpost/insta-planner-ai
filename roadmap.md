@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Corrigir seletor de destino do Estúdio: abertura, contas verificadas, loading/vazio/erro recuperável e interação desktop/mobile sem publicação.
 - [x] Publicação explícita no Estúdio: ações e resumo, conta separada de perfil, serviços reais Instagram/LinkedIn, rascunho/agendamento; Google bloqueado por automação não isolada. Testes mockados e UI isolada desktop/mobile, sem envio/deploy.
 - [ ] Validar salvar/ler rascunho e agendamento na sessão do solicitante — bloqueado: nenhuma conta de autenticação corresponde ao solicitante; não assumir outra conta.
 - [x] Clínica Escola sem logo: perfil explícito nenhuma, Estúdio local/IA/editor/exportações e cabeçalho sem overlay/fallback; demais logos preservadas. 200 testes passaram, build automático OK; componentes reais e download local verificados desktop/mobile. Sessão completa indisponível; teste legado vazio falha; imagens antigas achatadas não alteradas.
