@@ -48,7 +48,7 @@ export function resetarConfirmacao() {
 export function comGuardaIA<A extends unknown[], R>(acao: string, fn: (...a: A) => Promise<R>, agora: () => number = Date.now) {
   return async (...args: A): Promise<R> => {
     if (lerModo() !== "ia") throw new ModoGratuitoError(acao);
-    if (agora() > confirmadoAte) {
+    if (agora() >= confirmadoAte) {
       const ok = await confirmador(acao);
       if (!ok) throw new Error("Geração cancelada. Nenhum crédito foi usado e nada foi gerado.");
       confirmadoAte = agora() + JANELA_CONFIRMACAO_MS;
