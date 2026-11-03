@@ -34,3 +34,13 @@ describe("free-studio", () => {
     expect(modeloLegenda("educativo", "bruxismo", "instagram")).toContain("bruxismo");
   });
 });
+
+import { sortearTema, PLANNERS_TEMAS } from "./free-studio";
+describe("sortearTema", () => {
+  it("sorteia do planner escolhido e não repete os recentes", () => {
+    const lista = PLANNERS_TEMAS.liga.temas;
+    const recentes = lista.slice(0, lista.length - 1);
+    expect(sortearTema("liga", [...recentes], () => 0)).toBe(lista[lista.length - 1]);
+    expect(PLANNERS_TEMAS.chico.temas).toContain(sortearTema("chico", []));
+  });
+});

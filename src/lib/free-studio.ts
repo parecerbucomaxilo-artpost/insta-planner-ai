@@ -153,3 +153,21 @@ export function revisarTexto(texto: string): Problema[] {
 function capitalizar(s: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
+
+import { TEMAS_GERAIS, TEMAS_DIVERSOS, TEMAS_ESTUDANTES } from "./planner-temas";
+
+export type PlannerTemas = "chico" | "liga" | "diversos";
+
+export const PLANNERS_TEMAS: Record<PlannerTemas, { nome: string; temas: readonly string[] }> = {
+  chico: { nome: "Planner Simplificado Chico", temas: TEMAS_GERAIS },
+  liga: { nome: "Planner Simplificado Liga (estudantes)", temas: TEMAS_ESTUDANTES },
+  diversos: { nome: "Temas diversos", temas: TEMAS_DIVERSOS },
+};
+
+/** Sorteio local de um tema do planner, evitando os já sorteados recentemente. Não usa IA. */
+export function sortearTema(planner: PlannerTemas, recentes: string[], aleatorio: () => number = Math.random): string {
+  const lista = PLANNERS_TEMAS[planner].temas;
+  const livres = lista.filter((t) => !recentes.includes(t));
+  const base = livres.length ? livres : lista;
+  return base[Math.floor(aleatorio() * base.length) % base.length];
+}

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Lightbulb, ListChecks, Hash, FileText } from "lucide-react";
+import { Copy, Lightbulb, ListChecks, Hash, FileText, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   LIMITES_REDE, OBJETIVOS, CTAS_PERMITIDOS, ESTRUTURA_LEGENDA,
   statusRede, modeloLegenda, gerarGanchos, sugerirHashtags, revisarTexto,
-  type RedeTexto, type Objetivo,
+  PLANNERS_TEMAS, sortearTema,
+  type RedeTexto, type Objetivo, type PlannerTemas,
 } from "@/lib/free-studio";
 
 const REDES = Object.keys(LIMITES_REDE) as RedeTexto[];
@@ -29,6 +30,14 @@ export function TextStudio() {
   const [tema, setTema] = useState("");
   const [rede, setRede] = useState<RedeTexto>("instagram");
   const [objetivo, setObjetivo] = useState<Objetivo>("educativo");
+  const [planner, setPlanner] = useState<PlannerTemas>("chico");
+  const [recentes, setRecentes] = useState<string[]>([]);
+
+  const escolherParaMim = () => {
+    const t = sortearTema(planner, recentes);
+    setTema(t);
+    setRecentes((r) => [t, ...r].slice(0, 20));
+  };
 
   const ganchos = useMemo(() => gerarGanchos(tema), [tema]);
   const hashtags = useMemo(() => sugerirHashtags(tema, rede), [tema, rede]);
@@ -55,6 +64,28 @@ export function TextStudio() {
                 ))}
               </div>
             </div>
+          </div>
+
+          <div className="space-y-2 rounded-md border p-3">
+            <Label>Tema do planner</Label>
+            <div className="flex flex-wrap gap-2">
+              {(Object.keys(PLANNERS_TEMAS) as PlannerTemas[]).map((p) => (
+                <Button key={p} type="button" size="sm" variant={planner === p ? "secondary" : "outline"} onClick={() => setPlanner(p)}>{PLANNERS_TEMAS[p].nome}</Button>
+              ))}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button type="button" onClick={escolherParaMim}><Shuffle className="mr-1.5 h-4 w-4" /> Escolher tema para mim</Button>
+              <select
+                aria-label="Eu escolho o tema"
+                className="h-9 min-w-0 flex-1 rounded-md border bg-background px-2 text-sm"
+                value={PLANNERS_TEMAS[planner].temas.includes(tema) ? tema : ""}
+                onChange={(e) => e.target.value && setTema(e.target.value)}
+              >
+                <option value="">Eu escolho o tema da lista…</option>
+                {PLANNERS_TEMAS[planner].temas.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <p className="text-xs text-muted-foreground">A escolha automática sorteia um tema da lista do planner, sem repetir os últimos. Não usa IA nem créditos.</p>
           </div>
 
           <div className="space-y-1.5">
