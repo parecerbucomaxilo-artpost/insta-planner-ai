@@ -51,8 +51,8 @@ export const LOGOS_DISPONIVEIS: LogoOption[] = [
   },
   {
     key: "clinica-escola",
-    label: "Clínica Escola",
-    description: "Logo institucional da Clínica Escola.",
+    label: "Cirurgia e Biópsias",
+    description: "Logo oficial do perfil Cirurgia e Biópsias (chave legada clinica-escola).",
     url: logoClinicaEscola,
   },
   {

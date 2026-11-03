@@ -49,7 +49,8 @@ function linhas(ctx: CanvasRenderingContext2D, t: string, max: number) {
 async function compor(img: Img, formato: FormatoIA, marca: Marca): Promise<string> {
   const f = FORMATOS_IA[formato];
   const c = document.createElement("canvas"); c.width = f.w; c.height = f.h;
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext("2d");
+  if (!ctx) throw new Error("Não foi possível preparar a imagem para exportação.");
   const foto = await carregar(img.base);
   if (foto) {
     const e = Math.max(f.w / foto.width, f.h / foto.height);
@@ -77,7 +78,7 @@ async function compor(img: Img, formato: FormatoIA, marca: Marca): Promise<strin
     ctx.drawImage(logo, f.w - m - (logo.width / logo.height) * lh, m, (logo.width / logo.height) * lh, lh);
   }
   try { return c.toDataURL("image/jpeg", 0.92); } catch {
-    toast.warning("A logo oficial não pôde ser aplicada nesta exportação.");
+    toast.warning(MARCAS[marca].logo === "nenhuma" ? "Não foi possível compor esta exportação." : "A logo oficial não pôde ser aplicada nesta exportação.");
     return img.base;
   }
 }
@@ -168,7 +169,7 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
             <Label>Perfil ativo: {MARCAS[b.marca].nome}</Label>
-            <p className="text-xs text-muted-foreground">Público: {MARCAS[b.marca].publico}. Paleta, logo oficial, assinatura e chamadas seguem este perfil (troque no seletor de perfil acima).</p>
+            <p className="text-xs text-muted-foreground">Público: {MARCAS[b.marca].publico}. Paleta, {MARCAS[b.marca].logo !== "nenhuma" && "logo oficial, "}assinatura e chamadas seguem este perfil (troque no seletor de perfil acima).</p>
             {b.marca !== "chico" && (
               <div className="space-y-1">
                 <Label htmlFor="ia-tel">Telefone do perfil</Label>
@@ -314,7 +315,7 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
               <Button key={n} size="sm" variant="outline" disabled={ocupado} onClick={() => gerarImagem("slide", n)}>Slide {n}</Button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">A IA gera a imagem sem texto e sem logo. A headline abaixo e a logo oficial do perfil são aplicadas pelo app como camadas, então o texto sai exatamente como você escreveu.</p>
+          <p className="text-xs text-muted-foreground">A IA gera a imagem sem texto e sem logo. A headline abaixo{MARCAS[b.marca].logo !== "nenhuma" && " e a logo oficial do perfil"} é aplicada pelo app como camada, então o texto sai exatamente como você escreveu.</p>
           <div className="grid gap-4 sm:grid-cols-2">
             {Object.values(imgs).map((i) => (
               <div key={i.chave} className="space-y-2 rounded-md border p-2">

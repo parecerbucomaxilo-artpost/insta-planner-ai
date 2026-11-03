@@ -71,7 +71,7 @@ export const PERFIS: Record<PerfilId, Perfil> = {
     nome: "Clínica Escola",
     audiencia: "geral",
     temas: "clinica-escola",
-    logo: "clinica-escola",
+    logo: "nenhuma",
     publico: "Pacientes da Clínica Escola",
     nivel: "leigo",
     // Paleta própria não está configurada no projeto: neutro preto/branco, sem copiar outro perfil.
