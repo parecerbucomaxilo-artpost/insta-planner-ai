@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Centralizar tema/objetivo do Estúdio por usuário, perfil e material; remover campos duplicados, preservar edições e validar sem IA/publicação.
 - [ ] Corrigir autorização dos planners — problema confirmado; requer separar identidade autenticada, automação e posts compartilhados sem ampliar permissões; plano para aprovação.
 - [x] Corrigir descrição visual opcional — texto final real alimenta imagens sem inferência auxiliar nem parser JSON; testes mockados e compilação automática OK, sem geração paga.
 - [x] Corrigir seletor de destino do Estúdio: vazio reproduzido; seletor acessível controlado, verificações de conexão e loading/vazio/erro/retry. Interação com dados mockados conferida desktop/mobile sem envio; contas reais do solicitante não verificáveis sem sessão.
