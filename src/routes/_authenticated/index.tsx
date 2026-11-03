@@ -74,6 +74,7 @@ function Dashboard() {
  const [perfil, setPerfil] = useState<Perfil | null>(null);
  useEffect(() => { const c = readPerfilCache(); if (c) setPerfil(c); }, []);
  const [tab, setTab] = useState("criar");
+ const [menuAberto, setMenuAberto] = useState(false);
  const [autoGenWeekly, setAutoGenWeekly] = useState(false);
  const pendingPosts = posts.filter((post) => post.status === "PendenteAprovacao");
  const [pendingOnly, setPendingOnly] = useState(false);
