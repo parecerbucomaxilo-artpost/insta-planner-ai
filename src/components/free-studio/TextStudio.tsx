@@ -1,7 +1,7 @@
 import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Lightbulb, ListChecks, Hash, FileText, Shuffle } from "lucide-react";
+import { Copy, Lightbulb, ListChecks, Hash, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   LIMITES_REDE, OBJETIVOS, CTAS_PERMITIDOS, ESTRUTURA_LEGENDA,
   statusRede, modeloLegenda, gerarGanchos, sugerirHashtags, revisarTexto,
-  PLANNERS_TEMAS, sortearTema,
   type RedeTexto, type Objetivo, type PlannerTemas,
 } from "@/lib/free-studio";
 
@@ -26,20 +25,10 @@ async function copiar(texto: string) {
   }
 }
 
-export function TextStudio({ perfil }: { perfil: PerfilId }) {
+export function TextStudio({ perfil, tema }: { perfil: PerfilId; tema: string }) {
   const [texto, setTexto] = useState("");
-  const [tema, setTema] = useState("");
   const [rede, setRede] = useState<RedeTexto>("instagram");
   const [objetivo, setObjetivo] = useState<Objetivo>("educativo");
-  const planner: PlannerTemas = PERFIS[perfil].temas;
-  useEffect(() => { setTema(""); }, [perfil]);
-  const [recentes, setRecentes] = useState<string[]>([]);
-
-  const escolherParaMim = () => {
-    const t = sortearTema(planner, recentes);
-    setTema(t);
-    setRecentes((r) => [t, ...r].slice(0, 20));
-  };
 
   const ganchos = useMemo(() => gerarGanchos(tema), [tema]);
   const hashtags = useMemo(() => sugerirHashtags(tema, rede), [tema, rede]);
@@ -55,8 +44,8 @@ export function TextStudio({ perfil }: { perfil: PerfilId }) {
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="fs-tema">Tema</Label>
-              <Input id="fs-tema" value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Ex.: dente do siso" />
+              <Label>Tema confirmado</Label>
+              <p className="text-sm">{tema ? <strong>{tema}</strong> : <span className="text-muted-foreground">confirme um tema acima</span>} · Perfil: {PERFIS[perfil].nome}</p>
             </div>
             <div className="space-y-1.5">
               <Label>Rede</Label>
@@ -68,30 +57,13 @@ export function TextStudio({ perfil }: { perfil: PerfilId }) {
             </div>
           </div>
 
-          <div className="space-y-2 rounded-md border p-3">
-            <Label>Tema do perfil</Label>
-            <p className="text-xs">Perfil: <strong>{PERFIS[perfil].nome}</strong></p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button type="button" onClick={escolherParaMim}><Shuffle className="mr-1.5 h-4 w-4" /> Escolher tema para mim</Button>
-              <select
-                aria-label="Eu escolho o tema"
-                className="h-9 min-w-0 flex-1 rounded-md border bg-background px-2 text-sm"
-                value={PLANNERS_TEMAS[planner].temas.includes(tema) ? tema : ""}
-                onChange={(e) => e.target.value && setTema(e.target.value)}
-              >
-                <option value="">Eu escolho o tema da lista…</option>
-                {PLANNERS_TEMAS[planner].temas.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <p className="text-xs text-muted-foreground">A escolha automática sorteia um tema da lista do planner, sem repetir os últimos. Não usa IA nem créditos.</p>
-          </div>
-
           <div className="space-y-1.5">
             <Label>Modelo pronto por objetivo</Label>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(OBJETIVOS) as Objetivo[]).map((o) => (
                 <Button key={o} type="button" size="sm" variant={objetivo === o ? "secondary" : "outline"} onClick={() => {
                   setObjetivo(o);
+                  if (!tema) { toast.error("Confirme um tema antes."); return; }
                   setTexto(legendaDoPerfil(modeloLegenda(o, tema, rede), perfil));
                 }}>{OBJETIVOS[o]}</Button>
               ))}

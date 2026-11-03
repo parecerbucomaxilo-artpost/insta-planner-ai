@@ -52,7 +52,7 @@ export const FORMATOS_IA = {
 export type FormatoIA = keyof typeof FORMATOS_IA;
 
 export const BriefingSchema = z.object({
-  marca: z.enum(["chico", "cirurgia-biopsias", "clinica-escola"]),
+  marca: z.enum(["chico", "cirurgia-biopsias", "clinica-escola", "liga"]),
   telefone: z.string().trim().max(40).default(""),
   tema: z.string().trim().min(3).max(300),
   objetivo: z.string().trim().max(120).default("Educar"),
@@ -150,7 +150,7 @@ export function montarPromptImagem(b: Briefing, formato: FormatoIA, tipo: "capa"
   const papel = tipo === "capa" ? "capa de carrossel" : tipo === "slide" ? `slide ${slide ?? 1} de carrossel` : "post único";
   return [
     `Imagem fotográfica profissional para ${papel}, formato ${f.nome}, perfil ${MARCAS[b.marca].nome}.`,
-    MARCAS[b.marca].visual === "CHICO" ? "" : MARCAS[b.marca].visual,
+    ["CHICO", "LIGA"].includes(MARCAS[b.marca].visual) ? "" : MARCAS[b.marca].visual,
     `Tema exato: ${b.tema}. Objetivo: ${b.objetivo}.`,
     textoSlide ? `A cena deve ilustrar com precisão esta mensagem do slide: ${textoSlide}` : "",
     "Composição com hierarquia visual clara e uma área calma (terço superior ou inferior) para uma headline que será aplicada depois pelo sistema.",

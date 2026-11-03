@@ -1,9 +1,9 @@
 # Architecture rules
 - LinkedIn availability is a read-only background status check, never a route/auth/navigation prerequisite; publication and scheduling guards fail closed without modifying credentials or stored destinations.
 - AI model options, defaults, legacy validation and provider routing live in src/lib/ai-models.ts; only catalog-verified stable IDs are offered, explicit legacy choices are preserved or rejected without substitution, and generation failures never return local simulated content.
-- Anthropic is explicitly unconnected; its former browser-key UI removes the obsolete localStorage entry without reading it, because the project has no native Claude generation path.
+- Anthropic is unconnected (no native Claude path); the old browser-key UI only deletes its localStorage entry unread.
 - Generated-post review uses the shared PostReviewActions component and existing posts statuses through the authenticated browser client, so RLS applies and internal approval never invokes publishing.
-- Keep review actions before long slide/caption content and expose saved pending posts through visible navigation; generation refreshes persisted lists without auto-scheduling.
+- Review actions sit before long content; saved pending posts are reachable from navigation; generation never auto-schedules.
 - Parent previews stay mounted after review to show the saved decision; calendars list undated pending posts separately.
 - The shared review modal fetches saved media and platform captions by post ID; slide text is matched by its explicit slide number, and inline caption edits use a status-guarded browser update without publishing.
 - Chico images use finalized slide text through the contextual-image pipeline; generation errors never substitute providers or procedural images, so unrelated imagery cannot be saved as success.
@@ -23,4 +23,4 @@
 - Estúdio Gratuito (src/components/free-studio, rules in src/lib/free-studio.ts) is browser-only: templates/rules and Canvas, no AI, network calls, storage or publishing, so it stays free and never touches the posting flow.
 - Estúdio has two persisted modes: Gratuito (free-studio, local only) and IA Avançada (src/components/advanced-ai + src/lib/advanced-ai*.ts) which calls the existing gateway via authenticated server functions after a per-call credit confirmation; AI images are text/logo-free and headline + official logo are app canvas layers, so typography and logos stay exact.
 - Generation mode (src/lib/generation-mode.ts) is shared by Estúdio, composer, planners and week runs: client AI server-fn calls go through useGuardaIA, which blocks in Gratuito and asks a credit confirmation (10-min batch window); server pipelines never fill captions/slides with fixed templates — empty or malformed AI output is a visible error.
-- Estúdio profiles live only in src/lib/studio-profiles.ts and feed every Estúdio tool and IA briefing; non-Chico profiles never get Chico brand/CTAs, and unset fields stay blank, never copied.
+- Estúdio profiles live in src/lib/studio-profiles.ts and feed every Estúdio tool/IA briefing, isolated (unset fields blank); topics come from EscolhaTema (src/lib/theme-suggest.ts: IA via guarded server fn, rules in Gratuito) and nothing generates before a topic is confirmed.

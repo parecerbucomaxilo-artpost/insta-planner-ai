@@ -86,7 +86,7 @@ async function copiar(t: string) {
   try { await navigator.clipboard.writeText(t); toast.success("Copiado!"); } catch { toast.error("Não foi possível copiar."); }
 }
 
-export function IAAvancada({ perfil }: { perfil: Marca }) {
+export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   const textoFn = useServerFn(gerarTextoAvancado);
   const imagemFn = useServerFn(gerarImagemAvancada);
   const [b, setB] = useState<Briefing>({ marca: perfil, telefone: MARCAS[perfil].telefone, tema: "", objetivo: "Educar", rede: "instagram", formato: "Post único", nivel: MARCAS[perfil].nivel, tamanho: "medio", tom: "", cta: "" });
@@ -108,6 +108,7 @@ export function IAAvancada({ perfil }: { perfil: Marca }) {
     setB((s) => s.marca === perfil ? s : { ...s, marca: perfil, nivel: MARCAS[perfil].nivel, telefone: MARCAS[perfil].telefone, cta: "" });
     setImgs({}); setRes(null);
   }, [perfil]);
+  useEffect(() => { setB((s) => ({ ...s, tema })); setRes(null); }, [tema]);
 
   useEffect(() => {
     let vivo = true;
@@ -130,7 +131,7 @@ export function IAAvancada({ perfil }: { perfil: Marca }) {
   };
 
   const gerarTexto = (ajuste?: Ajuste) => {
-    if (b.tema.trim().length < 3) { toast.error("Informe o tema."); return; }
+    if (b.tema.trim().length < 3) { toast.error("Confirme um tema antes de gerar."); return; }
     const anterior = ajuste && res ? Object.entries(res.variantes).map(([k, v]) => `[${k}]\n${v}`).join("\n\n") : undefined;
     confirmar(ajuste ? `Ajustar texto: ${AJUSTES[ajuste]}` : "Gerar texto com IA", () =>
       executar(async () => {
@@ -141,7 +142,7 @@ export function IAAvancada({ perfil }: { perfil: Marca }) {
   };
 
   const gerarImagem = (tipo: "capa" | "unico" | "slide", n?: number) => {
-    if (b.tema.trim().length < 3) { toast.error("Informe o tema."); return; }
+    if (b.tema.trim().length < 3) { toast.error("Confirme um tema antes de gerar."); return; }
     const chave = tipo === "slide" ? `slide-${n}` : tipo;
     const nome = tipo === "capa" ? "Capa" : tipo === "unico" ? "Post único" : `Slide ${n}`;
     const existe = !!imgs[chave];
@@ -177,8 +178,8 @@ export function IAAvancada({ perfil }: { perfil: Marca }) {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="ia-tema">Tema</Label>
-              <Input id="ia-tema" value={b.tema} onChange={(e) => set("tema", e.target.value)} placeholder="Ex.: fratura de mandíbula em acidentes de moto" />
+              <Label>Tema confirmado</Label>
+              <p className="text-sm">{b.tema ? <strong>{b.tema}</strong> : <span className="text-muted-foreground">confirme um tema em "Quem escolhe o tema?" acima</span>}</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ia-obj">Objetivo</Label>
