@@ -39,7 +39,27 @@ const legacyImage = [
   "openai/gpt-image-1-mini",
 ];
 
+// OpenAI direto (chave própria OPENAI_API_KEY): reaproveita os nomes oficiais já
+// verificados no catálogo, sem o prefixo do gateway. A disponibilidade real é
+// confirmada no servidor contra GET https://api.openai.com/v1/models antes de cada uso.
+export const PREFIXO_OPENAI_DIRETO = "openai-direct/";
+export const MODELOS_IA_OPENAI_DIRETO = MODELOS_IA.filter((m) => m.id.startsWith("openai/")).map((m) => ({
+  id: `${PREFIXO_OPENAI_DIRETO}${m.id.slice(7)}`,
+  label: `${m.label} · chave própria`,
+}));
+export const MODELOS_IMAGEM_OPENAI_DIRETO = MODELOS_IMAGEM.filter((m) => m.id.startsWith("openai/")).map((m) => ({
+  id: `${PREFIXO_OPENAI_DIRETO}${m.id.slice(7)}`,
+  label: `${m.label} · chave própria`,
+}));
+export function nomeOficialOpenAI(id: string): string {
+  return id.startsWith(PREFIXO_OPENAI_DIRETO) ? id.slice(PREFIXO_OPENAI_DIRETO.length) : id;
+}
+
 export function validateModel(value: string, kind: "text" | "image"): string {
+  if (value.startsWith(PREFIXO_OPENAI_DIRETO)) {
+    const lista = kind === "text" ? MODELOS_IA_OPENAI_DIRETO : MODELOS_IMAGEM_OPENAI_DIRETO;
+    if (lista.some((m) => m.id === value)) return value;
+  }
   const allowed =
     kind === "text"
       ? [...MODELOS_IA.map((m) => m.id), ...legacyText]
@@ -61,6 +81,12 @@ export const ImageModelInput = z
 
 export function modelRoute(value: string, kind: "text" | "image") {
   validateModel(value, kind);
+  if (value.startsWith(PREFIXO_OPENAI_DIRETO))
+    return {
+      provider: "openai-direct",
+      endpoint: kind === "text" ? "/chat/completions" : "/images/generations",
+      format: kind === "text" ? "chat" : "openai",
+    } as const;
   if (kind === "text")
     return {
       provider: value.startsWith("openai/") ? "openai" : "google",
@@ -79,17 +105,23 @@ export function modelRoute(value: string, kind: "text" | "image") {
   } as const;
 }
 
-// Provedores oferecidos nos seletores. Ambos rodam pelo gateway já conectado
-// (créditos do workspace); nenhum segredo próprio é necessário.
-export const PROVEDORES_IA = { openai: "OpenAI / ChatGPT", google: "Google Gemini" } as const;
+// Provedores oferecidos nos seletores. "openai" e "google" usam o gateway do Lovable
+// (créditos do workspace); "openai-direto" usa a chave própria OPENAI_API_KEY no servidor.
+export const PROVEDORES_IA = {
+  "openai-direto": "OpenAI / ChatGPT (chave própria)",
+  openai: "OpenAI via créditos Lovable (atual)",
+  google: "Google Gemini",
+} as const;
 export type ProvedorIA = keyof typeof PROVEDORES_IA;
 
 export function provedorDoModelo(id: string): ProvedorIA {
+  if (id.startsWith(PREFIXO_OPENAI_DIRETO)) return "openai-direto";
   return id.startsWith("openai/") ? "openai" : "google";
 }
 
 export function modelosDoProvedor(kind: "text" | "image", prov: ProvedorIA) {
-  const lista = kind === "text" ? MODELOS_IA : MODELOS_IMAGEM;
+  if (prov === "openai-direto") return kind === "text" ? MODELOS_IA_OPENAI_DIRETO : MODELOS_IMAGEM_OPENAI_DIRETO;
+  const lista: ReadonlyArray<{ id: string; label: string }> = kind === "text" ? MODELOS_IA : MODELOS_IMAGEM;
   return lista.filter((m) => provedorDoModelo(m.id) === prov);
 }
 

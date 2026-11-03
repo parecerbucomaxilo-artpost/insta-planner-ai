@@ -8,7 +8,7 @@ export const gerarTextoAvancado = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => TextoInput.parse(d))
   .handler(async ({ data }) => {
-    if (!process.env.LOVABLE_API_KEY) throw new Error("IA não configurada. Nenhum texto foi gerado.");
+    if (!data.modelo?.startsWith("openai-direct/") && !process.env.LOVABLE_API_KEY) throw new Error("IA não configurada. Nenhum texto foi gerado.");
     const { generateTextAI } = await import("@/lib/ai-gateway.server");
     const { brandBookPrompt } = await import("@/lib/brand-book");
     const { plainLanguageRule } = await import("@/lib/plain-language");
@@ -49,7 +49,7 @@ export const gerarImagemAvancada = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ImagemInput.parse(d))
   .handler(async ({ data }) => {
-    if (!process.env.LOVABLE_API_KEY) throw new Error("Gerador de imagem não configurado. Nenhuma imagem foi criada.");
+    if (!data.modelo?.startsWith("openai-direct/") && !process.env.LOVABLE_API_KEY) throw new Error("Gerador de imagem não configurado. Nenhuma imagem foi criada.");
     const { generateImageBase64 } = await import("@/lib/ai-gateway.server");
     const { brandBookPrompt } = await import("@/lib/brand-book");
     const prompt = `${montarPromptImagem(data.briefing, data.formato, data.tipo, data.slide, data.textoSlide)}${data.briefing.marca === "chico" || data.briefing.marca === "liga" ? `\n\n${brandBookPrompt(MARCAS[data.briefing.marca].audiencia)}` : ""}`;
@@ -71,4 +71,12 @@ export const sugerirTemasIA = createServerFn({ method: "POST" })
       .map((r) => (r.prompt_ia || r.legenda || "").split(/[.\n]/)[0].slice(0, 160).trim())
       .filter(Boolean);
     return sugerirTemasComIA(data, historico, generateTextAI);
+  });
+
+/** Só informa se a chave própria da OpenAI existe; nunca devolve o valor. */
+export const statusOpenAIDireto = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { chaveOpenAIConfigurada } = await import("@/lib/openai-direct.server");
+    return { configurada: chaveOpenAIConfigurada() };
   });
