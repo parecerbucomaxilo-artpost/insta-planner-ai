@@ -109,6 +109,7 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
           const { data, error } = await supabase.from("posts").update({ status: "Agendado", data_agendamento: date }).eq("id", id).eq("user_id", uid).in("status", ["Rascunho", "Erro"]).select("id").single();
           if (error || !data) throw new Error("Não foi possível agendar o rascunho. Nenhum envio confirmado.");
         },
+        verificarMidia: async url => { try { const r = await fetch(url, { method: "HEAD", cache: "no-store" }); return r.ok; } catch { return false; } },
         publicar: id => publish({ data: { id, acao: "publicar" } }) as Promise<PublishResult>,
       }, c, destino, acao, quando ? new Date(quando).toISOString() : undefined, saved.current);
       saved.current = out.id;
@@ -140,7 +141,7 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
         {destino.canal === "google" && <p className="text-sm text-destructive">A automação atual usa assinatura/CTA fixos do Chico e não confirma a publicação final. Somente rascunho; envio bloqueado no Estúdio.</p>}
         <Label htmlFor="studio-envio-texto">Texto que será enviado</Label><Textarea id="studio-envio-texto" rows={5} value={texto} disabled={busy || !!resultado} onChange={e => setTexto(e.target.value)} />
         <p className="text-sm">{content.formato} · {content.imagens.length} imagem(ns) selecionada(s) · Tema: {content.tema}</p>
-        <div className="flex w-full min-w-0 gap-2 overflow-x-auto">{content.imagens.map((src, i) => <img key={src} src={src} alt={`Mídia de envio ${i + 1}`} className="h-40 w-auto shrink-0 rounded border" onLoad={() => setLoaded(s => s.includes(src) ? s : [...s, src])} onError={() => setErro(`Imagem ${i + 1} não carregou; envio bloqueado.`)} />)}</div>
+        <div className="flex w-full min-w-0 gap-2 overflow-x-auto">{content.imagens.map((src, i) => <img key={src} src={src} alt={`Mídia de envio ${i + 1}`} className="h-40 w-auto shrink-0 rounded border" onLoad={() => setLoaded(s => s.includes(src) ? s : [...s, src])} onError={() => setErro(`Imagem ${i + 1} não carregou; envio bloqueado. Selecione ou salve a arte novamente no Estúdio de Imagens.`)} />)}</div>
         {acao === "agendar" && <><Label htmlFor="studio-quando">Data e hora local</Label><Input id="studio-quando" type="datetime-local" value={quando} disabled={busy || !!resultado} onChange={e => setQuando(e.target.value)} /></>}
         <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={visto} disabled={busy} onChange={e => setVisto(e.target.checked)} />Revisei o texto, a mídia e o destino; confirmo esta ação.</label>
         {erro && <p role="alert" className="text-sm text-destructive">{erro} O conteúdo permanece no Estúdio.</p>}
