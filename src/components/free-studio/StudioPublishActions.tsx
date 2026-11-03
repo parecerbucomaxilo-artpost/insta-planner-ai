@@ -45,8 +45,12 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
   useEffect(() => { setTexto(content.texto); setVisto(false); }, [content.texto]);
   useEffect(() => { setVisto(false); setLoaded([]); }, [mediaFingerprint]);
 
+  const [aviso, setAviso] = useState("");
+  useEffect(() => { setAviso(""); }, [mediaFingerprint, content.rede]);
   const abrir = (a: StudioAction) => {
-    setAcao(a); setOpen(true); setErro(""); setVisto(false); setResultado("");
+    const motivo = bloqueioAntesDeAbrir(content, a);
+    if (motivo) { setAviso(motivo); return; }
+    setAviso(""); setAcao(a); setOpen(true); setErro(""); setVisto(false); setResultado("");
   };
   const carregar = async () => {
     const result = await carregarDestinos({
@@ -92,7 +96,9 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
           return { ...d, conectado: false };
         },
         upload: async (src, i, uid) => {
-          if (!src.startsWith("data:image/") && !src.startsWith("blob:")) throw new Error("Mídia não é uma imagem local selecionada do Estúdio.");
+          const origem = origemMidia(src, import.meta.env.VITE_SUPABASE_URL ?? "");
+          if (origem === "persistida") return src;
+          if (origem !== "local") throw new Error("Mídia não é uma imagem do Estúdio nem um arquivo já salvo no app.");
           const res = await fetch(src);
           if (!res.ok) throw new Error("Não foi possível ler a imagem selecionada.");
           const blob = await res.blob();
