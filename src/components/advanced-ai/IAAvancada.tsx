@@ -20,10 +20,7 @@ import {
 } from "@/lib/advanced-ai";
 import { gerarTextoAvancado, gerarImagemAvancada } from "@/lib/advanced-ai.functions";
 
-const CORES: Record<Marca, { texto: string; destaque: string; sombra: string }> = {
-  drfm: { texto: "#ffffff", destaque: "#2dd4ff", sombra: "#0c2340" },
-  lactbmf: { texto: "#ffffff", destaque: "#c92e28", sombra: "#000000" },
-};
+const cores = (m: Marca) => ({ texto: MARCAS[m].paleta.texto, destaque: MARCAS[m].paleta.destaque, sombra: MARCAS[m].paleta.fundo1 });
 
 type Pendente = { titulo: string; acao: () => Promise<void> };
 type Img = { chave: string; nome: string; base: string; headline: string };
@@ -58,7 +55,7 @@ async function compor(img: Img, formato: FormatoIA, marca: Marca): Promise<strin
     const e = Math.max(f.w / foto.width, f.h / foto.height);
     ctx.drawImage(foto, (f.w - foto.width * e) / 2, (f.h - foto.height * e) / 2, foto.width * e, foto.height * e);
   }
-  const cor = CORES[marca];
+  const cor = cores(marca);
   const m = Math.min(f.w, f.h) * 0.08;
   if (img.headline.trim()) {
     const g = ctx.createLinearGradient(0, f.h * 0.5, 0, f.h);
@@ -89,10 +86,10 @@ async function copiar(t: string) {
   try { await navigator.clipboard.writeText(t); toast.success("Copiado!"); } catch { toast.error("Não foi possível copiar."); }
 }
 
-export function IAAvancada() {
+export function IAAvancada({ perfil }: { perfil: Marca }) {
   const textoFn = useServerFn(gerarTextoAvancado);
   const imagemFn = useServerFn(gerarImagemAvancada);
-  const [b, setB] = useState<Briefing>({ marca: "drfm", tema: "", objetivo: "Educar", rede: "instagram", formato: "Post único", nivel: "leigo", tamanho: "medio", tom: "", cta: "" });
+  const [b, setB] = useState<Briefing>({ marca: perfil, telefone: MARCAS[perfil].telefone, tema: "", objetivo: "Educar", rede: "instagram", formato: "Post único", nivel: MARCAS[perfil].nivel, tamanho: "medio", tom: "", cta: "" });
   const [variantes, setVariantes] = useState<Variante[]>(["media"]);
   const [modeloTexto, setModeloTexto] = useState<string>(DEFAULT_TEXT_MODEL);
   const [modeloImagem, setModeloImagem] = useState<string>(DEFAULT_IMAGE_MODEL);
@@ -107,7 +104,10 @@ export function IAAvancada() {
   const fim = useRef<HTMLDivElement>(null);
 
   const set = <K extends keyof Briefing>(k: K, v: Briefing[K]) => setB((s) => ({ ...s, [k]: v }));
-  const trocarMarca = (m: Marca) => setB((s) => ({ ...s, marca: m, nivel: MARCAS[m].nivel, rede: m === "lactbmf" && s.rede === "google" ? "instagram" : s.rede }));
+  useEffect(() => {
+    setB((s) => s.marca === perfil ? s : { ...s, marca: perfil, nivel: MARCAS[perfil].nivel, telefone: MARCAS[perfil].telefone, cta: "" });
+    setImgs({}); setRes(null);
+  }, [perfil]);
 
   useEffect(() => {
     let vivo = true;
@@ -166,13 +166,14 @@ export function IAAvancada() {
         <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Sparkles className="h-4 w-4" /> Briefing</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Perfil / marca</Label>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(MARCAS) as Marca[]).map((m) => (
-                <Button key={m} size="sm" variant={b.marca === m ? "default" : "outline"} onClick={() => trocarMarca(m)}>{MARCAS[m].nome}</Button>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground">Público: {MARCAS[b.marca].publico}. Paleta, logo, assinatura e CTAs seguem as regras já configuradas deste perfil.</p>
+            <Label>Perfil ativo: {MARCAS[b.marca].nome}</Label>
+            <p className="text-xs text-muted-foreground">Público: {MARCAS[b.marca].publico}. Paleta, logo oficial, assinatura e chamadas seguem este perfil (troque no seletor de perfil acima).</p>
+            {b.marca !== "chico" && (
+              <div className="space-y-1">
+                <Label htmlFor="ia-tel">Telefone do perfil</Label>
+                <Input id="ia-tel" value={b.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="Não configurado — informe para incluir na legenda" />
+              </div>
+            )}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
@@ -215,7 +216,7 @@ export function IAAvancada() {
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="ia-cta">Chamada desejada (opcional, só CTAs permitidas)</Label>
-              <Input id="ia-cta" value={b.cta} onChange={(e) => set("cta", e.target.value)} placeholder={b.rede === "linkedin" ? "Ex.: Fale comigo no WhatsApp" : "Ex.: Saiba mais pelo link da bio"} />
+              <Input id="ia-cta" value={b.cta} onChange={(e) => set("cta", e.target.value)} placeholder={MARCAS[b.marca].ctaPadrao ? `Ex.: ${MARCAS[b.marca].ctaPadrao}` : "Sem chamada padrão configurada"} />
             </div>
           </div>
           <div className="space-y-1.5">
