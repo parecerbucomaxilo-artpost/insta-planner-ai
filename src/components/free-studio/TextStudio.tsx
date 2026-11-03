@@ -1,6 +1,6 @@
 import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
 import { StudioPublishActions } from "./StudioPublishActions";
-import { useMidiaEstudio, conteudoComMidia, definirMidiaEstudio } from "@/lib/studio-media";
+import { useMidiaEstudio, conteudoComMidia, limparMidiaEstudio, useUsuarioAtual } from "@/lib/studio-media";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Copy, Lightbulb, ListChecks, Hash, FileText } from "lucide-react";
@@ -35,7 +35,8 @@ export function TextStudio({ perfil, tema }: { perfil: PerfilId; tema: string })
   const ganchos = useMemo(() => gerarGanchos(tema), [tema]);
   const hashtags = useMemo(() => sugerirHashtags(tema, rede), [tema, rede]);
   const problemas = useMemo(() => revisarTexto(texto), [texto]);
-  const midiaSel = useMidiaEstudio(perfil);
+  const uid = useUsuarioAtual();
+  const midiaSel = useMidiaEstudio(perfil, uid);
   const midia = midiaSel && midiaSel.rede === rede ? midiaSel : null;
 
   const inserir = (trecho: string, noInicio = false) =>
@@ -106,7 +107,7 @@ export function TextStudio({ perfil, tema }: { perfil: PerfilId; tema: string })
                   <li key={i} className="flex gap-2"><Badge variant={p.tipo === "marca" ? "destructive" : "outline"}>{p.tipo}</Badge><span>{p.mensagem}</span></li>
                 ))}</ul>}
           </div>
-          {midia ? <div className="flex flex-wrap items-center gap-2 text-sm"><img src={midia.imagens[0]} alt="Arte anexada" className="h-14 w-auto rounded border" /><span>{midia.imagens.length} imagem(ns) do Estúdio de Imagens anexada(s) · {midia.formato}</span><Button type="button" size="sm" variant="ghost" onClick={() => definirMidiaEstudio(null)}>Remover</Button></div>
+          {midia ? <div className="flex flex-wrap items-center gap-2 text-sm"><img src={midia.imagens[0]} alt="Arte anexada" className="h-14 w-auto rounded border" /><span>{midia.imagens.length} imagem(ns) do Estúdio de Imagens anexada(s) · {midia.formato}</span><Button type="button" size="sm" variant="ghost" onClick={() => uid && limparMidiaEstudio(uid, perfil)}>Remover</Button></div>
             : <p className="text-sm text-muted-foreground">{midiaSel ? `A arte selecionada é para ${midiaSel.rede}; troque a rede ou selecione outra arte.` : "Nenhuma imagem anexada. Para Instagram, selecione uma arte no Estúdio de Imagens."}</p>}
           <StudioPublishActions content={conteudoComMidia({ perfil, tema, texto, rede }, midia)} />
         </CardContent>

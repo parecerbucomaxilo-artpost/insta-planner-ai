@@ -315,7 +315,9 @@ export const Route = createFileRoute("/api/public/posts-agendados")({
             .select("id,user_id,instagram_conta")
             .eq("status", "Agendado")
             .eq("postar_instagram", true)
-            .eq("instagram_conta", LIGA_ACCOUNT)
+            // Qualquer conta com destino definido (antes só a Liga: posts agendados do Chico/Estúdio nunca saíam).
+            .not("instagram_conta", "is", null)
+            .neq("instagram_conta", "")
             .lte("data_agendamento", nowIso)
             .order("data_agendamento", { ascending: true })
             .limit(1)

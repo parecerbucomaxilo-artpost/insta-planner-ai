@@ -38,6 +38,7 @@ export function validarPublicacao(c: StudioContent, d: StudioDestination, acao: 
   if (c.formato === "Carrossel" && c.imagens.length !== 5) throw new Error("Selecione os cinco slides completos do carrossel.");
   if (c.formato !== "Carrossel" && c.imagens.length > 1) throw new Error("Este formato aceita apenas uma imagem.");
   if (new Set(c.imagens).size !== c.imagens.length) throw new Error("Há imagens repetidas na seleção.");
+  if (acao === "agendar" && d.canal !== "instagram") throw new Error("Agendamento automático ativo só para Instagram. Para LinkedIn, salve como rascunho ou publique agora.");
   if (acao === "agendar" && (!quando || !Number.isFinite(Date.parse(quando)) || Date.parse(quando) <= agora)) throw new Error("Escolha uma data e hora no futuro.");
 }
 
@@ -66,6 +67,8 @@ export type StudioServices = {
   salvar: (uid: string, row: ReturnType<typeof linhaStudio>) => Promise<{ id: string; existente: boolean }>;
   agendar: (id: string, uid: string, quando: string) => Promise<void>;
   publicar: (id: string) => Promise<PublishResult>;
+  /** Confirms the saved media URL is reachable before an external send is requested. */
+  verificarMidia?: (url: string) => Promise<boolean>;
 };
 
 /** Only called by the explicit confirmation. No generation or autonomous dispatch. */
@@ -78,6 +81,9 @@ export async function executarPublicacaoStudio(s: StudioServices, c: StudioConte
   if (!id) {
     const urls: string[] = [];
     for (const [i, src] of c.imagens.entries()) urls.push(await s.upload(src, i, uid));
+    if (acao !== "rascunho" && s.verificarMidia) {
+      for (const [i, u] of urls.entries()) if (!(await s.verificarMidia(u))) throw new Error(`A imagem ${i + 1} não está acessível no armazenamento do app. Selecione ou salve a arte de novo; nada foi enviado.`);
+    }
     const saved = await s.salvar(uid, linhaStudio(c, d, urls));
     if (saved.existente) throw new Error("Este texto já está salvo. Abra o post existente em Todas as publicações; nenhuma cópia ou envio foi feito.");
     id = saved.id;

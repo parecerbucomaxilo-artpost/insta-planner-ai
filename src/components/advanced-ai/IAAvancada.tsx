@@ -21,6 +21,7 @@ import {
 import { gerarTextoAvancado, gerarImagemAvancada } from "@/lib/advanced-ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { aplicarDashboard, contextoDashboard, perfilDashboardDe, type ContextoDashboard } from "@/lib/dashboard-context";
+import { midiaPadrao, type MidiaEnvio } from "@/lib/studio-media";
 import { StudioPublishActions } from "@/components/free-studio/StudioPublishActions";
 
 const cores = (m: Marca) => ({ texto: MARCAS[m].paleta.texto, destaque: MARCAS[m].paleta.destaque, sombra: MARCAS[m].paleta.fundo1 });
@@ -106,8 +107,13 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   const [imgs, setImgs] = useState<Record<string, Img>>({});
   const [prontas, setProntas] = useState<Record<string, string>>({});
   const [varianteEnvio, setVarianteEnvio] = useState<string>("media");
-  const [midiaEnvio, setMidiaEnvio] = useState<"nenhuma" | "unico" | "capa" | "carrossel">("nenhuma");
+  const [midiaEnvio, setMidiaEnvioRaw] = useState<MidiaEnvio>("nenhuma");
+  const midiaEscolhida = useRef(false);
+  const setMidiaEnvio = (m: MidiaEnvio) => { midiaEscolhida.current = true; setMidiaEnvioRaw(m); };
   const fim = useRef<HTMLDivElement>(null);
+  // Sem isto, a imagem gerada nunca chegava à publicação: o seletor ficava em "Sem imagem" (0 imagens).
+  useEffect(() => { if (!midiaEscolhida.current) setMidiaEnvioRaw(midiaPadrao(prontas, slides)); }, [prontas, slides]);
+  useEffect(() => { midiaEscolhida.current = false; }, [perfil]);
 
   const editados = useRef(new Set<"objetivo" | "tom" | "contexto">());
   const [dash, setDash] = useState<ContextoDashboard | null>(null);

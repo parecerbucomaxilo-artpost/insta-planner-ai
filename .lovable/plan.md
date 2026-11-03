@@ -35,3 +35,8 @@ A descrição visual opcional foi removida: as imagens recebem a legenda e os te
 - `src/lib/dashboard-context.ts`: lê do perfil salvo (só do usuário logado e da conta do perfil editorial: Chico/Liga) nome, área (subespecialidades + CRO/UF) e tom; o cadastro atual não tem objetivo, público ou serviços, então nada é inventado.
 - Preenche só campos vazios e não editados; "Usar dados do Dashboard" substitui sob pedido. Sem objetivo, a geração pede apenas o objetivo.
 - Testes: `src/lib/dashboard-context.test.ts`.
+
+## Publicar/Agendar no Estúdio de ponta a ponta (03/11/2026)
+- Causas: (1) IA Avançada deixava "Imagem selecionada" em "Sem imagem" mesmo com arte pronta → diálogo com 0 imagens; (2) arte do Estúdio de Imagens era data URL só em memória, perdida ao trocar aba/recarregar; (3) a rotina agendada ativa (`posts-agendados`, a cada 5 min) só enviava posts da Liga.
+- Correções: IA Avançada pré-seleciona a mídia pronta; arte do canvas final é enviada ao armazenamento e guardada por usuário+perfil (sessão); URL verificada antes do envio; agendamento só Instagram (LinkedIn sem rotina ativa); rotina agendada vale para qualquer conta Instagram.
+- Dependência: a rotina roda no app publicado; a correção do agendador só vale depois de publicar o app.

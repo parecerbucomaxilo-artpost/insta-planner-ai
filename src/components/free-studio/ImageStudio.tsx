@@ -11,7 +11,8 @@ import { LOGOS_DISPONIVEIS } from "@/lib/logos-catalog";
 import { PERFIS, type PerfilId } from "@/lib/studio-profiles";
 import { StudioPublishActions } from "./StudioPublishActions";
 import type { StudioContent } from "@/lib/studio-publication";
-import { definirMidiaEstudio } from "@/lib/studio-media";
+import { definirMidiaEstudio, persistirArteCanvas, useUsuarioAtual } from "@/lib/studio-media";
+import { uploadPostImage } from "@/lib/storage-utils";
 
 const FORMATOS = {
   feed: { nome: "Instagram feed 4:5", w: 1080, h: 1350 },
@@ -65,6 +66,8 @@ function quebrarLinhas(ctx: CanvasRenderingContext2D, texto: string, max: number
 }
 
 export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: string }) {
+  const uid = useUsuarioAtual();
+  const [salvandoArte, setSalvandoArte] = useState(false);
   const [selecionada, setSelecionada] = useState<StudioContent | null>(null);
   const P = PERFIS[perfil];
   const CORES_MARCA = Array.from(new Set([P.paleta.texto, P.paleta.destaque, P.paleta.fundo1, P.paleta.fundo2]));
@@ -224,17 +227,21 @@ export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: st
               <Button size="sm" variant={tipo === "image/png" ? "secondary" : "outline"} onClick={() => setTipo("image/png")}>PNG</Button>
             </div>
             <Button variant="default" onClick={baixar} disabled={!img && !a.texto.trim()}><Download className="mr-1.5 h-4 w-4" /> Baixar</Button>
-            <Button variant="outline" disabled={(!img && !a.texto.trim()) || !tema} onClick={() => {
+            <Button variant="outline" disabled={salvandoArte || (!img && !a.texto.trim()) || !tema} onClick={async () => {
+              if (!uid) { toast.error("Entre na sua conta para anexar a arte à publicação."); return; }
+              const c = canvasRef.current;
+              if (!c) return;
+              setSalvandoArte(true);
               try {
-                const src = canvasRef.current?.toDataURL("image/jpeg", 0.92);
-                if (src) {
-                  const c: StudioContent = { perfil, tema, texto: "", imagens: [src], formato: a.formato === "stories" ? "Story" : "Post Único", rede: a.formato === "linkedin" ? "linkedin" : a.formato === "google" ? "google" : "instagram" };
-                  setSelecionada(c);
-                  definirMidiaEstudio({ perfil, tema, imagens: c.imagens, formato: c.formato, rede: c.rede });
-                  toast.success("Arte anexada. Ela também aparece no Estúdio de Texto para publicar com a legenda.");
-                }
-              } catch { toast.error("Não foi possível preparar a imagem selecionada."); }
-            }}>Selecionar arte para publicação</Button>
+                // Canvas final (texto, logo e filtros) → arquivo → armazenamento do app. Nada é publicado aqui.
+                const url = await persistirArteCanvas(() => new Promise(r => c.toBlob(r, "image/jpeg", 0.92)), f => uploadPostImage(f, uid));
+                const sel: StudioContent = { perfil, tema, texto: "", imagens: [url], formato: a.formato === "stories" ? "Story" : "Post Único", rede: a.formato === "linkedin" ? "linkedin" : a.formato === "google" ? "google" : "instagram" };
+                setSelecionada(sel);
+                definirMidiaEstudio({ userId: uid, perfil, tema, imagens: sel.imagens, formato: sel.formato, rede: sel.rede });
+                toast.success("Arte salva e anexada. Ela também aparece no Estúdio de Texto para publicar com a legenda.");
+              } catch (e) { toast.error(e instanceof Error ? e.message : "Não foi possível salvar a arte selecionada."); }
+              finally { setSalvandoArte(false); }
+            }}>{salvandoArte ? "Salvando arte…" : "Selecionar arte para publicação"}</Button>
             <Button variant="ghost" onClick={() => setA({ ...INICIAL, formato: a.formato })}><RotateCcw className="mr-1.5 h-4 w-4" /> Redefinir ajustes</Button>
           </div>
           {selecionada && <StudioPublishActions content={selecionada} />}
