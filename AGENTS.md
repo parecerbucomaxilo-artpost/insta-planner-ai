@@ -1,7 +1,6 @@
 # Architecture rules
 - LinkedIn availability is a read-only background status check, never a route/auth/navigation prerequisite; publication and scheduling guards fail closed without modifying credentials or stored destinations.
-- AI model options, defaults, legacy validation and provider routing live in src/lib/ai-models.ts; only catalog-verified stable IDs are offered, explicit legacy choices are preserved or rejected without substitution, and generation failures never return local simulated content.
-- Anthropic is unconnected (no native Claude path); the old browser-key UI only deletes its localStorage entry unread.
+- AI models/routing live in src/lib/ai-models.ts (catalog-verified IDs only, legacy choices preserved, no fallback or simulated output); OpenAI own-key route is src/lib/openai-direct.server.ts (OPENAI_API_KEY server-only, `openai-direct/<id>` checked via GET /v1/models; missing key or model is a visible error). Claude is unconnected.
 - Generated-post review uses the shared PostReviewActions component and existing posts statuses through the authenticated browser client, so RLS applies and internal approval never invokes publishing.
 - Review actions sit before long content; saved pending posts are reachable from navigation; generation never auto-schedules.
 - Parent previews stay mounted after review to show the saved decision; calendars list undated pending posts separately.

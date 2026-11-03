@@ -4,7 +4,7 @@ import { withRealism } from "@/lib/image-realism";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
 
-import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL, modelRoute, validateModel } from "./ai-models";
+import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL, modelRoute, validateModel, PREFIXO_OPENAI_DIRETO } from "./ai-models";
 export { MODELOS_IA, MODELOS_IMAGEM } from "./ai-models";
 
 // ---------------- Texto: GPT-5 mini via Lovable Gateway ----------------
@@ -16,9 +16,13 @@ export async function generateTextAI(opts: {
   model?: string;
   maxTokens?: number;
 }): Promise<string> {
+  const model = validateModel(opts.model || DEFAULT_TEXT_MODEL, "text");
+  if (model.startsWith(PREFIXO_OPENAI_DIRETO)) {
+    const { openaiDiretoTexto } = await import("./openai-direct.server");
+    return openaiDiretoTexto({ model, system: opts.system, prompt: opts.prompt });
+  }
   const apiKey = opts.apiKey || process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
-  const model = validateModel(opts.model || DEFAULT_TEXT_MODEL, "text");
 
   const res = await fetch(`${GATEWAY_URL}/chat/completions`, {
     method: "POST",
@@ -188,6 +192,10 @@ export async function generateImageBase64(opts: {
     );
   }
   validateModel(model, "image");
+  if (model.startsWith(PREFIXO_OPENAI_DIRETO)) {
+    const { openaiDiretoImagem } = await import("./openai-direct.server");
+    return openaiDiretoImagem({ model, prompt: opts.prompt, size });
+  }
   if (!apiKey)
     throw new Error("Gerador de imagem não configurado; nenhuma imagem substituta foi criada.");
   return generateImageGateway({
