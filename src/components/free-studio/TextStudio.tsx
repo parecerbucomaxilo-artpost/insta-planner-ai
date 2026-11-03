@@ -42,6 +42,7 @@ export function TextStudio({ perfil, tema }: { perfil: PerfilId; tema: string })
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2 text-base"><FileText className="h-4 w-4" /> Editor de legenda</CardTitle></CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Tema confirmado</Label>
               <p className="text-sm">{tema ? <strong>{tema}</strong> : <span className="text-muted-foreground">confirme um tema acima</span>} · Perfil: {PERFIS[perfil].nome}</p>
