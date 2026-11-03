@@ -1,3 +1,4 @@
+import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Copy, Lightbulb, ListChecks, Hash, FileText, Shuffle } from "lucide-react";
@@ -25,12 +26,13 @@ async function copiar(texto: string) {
   }
 }
 
-export function TextStudio() {
+export function TextStudio({ perfil }: { perfil: PerfilId }) {
   const [texto, setTexto] = useState("");
   const [tema, setTema] = useState("");
   const [rede, setRede] = useState<RedeTexto>("instagram");
   const [objetivo, setObjetivo] = useState<Objetivo>("educativo");
-  const [planner, setPlanner] = useState<PlannerTemas>("chico");
+  const planner: PlannerTemas = PERFIS[perfil].temas;
+  useEffect(() => { setTema(""); }, [perfil]);
   const [recentes, setRecentes] = useState<string[]>([]);
 
   const escolherParaMim = () => {
@@ -67,12 +69,8 @@ export function TextStudio() {
           </div>
 
           <div className="space-y-2 rounded-md border p-3">
-            <Label>Tema do planner</Label>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(PLANNERS_TEMAS) as PlannerTemas[]).map((p) => (
-                <Button key={p} type="button" size="sm" variant={planner === p ? "secondary" : "outline"} onClick={() => setPlanner(p)}>{PLANNERS_TEMAS[p].nome}</Button>
-              ))}
-            </div>
+            <Label>Tema do perfil</Label>
+            <p className="text-xs">Perfil: <strong>{PERFIS[perfil].nome}</strong></p>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button type="button" onClick={escolherParaMim}><Shuffle className="mr-1.5 h-4 w-4" /> Escolher tema para mim</Button>
               <select
@@ -94,7 +92,7 @@ export function TextStudio() {
               {(Object.keys(OBJETIVOS) as Objetivo[]).map((o) => (
                 <Button key={o} type="button" size="sm" variant={objetivo === o ? "secondary" : "outline"} onClick={() => {
                   setObjetivo(o);
-                  setTexto(modeloLegenda(o, tema, rede));
+                  setTexto(legendaDoPerfil(modeloLegenda(o, tema, rede), perfil));
                 }}>{OBJETIVOS[o]}</Button>
               ))}
             </div>
