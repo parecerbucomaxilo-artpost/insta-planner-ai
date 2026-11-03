@@ -1,7 +1,7 @@
 import { PERFIS, type PerfilId } from "./studio-profiles";
 import { flagsDeRede, type Rede } from "./networks";
 
-export type StudioContent = { perfil: PerfilId; tema: string; texto: string; imagens: string[]; formato: "Post Único" | "Carrossel" | "Story" | "Reels" | "Artigo LinkedIn"; rede: Rede };
+export type StudioContent = { perfil: PerfilId; tema: string; texto: string; imagens: string[]; formato: "Post Único" | "Carrossel" | "Story" | "Reels" | "Artigo LinkedIn"; rede: Rede; midiaPendente?: boolean };
 export type StudioDestination = { canal: Rede; conta: string; conectado: boolean };
 export type StudioAction = "rascunho" | "agendar" | "publicar";
 
@@ -10,6 +10,7 @@ export function validarPublicacao(c: StudioContent, d: StudioDestination, acao: 
   if (!c.texto.trim() && !c.imagens.length) throw new Error("Selecione texto e/ou imagem do Estúdio.");
   if (/\[[^\]]+\]/.test(c.texto) && acao !== "rascunho") throw new Error("Complete os trechos entre colchetes antes de enviar.");
   if (acao === "rascunho") return;
+  if (c.midiaPendente) throw new Error("A imagem/slide selecionado ainda não está pronto. Aguarde ou selecione mídia completa.");
   if (!d.conectado) throw new Error("Conta não conectada/autorizada. Abra Configurações → Redes Sociais e conecte o destino.");
   if (d.canal === "google") throw new Error("Google Business usa uma automação com assinatura/CTA fixos do Chico e sem seleção de conta ou confirmação final. Envio pelo Estúdio indisponível para preservar seu perfil.");
   if (d.canal === "instagram" && !d.conta) throw new Error("Escolha uma conta Instagram autorizada.");
@@ -66,7 +67,8 @@ export async function executarPublicacaoStudio(s: StudioServices, c: StudioConte
     id = saved.id;
   }
   if (acao === "agendar") {
-    await s.agendar(id, uid, quando ?? "");
+    try { await s.agendar(id, uid, quando ?? ""); }
+    catch (e) { throw Object.assign(new Error(e instanceof Error ? e.message : "Falha ao agendar."), { salvoId: id }); }
     return { id, estado: "agendado" as const };
   }
   if (acao === "publicar") {

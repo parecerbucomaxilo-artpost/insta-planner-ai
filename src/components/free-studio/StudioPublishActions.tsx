@@ -37,8 +37,10 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
   const saved = useRef<string | undefined>(undefined);
   const lock = useRef(false);
   const fingerprint = JSON.stringify([content, texto, destino.canal, destino.conta]);
+  const mediaFingerprint = JSON.stringify(content.imagens);
   useEffect(() => { saved.current = undefined; setResultado(""); setLink(""); }, [fingerprint]);
-  useEffect(() => { setTexto(content.texto); setVisto(false); setLoaded([]); }, [content.texto, content.imagens]);
+  useEffect(() => { setTexto(content.texto); setVisto(false); }, [content.texto]);
+  useEffect(() => { setVisto(false); setLoaded([]); }, [mediaFingerprint]);
 
   const abrir = async (a: StudioAction) => {
     setAcao(a); setOpen(true); setErro(""); setVisto(false); setResultado("");
