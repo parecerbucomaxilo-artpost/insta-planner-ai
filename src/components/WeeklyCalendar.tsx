@@ -1,3 +1,4 @@
+import { useGuardaIA } from "@/components/GenerationMode";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { salvarPostInedito } from "@/lib/post-guard";
 import { cn } from "@/lib/utils";
@@ -155,7 +156,7 @@ function fmtDate(d: Date) {
 }
 
 export function WeeklyCalendar({ perfil: _perfil, onCreated, autoGenerate = false }: { perfil: Perfil | null; onCreated: () => void; autoGenerate?: boolean }) {
-  const gerarPostFn = useServerFn(generateSinglePost);
+  const gerarPostFn = useGuardaIA("Gerar publicação", useServerFn(generateSinglePost));
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const [formato, setFormato] = useState<"Feed" | "Stories" | "Reels" | "Carrossel">("Feed");
   const [loading, setLoading] = useState(false);

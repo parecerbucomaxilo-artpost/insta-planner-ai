@@ -1,3 +1,4 @@
+import { useGuardaIA } from "@/components/GenerationMode";
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { useLinkedInStatus } from "@/hooks/use-linkedin-status";
 import { Posts7Dias } from "@/components/Posts7Dias";
@@ -92,7 +93,7 @@ const FORMATOS: {
 export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const linkedIn = useLinkedInStatus();
   const publishIg = useServerFn(publishInstagramNow);
-  const genCaption = useServerFn(generateCaptionOnly);
+  const genCaption = useGuardaIA("Gerar legenda", useServerFn(generateCaptionOnly));
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
   const [formato, setFormato] = useState<Formato>("Post Único");
   const [quando, setQuando] = useState<Quando>("agora");
@@ -593,8 +594,8 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
   const [previewIdx, setPreviewIdx] = useState(0);
   const previewScrollerRef = useRef<HTMLDivElement | null>(null);
   const [discarding, setDiscarding] = useState(false);
-  const genSingle = useServerFn(generateSinglePost);
-  const genWeek = useServerFn(generateWeekThemes);
+  const genSingle = useGuardaIA("Gerar publicação", useServerFn(generateSinglePost));
+  const genWeek = useGuardaIA("Gerar temas da semana", useServerFn(generateWeekThemes));
   const discardFn = useServerFn(discardPost);
   const approveFn = useServerFn(approvePost);
   const [approving, setApproving] = useState<null | "arquivar" | "agendar" | "publicar">(null);

@@ -1,3 +1,4 @@
+import { useGuardaIA } from "@/components/GenerationMode";
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { Posts7Dias } from "@/components/Posts7Dias";
 import { PostReviewActions } from "@/components/PostReviewActions";
@@ -75,8 +76,8 @@ interface PreviewState {
 }
 
 export function PlannerAgendamentoTratamento() {
-  const genSingle = useServerFn(generateSinglePost);
-  const genCaption = useServerFn(generateCaptionOnly);
+  const genSingle = useGuardaIA("Gerar publicação", useServerFn(generateSinglePost));
+  const genCaption = useGuardaIA("Gerar legenda", useServerFn(generateCaptionOnly));
   const approveFn = useServerFn(approvePost);
   const discardFn = useServerFn(discardPost);
   const publishIg = useServerFn(publishInstagramNow);
