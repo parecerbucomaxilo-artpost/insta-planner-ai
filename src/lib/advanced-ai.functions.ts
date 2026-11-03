@@ -25,7 +25,7 @@ export const gerarTextoAvancado = createServerFn({ method: "POST" })
       regrasMarca,
       p.CTAS_PROIBIDOS,
       ctas,
-      plainLanguageRule({ audiencia, nivel: b.nivel === "tecnico" ? "técnico" : undefined }),
+      plainLanguageRule({ audiencia, nivel: b.nivel === "tecnico" ? "linkedin-cientifico" : undefined }),
     ].join("\n\n");
     const prompt = `${p.clinicalContract(b.tema, audiencia)}\n\n${montarPromptTexto(b, data.variantes, data.ajuste, data.anterior)}`;
     const bruto = await generateTextAI({ system, prompt, model: data.modelo });
