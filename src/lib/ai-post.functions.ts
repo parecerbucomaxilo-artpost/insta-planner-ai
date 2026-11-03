@@ -91,14 +91,14 @@ const WeekInput = z.object({
 });
 
 const WHATSAPP = "https://wa.me/5511947684004";
-const ASSINATURA = "PROF. FRANCISCO MENEZES | CROSP:53318";
-const ASSINATURA_SUBTITULO = "Cirurgia e Traumatologia Bucomaxilofacial · Odontologia Hospitalar";
+export const ASSINATURA = "PROF. FRANCISCO MENEZES | CROSP:53318";
+export const ASSINATURA_SUBTITULO = "Cirurgia e Traumatologia Bucomaxilofacial · Odontologia Hospitalar";
 const CIDADES_ATENDIMENTO = "São Paulo, Santa Bárbara d'Oeste e Americana";
-const LOCALIZACAO_OBRIGATORIA = `INCLUSÃO OBRIGATÓRIA DE LOCALIZAÇÃO: no fechamento da legenda (junto ao CTA ou na última linha antes das hashtags), inserir naturalmente a frase indicando que os atendimentos são realizados em ${CIDADES_ATENDIMENTO}. Ex.: "Atendimento em ${CIDADES_ATENDIMENTO}." — variar a redação, mas SEMPRE citar as TRÊS cidades, na ordem, com a grafia exata "Santa Bárbara d'Oeste".`;
+export const LOCALIZACAO_OBRIGATORIA = `INCLUSÃO OBRIGATÓRIA DE LOCALIZAÇÃO: no fechamento da legenda (junto ao CTA ou na última linha antes das hashtags), inserir naturalmente a frase indicando que os atendimentos são realizados em ${CIDADES_ATENDIMENTO}. Ex.: "Atendimento em ${CIDADES_ATENDIMENTO}." — variar a redação, mas SEMPRE citar as TRÊS cidades, na ordem, com a grafia exata "Santa Bárbara d'Oeste".`;
 
-const CTAS_PROIBIDOS = `PROIBIDO ABSOLUTO nos textos: "agende sua consulta", "agende sua avaliação", "marque consulta", "marque avaliação", "promoção", "oferta", "desconto", "últimas vagas", qualquer chamada comercial explícita.`;
-const CTAS_PERMITIDOS_IG = `CTAs PERMITIDOS (IG/X): "Saiba mais pelo link da bio." | "Expliquei esse assunto em detalhes no link da bio." | "Veja o conteúdo completo através do link da bio." | "Link na Bio".`;
-const CTAS_PERMITIDOS_LI = `CTA permitido (LinkedIn): convite à discussão profissional entre colegas ou WhatsApp ${WHATSAPP} ("Fale comigo no WhatsApp").`;
+export const CTAS_PROIBIDOS = `PROIBIDO ABSOLUTO nos textos: "agende sua consulta", "agende sua avaliação", "marque consulta", "marque avaliação", "promoção", "oferta", "desconto", "últimas vagas", qualquer chamada comercial explícita.`;
+export const CTAS_PERMITIDOS_IG = `CTAs PERMITIDOS (IG/X): "Saiba mais pelo link da bio." | "Expliquei esse assunto em detalhes no link da bio." | "Veja o conteúdo completo através do link da bio." | "Link na Bio".`;
+export const CTAS_PERMITIDOS_LI = `CTA permitido (LinkedIn): convite à discussão profissional entre colegas ou WhatsApp ${WHATSAPP} ("Fale comigo no WhatsApp").`;
 
 type TopicGuidance = {
   oQue: string;
@@ -1454,7 +1454,7 @@ function visualSceneForTopic(
   return `${prefixo} sobre "${tema}" mostrando especificamente: ${g.oQue}; mecanismo visual: ${g.porQue}; solução representada: ${g.conduta}`;
 }
 
-function clinicalContract(
+export function clinicalContract(
   tema: string,
   audiencia: z.infer<typeof SingleInput>["audiencia"],
   slideIndex?: number,
