@@ -265,7 +265,7 @@ function Dashboard() {
      { v: "perfil", nome: "Perfil", Icon: Settings },
      { v: "chaves", nome: "Integrações", Icon: KeyRound },
      { v: "ia", nome: "Inteligência artificial", Icon: ClipboardList },
-     { v: "estudio", nome: "Estúdio Gratuito", Icon: PencilRuler },
+     { v: "estudio", nome: "Estúdio (Gratuito / IA)", Icon: PencilRuler },
    ];
    const atual = itens.find((i) => i.v === tab) ?? itens[0];
    return (
