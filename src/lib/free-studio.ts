@@ -132,7 +132,7 @@ export function revisarTexto(texto: string): Problema[] {
   for (const [erro, certo] of Object.entries(ERROS_COMUNS)) {
     if (new RegExp(`(^|[^\\p{L}])${erro}([^\\p{L}]|$)`, "u").test(baixo)) p.push({ tipo: "ortografia", mensagem: `“${erro}” → prefira “${certo}”.` });
   }
-  const dup = texto.match(/(^|[^\p{L}])([\p{L}]{2,})\s+\2(?=[^\p{L}]|$)/iu);
+  const dup = texto.match(/(^|[^\p{L}])([\p{L}]+)\s+\2(?=[^\p{L}]|$)/iu);
   if (dup) p.push({ tipo: "ortografia", mensagem: `Palavra repetida: “${dup[2]} ${dup[2]}”.` });
   if (/ {2,}/.test(texto)) p.push({ tipo: "formato", mensagem: "Há espaços duplos." });
   if (/\s[,.;:!?]/.test(texto)) p.push({ tipo: "formato", mensagem: "Há espaço antes de pontuação." });
