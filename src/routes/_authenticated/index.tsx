@@ -38,6 +38,7 @@ import { signPostMediaUrls } from "@/lib/storage-url";
 import { POST_REVIEW_CHANGED } from "@/lib/post-review";
 import { ApproveAllReview } from "@/components/ApproveAllReview";
 import { LinkedInConnectionNotice } from "@/components/LinkedInConnectionNotice";
+import { EstudioGratuito } from "@/components/free-studio/EstudioGratuito";
 
 export const Route = createFileRoute("/_authenticated/")({
  head: () => ({
@@ -265,6 +266,7 @@ function Dashboard() {
  <TabsTrigger value="perfil"><Settings className="h-4 w-4 mr-1.5" aria-hidden="true" /> Perfil</TabsTrigger>
  <TabsTrigger value="chaves"><KeyRound className="h-4 w-4 mr-1.5" aria-hidden="true" /> Integrações</TabsTrigger>
  <TabsTrigger value="ia"><ClipboardList className="h-4 w-4 mr-1.5" aria-hidden="true" /> Inteligência artificial</TabsTrigger>
+ <TabsTrigger value="estudio"><PencilRuler className="h-4 w-4 mr-1.5" aria-hidden="true" /> Estúdio Gratuito</TabsTrigger>
  </TabsList>
  </div>
 
@@ -315,6 +317,9 @@ function Dashboard() {
  </TabsContent>
  <TabsContent value="ia" className="mt-6">
  <AnthropicKeySettings />
+ </TabsContent>
+ <TabsContent value="estudio" className="mt-6">
+ <EstudioGratuito />
  </TabsContent>
  </Tabs>
  </main>
