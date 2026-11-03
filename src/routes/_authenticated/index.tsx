@@ -272,29 +272,44 @@ function Dashboard() {
    ];
    const atual = itens.find((i) => i.v === tab) ?? itens[0];
    return (
-     <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
-       <SheetTrigger asChild>
-         <Button variant="outline" className="w-full justify-start gap-2 sm:w-auto" aria-label="Abrir menu">
-           <Menu className="h-4 w-4" aria-hidden="true" />
-           <atual.Icon className="h-4 w-4" aria-hidden="true" /> {atual.nome}
-         </Button>
-       </SheetTrigger>
-       <SheetContent side="left" className="w-72 overflow-y-auto p-4">
-         <SheetHeader><SheetTitle>Menu</SheetTitle></SheetHeader>
-         <nav className="mt-4 flex flex-col gap-1" aria-label="Seções do planner">
-           {itens.map((i) => (
-             <Button
-               key={i.v}
-               variant={tab === i.v ? "secondary" : "ghost"}
-               className="justify-start gap-2"
-               onClick={() => { setTab(i.v); i.onSel?.(); setMenuAberto(false); }}
-             >
-               <i.Icon className="h-4 w-4" aria-hidden="true" /> {i.nome}
-             </Button>
-           ))}
+     <div
+       className="relative"
+       onKeyDown={(e) => { if (e.key === "Escape" && menuAberto) { e.stopPropagation(); setMenuAberto(false); } }}
+     >
+       <Button
+         variant="outline"
+         className="w-full justify-start gap-2 sm:w-auto"
+         aria-label={`Menu de seções: ${atual.nome}`}
+         aria-expanded={menuAberto}
+         aria-controls="menu-secoes-planner"
+         onClick={() => setMenuAberto((v) => !v)}
+       >
+         <atual.Icon className="h-4 w-4" aria-hidden="true" /> {atual.nome}
+         <ChevronDown className={`ml-auto h-4 w-4 transition-transform duration-300 sm:ml-2 ${menuAberto ? "rotate-180" : ""}`} aria-hidden="true" />
+       </Button>
+       <div
+         id="menu-secoes-planner"
+         className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${menuAberto ? "grid-rows-[1fr] opacity-100" : "pointer-events-none grid-rows-[0fr] opacity-0"}`}
+         aria-hidden={!menuAberto}
+       >
+         <nav className="overflow-hidden" aria-label="Seções do planner">
+           <div className="mt-2 flex flex-col gap-1 rounded-md border bg-card p-2 shadow-sm sm:max-w-sm">
+             {itens.map((i) => (
+               <Button
+                 key={i.v}
+                 variant={tab === i.v ? "secondary" : "ghost"}
+                 className="justify-start gap-2"
+                 tabIndex={menuAberto ? 0 : -1}
+                 aria-current={tab === i.v ? "page" : undefined}
+                 onClick={() => { setTab(i.v); i.onSel?.(); setMenuAberto(false); }}
+               >
+                 <i.Icon className="h-4 w-4" aria-hidden="true" /> {i.nome}
+               </Button>
+             ))}
+           </div>
          </nav>
-       </SheetContent>
-     </Sheet>
+       </div>
+     </div>
    );
  })()}
 
