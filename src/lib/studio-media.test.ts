@@ -82,7 +82,7 @@ describe("Agendamento", () => {
     expect(s.agendar).toHaveBeenCalledWith("p1", "u1", iso); expect(s.publicar).not.toHaveBeenCalled();
   });
   it("LinkedIn não pode ser agendado (sem rotina automática ativa)", () => {
-    expect(() => validarPublicacao({ ...base, rede: "linkedin", imagens: [] }, { canal: "linkedin", conta: "", conectado: true }, "agendar", "2099-01-01T00:00:00Z", 0)).toThrow("só para Instagram");
+    expect(() => validarPublicacao({ ...base, rede: "linkedin", imagens: [], formato: "Post Único" }, { canal: "linkedin", conta: "", conectado: true }, "agendar", "2099-01-01T00:00:00Z", 0)).toThrow("só para Instagram");
   });
   it("rotina agendada publica posts vencidos de qualquer conta Instagram, não só a Liga", () => {
     const src = readFileSync("src/routes/api/public/posts-agendados.ts", "utf8");
