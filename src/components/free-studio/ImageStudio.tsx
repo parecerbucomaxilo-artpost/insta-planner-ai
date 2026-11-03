@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LOGOS_DISPONIVEIS } from "@/lib/logos-catalog";
+import { PERFIS, type PerfilId } from "@/lib/studio-profiles";
 
 const FORMATOS = {
   feed: { nome: "Instagram feed 4:5", w: 1080, h: 1350 },
@@ -33,8 +35,6 @@ const FONTES = [
   { nome: "Mono", css: "ui-monospace, 'Courier New', monospace" },
 ];
 
-/** Cores das marcas do projeto (Chico e Liga) como atalhos; qualquer cor pode ser escolhida. */
-const CORES_MARCA = ["#ffffff", "#000000", "#0c2340", "#2dd4ff", "#545454", "#c92e28"];
 
 type Ajustes = {
   formato: Formato; zoom: number; offX: number; offY: number;
@@ -61,7 +61,18 @@ function quebrarLinhas(ctx: CanvasRenderingContext2D, texto: string, max: number
   return linhas;
 }
 
-export function ImageStudio() {
+export function ImageStudio({ perfil }: { perfil: PerfilId }) {
+  const P = PERFIS[perfil];
+  const CORES_MARCA = Array.from(new Set([P.paleta.texto, P.paleta.destaque, P.paleta.fundo1, P.paleta.fundo2]));
+  const [comLogo, setComLogo] = useState(true);
+  const [logo, setLogo] = useState<HTMLImageElement | null>(null);
+  useEffect(() => {
+    setLogo(null);
+    const url = LOGOS_DISPONIVEIS.find((l) => l.key === P.logo)?.url;
+    if (!url) return;
+    const i = new Image(); i.crossOrigin = "anonymous";
+    i.onload = () => setLogo(i); i.src = url;
+  }, [P.logo]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
@@ -100,7 +111,7 @@ export function ImageStudio() {
     const ctx = c.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "#1f1f1f";
+    ctx.fillStyle = P.paleta.fundo1;
     ctx.fillRect(0, 0, W, H);
     if (img) {
       const escala = Math.max(W / img.naturalWidth, H / img.naturalHeight) * a.zoom;
@@ -128,7 +139,11 @@ export function ImageStudio() {
       linhas.forEach((l, i) => ctx.fillText(l, x, cy + i * alturaLinha));
       ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
     }
-  }, [a, img]);
+    if (comLogo && logo) {
+      const m = Math.min(W, H) * 0.06, lh = Math.min(W, H) * 0.12, lw = (logo.width / logo.height) * lh;
+      ctx.drawImage(logo, W - m - lw, m, lw, lh);
+    }
+  }, [a, img, comLogo, logo, P.paleta.fundo1]);
 
   useEffect(() => { desenhar(); }, [desenhar]);
 
@@ -259,7 +274,8 @@ export function ImageStudio() {
                 <button key={c} type="button" aria-label={`Cor ${c}`} onClick={() => set("cor", c)} className="h-7 w-7 rounded-full border" style={{ backgroundColor: c }} />
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">O logo oficial não é desenhado aqui; use a arte com logo do próprio Planner quando precisar dele.</p>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={comLogo} onChange={(e) => setComLogo(e.target.checked)} /> Aplicar logo oficial do perfil {P.nome}</label>
+            <p className="text-xs text-muted-foreground">Cores e logo seguem o perfil {P.nome}. A logo é o arquivo oficial, nunca redesenhada.</p>
           </CardContent>
         </Card>
       </div>

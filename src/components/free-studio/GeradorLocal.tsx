@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Wand2, Download, Copy, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LOGOS_DISPONIVEIS, type LogoKey } from "@/lib/logos-catalog";
+import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
 import {
-  OBJETIVOS, PLANNERS_TEMAS, sortearTema, modeloLegenda, gerarGanchos, sugerirHashtags,
+  OBJETIVOS, sortearTema, modeloLegenda, gerarGanchos, sugerirHashtags,
   type Objetivo, type PlannerTemas, type RedeTexto,
 } from "@/lib/free-studio";
 
@@ -21,15 +22,8 @@ const TIPOS = {
 } as const;
 type Tipo = keyof typeof TIPOS;
 
-/** Identidade de cada planner, igual à configurada nos planners (cores, logo real e assinatura). */
 type Ident = { fundo1: string; fundo2: string; destaque: string; texto: string; logo: LogoKey; assinatura: string };
-const IDENT: Record<PlannerTemas, Ident> = {
-  chico: { fundo1: "#0c2340", fundo2: "#000000", destaque: "#2dd4ff", texto: "#ffffff", logo: "planner", assinatura: "Prof. Francisco Menezes | CROSP 53318" },
-  diversos: { fundo1: "#0c2340", fundo2: "#000000", destaque: "#2dd4ff", texto: "#ffffff", logo: "planner", assinatura: "Prof. Francisco Menezes | CROSP 53318" },
-  liga: { fundo1: "#000000", fundo2: "#545454", destaque: "#c92e28", texto: "#ffffff", logo: "liga-ctbmf", assinatura: "Liga Acadêmica de CTBMF" },
-  "cirurgia-biopsias": { fundo1: "#2d2c32", fundo2: "#2d2c32", destaque: "#dd8e3c", texto: "#fbfbfb", logo: "clinica-escola", assinatura: "Agenda aberta · Clínica Escola" },
-  "clinica-escola": { fundo1: "#2d2c32", fundo2: "#2d2c32", destaque: "#dd8e3c", texto: "#fbfbfb", logo: "clinica-escola", assinatura: "Clínica Escola" },
-};
+const identDe = (id: PerfilId): Ident => ({ ...PERFIS[id].paleta, logo: PERFIS[id].logo, assinatura: PERFIS[id].assinatura });
 
 function carregar(src: string): Promise<HTMLImageElement | null> {
   return new Promise((ok) => {
@@ -100,9 +94,10 @@ function desenhar(w: number, h: number, cor: Ident, titulo: string, sub: string,
 }
 
 
-export function GeradorLocal() {
+export function GeradorLocal({ perfil }: { perfil: PerfilId }) {
   const [tipo, setTipo] = useState<Tipo>("ig-feed");
-  const [planner, setPlanner] = useState<PlannerTemas>("chico");
+  const planner: PlannerTemas = PERFIS[perfil].temas;
+  useEffect(() => { setTema(""); setImagens([]); setLegenda(""); }, [perfil]);
   const [objetivo, setObjetivo] = useState<Objetivo>("educativo");
   const [tema, setTema] = useState("");
   const [legenda, setLegenda] = useState("");
@@ -115,9 +110,9 @@ export function GeradorLocal() {
     const t = tema.trim() || sortearTema(planner, []);
     setTema(t);
     const cfg = TIPOS[tipo];
-    const id = IDENT[planner];
+    const id = identDe(perfil);
     const tags = sugerirHashtags(t, cfg.rede);
-    setLegenda(modeloLegenda(objetivo, t, cfg.rede) + (tags.length ? `\n\n${tags.join(" ")}` : ""));
+    setLegenda(legendaDoPerfil(modeloLegenda(objetivo, t, cfg.rede), perfil) + (tags.length && cfg.rede !== "google" ? `\n\n${tags.join(" ")}` : ""));
     const ganchos = gerarGanchos(t);
     const urlLogo = LOGOS_DISPONIVEIS.find((l) => l.key === id.logo)?.url;
     let logo = urlLogo ? await carregar(urlLogo) : null;
@@ -126,7 +121,7 @@ export function GeradorLocal() {
       { t: ganchos[4], s: "[Explicação simples do tema]" },
       { t: ganchos[1], s: "[Sinal 1 · Sinal 2 · Sinal 3]" },
       { t: ganchos[5], s: "Cada caso exige avaliação individual por um profissional habilitado." },
-      { t: "Salve este post para consultar depois", s: "Saiba mais pelo link da bio" },
+      { t: "Salve este post para consultar depois", s: perfil === "chico" ? "Saiba mais pelo link da bio" : PERFIS[perfil].telefone ? `📞 ${PERFIS[perfil].telefone}` : "" },
     ];
     const n = slides.length;
     const fazer = () => slides.map((s, i) => {
@@ -165,14 +160,7 @@ export function GeradorLocal() {
             ))}
           </div>
         </div>
-        <div className="space-y-1.5">
-          <Label>Planner</Label>
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(PLANNERS_TEMAS) as PlannerTemas[]).map((p) => (
-              <Button key={p} size="sm" variant={planner === p ? "secondary" : "outline"} onClick={() => { setPlanner(p); setTema(""); }}>{PLANNERS_TEMAS[p].nome}</Button>
-            ))}
-          </div>
-        </div>
+        <p className="text-sm">Perfil: <strong>{PERFIS[perfil].nome}</strong> — cores, logo oficial, assinatura e temas deste perfil.</p>
         <div className="space-y-1.5">
           <Label>Objetivo</Label>
           <div className="flex flex-wrap gap-2">
