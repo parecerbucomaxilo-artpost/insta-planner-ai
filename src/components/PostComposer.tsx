@@ -568,6 +568,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 }
 
 function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
+  const linkedIn = useLinkedInStatus();
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<
     "CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos"
@@ -586,7 +587,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
     tema: string;
     gancho: string;
   }> | null>(null);
-  const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[] } | null>(
+  const [preview, setPreview] = useState<{ id: string; legenda: string; urls: string[]; linkedin?: boolean } | null>(
     null,
   );
   const [previewIdx, setPreviewIdx] = useState(0);
@@ -646,7 +647,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       toast.success("Pré-visualize abaixo antes de publicar.", { id: tid });
       setTema("");
       setPreviewIdx(0);
-      setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
+      setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, linkedin: false });
       onCreated(); // Refresh saved pending posts without approving, scheduling or publishing.
     } catch (e: any) {
       if (ctrl.signal.aborted || e?.name === "AbortError") {
@@ -757,7 +758,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       });
       setTemas((prev) => prev?.filter((x) => x.tema !== t.tema) ?? null);
       setPreviewIdx(0);
-      setPreview({ id: out.id, legenda: out.legenda, urls: out.urls });
+      setPreview({ id: out.id, legenda: out.legenda, urls: out.urls, linkedin: r === "linkedin" });
       onCreated(); // Expose the saved pending post immediately.
     } catch (e: any) {
       if (ctrl.signal.aborted || e?.name === "AbortError") {
@@ -1267,6 +1268,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
               );
             })()}
           <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
+            {preview?.linkedin && !linkedIn.connected && <p role="status" className="w-full text-sm text-muted-foreground">{linkedIn.message}</p>}
             <Button
               variant="destructive"
               disabled={discarding || approving !== null}
@@ -1290,7 +1292,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
             {(["arquivar", "agendar", "publicar"] as const).map((acao) => (
               <Button
                 key={acao}
-                disabled={discarding || approving !== null}
+                disabled={discarding || approving !== null || (acao !== "arquivar" && preview?.linkedin === true && !linkedIn.connected)}
                 onClick={async () => {
                   if (!preview) return;
                   setApproving(acao);

@@ -1860,6 +1860,10 @@ export const generateSinglePost = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) => SingleInput.parse(d))
   .handler(async ({ data }) => {
+    if (data.status === "Agendado" && data.rede === "linkedin") {
+      const connection = await checkLinkedInConnection(process.env['LOVABLE_API_KEY'], process.env['LINKEDIN_API_KEY']);
+      if (!connection.connected) throw new Error(connection.message);
+    }
     const context = { userId: TEMP_USER_ID };
     const postId = crypto.randomUUID();
 
