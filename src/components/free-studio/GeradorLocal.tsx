@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LOGOS_DISPONIVEIS, type LogoKey } from "@/lib/logos-catalog";
 import {
   OBJETIVOS, PLANNERS_TEMAS, sortearTema, modeloLegenda, gerarGanchos, sugerirHashtags,
   type Objetivo, type PlannerTemas, type RedeTexto,
@@ -20,11 +21,24 @@ const TIPOS = {
 } as const;
 type Tipo = keyof typeof TIPOS;
 
-/** Paletas de marca usadas apenas no desenho local (Canvas). Liga não usa azul/ciano. */
-function paleta(planner: PlannerTemas) {
-  return planner === "liga"
-    ? { fundo1: "#000000", fundo2: "#545454", destaque: "#c92e28", texto: "#ffffff" }
-    : { fundo1: "#0c2340", fundo2: "#000000", destaque: "#2dd4ff", texto: "#ffffff" };
+/** Identidade de cada planner, igual à configurada nos planners (cores, logo real e assinatura). */
+type Ident = { fundo1: string; fundo2: string; destaque: string; texto: string; logo: LogoKey; assinatura: string };
+const IDENT: Record<PlannerTemas, Ident> = {
+  chico: { fundo1: "#0c2340", fundo2: "#000000", destaque: "#2dd4ff", texto: "#ffffff", logo: "planner", assinatura: "Prof. Francisco Menezes | CROSP 53318" },
+  diversos: { fundo1: "#0c2340", fundo2: "#000000", destaque: "#2dd4ff", texto: "#ffffff", logo: "planner", assinatura: "Prof. Francisco Menezes | CROSP 53318" },
+  liga: { fundo1: "#000000", fundo2: "#545454", destaque: "#c92e28", texto: "#ffffff", logo: "liga-ctbmf", assinatura: "Liga Acadêmica de CTBMF" },
+  "cirurgia-biopsias": { fundo1: "#2d2c32", fundo2: "#2d2c32", destaque: "#dd8e3c", texto: "#fbfbfb", logo: "clinica-escola", assinatura: "Agenda aberta · Clínica Escola" },
+  "clinica-escola": { fundo1: "#2d2c32", fundo2: "#2d2c32", destaque: "#dd8e3c", texto: "#fbfbfb", logo: "clinica-escola", assinatura: "Clínica Escola" },
+};
+
+function carregar(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((ok) => {
+    const i = new Image();
+    i.crossOrigin = "anonymous";
+    i.onload = () => ok(i);
+    i.onerror = () => ok(null);
+    i.src = src;
+  });
 }
 
 function quebrar(ctx: CanvasRenderingContext2D, texto: string, max: number) {
@@ -38,14 +52,20 @@ function quebrar(ctx: CanvasRenderingContext2D, texto: string, max: number) {
   return linhas;
 }
 
-function desenhar(w: number, h: number, planner: PlannerTemas, titulo: string, sub: string, rodape: string) {
+function desenhar(w: number, h: number, cor: Ident, titulo: string, sub: string, rodape: string, foto: HTMLImageElement | null, logo: HTMLImageElement | null) {
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
   const ctx = c.getContext("2d")!;
-  const cor = paleta(planner);
   const g = ctx.createLinearGradient(0, 0, w, h);
   g.addColorStop(0, cor.fundo1); g.addColorStop(1, cor.fundo2);
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  if (foto) {
+    const esc = Math.max(w / foto.width, h / foto.height);
+    ctx.drawImage(foto, (w - foto.width * esc) / 2, (h - foto.height * esc) / 2, foto.width * esc, foto.height * esc);
+    const v = ctx.createLinearGradient(0, 0, 0, h);
+    v.addColorStop(0, cor.fundo1 + "66"); v.addColorStop(1, cor.fundo1 + "ee");
+    ctx.fillStyle = v; ctx.fillRect(0, 0, w, h);
+  }
   const m = Math.round(Math.min(w, h) * 0.08);
   const base = Math.min(w, h);
   ctx.fillStyle = cor.destaque;
@@ -72,10 +92,13 @@ function desenhar(w: number, h: number, planner: PlannerTemas, titulo: string, s
     ctx.fillStyle = cor.destaque;
     ctx.fillText(rodape, m, h - m - tr);
   }
-  return c.toDataURL("image/jpeg", 0.92);
+  if (logo) {
+    const lh = base * 0.14, lw = (logo.width / logo.height) * lh;
+    ctx.drawImage(logo, w - m - lw, m, lw, lh);
+  }
+  try { return c.toDataURL("image/jpeg", 0.92); } catch { return null; }
 }
 
-const ASSINATURA = "Prof. Francisco Menezes | CROSP 53318";
 
 export function GeradorLocal() {
   const [tipo, setTipo] = useState<Tipo>("ig-feed");
@@ -84,28 +107,45 @@ export function GeradorLocal() {
   const [tema, setTema] = useState("");
   const [legenda, setLegenda] = useState("");
   const [imagens, setImagens] = useState<string[]>([]);
+  const [foto, setFoto] = useState<HTMLImageElement | null>(null);
+  const [gerando, setGerando] = useState(false);
 
-  const gerar = () => {
+  const gerar = async () => {
+    setGerando(true);
     const t = tema.trim() || sortearTema(planner, []);
     setTema(t);
     const cfg = TIPOS[tipo];
+    const id = IDENT[planner];
     const tags = sugerirHashtags(t, cfg.rede);
     setLegenda(modeloLegenda(objetivo, t, cfg.rede) + (tags.length ? `\n\n${tags.join(" ")}` : ""));
     const ganchos = gerarGanchos(t);
-    const assinar = planner !== "liga";
-    if (cfg.slides === 1) {
-      setImagens([desenhar(cfg.w, cfg.h, planner, ganchos[0], "", assinar ? ASSINATURA : "")]);
-    } else {
-      const slides = [
-        { t: ganchos[0], s: "Arraste para o lado →" },
-        { t: ganchos[4], s: "[Explicação simples do tema]" },
-        { t: ganchos[1], s: "[Sinal 1 · Sinal 2 · Sinal 3]" },
-        { t: ganchos[5], s: "Cada caso exige avaliação individual por um profissional habilitado." },
-        { t: "Salve este post para consultar depois", s: "Saiba mais pelo link da bio" },
-      ];
-      setImagens(slides.map((s, i) => desenhar(cfg.w, cfg.h, planner, s.t, s.s, assinar && (i === 0 || i === 4) ? ASSINATURA : `${i + 1}/5`)));
-    }
-    toast.success("Imagem e legenda geradas com modelos fixos.");
+    const urlLogo = LOGOS_DISPONIVEIS.find((l) => l.key === id.logo)?.url;
+    let logo = urlLogo ? await carregar(urlLogo) : null;
+    const slides = cfg.slides === 1 ? [{ t: ganchos[0], s: "" }] : [
+      { t: ganchos[0], s: "Arraste para o lado →" },
+      { t: ganchos[4], s: "[Explicação simples do tema]" },
+      { t: ganchos[1], s: "[Sinal 1 · Sinal 2 · Sinal 3]" },
+      { t: ganchos[5], s: "Cada caso exige avaliação individual por um profissional habilitado." },
+      { t: "Salve este post para consultar depois", s: "Saiba mais pelo link da bio" },
+    ];
+    const n = slides.length;
+    const fazer = () => slides.map((s, i) => {
+      const extremo = i === 0 || i === n - 1;
+      return desenhar(cfg.w, cfg.h, id, s.t, s.s, extremo ? id.assinatura : `${i + 1}/${n}`, foto, extremo ? logo : null);
+    });
+    let out = fazer();
+    if (out.some((x) => !x)) { logo = null; out = fazer(); toast.warning("Não foi possível aplicar a logo nesta imagem; adicione-a manualmente."); }
+    setImagens(out.filter((x): x is string => !!x));
+    setGerando(false);
+    toast.success("Imagem e legenda geradas com a identidade do planner.");
+  };
+
+  const enviarFoto = (f?: File) => {
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const i = new Image();
+    i.onload = () => setFoto(i);
+    i.src = url;
   };
 
   const baixar = (url: string, i: number) => {
@@ -145,8 +185,15 @@ export function GeradorLocal() {
           <Input value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Tema (vazio = sorteado do planner)" aria-label="Tema" />
           <Button variant="outline" onClick={() => setTema(sortearTema(planner, [tema]))}><Shuffle className="mr-1.5 h-4 w-4" /> Sortear tema</Button>
         </div>
-        <Button className="w-full" onClick={gerar}><Wand2 className="mr-1.5 h-4 w-4" /> Gerar imagens e legendas</Button>
-        <p className="text-xs text-muted-foreground">Gerado por modelos fixos no seu navegador, sem IA e sem créditos. Carrossel do feed = 5 slides. A logo não é desenhada; complete os trechos entre colchetes.</p>
+        <div className="space-y-1.5">
+          <Label htmlFor="gl-foto">Foto de fundo (opcional, fica só no seu navegador)</Label>
+          <div className="flex gap-2">
+            <Input id="gl-foto" type="file" accept="image/*" onChange={(e) => enviarFoto(e.target.files?.[0])} />
+            {foto && <Button variant="ghost" onClick={() => setFoto(null)}>Remover</Button>}
+          </div>
+        </div>
+        <Button className="w-full" disabled={gerando} onClick={gerar}><Wand2 className="mr-1.5 h-4 w-4" /> Gerar imagens e legendas</Button>
+        <p className="text-xs text-muted-foreground">Gerado por modelos fixos no seu navegador, sem IA e sem créditos. Carrossel do feed = 5 slides. Cores, logo real e assinatura seguem o planner escolhido; complete os trechos entre colchetes.</p>
 
         {imagens.length > 0 && (
           <div className="space-y-4">
