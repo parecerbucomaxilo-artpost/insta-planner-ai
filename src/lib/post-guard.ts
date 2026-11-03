@@ -117,7 +117,9 @@ export async function salvarPostInedito(
     prompt_ia?: string | null;
   },
 ): Promise<{ id: string; existente: boolean }> {
-  const key = chaveConteudoManual(userId, row.legenda);
+  const key = row.legenda.trim()
+    ? chaveConteudoManual(userId, row.legenda)
+    : contentKey([userId, "manual-media", row.prompt_ia ?? "", JSON.stringify(row.imagens_carrossel ?? row.url_imagem ?? "")]);
   const { data: ja } = await client
     .from("posts")
     .select("id")
