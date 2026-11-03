@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SugerirTemasInput, sugerirTemasComIA } from "@/lib/theme-suggest";
 import { TextoInput, ImagemInput, MARCAS, montarPromptTexto, lerResultado, montarPromptImagem, FORMATOS_IA } from "@/lib/advanced-ai";
 
 /** Modo IA Avançada — chamadas reais ao gateway existente. Nunca devolve texto ou imagem simulados. */
@@ -54,4 +55,20 @@ export const gerarImagemAvancada = createServerFn({ method: "POST" })
     const prompt = `${montarPromptImagem(data.briefing, data.formato, data.tipo, data.slide, data.textoSlide)}${data.briefing.marca === "chico" || data.briefing.marca === "liga" ? `\n\n${brandBookPrompt(MARCAS[data.briefing.marca].audiencia)}` : ""}`;
     const b64 = await generateImageBase64({ prompt, model: data.modelo, size: FORMATOS_IA[data.formato].size });
     return { imagem: b64.startsWith("data:") ? b64 : `data:image/png;base64,${b64}` };
+  });
+
+/** IA escolhe o tema: chama o gateway real com histórico do usuário (antirrepetição). Sem fallback local. */
+export const sugerirTemasIA = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SugerirTemasInput.parse(d))
+  .handler(async ({ data, context }) => {
+    if (!process.env.LOVABLE_API_KEY) throw new Error("IA não configurada. Nenhuma sugestão foi gerada.");
+    const { generateTextAI } = await import("@/lib/ai-gateway.server");
+    const desde = new Date(Date.now() - 60 * 864e5).toISOString();
+    const { data: rows } = await context.supabase
+      .from("posts").select("prompt_ia, legenda").gte("created_at", desde).order("created_at", { ascending: false }).limit(60);
+    const historico = (rows ?? [])
+      .map((r) => (r.prompt_ia || r.legenda || "").split(/[.\n]/)[0].slice(0, 160).trim())
+      .filter(Boolean);
+    return sugerirTemasComIA(data, historico, generateTextAI);
   });
