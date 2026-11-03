@@ -38,6 +38,7 @@ import type { PostRow } from "@/lib/posts-types";
 import { signPostMediaUrls } from "@/lib/storage-url";
 import { POST_REVIEW_CHANGED } from "@/lib/post-review";
 import { ApproveAllReview } from "@/components/ApproveAllReview";
+import { LinkedInConnectionNotice } from "@/components/LinkedInConnectionNotice";
 
 export const Route = createFileRoute("/_authenticated/")({
  head: () => ({
@@ -240,6 +241,7 @@ function Dashboard() {
  </section>
 
  <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+ <div className="mb-4"><LinkedInConnectionNotice /></div>
  {signedOut && <div role="status" className="mb-4 flex flex-wrap items-center gap-3 border border-border bg-muted p-3">
  <p className="text-sm">Entre na sua conta para visualizar e aprovar os posts salvos.</p>
  <Button variant="outline" onClick={() => navigate({ to: "/auth", search: { redirect: "/" } })}>Entrar na conta</Button>

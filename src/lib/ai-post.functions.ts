@@ -1,4 +1,5 @@
 import { plainLanguageRule } from "@/lib/plain-language";
+import { checkLinkedInConnection } from "@/lib/social/linkedin-status";
 import { createServerFn } from "@tanstack/react-start";
 // Auth desativada no projeto — usamos um user_id temporário fixo.
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
@@ -1859,6 +1860,10 @@ export const generateSinglePost = createServerFn({ method: "POST" })
   .middleware([])
   .inputValidator((d: unknown) => SingleInput.parse(d))
   .handler(async ({ data }) => {
+    if (data.status === "Agendado" && data.rede === "linkedin") {
+      const connection = await checkLinkedInConnection(process.env['LOVABLE_API_KEY'], process.env['LINKEDIN_API_KEY']);
+      if (!connection.connected) throw new Error(connection.message);
+    }
     const context = { userId: TEMP_USER_ID };
     const postId = crypto.randomUUID();
 
@@ -2812,6 +2817,10 @@ export const approvePost = createServerFn({ method: "POST" })
         .select("user_id,postar_instagram,postar_linkedin")
         .eq("id", data.id)
         .maybeSingle();
+      if (post?.postar_linkedin) {
+        const connection = await checkLinkedInConnection(process.env['LOVABLE_API_KEY'], process.env['LINKEDIN_API_KEY']);
+        if (!connection.connected) throw new Error(connection.message);
+      }
       const publishUserId = (post as any)?.user_id || TEMP_USER_ID;
 
       const results: any = { ok: true, status: "Publicado" };
@@ -2875,9 +2884,13 @@ export const approvePost = createServerFn({ method: "POST" })
     }
     const { data: postMeta } = await supabaseAdmin
       .from("posts")
-      .select("instagram_conta")
+      .select("instagram_conta,postar_linkedin")
       .eq("id", data.id)
       .maybeSingle();
+    if (data.acao === "agendar" && postMeta?.postar_linkedin) {
+      const connection = await checkLinkedInConnection(process.env['LOVABLE_API_KEY'], process.env['LINKEDIN_API_KEY']);
+      if (!connection.connected) throw new Error(connection.message);
+    }
     const contaMeta = String((postMeta as any)?.instagram_conta || "")
       .trim()
       .replace(/^@+/, "")

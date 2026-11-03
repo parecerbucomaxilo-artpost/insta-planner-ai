@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
 import { ensurePerfil } from "@/lib/perfil.functions";
 import { createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
+import { LinkedInConnectionNotice } from "@/components/LinkedInConnectionNotice";
+import { useLinkedInStatus } from "@/hooks/use-linkedin-status";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
 type LiStatus =
@@ -19,6 +21,7 @@ type LiStatus =
   | null;
 
 export function SocialConnections() {
+  const linkedIn = useLinkedInStatus();
   // const fetchStatus = useServerFn(getLinkedInStatus);
   // const sendLinkedIn = useServerFn(publishToLinkedIn);
   const fetchStatus = async () => ({ connected: false });
@@ -93,6 +96,7 @@ export function SocialConnections() {
   };
 
   const handleTestLiWebhook = async () => {
+    if (!linkedIn.connected) return toast.error(linkedIn.message);
     const url = liWebhook.trim();
     if (!url) return toast.error("Insira a URL do webhook do LinkedIn primeiro.");
     setLiTesting(true);
@@ -143,6 +147,7 @@ export function SocialConnections() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          <LinkedInConnectionNotice />
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="li-webhook" className="flex items-center gap-1.5 text-sm">
@@ -161,7 +166,7 @@ export function SocialConnections() {
                 {liSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Salvar LinkedIn Webhook
               </Button>
-              <Button onClick={handleTestLiWebhook} disabled={liTesting || igLoading} variant="outline" size="sm">
+              <Button onClick={handleTestLiWebhook} disabled={liTesting || igLoading || !linkedIn.connected} variant="outline" size="sm">
                 {liTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 Testar disparo LinkedIn
               </Button>
