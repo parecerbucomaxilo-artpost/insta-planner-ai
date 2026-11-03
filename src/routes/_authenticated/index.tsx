@@ -258,7 +258,7 @@ function Dashboard() {
    const itens: Array<{ v: string; nome: string; Icon: typeof PlusCircle; onSel?: () => void }> = [
      { v: "criar", nome: "Criar", Icon: PlusCircle },
      { v: "simplificado", nome: "Planner Simplificado Liga", Icon: Sparkles },
-     { v: "simplificado-chico", nome: "Planner Simplificado Chico", Icon: Sparkles },
+     { v: "simplificado-chico", nome: "Planner Chico", Icon: Sparkles },
      { v: "agendamento-liga", nome: "Cirurgia e Biópsias", Icon: Stethoscope },
      { v: "clinica-escola", nome: "Planner Clínica Escola", Icon: CalendarCheck },
      { v: "semana", nome: "Cronograma de 7 dias", Icon: CalendarDays },
