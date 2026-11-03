@@ -1521,74 +1521,13 @@ export function completeCaptionIfNeeded(params: {
   especialidade: string;
 }) {
   const raw = (params.legenda || "").trim();
-  // TEMAS DIVERSOS: nunca preencher com bloco médico.
-  if (params.especialidade === "Temas Diversos") {
-    return raw || buildDiverseLocalCaption(params.tema, params.rede, params.formato);
-  }
+  // Sem texto da IA = erro visível. Nunca preencher com legenda ou parágrafos de modelo fixo.
   if (!raw)
-    return buildLocalCaption({
-      tema: params.tema,
-      rede: params.rede,
-      formato: params.formato,
-      especialidade: params.especialidade,
-      nivel: resolveNivel("auto", params.rede),
-      audiencia: params.audiencia,
-    });
-  const g = topicGuidance(params.tema);
-  const norm = normalizeTema(raw);
-  const hasConduta =
-    /(trat|conduta|avaliacao|avaliar|planej|fisioterapia|placa|cpap|biopsia|exodontia|higiene|protocolo|fixacao|orientacao|controle|acompanhamento)/.test(
-      norm,
-    );
-  const hasWhy =
-    /(porque|por que|acontece|mecanismo|causa|favorece|sobrecarga|inflamacao|risco)/.test(norm);
-  const hasAlert =
-    /(alerta|procure|avaliacao|especialista|persistente|piora|febre|inchaco|sangramento|travamento)/.test(
-      norm,
-    );
-  const hasGanho =
-    /(ganho|benef|qualidade de vida|volta a|sem dor|recuper|sorr|mastig|respir|dormir bem)/.test(
-      norm,
-    );
-  const minLen = params.formato === "Story" ? 140 : params.rede === "linkedin" ? 600 : 380;
-  const tooShort = raw.length < minLen;
-  if (!tooShort && hasConduta && hasWhy && hasAlert && hasGanho) return raw;
-  // Texto completo escrito para o tema + guia genérico: não anexar parágrafos de preenchimento
-  // idênticos aos de outros posts (só o fechamento oficial, se faltar).
-  // Guia genérico NUNCA completa com parágrafos fixos (curto ou longo): eram idênticos em todo
-  // post, a dedup recusava as 3 tentativas e nada era salvo ("o app não gera nada").
-  if (isGenericGuidance(g)) {
-    if (
-      params.rede === "linkedin" ||
-      params.formato === "Story" ||
-      /link da bio|link na bio/i.test(raw)
-    )
-      return raw;
-    return `${raw}\n\n${params.audiencia === "estudantes-graduacao" ? "Salve para revisar e compare com sua conduta na clínica." : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`}`;
-  }
-
-  if (params.formato === "Story") {
-    return `${raw}\n\nO que fazer: ${g.conduta}.\n\nGanho: ${g.ganho}.\n\nAtenção: ${g.alerta}.\n\nLink na Bio`;
-  }
-  if (params.rede === "linkedin") {
-    const extra: string[] = [];
-    if (!hasWhy) extra.push(`Por que acontece: ${g.porQue}.`);
-    if (!hasConduta) extra.push(`Conduta prática: ${g.conduta}.`);
-    if (!hasGanho) extra.push(`Ganho clínico esperado: ${g.ganho}.`);
-    if (!hasAlert) extra.push(`Sinais de alerta: ${g.alerta}.`);
-    return `${raw}\n\n${extra.join("\n\n")}`;
-  }
-  const fechamento =
-    params.audiencia === "estudantes-graduacao"
-      ? "Salve para revisar e compare com sua conduta na clínica."
-      : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`;
-  const partes: string[] = [raw];
-  if (!hasWhy) partes.push(`Por que acontece: ${g.porQue}.`);
-  if (!hasConduta) partes.push(`Como conduzir: ${g.conduta}.`);
-  if (!hasGanho) partes.push(`Ganho real: ${g.ganho}.`);
-  if (!hasAlert) partes.push(`Quando ligar o alerta: ${g.alerta}.`);
-  partes.push(fechamento);
-  return partes.join("\n\n");
+    throw new Error(`A IA não devolveu legenda para "${params.tema.slice(0, 60)}". Nada foi salvo e nenhum texto de modelo fixo foi usado no lugar.`);
+  if (params.especialidade === "Temas Diversos") return raw;
+  // Só o fechamento oficial da marca (CTA/cidades) é acrescentado se faltar — nunca conteúdo editorial fixo.
+  if (params.rede === "linkedin" || params.formato === "Story" || /link da bio|link na bio/i.test(raw)) return raw;
+  return `${raw}\n\n${params.audiencia === "estudantes-graduacao" ? "Salve para revisar e compare com sua conduta na clínica." : `Saiba mais pelo link da bio.\nAtendimento em ${CIDADES_ATENDIMENTO}.`}`;
 }
 
 function buildSlideNarratives(tema: string, audiencia: z.infer<typeof SingleInput>["audiencia"]) {
@@ -1621,13 +1560,12 @@ export function slidesNaoChico(
 ): string[] {
   try {
     return extractFinalSlides(legenda, total);
-  } catch (e) {
-    if (isGenericGuidance(topicGuidance(tema))) {
-      throw new Error(
-        `A IA não escreveu ${total} slides distintos para "${tema.slice(0, 60)}". Nada foi salvo — gere novamente ou detalhe melhor o tema.`,
-      );
-    }
-    return buildSlideNarratives(tema, audiencia);
+  } catch {
+    // Nunca substituir por roteiro fixo: slides precisam vir da IA.
+    void audiencia;
+    throw new Error(
+      `A IA não escreveu ${total} slides distintos para "${tema.slice(0, 60)}". Nada foi salvo e nenhum roteiro de modelo fixo foi usado — gere novamente.`,
+    );
   }
 }
 
@@ -2135,11 +2073,8 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           `O carrossel repetiu o conteúdo no(s) slide(s) ${rep.map((i) => i + 1).join(", ")}. Nada foi salvo — gere novamente para obter slides diferentes e progressivos.`,
         );
     }
-    const legendaResolvida = isChico
-      ? legendaBaseResolvida
-      : formato === "Carrossel" && !isDiverso
-        ? ensureCarouselCaption(legendaBaseResolvida, slideNarratives, data.audiencia)
-        : legendaBaseResolvida;
+    // Legenda final = texto da IA (não é remontada com blocos fixos de slides/hashtags).
+    const legendaResolvida = legendaBaseResolvida;
 
     // === NEXO LEGENDA ↔ IMAGEM ===
     // Extrai HEADLINE (1ª linha não-vazia) + ALT TEXT da legenda e, quando possível,

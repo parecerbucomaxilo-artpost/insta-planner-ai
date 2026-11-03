@@ -1,3 +1,5 @@
+import { useGuardaIA } from "@/components/GenerationMode";
+import { lerModo } from "@/lib/generation-mode";
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { Posts7Dias } from "@/components/Posts7Dias";
 import { PostReviewActions } from "@/components/PostReviewActions";
@@ -75,8 +77,8 @@ interface PreviewState {
 }
 
 export function PlannerAgendamentoTratamento() {
-  const genSingle = useServerFn(generateSinglePost);
-  const genCaption = useServerFn(generateCaptionOnly);
+  const genSingle = useGuardaIA("Gerar publicação", useServerFn(generateSinglePost));
+  const genCaption = useGuardaIA("Gerar legenda", useServerFn(generateCaptionOnly));
   const approveFn = useServerFn(approvePost);
   const discardFn = useServerFn(discardPost);
   const publishIg = useServerFn(publishInstagramNow);
@@ -134,9 +136,17 @@ export function PlannerAgendamentoTratamento() {
     if (!telefone.trim()) return toast.error("Informe o telefone antes de gerar a legenda.");
     setGerandoLegenda(true);
     try {
-      const final = buildPatientCaption({ tratamento, telefone, base: "", assunto });
-      setLegendaGerada(final);
-      toast.success("Legenda pronta — focada no tratamento e no ângulo escolhido.");
+      if (lerModo() === "ia") {
+        const out = await genCaption({
+          data: { tema: temaAtual(), rede: "instagram", formato: "Post Único", especialidade: "CTBMF", audiencia: "estudantes-graduacao", modelo },
+        });
+        setLegendaGerada(out.legenda);
+        toast.success("Legenda escrita pela IA — revise antes de usar.");
+      } else {
+        const final = buildPatientCaption({ tratamento, telefone, base: "", assunto });
+        setLegendaGerada(final);
+        toast.success("Legenda de modelo fixo (local — não é IA). Revise antes de usar.");
+      }
     } catch (e: any) {
       toast.error(e?.message || "Falha ao criar legenda.");
     } finally {
@@ -204,13 +214,10 @@ TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em po
         } as any,
       });
 
-      // Legenda do convite SEMPRE é a template determinística focada em UM único
-      // tratamento — nunca aceitamos texto da IA aqui porque ela drifta entre
-      // tratamentos. Só respeitamos legenda 100% manual digitada pelo usuário.
-      const legendaPaciente =
-        !override && legendaGerada.trim()
-          ? legendaGerada.trim()
-          : buildPatientCaption({ tratamento: tratSel, telefone, base: "", assunto });
+      // Legenda revisada pelo usuário tem prioridade; senão, a legenda escrita pela IA no
+      // pipeline (o tema enviado já restringe ao tratamento). Sem modelo fixo no modo IA.
+      const legendaPaciente = !override && legendaGerada.trim() ? legendaGerada.trim() : ((out as any).legenda || "").trim();
+      if (!legendaPaciente) throw new Error("A IA não devolveu legenda. Nada foi salvo com texto de modelo fixo.");
       await supabase
         .from("posts")
         .update({

@@ -1,3 +1,4 @@
+import { useGuardaIA } from "@/components/GenerationMode";
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { Posts7Dias } from "@/components/Posts7Dias";
 import { salvarPostInedito } from "@/lib/post-guard";
@@ -82,9 +83,9 @@ export function PlannerSimplificado({
   audiencia = "estudantes-graduacao",
   permiteTipoLiga = false,
 }: PlannerSimplificadoProps = {}) {
-  const genSingle = useServerFn(generateSinglePost);
-  const genWeek = useServerFn(generateWeekThemes);
-  const genCaption = useServerFn(generateCaptionOnly);
+  const genSingle = useGuardaIA("Gerar publicação", useServerFn(generateSinglePost));
+  const genWeek = useGuardaIA("Gerar temas da semana", useServerFn(generateWeekThemes));
+  const genCaption = useGuardaIA("Gerar legenda", useServerFn(generateCaptionOnly));
   const approveFn = useServerFn(approvePost);
   const discardFn = useServerFn(discardPost);
   const publishIg = useServerFn(publishInstagramNow);

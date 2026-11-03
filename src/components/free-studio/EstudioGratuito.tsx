@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -7,16 +6,11 @@ import { ImageStudio } from "./ImageStudio";
 import { GeradorLocal } from "./GeradorLocal";
 import { IAAvancada } from "@/components/advanced-ai/IAAvancada";
 
-type Modo = "gratuito" | "ia";
-const CHAVE = "estudio-modo";
+import { useModoGeracao } from "@/components/GenerationMode";
 
 /** Dois modos separados: ferramentas locais (sem IA) e IA Avançada (gateway real, pode consumir créditos). */
 export function EstudioGratuito() {
-  const [modo, setModo] = useState<Modo>("gratuito");
-  useEffect(() => {
-    if (localStorage.getItem(CHAVE) === "ia") setModo("ia");
-  }, []);
-  const trocar = (m: Modo) => { setModo(m); localStorage.setItem(CHAVE, m); };
+  const [modo, trocar] = useModoGeracao();
 
   return (
     <section className="space-y-4">
