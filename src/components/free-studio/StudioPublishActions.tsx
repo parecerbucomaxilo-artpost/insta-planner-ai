@@ -112,7 +112,7 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
       <Button variant="outline" onClick={() => void abrir("agendar")} disabled={busy || (!content.texto.trim() && !content.imagens.length)}><CalendarClock className="mr-1.5 h-4 w-4" />Agendar</Button>
     </div>
     <Dialog open={open} onOpenChange={o => { if (!busy) setOpen(o); }}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] w-[calc(100%-1rem)] min-w-0 overflow-y-auto [&>*]:min-w-0 sm:max-w-2xl">
         <DialogHeader><DialogTitle>{acao === "publicar" ? "Publicar — confirmar envio" : acao === "agendar" ? "Agendar publicação" : "Salvar rascunho"}</DialogTitle><DialogDescription>Perfil editorial: {PERFIS[content.perfil].nome}. A conta de destino é escolhida separadamente. Publicar envia conteúdo visível externamente; agendar autoriza envio futuro. Nenhuma geração envia automaticamente.</DialogDescription></DialogHeader>
         <Label htmlFor="studio-canal">Canal</Label>
         <select id="studio-canal" className="h-10 rounded-md border bg-background px-2" disabled={busy || !!resultado} value={destino.canal} onChange={e => setDestino({ canal: e.target.value as StudioDestination["canal"], conta: "", conectado: false })}>
@@ -123,7 +123,7 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
         {destino.canal === "google" && <p className="text-sm text-destructive">A automação atual usa assinatura/CTA fixos do Chico e não confirma a publicação final. Somente rascunho; envio bloqueado no Estúdio.</p>}
         <Label htmlFor="studio-envio-texto">Texto que será enviado</Label><Textarea id="studio-envio-texto" rows={5} value={texto} disabled={busy || !!resultado} onChange={e => setTexto(e.target.value)} />
         <p className="text-sm">{content.formato} · {content.imagens.length} imagem(ns) selecionada(s) · Tema: {content.tema}</p>
-        <div className="flex gap-2 overflow-x-auto">{content.imagens.map((src, i) => <img key={src} src={src} alt={`Mídia de envio ${i + 1}`} className="h-40 w-auto shrink-0 rounded border" onLoad={() => setLoaded(s => s.includes(src) ? s : [...s, src])} onError={() => setErro(`Imagem ${i + 1} não carregou; envio bloqueado.`)} />)}</div>
+        <div className="flex w-full min-w-0 gap-2 overflow-x-auto">{content.imagens.map((src, i) => <img key={src} src={src} alt={`Mídia de envio ${i + 1}`} className="h-40 w-auto shrink-0 rounded border" onLoad={() => setLoaded(s => s.includes(src) ? s : [...s, src])} onError={() => setErro(`Imagem ${i + 1} não carregou; envio bloqueado.`)} />)}</div>
         {acao === "agendar" && <><Label htmlFor="studio-quando">Data e hora local</Label><Input id="studio-quando" type="datetime-local" value={quando} disabled={busy || !!resultado} onChange={e => setQuando(e.target.value)} /></>}
         <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={visto} disabled={busy} onChange={e => setVisto(e.target.checked)} />Revisei o texto, a mídia e o destino; confirmo esta ação.</label>
         {erro && <p role="alert" className="text-sm text-destructive">{erro} O conteúdo permanece no Estúdio.</p>}

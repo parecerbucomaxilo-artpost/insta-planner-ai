@@ -43,7 +43,7 @@ function fitInstagramCaption(value: string) {
   return `${trimChars(text, budget)}${suffix}`;
 }
 
-async function findInstagramProfileByAccount(supabaseAdmin: any, conta: string, columns: string) {
+async function findInstagramProfileByAccount(supabaseAdmin: any, conta: string, columns: string, ownerId?: string) {
   const normalized = normalizeInstagramAccount(conta);
   if (!normalized) return null;
   const variants = [normalized, `@${normalized}`];
@@ -51,10 +51,12 @@ async function findInstagramProfileByAccount(supabaseAdmin: any, conta: string, 
 
   for (const field of fields) {
     for (const value of variants) {
-      const { data, error } = await supabaseAdmin
+      let query = supabaseAdmin
         .from("perfil_usuario")
         .select(columns)
-        .ilike(field, value)
+        .ilike(field, value);
+      if (ownerId && ownerId !== TEMP_USER_ID) query = query.eq("user_id", ownerId);
+      const { data, error } = await query
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -322,9 +324,10 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         supabaseAdmin,
         contaAlvo,
         "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id",
+        userId,
       );
       // Liga: se não existe perfil ainda, cria placeholder para receber token via OAuth/secret.
-      if (!perfil && contaAlvo === LIGA_ACCOUNT) {
+      if (!perfil && contaAlvo === LIGA_ACCOUNT && userId === TEMP_USER_ID) {
         const { data: created, error: createError } = await supabaseAdmin
           .from("perfil_usuario")
           .insert({ user_id: TEMP_USER_ID, arroba_usuario: contaAlvo, instagram_arroba: contaAlvo })
