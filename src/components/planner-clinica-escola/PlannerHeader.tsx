@@ -41,7 +41,6 @@ export function PlannerHeader() {
 
  <div className="p-5 border-t">
  <div className="min-w-0">
- <div className="min-w-0">
  <h2 className="text-lg font-bold flex items-center gap-2">
  <CalendarCheck className="h-5 w-5 text-primary" aria-hidden="true" />
  Planner Clínica Escola
@@ -49,7 +48,6 @@ export function PlannerHeader() {
  <p className="text-sm text-muted-foreground mt-0.5">
  Organize a agenda da clínica escola, registre cada paciente e acompanhe os atendimentos da semana.
  </p>
- </div>
  </div>
 
  </div>
