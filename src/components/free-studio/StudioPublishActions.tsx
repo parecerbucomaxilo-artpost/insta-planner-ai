@@ -16,6 +16,8 @@ import { getLinkedInStatus } from "@/lib/social/linkedin-status.functions";
 import { PERFIS } from "@/lib/studio-profiles";
 import { POST_REVIEW_CHANGED } from "@/lib/post-review";
 import { executarPublicacaoStudio, type StudioContent, type StudioAction, type StudioDestination, type PublishResult } from "@/lib/studio-publication";
+import { carregarDestinos } from "@/lib/studio-destinations";
+import { StudioDestinationPicker } from "./StudioDestinationPicker";
 
 export function StudioPublishActions({ content }: { content: StudioContent }) {
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
   const [acao, setAcao] = useState<StudioAction>("publicar");
   const [destino, setDestino] = useState<StudioDestination>({ canal: content.rede, conta: "", conectado: false });
   const [contas, setContas] = useState<string[]>([]);
+  const [destinosProntos, setDestinosProntos] = useState(false);
   const [quando, setQuando] = useState("");
   const [texto, setTexto] = useState(content.texto);
   const [busy, setBusy] = useState(false);
@@ -42,15 +45,26 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
   useEffect(() => { setTexto(content.texto); setVisto(false); }, [content.texto]);
   useEffect(() => { setVisto(false); setLoaded([]); }, [mediaFingerprint]);
 
-  const abrir = async (a: StudioAction) => {
+  const abrir = (a: StudioAction) => {
     setAcao(a); setOpen(true); setErro(""); setVisto(false); setResultado("");
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) throw new Error("Entre na sua conta para salvar, agendar ou publicar. Conteúdo mantido no Estúdio.");
-      const { data: rows, error: e } = await supabase.from("perfil_usuario").select("instagram_arroba,arroba_usuario").eq("user_id", data.user.id);
-      if (e) throw e;
-      setContas([...new Set((rows ?? []).map(r => (r.instagram_arroba || r.arroba_usuario).replace(/^@+/, "").toLowerCase()).filter(Boolean))]);
-    } catch (e) { setErro(e instanceof Error ? e.message : "Não foi possível carregar suas contas."); }
+  };
+  const carregar = async () => {
+    const result = await carregarDestinos({
+      usuario: async () => {
+        const { data, error } = await supabase.auth.getUser();
+        if (error || !data.user) throw new Error("Entre na sua conta para carregar os destinos. Conteúdo mantido no Estúdio.");
+        return data.user.id;
+      },
+      perfis: async uid => {
+        const { data, error } = await supabase.from("perfil_usuario").select("instagram_arroba,arroba_usuario").eq("user_id", uid);
+        if (error) throw new Error("Não foi possível carregar suas contas. Tente novamente.");
+        return (data ?? []).map(r => r.instagram_arroba || r.arroba_usuario);
+      },
+      instagram: async conta => (await meta({ data: { conta } })).hasMeta,
+      linkedin: () => linkedin(),
+    });
+    setContas(result.contas.filter(d => d.canal === "instagram").map(d => d.conta));
+    return result;
   };
 
   const executar = async () => {
@@ -90,7 +104,7 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
           if (error || !data) throw new Error("Não foi possível agendar o rascunho. Nenhum envio confirmado.");
         },
         publicar: id => publish({ data: { id, acao: "publicar" } }) as Promise<PublishResult>,
-      }, c, { ...destino, conectado: destino.canal !== "google" && (destino.canal === "linkedin" || !!destino.conta) }, acao, quando ? new Date(quando).toISOString() : undefined, saved.current);
+      }, c, destino, acao, quando ? new Date(quando).toISOString() : undefined, saved.current);
       saved.current = out.id;
       const at = new Date().toLocaleString("pt-BR");
       if (out.estado === "publicado") {
@@ -114,11 +128,7 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
     <Dialog open={open} onOpenChange={o => { if (!busy) setOpen(o); }}>
       <DialogContent className="max-h-[90vh] w-[calc(100%-1rem)] min-w-0 overflow-y-auto [&>*]:min-w-0 sm:max-w-2xl">
         <DialogHeader><DialogTitle>{acao === "publicar" ? "Publicar — confirmar envio" : acao === "agendar" ? "Agendar publicação" : "Salvar rascunho"}</DialogTitle><DialogDescription>Perfil editorial: {PERFIS[content.perfil].nome}. A conta de destino é escolhida separadamente. Publicar envia conteúdo visível externamente; agendar autoriza envio futuro. Nenhuma geração envia automaticamente.</DialogDescription></DialogHeader>
-        <Label htmlFor="studio-canal">Canal</Label>
-        <select id="studio-canal" className="h-10 rounded-md border bg-background px-2" disabled={busy || !!resultado} value={destino.canal} onChange={e => setDestino({ canal: e.target.value as StudioDestination["canal"], conta: "", conectado: false })}>
-          <option value="instagram">Instagram</option><option value="linkedin">LinkedIn — membro da conexão existente</option><option value="google">Google Business — somente rascunho no Estúdio</option>
-        </select>
-        {destino.canal === "instagram" && <><Label htmlFor="studio-conta">Conta social de destino</Label><select id="studio-conta" className="h-10 rounded-md border bg-background px-2" value={destino.conta} disabled={busy || !!resultado} onChange={e => setDestino(d => ({ ...d, conta: e.target.value }))}><option value="">Selecione uma conta sua</option>{contas.map(c => <option key={c} value={c}>@{c}</option>)}</select></>}
+        <StudioDestinationPicker carregar={carregar} destino={destino} onChange={d => { setDestino(d); setVisto(false); }} onConectar={() => navigate({ to: "/settings" })} disabled={busy || !!resultado} onReady={setDestinosProntos} />
         {destino.canal === "linkedin" && <p className="text-sm text-muted-foreground">Destino: membro autorizado na conexão LinkedIn existente, não o perfil editorial. Esta integração não permite escolher outra conta aqui.</p>}
         {destino.canal === "google" && <p className="text-sm text-destructive">A automação atual usa assinatura/CTA fixos do Chico e não confirma a publicação final. Somente rascunho; envio bloqueado no Estúdio.</p>}
         <Label htmlFor="studio-envio-texto">Texto que será enviado</Label><Textarea id="studio-envio-texto" rows={5} value={texto} disabled={busy || !!resultado} onChange={e => setTexto(e.target.value)} />
@@ -130,7 +140,7 @@ export function StudioPublishActions({ content }: { content: StudioContent }) {
         {resultado && <p role="status" className="break-words text-sm">{resultado}</p>}
         {link && <a className="text-sm underline" href={link} target="_blank" rel="noreferrer">Abrir publicação no LinkedIn</a>}
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => void executar()} disabled={busy || !visto || !!resultado || (acao !== "rascunho" && (destino.canal === "google" || content.imagens.some(src => !loaded.includes(src))))}>{busy && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}{acao === "publicar" ? "Publicar agora" : acao === "agendar" ? "Confirmar agendamento" : "Confirmar rascunho"}</Button>
+          <Button onClick={() => void executar()} disabled={busy || !visto || !!resultado || (acao !== "rascunho" && (!destinosProntos || !destino.conectado || destino.canal === "google" || content.imagens.some(src => !loaded.includes(src))))}>{busy && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}{acao === "publicar" ? "Publicar agora" : acao === "agendar" ? "Confirmar agendamento" : "Confirmar rascunho"}</Button>
           <Button variant="outline" disabled={busy} onClick={() => navigate({ to: "/settings" })}>Conexões existentes</Button>
           <Button variant="ghost" disabled={busy} onClick={() => setOpen(false)}>Fechar</Button>
         </div>
