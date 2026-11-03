@@ -30,3 +30,8 @@ A descrição visual opcional foi removida: as imagens recebem a legenda e os te
 - Causa: o Estúdio de Texto enviava sempre `imagens: []`; a arte escolhida no Estúdio de Imagens ficava só naquela aba. O diálogo abria "pronto" com 0 imagens e o Instagram bloqueava no fim.
 - Correção: `src/lib/studio-media.ts` guarda em memória a arte selecionada (por perfil, sem cruzar perfis) e o Estúdio de Texto a anexa; `bloqueioAntesDeAbrir` impede abrir Publicar/Agendar sem mídia exigida e orienta; `origemMidia` reaproveita URLs já salvas no armazenamento do app e envia uma vez data/blob; retry reusa o post salvo.
 - Testes: `src/lib/studio-media.test.ts` (sem geração nem publicação real).
+
+## Contexto do Dashboard na IA Avançada (03/11/2026)
+- `src/lib/dashboard-context.ts`: lê do perfil salvo (só do usuário logado e da conta do perfil editorial: Chico/Liga) nome, área (subespecialidades + CRO/UF) e tom; o cadastro atual não tem objetivo, público ou serviços, então nada é inventado.
+- Preenche só campos vazios e não editados; "Usar dados do Dashboard" substitui sob pedido. Sem objetivo, a geração pede apenas o objetivo.
+- Testes: `src/lib/dashboard-context.test.ts`.
