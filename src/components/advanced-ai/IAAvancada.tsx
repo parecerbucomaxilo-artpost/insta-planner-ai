@@ -12,7 +12,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MODELOS_IA, MODELOS_IMAGEM, DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
+import { PROVEDORES_IA, modelosDoProvedor, padraoDoProvedor, provedorDoModelo, type ProvedorIA } from "@/lib/ai-models";
+import { montarPacote, type PacoteCriacao } from "@/lib/advanced-ai";
 import { LOGOS_DISPONIVEIS } from "@/lib/logos-catalog";
 import {
   MARCAS, REDES_IA, VARIANTES, AJUSTES, FORMATOS_IA, LIMITE_REDE,
@@ -96,8 +97,11 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   const imagemFn = useServerFn(gerarImagemAvancada);
   const [b, setB] = useState<Briefing>({ marca: perfil, telefone: MARCAS[perfil].telefone, tema: "", objetivo: "", contexto: "", rede: "instagram", formato: "Post único", nivel: MARCAS[perfil].nivel, tamanho: "medio", tom: "", cta: "" });
   const [variantes, setVariantes] = useState<Variante[]>(["media"]);
-  const [modeloTexto, setModeloTexto] = useState<string>(DEFAULT_TEXT_MODEL);
-  const [modeloImagem, setModeloImagem] = useState<string>(DEFAULT_IMAGE_MODEL);
+  // OpenAI é o provedor principal deste modo; Gemini segue disponível no seletor.
+  const [modeloTexto, setModeloTexto] = useState<string>(() => padraoDoProvedor("text", "openai"));
+  const [modeloImagem, setModeloImagem] = useState<string>(() => padraoDoProvedor("image", "openai"));
+  const [pacote, setPacote] = useState<PacoteCriacao | null>(null);
+  const emCurso = useRef(false);
   const [res, setRes] = useState<Resultado | null>(null);
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
@@ -140,7 +144,7 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
     setB((s) => s.marca === perfil ? s : { ...s, marca: perfil, nivel: MARCAS[perfil].nivel, telefone: MARCAS[perfil].telefone, cta: "" });
     setImgs({}); setRes(null);
   }, [perfil]);
-  useEffect(() => { setB((s) => ({ ...s, tema })); setRes(null); }, [tema]);
+  useEffect(() => { setB((s) => ({ ...s, tema })); setRes(null); setPacote(null); }, [tema]);
 
   useEffect(() => {
     let vivo = true;
@@ -155,11 +159,29 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   const confirmar = (titulo: string, acao: () => Promise<void>) => setPendente({ titulo, acao });
 
   const executar = async (acao: () => Promise<void>) => {
+    if (emCurso.current) return; // evita chamada duplicada por clique duplo
+    emCurso.current = true;
     setOcupado(true); setErro("");
     try { await acao(); } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setErro(msg); toast.error(msg);
-    } finally { setOcupado(false); }
+    } finally { emCurso.current = false; setOcupado(false); }
+  };
+
+  const criarComOpenAI = () => {
+    if (b.tema.trim().length < 3) { toast.error("Confirme um tema antes de gerar."); return; }
+    if (!b.objetivo.trim()) { toast.error("Informe o objetivo da postagem (não há objetivo cadastrado no Dashboard)."); return; }
+    const mt = provedorDoModelo(modeloTexto) === "openai" ? modeloTexto : padraoDoProvedor("text", "openai");
+    const mi = provedorDoModelo(modeloImagem) === "openai" ? modeloImagem : padraoDoProvedor("image", "openai");
+    setModeloTexto(mt); setModeloImagem(mi);
+    const vars: Variante[] = variantes.includes("media") ? variantes : ["media", ...variantes];
+    confirmar("Criar com OpenAI: conceito, texto da arte, legenda, CTA e hashtags (a imagem só é gerada depois, com outro clique)", () =>
+      executar(async () => {
+        const r = await textoFn({ data: { briefing: b, variantes: vars, modelo: mt } });
+        setPacote(montarPacote(r, "media", b.cta));
+        setRes(r);
+        setTimeout(() => fim.current?.scrollIntoView({ behavior: "smooth" }), 50);
+      }));
   };
 
   const gerarTexto = (ajuste?: Ajuste) => {
@@ -272,14 +294,21 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
+              <Label htmlFor="ia-pt">Provedor de texto</Label>
+              <select id="ia-pt" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={provedorDoModelo(modeloTexto)} onChange={(e) => setModeloTexto(padraoDoProvedor("text", e.target.value as ProvedorIA))}>
+                {(Object.keys(PROVEDORES_IA) as ProvedorIA[]).map((p) => <option key={p} value={p}>{PROVEDORES_IA[p]}</option>)}
+              </select>
               <Label htmlFor="ia-mt">Modelo de texto</Label>
               <select id="ia-mt" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={modeloTexto} onChange={(e) => setModeloTexto(e.target.value)}>
-                {MODELOS_IA.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+                {modelosDoProvedor("text", provedorDoModelo(modeloTexto)).map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
               </select>
             </div>
-            <div className="flex items-end">
-              <Button className="w-full" disabled={ocupado} onClick={() => gerarTexto()}>
-                {ocupado ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1.5 h-4 w-4" />} Gerar texto com IA
+            <div className="flex flex-col justify-end gap-2">
+              <Button className="w-full" disabled={ocupado} onClick={criarComOpenAI}>
+                {ocupado ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1.5 h-4 w-4" />} CRIAR COM OPENAI
+              </Button>
+              <Button className="w-full" variant="outline" disabled={ocupado} onClick={() => gerarTexto()}>
+                Gerar só o texto
               </Button>
             </div>
           </div>
@@ -296,6 +325,17 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
               <p className="font-semibold">{res.titulo}</p>
               <p className="text-sm text-muted-foreground">{res.ideiaCentral}</p>
             </div>
+            {pacote && (
+              <div className="space-y-1 rounded-md border p-3 text-sm">
+                <p className="font-semibold">Pacote OpenAI</p>
+                <p><strong>Conceito:</strong> {pacote.conceito || "—"}</p>
+                <p><strong>Texto da arte:</strong> {pacote.textoArte}</p>
+                <p><strong>CTA:</strong> {pacote.cta || "incluída na legenda"}</p>
+                <p><strong>Hashtags:</strong> {pacote.hashtags.join(" ") || "—"}</p>
+                <p className="text-muted-foreground">A legenda está abaixo. A imagem não foi gerada: use “Gerar imagem com OpenAI” (pede confirmação de créditos). O texto da arte e a logo entram como camada por cima da imagem.</p>
+                <Button size="sm" disabled={ocupado} onClick={() => gerarImagem("unico")}>Gerar imagem com {PROVEDORES_IA[provedorDoModelo(modeloImagem)]}</Button>
+              </div>
+            )}
             {res.precisaFonte && <p className="rounded-md border p-2 text-sm"><AlertTriangle className="mr-1 inline h-4 w-4" />Este tema precisa de fonte verificável antes de publicar. {res.observacoes}</p>}
             {Object.entries(res.variantes).map(([k, v]) => (
               <div key={k} className="space-y-1.5">
@@ -331,9 +371,13 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
+              <Label htmlFor="ia-pi">Provedor de imagem</Label>
+              <select id="ia-pi" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={provedorDoModelo(modeloImagem)} onChange={(e) => setModeloImagem(padraoDoProvedor("image", e.target.value as ProvedorIA))}>
+                {(Object.keys(PROVEDORES_IA) as ProvedorIA[]).map((p) => <option key={p} value={p}>{PROVEDORES_IA[p]}</option>)}
+              </select>
               <Label htmlFor="ia-mi">Modelo de imagem</Label>
               <select id="ia-mi" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={modeloImagem} onChange={(e) => setModeloImagem(e.target.value)}>
-                {MODELOS_IMAGEM.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+                {modelosDoProvedor("image", provedorDoModelo(modeloImagem)).map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
               </select>
             </div>
             <div className="space-y-1.5">

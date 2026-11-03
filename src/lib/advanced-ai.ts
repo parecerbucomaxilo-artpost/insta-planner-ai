@@ -160,3 +160,25 @@ export function montarPromptImagem(b: Briefing, formato: FormatoIA, tipo: "capa"
     "Anatomia correta, instrumentos odontológicos plausíveis e não deformados, ambiente clínico/hospitalar verossímil, sem sangue ou sensacionalismo.",
   ].filter(Boolean).join("\n");
 }
+
+/** Pacote do modo "Criar com OpenAI": tudo vem do resultado real da IA, nada é preenchido por modelo fixo. */
+export type PacoteCriacao = {
+  conceito: string;
+  textoArte: string;
+  legenda: string;
+  cta: string;
+  hashtags: string[];
+};
+
+export function montarPacote(r: Resultado, varianteLegenda: string, ctaBriefing: string): PacoteCriacao {
+  const legenda = r.variantes[varianteLegenda] ?? Object.values(r.variantes)[0] ?? "";
+  if (!r.titulo.trim() || !legenda.trim())
+    throw new Error("A IA não devolveu texto da arte ou legenda. Nada foi preenchido automaticamente; gere novamente.");
+  return {
+    conceito: r.ideiaCentral.trim(),
+    textoArte: r.titulo.trim(),
+    legenda,
+    cta: ctaBriefing.trim(),
+    hashtags: r.hashtags,
+  };
+}
