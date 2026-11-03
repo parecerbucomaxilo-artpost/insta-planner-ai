@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { SeletorModoGeracao, ConfirmacaoIAHost } from "@/components/GenerationMode";
 import { Toaster } from "@/components/ui/sonner";
+import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
