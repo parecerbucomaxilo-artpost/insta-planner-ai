@@ -71,7 +71,9 @@ export function ImageStudio({ perfil }: { perfil: PerfilId }) {
     const url = LOGOS_DISPONIVEIS.find((l) => l.key === P.logo)?.url;
     if (!url) return;
     const i = new Image(); i.crossOrigin = "anonymous";
-    i.onload = () => setLogo(i); i.src = url;
+    let ativo = true;
+    i.onload = () => { if (ativo) setLogo(i); }; i.src = url;
+    return () => { ativo = false; };
   }, [P.logo]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -139,11 +141,11 @@ export function ImageStudio({ perfil }: { perfil: PerfilId }) {
       linhas.forEach((l, i) => ctx.fillText(l, x, cy + i * alturaLinha));
       ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
     }
-    if (comLogo && logo) {
+    if (P.logo !== "nenhuma" && comLogo && logo) {
       const m = Math.min(W, H) * 0.06, lh = Math.min(W, H) * 0.12, lw = (logo.width / logo.height) * lh;
       ctx.drawImage(logo, W - m - lw, m, lw, lh);
     }
-  }, [a, img, comLogo, logo, P.paleta.fundo1]);
+  }, [a, img, comLogo, logo, P.logo, P.paleta.fundo1]);
 
   useEffect(() => { desenhar(); }, [desenhar]);
 
@@ -274,8 +276,8 @@ export function ImageStudio({ perfil }: { perfil: PerfilId }) {
                 <button key={c} type="button" aria-label={`Cor ${c}`} onClick={() => set("cor", c)} className="h-7 w-7 rounded-full border" style={{ backgroundColor: c }} />
               ))}
             </div>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={comLogo} onChange={(e) => setComLogo(e.target.checked)} /> Aplicar logo oficial do perfil {P.nome}</label>
-            <p className="text-xs text-muted-foreground">Cores e logo seguem o perfil {P.nome}. A logo é o arquivo oficial, nunca redesenhada.</p>
+            {P.logo !== "nenhuma" && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={comLogo} onChange={(e) => setComLogo(e.target.checked)} /> Aplicar logo oficial do perfil {P.nome}</label>}
+            <p className="text-xs text-muted-foreground">Cores seguem o perfil {P.nome}.{P.logo !== "nenhuma" && " A logo é o arquivo oficial, nunca redesenhada."}</p>
           </CardContent>
         </Card>
       </div>

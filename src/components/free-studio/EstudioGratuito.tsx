@@ -45,7 +45,7 @@ export function EstudioGratuito() {
             <Button key={id} role="radio" aria-checked={perfil === id} variant={perfil === id ? "default" : "outline"} onClick={() => escolher(id)}>{PERFIS[id].nome}</Button>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">Público: {P.publico}. Texto, imagens, cores, logo oficial, chamada e assinatura seguem este perfil.</p>
+        <p className="text-xs text-muted-foreground">Público: {P.publico}. Texto, imagens, cores, {P.logo !== "nenhuma" && "logo oficial, "}chamada e assinatura seguem este perfil.</p>
         {P.faltando.length > 0 && <p className="text-xs text-muted-foreground">Ainda não configurado neste perfil: {P.faltando.join(", ")}. Esses itens ficam em branco até serem informados.</p>}
       </div>
       <EscolhaTema key={perfil} perfil={perfil} modo={modo} aprovado={tema} onAprovar={setTema} />

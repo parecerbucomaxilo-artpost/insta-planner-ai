@@ -49,7 +49,8 @@ function quebrar(ctx: CanvasRenderingContext2D, texto: string, max: number) {
 function desenhar(w: number, h: number, cor: Ident, titulo: string, sub: string, rodape: string, foto: HTMLImageElement | null, logo: HTMLImageElement | null) {
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext("2d");
+  if (!ctx) return null;
   const g = ctx.createLinearGradient(0, 0, w, h);
   g.addColorStop(0, cor.fundo1); g.addColorStop(1, cor.fundo2);
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
@@ -127,7 +128,7 @@ export function GeradorLocal({ perfil, tema }: { perfil: PerfilId; tema: string 
       return desenhar(cfg.w, cfg.h, id, s.t, s.s, extremo ? id.assinatura : `${i + 1}/${n}`, foto, extremo ? logo : null);
     });
     let out = fazer();
-    if (out.some((x) => !x)) { logo = null; out = fazer(); toast.warning("Não foi possível aplicar a logo nesta imagem; adicione-a manualmente."); }
+    if (out.some((x) => !x)) { logo = null; out = fazer(); toast.warning(id.logo === "nenhuma" ? "Não foi possível exportar esta imagem." : "Não foi possível aplicar a logo nesta imagem; adicione-a manualmente."); }
     setImagens(out.filter((x): x is string => !!x));
     setGerando(false);
     toast.success("Imagem e legenda geradas com a identidade do planner.");
@@ -158,7 +159,7 @@ export function GeradorLocal({ perfil, tema }: { perfil: PerfilId; tema: string 
             ))}
           </div>
         </div>
-        <p className="text-sm">Perfil: <strong>{PERFIS[perfil].nome}</strong> — cores, logo oficial, assinatura e temas deste perfil.</p>
+        <p className="text-sm">Perfil: <strong>{PERFIS[perfil].nome}</strong> — cores, {PERFIS[perfil].logo !== "nenhuma" && "logo oficial, "}assinatura e temas deste perfil.</p>
         <div className="space-y-1.5">
           <Label>Objetivo</Label>
           <div className="flex flex-wrap gap-2">
@@ -176,7 +177,7 @@ export function GeradorLocal({ perfil, tema }: { perfil: PerfilId; tema: string 
           </div>
         </div>
         <Button className="w-full" disabled={gerando || !tema} onClick={gerar}><Wand2 className="mr-1.5 h-4 w-4" /> Gerar imagens e legendas</Button>
-        <p className="text-xs text-muted-foreground">Gerado por modelos fixos no seu navegador, sem IA e sem créditos. Carrossel do feed = 5 slides. Cores, logo real e assinatura seguem o planner escolhido; complete os trechos entre colchetes.</p>
+        <p className="text-xs text-muted-foreground">Gerado por modelos fixos no seu navegador, sem IA e sem créditos. Carrossel do feed = 5 slides. Cores, {PERFIS[perfil].logo !== "nenhuma" && "logo real e "}assinatura seguem o planner escolhido; complete os trechos entre colchetes.</p>
 
         {imagens.length > 0 && (
           <div className="space-y-4">
