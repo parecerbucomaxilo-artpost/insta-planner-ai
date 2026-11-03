@@ -19,7 +19,7 @@ import {
   MARCAS, REDES_IA, VARIANTES, AJUSTES, FORMATOS_IA, LIMITE_REDE,
   type Marca, type RedeIA, type Variante, type Ajuste, type FormatoIA, type Briefing, type Resultado,
 } from "@/lib/advanced-ai";
-import { gerarTextoAvancado, gerarImagemAvancada } from "@/lib/advanced-ai.functions";
+import { gerarTextoAvancado, gerarImagemAvancada, statusOpenAIDireto } from "@/lib/advanced-ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { aplicarDashboard, contextoDashboard, perfilDashboardDe, type ContextoDashboard } from "@/lib/dashboard-context";
 import { midiaPadrao, type MidiaEnvio } from "@/lib/studio-media";
@@ -102,6 +102,12 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   const [modeloImagem, setModeloImagem] = useState<string>(() => padraoDoProvedor("image", "openai"));
   const [pacote, setPacote] = useState<PacoteCriacao | null>(null);
   const emCurso = useRef(false);
+  const statusFn = useServerFn(statusOpenAIDireto);
+  const [chaveOpenAI, setChaveOpenAI] = useState<boolean | null>(null);
+  useEffect(() => { statusFn().then((r) => setChaveOpenAI(r.configurada)).catch(() => setChaveOpenAI(false)); }, [statusFn]);
+  const usaDireto = provedorDoModelo(modeloTexto) === "openai-direto" || provedorDoModelo(modeloImagem) === "openai-direto";
+  const bloqueioChave = (m: string) => provedorDoModelo(m) === "openai-direto" && chaveOpenAI !== true;
+  const avisoChave = "OpenAI (chave própria) não configurada: adicione o segredo OPENAI_API_KEY nas configurações do projeto (Secrets) ou escolha outro provedor.";
   const [res, setRes] = useState<Resultado | null>(null);
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
@@ -171,8 +177,10 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   const criarComOpenAI = () => {
     if (b.tema.trim().length < 3) { toast.error("Confirme um tema antes de gerar."); return; }
     if (!b.objetivo.trim()) { toast.error("Informe o objetivo da postagem (não há objetivo cadastrado no Dashboard)."); return; }
-    const mt = provedorDoModelo(modeloTexto) === "openai" ? modeloTexto : padraoDoProvedor("text", "openai");
-    const mi = provedorDoModelo(modeloImagem) === "openai" ? modeloImagem : padraoDoProvedor("image", "openai");
+    const provOpenAI: ProvedorIA = provedorDoModelo(modeloTexto) === "openai-direto" || (provedorDoModelo(modeloTexto) === "google" && chaveOpenAI) ? "openai-direto" : "openai";
+    const mt = provedorDoModelo(modeloTexto) === provOpenAI ? modeloTexto : padraoDoProvedor("text", provOpenAI);
+    const mi = provedorDoModelo(modeloImagem) === provOpenAI ? modeloImagem : padraoDoProvedor("image", provOpenAI);
+    if (bloqueioChave(mt)) { toast.error(avisoChave); return; }
     setModeloTexto(mt); setModeloImagem(mi);
     const vars: Variante[] = variantes.includes("media") ? variantes : ["media", ...variantes];
     confirmar("Criar com OpenAI: conceito, texto da arte, legenda, CTA e hashtags (a imagem só é gerada depois, com outro clique)", () =>
@@ -185,6 +193,7 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   };
 
   const gerarTexto = (ajuste?: Ajuste) => {
+    if (bloqueioChave(modeloTexto)) { toast.error(avisoChave); return; }
     if (b.tema.trim().length < 3) { toast.error("Confirme um tema antes de gerar."); return; }
     if (!b.objetivo.trim()) { toast.error("Informe o objetivo da postagem (não há objetivo cadastrado no Dashboard)."); return; }
     const anterior = ajuste && res ? Object.entries(res.variantes).map(([k, v]) => `[${k}]\n${v}`).join("\n\n") : undefined;
@@ -197,6 +206,7 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   };
 
   const gerarImagem = (tipo: "capa" | "unico" | "slide", n?: number) => {
+    if (bloqueioChave(modeloImagem)) { toast.error(avisoChave); return; }
     if (b.tema.trim().length < 3) { toast.error("Confirme um tema antes de gerar."); return; }
     const chave = tipo === "slide" ? `slide-${n}` : tipo;
     const nome = tipo === "capa" ? "Capa" : tipo === "unico" ? "Post único" : `Slide ${n}`;
@@ -312,6 +322,8 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
               </Button>
             </div>
           </div>
+          {usaDireto && chaveOpenAI === false && <p role="alert" className="rounded-md border border-destructive/50 p-3 text-sm text-destructive">{avisoChave}</p>}
+          {usaDireto && chaveOpenAI && <p className="text-xs text-muted-foreground">Chave própria: cada geração é cobrada direto na sua conta OpenAI (separada da assinatura do ChatGPT).</p>}
           <p className="text-xs text-muted-foreground">Sem pesquisa bibliográfica ao vivo: a IA não cita referências. Cada geração pode consumir créditos Lovable AI; o custo exato não é medido aqui.</p>
           {erro && <p role="alert" className="flex items-start gap-2 rounded-md border border-destructive/50 p-3 text-sm text-destructive"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{erro}</p>}
         </CardContent>
