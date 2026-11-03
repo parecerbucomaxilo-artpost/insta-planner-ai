@@ -19,6 +19,8 @@ import {
   type Marca, type RedeIA, type Variante, type Ajuste, type FormatoIA, type Briefing, type Resultado,
 } from "@/lib/advanced-ai";
 import { gerarTextoAvancado, gerarImagemAvancada } from "@/lib/advanced-ai.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { aplicarDashboard, contextoDashboard, perfilDashboardDe, type ContextoDashboard } from "@/lib/dashboard-context";
 import { StudioPublishActions } from "@/components/free-studio/StudioPublishActions";
 
 const cores = (m: Marca) => ({ texto: MARCAS[m].paleta.texto, destaque: MARCAS[m].paleta.destaque, sombra: MARCAS[m].paleta.fundo1 });
@@ -91,7 +93,7 @@ async function copiar(t: string) {
 export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   const textoFn = useServerFn(gerarTextoAvancado);
   const imagemFn = useServerFn(gerarImagemAvancada);
-  const [b, setB] = useState<Briefing>({ marca: perfil, telefone: MARCAS[perfil].telefone, tema: "", objetivo: "Educar", rede: "instagram", formato: "Post único", nivel: MARCAS[perfil].nivel, tamanho: "medio", tom: "", cta: "" });
+  const [b, setB] = useState<Briefing>({ marca: perfil, telefone: MARCAS[perfil].telefone, tema: "", objetivo: "", contexto: "", rede: "instagram", formato: "Post único", nivel: MARCAS[perfil].nivel, tamanho: "medio", tom: "", cta: "" });
   const [variantes, setVariantes] = useState<Variante[]>(["media"]);
   const [modeloTexto, setModeloTexto] = useState<string>(DEFAULT_TEXT_MODEL);
   const [modeloImagem, setModeloImagem] = useState<string>(DEFAULT_IMAGE_MODEL);
@@ -107,7 +109,27 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
   const [midiaEnvio, setMidiaEnvio] = useState<"nenhuma" | "unico" | "capa" | "carrossel">("nenhuma");
   const fim = useRef<HTMLDivElement>(null);
 
-  const set = <K extends keyof Briefing>(k: K, v: Briefing[K]) => setB((s) => ({ ...s, [k]: v }));
+  const editados = useRef(new Set<"objetivo" | "tom" | "contexto">());
+  const [dash, setDash] = useState<ContextoDashboard | null>(null);
+  const set = <K extends keyof Briefing>(k: K, v: Briefing[K]) => {
+    if (k === "objetivo" || k === "tom" || k === "contexto") editados.current.add(k);
+    setB((s) => ({ ...s, [k]: v }));
+  };
+  useEffect(() => {
+    let vivo = true;
+    setDash(null); editados.current.clear();
+    setB((s) => ({ ...s, objetivo: "", tom: "", contexto: "" }));
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data } = await supabase.from("perfil_usuario").select("user_id,nome_profissional,arroba_usuario,instagram_arroba,cro_uf,subespecialidades,tom_voz").eq("user_id", u.user.id);
+      if (!vivo) return;
+      const c = contextoDashboard(perfilDashboardDe(data ?? [], perfil, u.user.id));
+      setDash(c);
+      setB((s) => aplicarDashboard(s, c, editados.current));
+    })();
+    return () => { vivo = false; };
+  }, [perfil]);
   useEffect(() => {
     setB((s) => s.marca === perfil ? s : { ...s, marca: perfil, nivel: MARCAS[perfil].nivel, telefone: MARCAS[perfil].telefone, cta: "" });
     setImgs({}); setRes(null);
@@ -136,6 +158,7 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
 
   const gerarTexto = (ajuste?: Ajuste) => {
     if (b.tema.trim().length < 3) { toast.error("Confirme um tema antes de gerar."); return; }
+    if (!b.objetivo.trim()) { toast.error("Informe o objetivo da postagem (não há objetivo cadastrado no Dashboard)."); return; }
     const anterior = ajuste && res ? Object.entries(res.variantes).map(([k, v]) => `[${k}]\n${v}`).join("\n\n") : undefined;
     confirmar(ajuste ? `Ajustar texto: ${AJUSTES[ajuste]}` : "Gerar texto com IA", () =>
       executar(async () => {
@@ -188,8 +211,15 @@ export function IAAvancada({ perfil, tema }: { perfil: Marca; tema: string }) {
             <div className="space-y-1.5">
               <Label htmlFor="ia-obj">Objetivo</Label>
               <select id="ia-obj" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={b.objetivo} onChange={(e) => set("objetivo", e.target.value)}>
+                {!["Educar", "Prevenir", "Orientar", "Informar", "Fortalecer autoridade"].includes(b.objetivo) && <option value={b.objetivo}>{b.objetivo || "Selecione o objetivo"}</option>}
                 {["Educar", "Prevenir", "Orientar", "Informar", "Fortalecer autoridade"].map((o) => <option key={o}>{o}</option>)}
               </select>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <div className="flex flex-wrap items-center justify-between gap-2"><Label htmlFor="ia-ctx">Contexto do Dashboard</Label>
+                <Button type="button" size="sm" variant="outline" disabled={!dash} onClick={() => dash && setB((s) => aplicarDashboard(s, dash, editados.current, true))}>Usar dados do Dashboard</Button></div>
+              <Input id="ia-ctx" value={b.contexto} onChange={(e) => set("contexto", e.target.value)} placeholder={dash && !dash.nome && !dash.area ? "Nada cadastrado no Dashboard para este perfil" : "Nome e área de atuação do Dashboard"} />
+              {dash && !dash.objetivo && <p className="text-xs text-muted-foreground">O Dashboard não tem objetivo cadastrado; escolha só o objetivo acima.</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ia-rede">Rede</Label>
