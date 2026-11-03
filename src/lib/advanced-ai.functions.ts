@@ -13,18 +13,24 @@ export const gerarTextoAvancado = createServerFn({ method: "POST" })
     const { plainLanguageRule } = await import("@/lib/plain-language");
     const p = await import("@/lib/ai-post.functions");
     const b = data.briefing;
-    const audiencia = MARCAS[b.marca].audiencia;
-    const isDrfm = b.marca === "drfm";
+    const perfil = MARCAS[b.marca];
+    const audiencia = perfil.audiencia;
+    const isChico = b.marca === "chico";
     const ctas = b.rede === "linkedin" ? p.CTAS_PERMITIDOS_LI : p.CTAS_PERMITIDOS_IG;
-    const regrasMarca = isDrfm
-      ? `Perfil @drfranciscomenezes: tom humanizado, premium e acessível para pacientes. ${p.LOCALIZACAO_OBRIGATORIA} Encerre com "${p.ASSINATURA}" — "${p.ASSINATURA_SUBTITULO}".`
-      : "Perfil @lactbmf.anhanguerasbo: tom acadêmico, científico e institucional para estudantes e profissionais. Não use assinatura, cidades ou CTA do perfil @drfranciscomenezes.";
     const system = [
       "Você é editor-chefe de conteúdo em Cirurgia e Traumatologia Bucomaxilofacial e Odontologia Hospitalar. Escreva em português brasileiro impecável.",
-      brandBookPrompt(audiencia),
-      regrasMarca,
-      p.CTAS_PROIBIDOS,
-      ctas,
+      ...(isChico
+        ? [
+            brandBookPrompt(audiencia),
+            `Perfil @drfranciscomenezes: tom humanizado, premium e acessível para pacientes. ${p.LOCALIZACAO_OBRIGATORIA} Encerre com "${p.ASSINATURA}" — "${p.ASSINATURA_SUBTITULO}".`,
+            p.CTAS_PROIBIDOS,
+            ctas,
+          ]
+        : [
+            perfil.regras,
+            `Assinatura do perfil: "${perfil.assinatura}".`,
+            b.telefone ? `Telefone oficial para agendamento/contato: ${b.telefone}.` : "Sem telefone configurado: não escreva nenhum número de telefone.",
+          ]),
       plainLanguageRule({ audiencia, nivel: b.nivel === "tecnico" ? "linkedin-cientifico" : undefined }),
     ].join("\n\n");
     const prompt = `${p.clinicalContract(b.tema, audiencia)}\n\n${montarPromptTexto(b, data.variantes, data.ajuste, data.anterior)}`;
@@ -39,7 +45,7 @@ export const gerarImagemAvancada = createServerFn({ method: "POST" })
     if (!process.env.LOVABLE_API_KEY) throw new Error("Gerador de imagem não configurado. Nenhuma imagem foi criada.");
     const { generateImageBase64 } = await import("@/lib/ai-gateway.server");
     const { brandBookPrompt } = await import("@/lib/brand-book");
-    const prompt = `${montarPromptImagem(data.briefing, data.formato, data.tipo, data.slide, data.textoSlide)}\n\n${brandBookPrompt(MARCAS[data.briefing.marca].audiencia)}`;
+    const prompt = `${montarPromptImagem(data.briefing, data.formato, data.tipo, data.slide, data.textoSlide)}${data.briefing.marca === "chico" ? `\n\n${brandBookPrompt(MARCAS[data.briefing.marca].audiencia)}` : ""}`;
     const b64 = await generateImageBase64({ prompt, model: data.modelo, size: FORMATOS_IA[data.formato].size });
     return { imagem: b64.startsWith("data:") ? b64 : `data:image/png;base64,${b64}` };
   });

@@ -2,11 +2,11 @@ import { z } from "zod";
 
 /** Regras puras (sem rede) do modo IA Avançada: briefing, variantes, ajustes e prompts. */
 
-export const MARCAS = {
-  drfm: { nome: "@drfranciscomenezes — pacientes", audiencia: "chico-drfm", logo: "planner", publico: "Pacientes e público geral", nivel: "leigo" },
-  lactbmf: { nome: "@lactbmf.anhanguerasbo — acadêmico", audiencia: "estudantes-graduacao", logo: "liga-ctbmf", publico: "Estudantes e profissionais de Odontologia", nivel: "tecnico" },
-} as const;
-export type Marca = keyof typeof MARCAS;
+import { PERFIS, type PerfilId } from "@/lib/studio-profiles";
+
+/** Perfis do Estúdio: Planner Chico, Cirurgia e Biópsias, Clínica Escola. */
+export const MARCAS = PERFIS;
+export type Marca = PerfilId;
 
 export const REDES_IA = { instagram: "Instagram", linkedin: "LinkedIn", google: "Google Business" } as const;
 export type RedeIA = keyof typeof REDES_IA;
@@ -52,7 +52,8 @@ export const FORMATOS_IA = {
 export type FormatoIA = keyof typeof FORMATOS_IA;
 
 export const BriefingSchema = z.object({
-  marca: z.enum(["drfm", "lactbmf"]),
+  marca: z.enum(["chico", "cirurgia-biopsias", "clinica-escola"]),
+  telefone: z.string().trim().max(40).default(""),
   tema: z.string().trim().min(3).max(300),
   objetivo: z.string().trim().max(120).default("Educar"),
   rede: z.enum(["instagram", "linkedin", "google"]),
@@ -106,6 +107,7 @@ export function montarPromptTexto(b: Briefing, variantes: Variante[], ajuste?: A
     "BRIEFING ESTRUTURADO:",
     `- Marca/perfil: ${MARCAS[b.marca].nome}`,
     `- Público: ${MARCAS[b.marca].publico}`,
+    b.telefone ? `- Telefone de contato (usar exatamente este): ${b.telefone}` : "",
     `- Tema: ${b.tema}`,
     `- Objetivo: ${b.objetivo}`,
     `- Rede principal: ${REDES_IA[b.rede]} (limite ${LIMITE_REDE[b.rede]} caracteres)`,
@@ -148,6 +150,7 @@ export function montarPromptImagem(b: Briefing, formato: FormatoIA, tipo: "capa"
   const papel = tipo === "capa" ? "capa de carrossel" : tipo === "slide" ? `slide ${slide ?? 1} de carrossel` : "post único";
   return [
     `Imagem fotográfica profissional para ${papel}, formato ${f.nome}, perfil ${MARCAS[b.marca].nome}.`,
+    MARCAS[b.marca].visual === "CHICO" ? "" : MARCAS[b.marca].visual,
     `Tema exato: ${b.tema}. Objetivo: ${b.objetivo}.`,
     textoSlide ? `A cena deve ilustrar com precisão esta mensagem do slide: ${textoSlide}` : "",
     "Composição com hierarquia visual clara e uma área calma (terço superior ou inferior) para uma headline que será aplicada depois pelo sistema.",
