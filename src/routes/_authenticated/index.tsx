@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import { SeletorModoGeracao, ConfirmacaoIAHost } from "@/components/GenerationMode";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -250,6 +251,8 @@ function Dashboard() {
  <LayoutGrid className="h-4 w-4" aria-hidden="true" /> Todas as publicações
  </Button>
  </div>
+ <ConfirmacaoIAHost />
+ {tab !== "estudio" && <div className="mb-3"><SeletorModoGeracao /></div>}
  <Tabs value={tab} onValueChange={setTab}>
  {(() => {
    const itens: Array<{ v: string; nome: string; Icon: typeof PlusCircle; onSel?: () => void }> = [
