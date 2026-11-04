@@ -1873,13 +1873,15 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const applyOverlay = async (b64: string) => {
       const logoPosition = isChico ? "top-right" : "bottom-right";
       // Seleção manual do usuário tem prioridade absoluta.
-      const { logosEscolhidos } = await import("@/lib/post-logo");
+      const { logosEscolhidos, apresentacaoLogo } = await import("@/lib/post-logo");
       const selectedLogoKeys = logosEscolhidos(data.logoKeys, data.logoKey);
       if (!selectedLogoKeys.length) return b64;
       const { getLogoOptions } = await import("@/lib/logos-catalog");
       const opts = getLogoOptions(selectedLogoKeys);
       if (opts.length) {
-        const stamped = await overlayLogo(b64, undefined, 10, {
+        const presentation = apresentacaoLogo(data.audiencia);
+        const stamped = await overlayLogo(b64, undefined, presentation.sizePct, {
+          prominent: presentation.prominent,
           withLogo: true,
           position: logoPosition,
           smart: false,

@@ -1,3 +1,10 @@
+# CTBMF e logos da Liga
+
+- Botão “Gerar tema — CTBMF” acima de Hospitalar, reutilizando a geração existente e sua confirmação de créditos.
+- Logos manualmente selecionados na Liga: tamanho de referência 18% em vez do limite anterior de 7%, opacidade plena em vez de 42%. Múltiplos logos mantêm proporções e limite de largura; demais planners e arquivos originais preservados. Não ativa logos automaticamente.
+- Arquivos: PlannerSimplificado.tsx, post-logo.ts, post-logo.test.ts, logo-overlay.server.ts, ai-post.functions.ts; memória e roadmap.
+- Verificado em sessão real: botão habilitado acima de Hospitalar em 1280 e 390 px; 12 testes passaram; compilação automática OK. Sem gerar IA, publicar posts ou publicar app. Custo de geração/envio zero; custo do trabalho Lovable não consultado.
+
 # Publicação após aprovação
 
 - Aprovar continua sendo revisão interna. Publicar agora envia aprovados; Agendado só envia quando chega a data/hora escolhida.

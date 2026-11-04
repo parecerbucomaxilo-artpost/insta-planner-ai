@@ -1145,6 +1145,19 @@ export function PlannerSimplificado({
                   com imagem + legenda {false ? "pelo app" : "pela IA"}
                 </Button>
                 <Button
+                  onClick={() => handleGerar({ forcarEspecialidade: "CTBMF" })}
+                  disabled={busy}
+                  variant="secondary"
+                  className="w-full"
+                >
+                  {busy ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Stethoscope className="w-4 h-4 mr-2" />
+                  )}
+                  Gerar tema — CTBMF
+                </Button>
+                <Button
                   onClick={() => handleGerar({ forcarEspecialidade: "Odontologia Hospitalar" })}
                   disabled={busy}
                   variant="secondary"
