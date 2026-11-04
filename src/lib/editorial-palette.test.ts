@@ -7,7 +7,7 @@ describe("referências laranja dos três perfis", () => {
   it.each(["cirurgia-biopsias", "clinica-escola", "liga"] as const)("%s aplica laranja, preto e branco em todos os formatos", (marca) => {
     expect(PERFIS[marca].paleta).toEqual({ fundo1: "#000000", fundo2: "#545454", destaque: "#FF5A00", texto: "#FFFFFF", confirmada: true });
     const briefing = BriefingSchema.parse({ marca, tema: "Cuidados após cirurgia", rede: "instagram", nivel: "leigo" });
-    for (const formato of ["feed", "stories"] as const) {
+    for (const formato of ["feed", "story"] as const) {
       for (const tipo of ["unico", "capa", "slide"] as const) {
         const prompt = montarPromptImagem(briefing, formato, tipo, 2, "Cuidados com a recuperação");
         expect(prompt).toContain("#FF5A00");
