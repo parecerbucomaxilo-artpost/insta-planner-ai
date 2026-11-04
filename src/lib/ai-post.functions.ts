@@ -1903,7 +1903,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const b = BRAND_BOOK_IMG[brandKeyImg];
     const brandOneLiner = `MARCA (${b.instagram}): paleta ${b.paleta.primary} · ${b.paleta.secondary} · ${b.paleta.bg} · ${b.paleta.text}. Estilo: ${b.estilo} Não desenhar/imitar logotipos nem escrever "LOGO" como substituto. Sem placeholders de marca.`;
     const genAndUpload = (prompt: string, slideIndex = 0) => {
-      const safe = `${prompt}\n\n${brandOneLiner}`;
+      const safe = `${prompt}\n\n${brandOneLiner}${isChico ? '\nREGRA FINAL DE ASSINATURA: se houver identificação textual nesta arte, usar somente "Francisco Menezes — CROSP 53318", sem título, subtítulo profissional ou credenciais extras. Preferir assinatura na legenda; não repetir em cada slide.' : ""}`;
       return generateImageWithRetry(safe)
         .then((b64) => ensureJpegB64(b64))
         .then(applyOverlay)
