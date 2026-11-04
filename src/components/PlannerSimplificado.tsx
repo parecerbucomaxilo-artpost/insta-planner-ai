@@ -96,7 +96,7 @@ export function PlannerSimplificado({
 
   const [conta, setConta] = useState<string>("");
   const [contaInput, setContaInput] = useState<string>("");
-  const [destinoStatus, setDestinoStatus] = useState<"loading" | "ok" | "missing">("loading");
+  const [destinoStatus, setDestinoStatus] = useState<"loading" | "ok" | "missing" | "reconnect" | "unverified">("loading");
   const [destinoModo, setDestinoModo] = useState<"meta" | "missing">("missing");
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [metaConnectPath, setMetaConnectPath] = useState<string>("");
@@ -196,18 +196,24 @@ export function PlannerSimplificado({
       setDestinoModo("missing");
       return;
     }
+    let active = true;
     setDestinoStatus("loading");
-    (async () => {
+    const refresh = async () => {
       try {
         const destino = await fetchDestino({ data: { conta } });
-        setDestinoStatus(destino.status);
+        if (!active) return;
+        setDestinoStatus(destino.connectionState === "reconnect" ? "reconnect" : destino.connectionState === "unverified" ? "unverified" : destino.status);
         setDestinoModo(destino.mode);
       } catch (e: any) {
-        setDestinoStatus("missing");
+        if (!active) return;
+        setDestinoStatus("unverified");
         setDestinoModo("missing");
-        toast.error(e.message || "Erro ao carregar destino.");
       }
-    })();
+    };
+    void refresh();
+    window.addEventListener("focus", refresh);
+    const timer = window.setInterval(refresh, 60_000);
+    return () => { active = false; window.removeEventListener("focus", refresh); window.clearInterval(timer); };
   }, [conta, fetchDestino]);
 
   const conectarMetaConta = async () => {
@@ -766,7 +772,11 @@ export function PlannerSimplificado({
             Destino de publicação de @{conta}
             {destinoStatus === "ok" && <Badge className="bg-emerald-600">Meta conectada</Badge>}
             {destinoStatus === "missing" && <Badge variant="destructive">Não conectado</Badge>}
+            {destinoStatus === "reconnect" && <Badge variant="destructive">Requer reconexão</Badge>}
+            {destinoStatus === "unverified" && <Badge variant="secondary">Verificação indisponível</Badge>}
           </Label>
+          {destinoStatus === "reconnect" && <div className="space-y-2"><p role="alert" className="text-sm text-destructive">Autorização Instagram expirada ou revogada. Conta e destino preservados.</p><Button variant="outline" onClick={() => void conectarMetaConta()}>Reconectar Instagram</Button></div>}
+          {destinoStatus === "unverified" && <p role="status" className="text-sm text-muted-foreground">Não foi possível verificar Instagram agora. Conta salva preservada; a verificação será repetida.</p>}
           {destinoStatus === "missing" && (
             <div className="rounded-md border border-amber-200 bg-white/70 p-3 text-xs text-amber-950 space-y-1">
               <p className="font-semibold">Conectar Instagram @{conta} pelo Meta:</p>
