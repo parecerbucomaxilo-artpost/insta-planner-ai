@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Desativar logos automáticos em todos os novos posts/planners; preservar assets, identidade, conteúdos salvos e inserção manual; validar sem geração/envio.
+- [x] Desativar logos automáticos em novos posts/planners: gerador compartilhado sem fallback, seletores nenhuma, Estúdio manual opt-in; 35 testes passaram, editor verificado nos quatro perfis desktop/mobile, assets com hashes intactos; sem geração/envio/deploy.
 - [x] Autorizar e combinar logo real Anhanguera com Cirurgia e Biópsias/Liga; Clínica Escola usa Anhanguera, Chico preservado. Catálogo e composição local/IA compartilhados; sem publicação.
 - [x] Aplicar referências laranja/preto/branco aos posts de Cirurgias e Biópsias, Clínica Escola e Liga; paletas do Estúdio, brand book e prompts Liga/Cirurgias sincronizados. Chico e logos preservados; 25 testes passaram, compilação automática OK. Sem geração paga, publicação ou alteração de posts antigos.
 - [x] Preservar Instagram por usuário/conta: colunas de tokens protegidas (privilégios verificados), status restaurado, refresh Instagram suportado, autorização inválida preserva destino; 284 testes passaram, UI desktop/mobile simulada e build automático OK; sem Meta/publicação. Typecheck separado não executado por regra do ambiente; conta real não exercitada.
