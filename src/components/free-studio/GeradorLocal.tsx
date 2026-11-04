@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRascunhoStudio } from "./StudioMaterial";
 import { objetivoLocal } from "@/lib/studio-context";
+import { conteudoEditorialChico } from "@/lib/chico-editorial";
 import { StudioPublishActions } from "./StudioPublishActions";
 import { toast } from "sonner";
 import { Wand2, Download, Copy } from "lucide-react";
@@ -118,7 +119,7 @@ export function GeradorLocal({ perfil, tema, objetivo }: { perfil: PerfilId; tem
     const cfg = TIPOS[tipo];
     const id = identDe(perfil);
     const tags = sugerirHashtags(t, cfg.rede);
-    setLegenda(legendaDoPerfil(modeloLegenda(o, t, cfg.rede), perfil) + (tags.length && cfg.rede !== "google" ? `\n\n${tags.join(" ")}` : ""));
+    setLegenda(((perfil === "chico" ? conteudoEditorialChico(t, "Post único") : null) ?? legendaDoPerfil(modeloLegenda(o, t, cfg.rede), perfil)) + (tags.length && cfg.rede !== "google" ? `\n\n${tags.join(" ")}` : ""));
     const ganchos = gerarGanchos(t);
     let logo: HTMLImageElement | null;
     try { logo = await carregarLogoManual(comLogo, () => carregarLogoStudio(id.logo)); }
