@@ -140,7 +140,7 @@ export const createInstagramOAuthStartUrl = createServerFn({ method: "POST" })
     authUrl.searchParams.set("response_type", "code");
     authUrl.searchParams.set("scope", INSTAGRAM_SCOPES);
     authUrl.searchParams.set("state", state);
-    authUrl.searchParams.set("force_reauth", "true");
+    // Existing authorization is retained; no forced reauthentication on ordinary connects.
     authUrl.searchParams.set("enable_fb_login", "false");
 
     return { url: authUrl.toString() };

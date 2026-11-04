@@ -1,3 +1,4 @@
+import { PROFILE_PUBLIC_COLUMNS } from "@/lib/instagram-connection";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,21 +59,12 @@ export const Route = createFileRoute("/_authenticated/")({
 
 const PERFIL_CACHE_KEY = "planner_perfil_cache_v1";
 
-function readPerfilCache(): Perfil | null {
- if (typeof window === "undefined") return null;
- try {
- const raw = window.localStorage.getItem(PERFIL_CACHE_KEY);
- return raw? (JSON.parse(raw) as Perfil): null;
- } catch {
- return null;
- }
-}
 
 function Dashboard() {
  const navigate = useNavigate();
  const [posts, setPosts] = useState<PostRow[]>([]);
  const [perfil, setPerfil] = useState<Perfil | null>(null);
- useEffect(() => { const c = readPerfilCache(); if (c) setPerfil(c); }, []);
+ useEffect(() => { try { window.localStorage.removeItem(PERFIL_CACHE_KEY); } catch { /* Legacy unsafe cache removed without reading it. */ } }, []);
  const [tab, setTab] = useState("criar");
  const [menuAberto, setMenuAberto] = useState(false);
  const [autoGenWeekly, setAutoGenWeekly] = useState(false);
@@ -112,14 +104,14 @@ function Dashboard() {
  if (!uid) return;
  const { data } = await supabase
 .from("perfil_usuario")
-.select("*")
+.select(PROFILE_PUBLIC_COLUMNS)
 .eq("user_id", uid)
 .order("created_at", { ascending: true })
 .limit(1)
 .maybeSingle();
  if (data) {
  setPerfil(data as Perfil);
- try { window.localStorage.setItem(PERFIL_CACHE_KEY, JSON.stringify(data)); } catch { /* ignore */ }
+
  }
  }, []);
 

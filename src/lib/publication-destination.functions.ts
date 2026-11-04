@@ -15,7 +15,7 @@ function normalizeAccount(conta: string) {
   return normalized;
 }
 
-async function findProfileByAccount(supabaseAdmin: any, conta: string, columns: string) {
+async function findProfileByAccount(supabaseAdmin: any, conta: string, columns: string, userId: string) {
   const variants = [conta, `@${conta}`];
   const fields = ["arroba_usuario", "instagram_arroba"];
 
@@ -24,6 +24,7 @@ async function findProfileByAccount(supabaseAdmin: any, conta: string, columns: 
       const { data, error } = await supabaseAdmin
         .from("perfil_usuario")
         .select(columns)
+        .eq("user_id", userId)
         .ilike(field, value)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -38,24 +39,29 @@ async function findProfileByAccount(supabaseAdmin: any, conta: string, columns: 
 }
 
 export const getPublicationDestination = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => AccountInput.parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const conta = normalizeAccount(data.conta);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const perfil = await findProfileByAccount(
       supabaseAdmin,
       conta,
-      "instagram_access_token,instagram_business_account_id",
+      "id,user_id,instagram_access_token,instagram_business_account_id,instagram_connection",
+      context.userId,
     );
 
-    const hasMeta = Boolean(perfil?.instagram_access_token && perfil?.instagram_business_account_id);
+    const { maintainInstagramConnection } = await import("./instagram-connection.server");
+    const result = perfil ? await maintainInstagramConnection(supabaseAdmin, perfil) : { state: "missing" };
+    const hasMeta = result.state === "connected";
 
     return {
       webhookUrl: "",
       hasMeta,
       mode: hasMeta ? "meta" : "missing",
       status: hasMeta ? "ok" : "missing",
+      connectionState: result.state,
     } as const;
   });
 
@@ -66,7 +72,7 @@ export const ensurePublicationDestinationProfile = createServerFn({ method: "POS
     const conta = normalizeAccount(data.conta);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const existing = await findProfileByAccount(supabaseAdmin, conta, "id,user_id");
+    const existing = await findProfileByAccount(context.supabase, conta, "id,user_id", context.userId);
 
     if (existing?.id) {
       const { error } = await supabaseAdmin
@@ -186,7 +192,7 @@ export const saveManualInstagramToken = createServerFn({ method: "POST" })
     await validateInstagramTokenForAccount(accessToken, igBusinessId, conta);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const existing = await findProfileByAccount(supabaseAdmin, conta, "id");
+    const existing = await findProfileByAccount(context.supabase, conta, "id", context.userId);
     const payload = {
       user_id: context.userId,
       nome_profissional: conta,
@@ -194,6 +200,7 @@ export const saveManualInstagramToken = createServerFn({ method: "POST" })
       instagram_arroba: conta,
       instagram_access_token: accessToken,
       instagram_business_account_id: igBusinessId,
+      instagram_connection: { flow: "unknown", state: "connected", checkedAt: new Date().toISOString() },
       updated_at: new Date().toISOString(),
     };
     if (existing?.id) {

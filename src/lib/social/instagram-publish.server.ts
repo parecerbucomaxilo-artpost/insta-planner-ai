@@ -1,3 +1,5 @@
+import { assertInstagramResponse, InstagramAuthorizationError } from "../instagram-connection";
+import { maintainInstagramConnection } from "../instagram-connection.server";
 const GRAPH_VERSION = "v21.0";
 const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
@@ -15,10 +17,6 @@ type PublishPostInput = {
 function normalizeInstagramAccount(value: string | null | undefined) {
   const normalized = String(value || "").trim().replace(/^@+/, "").toLowerCase();
   return normalized || null;
-}
-
-function isInvalidMetaTokenMessage(message: string) {
-  return /access token|OAuthException|Cannot parse|token.*inválid|token.*expirad|Session has expired|Error validating access token/i.test(message);
 }
 
 function countChars(value: string) {
@@ -169,14 +167,7 @@ async function graphPost(edge: string, params: Record<string, string | number | 
   for (const [key, value] of Object.entries(params)) body.set(key, String(value));
   const res = await fetch(`https://${host}/${GRAPH_VERSION}/${edge}`, { method: "POST", body });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok || json.error) {
-    const raw = json?.error?.message || `Meta respondeu ${res.status}`;
-    const isBadToken = /access token|OAuthException|Cannot parse/i.test(raw);
-    const message = isBadToken
-      ? `${raw} — o token Meta salvo está inválido/expirado. Em Configurações → Redes Sociais, reconecte a conta ou cole um novo Access Token (Graph API Explorer).`
-      : raw;
-    throw new Error(`Instagram: ${message}`);
-  }
+  assertInstagramResponse(res, json);
 
   return json as { id?: string };
 }
@@ -187,7 +178,7 @@ async function graphGet(edge: string, accessToken: string, host = "graph.faceboo
   url.searchParams.set("access_token", accessToken);
   const res = await fetch(url);
   const json = await res.json().catch(() => ({}));
-  if (!res.ok || json.error) throw new Error(json?.error?.message || `Meta respondeu ${res.status}`);
+  assertInstagramResponse(res, json);
   return json as { status_code?: string; status?: string };
 }
 
@@ -197,7 +188,7 @@ async function graphGetFields<T extends Record<string, unknown>>(edge: string, a
   url.searchParams.set("access_token", accessToken);
   const res = await fetch(url);
   const json = await res.json().catch(() => ({}));
-  if (!res.ok || json.error) throw new Error(json?.error?.message || `Meta respondeu ${res.status}`);
+  assertInstagramResponse(res, json);
   return json as T;
 }
 
@@ -323,7 +314,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       perfil = await findInstagramProfileByAccount(
         supabaseAdmin,
         contaAlvo,
-        "id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id",
+        "id,user_id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_connection",
         userId,
       );
       // Liga: se não existe perfil ainda, cria placeholder para receber token via OAuth/secret.
@@ -331,7 +322,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
         const { data: created, error: createError } = await supabaseAdmin
           .from("perfil_usuario")
           .insert({ user_id: TEMP_USER_ID, arroba_usuario: contaAlvo, instagram_arroba: contaAlvo })
-          .select("id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id")
+          .select("id,user_id,arroba_usuario,instagram_arroba,instagram_access_token,instagram_business_account_id,instagram_connection")
           .maybeSingle();
         if (createError) throw new Error(`DB: ${createError.message}`);
         perfil = created;
@@ -397,7 +388,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
             igId = match.instagram_business_account.id;
           }
         } catch (e) {
-          console.warn("[instagram-publish] liga me/accounts falhou:", e instanceof Error ? e.message : e);
+          console.warn("[instagram-publish] liga me/accounts falhou: — conexão preservada");
         }
         if (!igId) {
           try {
@@ -412,7 +403,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
               pageToken = envToken;
             }
           } catch (e) {
-            console.warn("[instagram-publish] liga graph.instagram.com/me falhou:", e instanceof Error ? e.message : e);
+            console.warn("[instagram-publish] liga graph.instagram.com/me falhou: — conexão preservada");
           }
         }
         if (igId && pageToken) {
@@ -451,7 +442,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
             igId = match.instagram_business_account.id;
           }
         } catch (e) {
-          console.warn("[instagram-publish] francisco me/accounts falhou:", e instanceof Error ? e.message : e);
+          console.warn("[instagram-publish] francisco me/accounts falhou: — conexão preservada");
         }
         if (!igId) {
           try {
@@ -466,7 +457,7 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
               pageToken = envToken;
             }
           } catch (e) {
-            console.warn("[instagram-publish] francisco graph.instagram.com/me falhou:", e instanceof Error ? e.message : e);
+            console.warn("[instagram-publish] francisco graph.instagram.com/me falhou: — conexão preservada");
           }
         }
         if (igId && pageToken) {
@@ -488,6 +479,9 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
       );
     }
 
+    const connection = await maintainInstagramConnection(supabaseAdmin, perfil);
+    if (connection.state !== "connected" || !connection.token) throw new Error(connection.state === "reconnect" ? "Autorização Instagram expirada ou revogada. Reconecte a conta." : "Não foi possível verificar Instagram. Conta salva preservada; tente novamente.");
+    perfil.instagram_access_token = connection.token;
     via = "meta";
     try {
       await assertMetaAccountMatchesTarget(perfil.instagram_business_account_id, perfil.instagram_access_token, contaAlvo);
@@ -502,11 +496,11 @@ export async function publishInstagramPostById({ supabaseAdmin, postId, userId }
 
     } catch (metaError) {
       const metaMessage = metaError instanceof Error ? metaError.message : String(metaError);
-      if (isInvalidMetaTokenMessage(metaMessage)) {
+      if (metaError instanceof InstagramAuthorizationError) {
         await supabaseAdmin
           .from("perfil_usuario")
-          .update({ instagram_access_token: null, instagram_business_account_id: null, updated_at: new Date().toISOString() })
-          .eq("id", perfil.id);
+          .update({ instagram_connection: { ...perfil.instagram_connection, state: "reconnect" }, updated_at: new Date().toISOString() })
+          .eq("id", perfil.id).eq("user_id", perfil.user_id).eq("instagram_access_token", perfil.instagram_access_token);
         throw new Error(
           `Token Meta inválido/expirado para @${targetAccount || "esta conta"}: ${metaMessage}. ` +
           `Reconecte o Instagram em "Configurações > Conectar Instagram".`,
