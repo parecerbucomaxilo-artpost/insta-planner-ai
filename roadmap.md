@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Linha editorial Chico: 36 pautas/12 eixos, quatro formatos por pauta, biblioteca com filtro/cópia/uso de tema; catálogo exclusivo no Estúdio e semana, assinatura exata; 44 testes e desktop/mobile verificados, sem gerar/salvar/publicar posts.
 - [x] Desativar logos automáticos em novos posts/planners: gerador compartilhado sem fallback, seletores nenhuma, Estúdio manual opt-in; 35 testes passaram, editor verificado nos quatro perfis desktop/mobile, assets com hashes intactos; sem geração/envio/deploy.
 - [x] Autorizar e combinar logo real Anhanguera com Cirurgia e Biópsias/Liga; Clínica Escola usa Anhanguera, Chico preservado. Catálogo e composição local/IA compartilhados; sem publicação.
 - [x] Aplicar referências laranja/preto/branco aos posts de Cirurgias e Biópsias, Clínica Escola e Liga; paletas do Estúdio, brand book e prompts Liga/Cirurgias sincronizados. Chico e logos preservados; 25 testes passaram, compilação automática OK. Sem geração paga, publicação ou alteração de posts antigos.

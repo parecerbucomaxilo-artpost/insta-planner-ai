@@ -1,5 +1,6 @@
 import { useRascunhoStudio, useStudioMaterial } from "./StudioMaterial";
 import { objetivoLocal } from "@/lib/studio-context";
+import { conteudoEditorialChico } from "@/lib/chico-editorial";
 import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
 import { StudioPublishActions } from "./StudioPublishActions";
 import { useMidiaEstudio, conteudoComMidia, limparMidiaEstudio, useUsuarioAtual } from "@/lib/studio-media";
@@ -63,7 +64,7 @@ export function TextStudio({ perfil, tema, objetivo }: { perfil: PerfilId; tema:
 
           <Button type="button" variant="outline" disabled={!tema || !objetivoLocal(objetivo)} onClick={() => {
             const o = objetivoLocal(objetivo);
-            if (o && tema) setTexto(legendaDoPerfil(modeloLegenda(o, tema, rede), perfil));
+            if (o && tema) setTexto((perfil === "chico" ? conteudoEditorialChico(tema, "Post único") : null) ?? legendaDoPerfil(modeloLegenda(o, tema, rede), perfil));
           }}>Aplicar modelo ao objetivo escolhido</Button>
 
           <Textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={14} placeholder="Escreva ou cole sua legenda aqui…" aria-label="Texto da legenda" />

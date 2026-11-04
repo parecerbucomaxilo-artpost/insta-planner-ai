@@ -155,11 +155,12 @@ function capitalizar(s: string): string {
 }
 
 import { TEMAS_GERAIS, TEMAS_DIVERSOS, TEMAS_ESTUDANTES, TRATAMENTOS, TEMAS_CLINICA_ESCOLA } from "./planner-temas";
+import { TEMAS_CTBMF_CHICO } from "./chico-editorial";
 
 export type PlannerTemas = "chico" | "liga" | "cirurgia-biopsias" | "clinica-escola" | "diversos";
 
 export const PLANNERS_TEMAS: Record<PlannerTemas, { nome: string; temas: readonly string[] }> = {
-  chico: { nome: "Planner Simplificado Chico", temas: TEMAS_GERAIS },
+  chico: { nome: "Planner Simplificado Chico", temas: TEMAS_CTBMF_CHICO },
   liga: { nome: "Planner Simplificado Liga (estudantes)", temas: TEMAS_ESTUDANTES },
   "cirurgia-biopsias": { nome: "Cirurgia e Biópsias", temas: TRATAMENTOS.map((t) => t.label) },
   "clinica-escola": { nome: "Planner Clínica Escola", temas: TEMAS_CLINICA_ESCOLA },

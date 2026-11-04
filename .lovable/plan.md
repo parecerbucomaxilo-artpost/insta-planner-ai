@@ -1,3 +1,12 @@
+# Linha editorial CTBMF — Planner Chico
+
+- Criadas 36 pautas originais em 12 eixos com conteúdo educativo e direção visual; quatro modelos por pauta: carrossel, post único, roteiro de reel (texto, não vídeo) e stories. Biblioteca exclusiva do Chico com filtros, prévia, copiar e usar como tema, sem gerar/salvar posts.
+- Catálogo do Estúdio, seleção de tema individual, planejamento semanal e reposição passam a reconhecer o catálogo exclusivo Chico. Outros planners, modo hospitalar e temas diversos preservados; nenhuma execução da programação foi feita.
+- Assinatura: Francisco Menezes — CROSP 53318. Diretrizes exclusivas do Chico/IA Avançada atualizadas, removidas instruções comerciais conflitantes; logos seguem opt-in. Modelos locais são conteúdo editorial revisável, não simulam resposta de IA.
+- Novos: src/lib/chico-editorial.ts, chico-editorial.test.ts, src/components/ChicoEditorial.tsx. Alterados: PlannerSimplificado.tsx, Posts7Dias.tsx, free-studio/TextStudio.tsx, free-studio/GeradorLocal.tsx, lib/free-studio.ts, studio-profiles.ts, ai-post.functions.ts, advanced-ai.functions.ts; memória, plano e roadmap.
+- Verificado: 44 testes passaram (cobertura dos eixos, quatro formatos, assinatura única/exata, paleta e outros catálogos preservados; regressões de temas/semana). Biblioteca desktop 1280 e mobile 390 px: filtro, seleção, quatro formatos, uso do tema e assinatura; sem erros de navegador. Compilação automática OK.
+- Sem IA/imagem/Meta real, alterações de banco, posts salvos, agendamento, publicação ou deploy. Custo de geração/envio: zero; custo do trabalho Lovable não consultado. Conteúdo exige revisão profissional antes de publicação; não foram inventadas fontes ou estatísticas.
+
 # Logos somente mediante escolha manual — Post Planner Pro
 
 - Novos posts sem seleção explícita não recebem logo em nenhum planner; seleção vazia não herda logo legado. Seletores iniciam em “nenhuma”.

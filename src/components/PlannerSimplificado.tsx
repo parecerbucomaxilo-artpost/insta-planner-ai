@@ -1,6 +1,7 @@
 import { useGuardaIA } from "@/components/GenerationMode";
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { Posts7Dias } from "@/components/Posts7Dias";
+import { ChicoEditorial } from "@/components/ChicoEditorial";
 import { salvarPostInedito } from "@/lib/post-guard";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import { POST_REVIEW_CHANGED, GENERATED_POST_STATUS } from "@/lib/post-review";
@@ -462,7 +463,7 @@ export function PlannerSimplificado({
     const tid = "local-week-simple";
     toast.loading("Gerador local planejando 7 dias...", { id: tid });
     try {
-      const out = await genWeek({ data: { especialidade, modelo, temaGuia: tema.trim() } as any });
+      const out = await genWeek({ data: { especialidade, modelo, temaGuia: tema.trim(), perfilEditorial: effectiveAudiencia === "chico-drfm" ? "chico" : undefined } as any });
       // Filtra apenas slots do Instagram para a conta simplificada
       const igOnly = (out.temas as any[]).filter(
         (t) => t.rede === "instagram" || t.rede === "estilo-x",
@@ -947,6 +948,7 @@ export function PlannerSimplificado({
           </Card>
 
           {/* Seleção de LOGO (overlay aplicado na arte gerada) */}
+          {effectiveAudiencia === "chico-drfm" && <ChicoEditorial onTema={t => { setTema(t); setEspecialidade("CTBMF"); }} />}
           <Card className="p-5 space-y-3">
             <Label className="text-sm font-semibold">Logos do post</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -1039,6 +1041,7 @@ export function PlannerSimplificado({
 
             <Posts7Dias
               idRetomada="chico"
+            perfilEditorial={effectiveAudiencia === "chico-drfm" ? "chico" : undefined}
               especialidade={especialidade}
               temaGuia={tema}
               escritorLocal={false}

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { SugerirTemasInput, sugerirTemasComIA } from "@/lib/theme-suggest";
+import { diretrizEditorialChico } from "@/lib/chico-editorial";
 import { TextoInput, ImagemInput, MARCAS, montarPromptTexto, lerResultado, montarPromptImagem, FORMATOS_IA } from "@/lib/advanced-ai";
 
 /** Modo IA Avançada — chamadas reais ao gateway existente. Nunca devolve texto ou imagem simulados. */
@@ -29,7 +30,7 @@ export const gerarTextoAvancado = createServerFn({ method: "POST" })
         : isChico
         ? [
             brandBookPrompt(audiencia),
-            `Perfil @drfranciscomenezes: tom humanizado, premium e acessível para pacientes. ${p.LOCALIZACAO_OBRIGATORIA} Encerre com "${p.ASSINATURA}" — "${p.ASSINATURA_SUBTITULO}".`,
+            `Perfil @drfranciscomenezes: tom humanizado, premium e acessível para pacientes. ${diretrizEditorialChico()}`,
             p.CTAS_PROIBIDOS,
             ctas,
           ]
