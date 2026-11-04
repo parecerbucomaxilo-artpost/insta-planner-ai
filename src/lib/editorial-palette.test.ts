@@ -20,10 +20,10 @@ describe("referências laranja dos três perfis", () => {
     expect(BRAND_BOOK.lactbmf.paleta.secondary).toBe(PERFIS.liga.paleta.destaque);
     expect(BRAND_IMAGE_STYLE.lactbmf.identidade).toContain("#FF5A00");
   });
-  it("preserva Chico e a ausência de logo da Clínica Escola", () => {
+  it("preserva Chico e os dados da Clínica Escola", () => {
     expect(PERFIS.chico.paleta.destaque).toBe("#2dd4ff");
     expect(BRAND_BOOK.drfranciscomenezes.paleta.primary).toBe("#0c2340");
-    expect(PERFIS["clinica-escola"].logo).toBe("nenhuma");
+    expect(PERFIS["clinica-escola"].logo).toBe("anhanguera");
     expect(PERFIS["clinica-escola"].telefone).toBe("");
   });
 });

@@ -70,7 +70,9 @@ export function getLogoOption(key?: LogoKey | null): LogoOption | undefined {
 
 export function getLogoOptions(keys?: LogoKey[] | null): LogoOption[] {
   if (!keys?.length) return [];
-  const unique = Array.from(new Set(keys)).filter((key) => key !== "nenhuma");
+  if (keys.includes("nenhuma")) return [];
+  const institutional = keys.some((key) => key === "liga-ctbmf" || key === "clinica-escola");
+  const unique = Array.from(new Set(institutional ? [...keys, "anhanguera" as const] : keys));
   return unique
     .map((key) => getLogoOption(key))
     .filter((logo): logo is LogoOption => Boolean(logo?.url));

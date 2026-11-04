@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Autorizar e combinar logo real Anhanguera com Cirurgia e Biópsias/Liga; Clínica Escola usa Anhanguera, Chico preservado. Catálogo e composição local/IA compartilhados; sem publicação.
 - [x] Aplicar referências laranja/preto/branco aos posts de Cirurgias e Biópsias, Clínica Escola e Liga; paletas do Estúdio, brand book e prompts Liga/Cirurgias sincronizados. Chico e logos preservados; 25 testes passaram, compilação automática OK. Sem geração paga, publicação ou alteração de posts antigos.
 - [x] Preservar Instagram por usuário/conta: colunas de tokens protegidas (privilégios verificados), status restaurado, refresh Instagram suportado, autorização inválida preserva destino; 284 testes passaram, UI desktop/mobile simulada e build automático OK; sem Meta/publicação. Typecheck separado não executado por regra do ambiente; conta real não exercitada.
 - [x] Centralizar tema/objetivo do Estúdio por usuário, perfil e material; rascunhos locais e mídia isolados, campos duplicados removidos, 60 testes e interface desktop/mobile simulada sem IA/publicação.

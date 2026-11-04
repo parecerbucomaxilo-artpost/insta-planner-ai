@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PROVEDORES_IA, modelosDoProvedor, padraoDoProvedor, provedorDoModelo, type ProvedorIA } from "@/lib/ai-models";
 import { montarPacote, type PacoteCriacao } from "@/lib/advanced-ai";
-import { LOGOS_DISPONIVEIS } from "@/lib/logos-catalog";
+import { carregarLogoStudio } from "@/lib/studio-logo";
 import {
   MARCAS, REDES_IA, VARIANTES, AJUSTES, FORMATOS_IA, LIMITE_REDE,
   type Marca, type RedeIA, type Variante, type Ajuste, type FormatoIA, type Briefing, type Resultado,
@@ -77,8 +77,7 @@ async function compor(img: Img, formato: FormatoIA, marca: Marca): Promise<strin
     ctx.fillStyle = cor.texto; ctx.textBaseline = "top";
     for (const l of ls) { ctx.fillText(l, m, y); y += tam * 1.15; }
   }
-  const url = LOGOS_DISPONIVEIS.find((l) => l.key === MARCAS[marca].logo)?.url;
-  const logo = url ? await carregar(url, true) : null;
+  const logo = await carregarLogoStudio(MARCAS[marca].logo);
   if (logo) {
     const lh = Math.min(f.w, f.h) * 0.13;
     ctx.drawImage(logo, f.w - m - (logo.width / logo.height) * lh, m, (logo.width / logo.height) * lh, lh);

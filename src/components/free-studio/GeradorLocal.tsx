@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LOGOS_DISPONIVEIS, type LogoKey } from "@/lib/logos-catalog";
+import { type LogoKey } from "@/lib/logos-catalog";
+import { carregarLogoStudio } from "@/lib/studio-logo";
 import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
 import {
   OBJETIVOS, modeloLegenda, gerarGanchos, sugerirHashtags,
@@ -117,8 +118,9 @@ export function GeradorLocal({ perfil, tema, objetivo }: { perfil: PerfilId; tem
     const tags = sugerirHashtags(t, cfg.rede);
     setLegenda(legendaDoPerfil(modeloLegenda(o, t, cfg.rede), perfil) + (tags.length && cfg.rede !== "google" ? `\n\n${tags.join(" ")}` : ""));
     const ganchos = gerarGanchos(t);
-    const urlLogo = LOGOS_DISPONIVEIS.find((l) => l.key === id.logo)?.url;
-    let logo = urlLogo ? await carregar(urlLogo) : null;
+    let logo: HTMLImageElement | null;
+    try { logo = await carregarLogoStudio(id.logo); }
+    catch { setGerando(false); toast.error("Não foi possível carregar os logos oficiais."); return; }
     const slides = cfg.slides === 1 ? [{ t: ganchos[0], s: "" }] : [
       { t: ganchos[0], s: "Arraste para o lado →" },
       { t: ganchos[4], s: "[Explicação simples do tema]" },

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LOGOS_DISPONIVEIS } from "@/lib/logos-catalog";
+import { carregarLogoStudio } from "@/lib/studio-logo";
 import { PERFIS, type PerfilId } from "@/lib/studio-profiles";
 import { StudioPublishActions } from "./StudioPublishActions";
 import type { StudioContent } from "@/lib/studio-publication";
@@ -77,11 +77,9 @@ export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: st
   const [logo, setLogo] = useState<HTMLImageElement | null>(null);
   useEffect(() => {
     setLogo(null);
-    const url = LOGOS_DISPONIVEIS.find((l) => l.key === P.logo)?.url;
-    if (!url) return;
-    const i = new Image(); i.crossOrigin = "anonymous";
     let ativo = true;
-    i.onload = () => { if (ativo) setLogo(i); }; i.src = url;
+    carregarLogoStudio(P.logo).then(image => { if (ativo) setLogo(image); })
+      .catch(() => { if (ativo) toast.error("Não foi possível carregar os logos oficiais."); });
     return () => { ativo = false; };
   }, [P.logo]);
   const canvasRef = useRef<HTMLCanvasElement>(null);

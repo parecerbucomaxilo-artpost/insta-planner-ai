@@ -4,11 +4,10 @@ import { getLogoOption, getLogoOptions } from "./logos-catalog";
 import { MARCAS } from "./advanced-ai";
 
 describe("logos por perfil", () => {
-  it("Clínica Escola não resolve nenhum overlay, inclusive no briefing IA", () => {
-    expect(PERFIS["clinica-escola"].logo).toBe("nenhuma");
-    expect(getLogoOption(PERFIS["clinica-escola"].logo)?.url).toBe("");
-    expect(getLogoOptions([PERFIS["clinica-escola"].logo])).toEqual([]);
-    expect(MARCAS["clinica-escola"].logo).toBe("nenhuma");
+  it("Clínica Escola usa somente Anhanguera, sem inventar logo próprio", () => {
+    expect(PERFIS["clinica-escola"].logo).toBe("anhanguera");
+    expect(getLogoOptions([PERFIS["clinica-escola"].logo]).map(l => l.key)).toEqual(["anhanguera"]);
+    expect(MARCAS["clinica-escola"].logo).toBe("anhanguera");
   });
   it.each([
     ["chico", "planner"],
@@ -16,7 +15,11 @@ describe("logos por perfil", () => {
     ["liga", "liga-ctbmf"],
   ] as const)("preserva a logo de %s", (id, key) => {
     expect(PERFIS[id].logo).toBe(key);
-    expect(getLogoOptions([PERFIS[id].logo])).toHaveLength(1);
+    expect(getLogoOptions([PERFIS[id].logo]).map(l => l.key)).toEqual(id === "chico" ? [key] : [key, "anhanguera"]);
     expect(getLogoOption(PERFIS[id].logo)?.url).toBeTruthy();
+  });
+  it("não duplica Anhanguera e respeita a escolha sem logo", () => {
+    expect(getLogoOptions(["liga-ctbmf", "anhanguera"]).map(l => l.key)).toEqual(["liga-ctbmf", "anhanguera"]);
+    expect(getLogoOptions(["nenhuma"])).toEqual([]);
   });
 });
