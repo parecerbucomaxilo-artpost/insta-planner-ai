@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { connectionState, lifecycleFromOAuth, shouldRefresh, assertInstagramResponse, InstagramAuthorizationError } from "./instagram-connection";
+import { connectionState, lifecycleFromOAuth, shouldRefresh, assertInstagramResponse, InstagramAuthorizationError, validOAuthNonce } from "./instagram-connection";
 import { maintainInstagramConnection } from "./instagram-connection.server";
 
 const now = Date.parse("2026-11-04T15:04:00Z");
@@ -17,6 +17,12 @@ function database(rows: any[]) {
 }
 const response = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 describe("Instagram connection lifecycle without provider calls", () => {
+  it("OAuth callback timeout does not authorize stale or future state", () => {
+    expect(validOAuthNonce(`fixture~${now}`, now)).toBe(true);
+    expect(validOAuthNonce(`fixture~${now - 31 * 60_000}`, now)).toBe(false);
+    expect(validOAuthNonce(`fixture~${now + 1}`, now)).toBe(false);
+    expect(validOAuthNonce("legacy", now)).toBe(false);
+  });
   it.each(["reload", "navigation", "editorial profile change", "reopen"])("%s restores durable credentials without disconnecting", async () => {
     const saved = fixture(); const db = database([saved]); const meta = vi.fn();
     const restored = JSON.parse(JSON.stringify(saved));

@@ -30,3 +30,8 @@ export function assertInstagramResponse(response: { ok: boolean; status: number 
   if (!response.ok || json.error) throw new Error(`Instagram indisponível ou sem permissão para esta ação (${response.status}). A conexão salva foi preservada.`);
 }
 export const PROFILE_PUBLIC_COLUMNS = "id,user_id,nome_profissional,arroba_usuario,url_logo,instagram_arroba,instagram_foto_url,linkedin_nome,linkedin_foto_url,cro_uf,subespecialidades,tom_voz,linkedin_webhook_url,instagram_webhook_url,webhook_url,buffer_access_token";
+
+export function validOAuthNonce(nonce: string | undefined, now = Date.now()) {
+  const issued = Number(nonce?.split("~")[1]);
+  return Number.isFinite(issued) && issued > 0 && issued <= now && now - issued <= 30 * 60_000;
+}

@@ -1,4 +1,4 @@
-import { lifecycleFromOAuth } from "@/lib/instagram-connection";
+import { lifecycleFromOAuth, validOAuthNonce } from "@/lib/instagram-connection";
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 
@@ -53,6 +53,7 @@ export const Route = createFileRoute("/api/public/instagram-oauth/callback")({
         const parts = state.split(".");
         if (parts.length !== 5 || parts[3] !== "ig") return htmlPage("Erro", `<h1>❌ State inválido</h1>`);
         const [perfilId, nonce, targetEncoded, marker, sig] = parts;
+        if (!validOAuthNonce(nonce)) return htmlPage("Erro", "<h1>Autorização expirada</h1><p>Inicie novamente a conexão. A conta salva foi preservada.</p>");
         const signedPayload = `${perfilId}.${nonce}.${targetEncoded}.${marker}`;
         const expectedSig = createHmac("sha256", appSecret).update(signedPayload).digest("hex").slice(0, 32);
         const sigBuf = Buffer.from(sig);
