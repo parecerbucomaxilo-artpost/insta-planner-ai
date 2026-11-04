@@ -63,6 +63,7 @@ export type Database = {
           instagram_access_token: string | null
           instagram_arroba: string
           instagram_business_account_id: string | null
+          instagram_connection: Json | null
           instagram_foto_url: string | null
           instagram_webhook_url: string | null
           linkedin_access_token: string | null
@@ -88,6 +89,7 @@ export type Database = {
           instagram_access_token?: string | null
           instagram_arroba?: string
           instagram_business_account_id?: string | null
+          instagram_connection?: Json | null
           instagram_foto_url?: string | null
           instagram_webhook_url?: string | null
           linkedin_access_token?: string | null
@@ -113,6 +115,7 @@ export type Database = {
           instagram_access_token?: string | null
           instagram_arroba?: string
           instagram_business_account_id?: string | null
+          instagram_connection?: Json | null
           instagram_foto_url?: string | null
           instagram_webhook_url?: string | null
           linkedin_access_token?: string | null
@@ -256,6 +259,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      save_instagram_connection: {
+        Args: {
+          p_account: string
+          p_ig_id: string
+          p_metadata: Json
+          p_perfil: string
+          p_token: string
+        }
+        Returns: string
       }
     }
     Enums: {
