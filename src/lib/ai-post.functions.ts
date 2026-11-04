@@ -1040,6 +1040,7 @@ function chicoImagePrompt(
 }
 
 import { TEMAS_GERAIS, TEMAS_DIVERSOS, TEMAS_ESTUDANTES } from "./planner-temas";
+import { TEMAS_CTBMF_CHICO, diretrizEditorialChico } from "./chico-editorial";
 
 function normalizeTema(s: string) {
   return s
@@ -1062,7 +1063,7 @@ function chooseLocalTema(
       ? TEMAS_DIVERSOS
       : audiencia === "estudantes-graduacao"
         ? TEMAS_ESTUDANTES
-        : TEMAS_GERAIS;
+        : audiencia === "chico-drfm" ? [...TEMAS_CTBMF_CHICO, ...TEMAS_GERAIS] : TEMAS_GERAIS;
   const usadosNorm = new Set(usados.map(normalizeTema));
   const start =
     Math.abs(seedText.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), Date.now())) %
@@ -1876,7 +1877,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const { brandBookPrompt } = await import("@/lib/brand-book");
       const { hooksLibraryPrompt } = await import("@/lib/hooks-library");
       const { strategyPrompt } = await import("@/lib/strategy-prompt");
-      const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}`;
+      const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}${isChico ? `\n\n${diretrizEditorialChico()}` : ""}`;
       const contrato = clinicalContract(tema, data.audiencia);
       const roteiroCarrossel =
         formato === "Carrossel"
@@ -2649,7 +2650,7 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
       : isEstudantes
         ? ligaCaptionSystem(data.formato, tema)
         : `Você é o copywriter sênior do Prof. Francisco Menezes. PT-BR Brasil impecável. Tom: ${nivel}. ${CTAS_PROIBIDOS} ${data.rede === "linkedin" ? CTAS_PERMITIDOS_LI : CTAS_PERMITIDOS_IG}. ${LOCALIZACAO_OBRIGATORIA} Encerre com "${ASSINATURA}" — "${ASSINATURA_SUBTITULO}".${CONTEUDO_COMPLETO}${pickMetodologiaCopy(tema)}`;
-    const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}`;
+    const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}${isChico ? `\n\n${diretrizEditorialChico()}` : ""}`;
     const contrato = clinicalContract(tema, data.audiencia);
     const prompt = `${contrato}\n\nTema sugerido pelo usuário: ${tema}\nRede: ${data.rede}\nFormato: ${data.formato}\nEspecialidade: ${data.especialidade}\n\nTAREFA: escreva APENAS a legenda final pronta para publicação, mencionando O QUE É, POR QUE ACONTECE, COMO SE CONDUZ/TRATA e QUANDO PROCURAR AJUDA.\n\nResponda apenas em PT-BR. Sem comentários meta, sem aspas envolvendo o texto.`;
     const txt = await generateTextAI({

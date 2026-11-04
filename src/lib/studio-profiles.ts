@@ -1,6 +1,7 @@
 import type { LogoKey } from "@/lib/logos-catalog";
 import type { PlannerTemas } from "@/lib/free-studio";
 import { EDITORIAL_ORANGE, ORANGE_REFERENCE_STYLE } from "./brand-book";
+import { ASSINATURA_CHICO } from "./chico-editorial";
 
 /**
  * Perfis do Estúdio (Gratuito e IA Avançada). Cada perfil carrega SOMENTE os dados
@@ -38,7 +39,7 @@ export const PERFIS: Record<PerfilId, Perfil> = {
     publico: "Pacientes e público geral (@drfranciscomenezes)",
     nivel: "leigo",
     paleta: { fundo1: "#0c2340", fundo2: "#000000", destaque: "#2dd4ff", texto: "#ffffff", confirmada: true },
-    assinatura: "Prof. Francisco Menezes | CROSP 53318",
+    assinatura: ASSINATURA_CHICO,
     telefone: "",
     ctaPadrao: "Saiba mais pelo link da bio",
     regras: "CHICO",
