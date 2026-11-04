@@ -69,7 +69,7 @@ export const createMetaOAuthStartUrl = createServerFn({ method: "POST" })
 
     const targetAccount = normalizeInstagramAccount(data.targetAccount);
     const targetEncoded = targetAccount ? base64UrlEncode(targetAccount) : "_";
-    const nonce = crypto.randomUUID();
+    const nonce = `${crypto.randomUUID()}~${Date.now()}`;
     const payload = `${data.perfilId}.${nonce}.${targetEncoded}`;
     const sig = createHmac("sha256", appSecret).update(payload).digest("hex").slice(0, 32);
     const state = `${payload}.${sig}`;
@@ -129,7 +129,7 @@ export const createInstagramOAuthStartUrl = createServerFn({ method: "POST" })
 
     const targetAccount = normalizeInstagramAccount(data.targetAccount);
     const targetEncoded = targetAccount ? base64UrlEncode(targetAccount) : "_";
-    const nonce = crypto.randomUUID();
+    const nonce = `${crypto.randomUUID()}~${Date.now()}`;
     const payload = `${data.perfilId}.${nonce}.${targetEncoded}.ig`;
     const sig = createHmac("sha256", appSecret).update(payload).digest("hex").slice(0, 32);
     const state = `${payload}.${sig}`;
@@ -140,7 +140,7 @@ export const createInstagramOAuthStartUrl = createServerFn({ method: "POST" })
     authUrl.searchParams.set("response_type", "code");
     authUrl.searchParams.set("scope", INSTAGRAM_SCOPES);
     authUrl.searchParams.set("state", state);
-    authUrl.searchParams.set("force_reauth", "true");
+    // Existing authorization is retained; no forced reauthentication on ordinary connects.
     authUrl.searchParams.set("enable_fb_login", "false");
 
     return { url: authUrl.toString() };

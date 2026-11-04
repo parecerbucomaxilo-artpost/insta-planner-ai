@@ -1,3 +1,4 @@
+import { lifecycleFromOAuth, validOAuthNonce } from "@/lib/instagram-connection";
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 
@@ -32,7 +33,7 @@ function htmlPage(title: string, body: string) {
 .card{max-width:480px;background:#1e293b;padding:32px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 h1{margin:0 0 12px;font-size:22px}p{color:#cbd5e1;line-height:1.5}a{color:#60a5fa}</style></head>
 <body><div class="card">${body}<p style="margin-top:24px"><a href="/settings">← Voltar para Configurações</a></p>
-<script>setTimeout(()=>{try{window.opener&&window.opener.postMessage({type:'meta-oauth-done'},'*');window.close()}catch(e){}}, 1500)</script>
+<script>setTimeout(()=>{try{window.opener&&window.opener.postMessage({type:'meta-oauth-done'},'https://insta-planner-ai.lovable.app');window.close()}catch(e){}}, 1500)</script>
 </div></body></html>`,
     { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
@@ -57,6 +58,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
         const parts = state.split(".");
         if (parts.length !== 3 && parts.length !== 4) return htmlPage("Erro", `<h1>❌ State inválido</h1>`);
         const [perfilId, nonce] = parts;
+        if (!validOAuthNonce(nonce)) return htmlPage("Erro", "<h1>Autorização expirada</h1><p>Inicie novamente a conexão. A conta salva foi preservada.</p>");
         const targetEncoded = parts.length === 4 ? parts[2] : "_";
         const sig = parts.length === 4 ? parts[3] : parts[2];
         const signedPayload = parts.length === 4 ? `${perfilId}.${nonce}.${targetEncoded}` : `${perfilId}.${nonce}`;
@@ -77,7 +79,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
           );
           const tokJson = await tokRes.json();
           if (!tokRes.ok || !tokJson.access_token) {
-            return htmlPage("Erro", `<h1>❌ Falha ao trocar código</h1><p>${escapeHtml(JSON.stringify(tokJson))}</p>`);
+            return htmlPage("Erro", `<h1>❌ Falha ao trocar código</h1><p>${"Não foi possível concluir a autorização. Tente reconectar."}</p>`);
           }
           const shortUserToken = tokJson.access_token;
 
@@ -87,7 +89,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
           );
           const longJson = await longRes.json();
           if (!longRes.ok || !longJson.access_token) {
-            return htmlPage("Erro", `<h1>❌ Falha no token longo</h1><p>${escapeHtml(JSON.stringify(longJson))}</p>`);
+            return htmlPage("Erro", `<h1>❌ Falha no token longo</h1><p>${"Não foi possível concluir a autorização. Tente reconectar."}</p>`);
           }
           const longUserToken = longJson.access_token;
 
@@ -135,15 +137,10 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
 
           // 4. Save to perfil_usuario
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { error } = await supabaseAdmin
-            .from("perfil_usuario")
-            .update({
-              instagram_access_token: pageAccessToken,
-              instagram_business_account_id: igBusinessId,
-              ...(igUsername ? { arroba_usuario: igUsername, instagram_arroba: igUsername } : {}),
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", perfilId);
+          const { error } = await supabaseAdmin.rpc("save_instagram_connection", {
+            p_perfil: perfilId, p_account: igUsername || "", p_ig_id: igBusinessId, p_token: pageAccessToken,
+            p_metadata: lifecycleFromOAuth("facebook", undefined),
+          });
 
           if (error) return htmlPage("Erro", `<h1>❌ Erro ao salvar</h1><p>${escapeHtml(error.message)}</p>`);
 
@@ -152,7 +149,7 @@ export const Route = createFileRoute("/api/public/meta-oauth/callback")({
             `<h1>✅ Instagram conectado</h1><p><strong>Conta:</strong> ${escapeHtml(igUsername ? `@${igUsername}` : "Instagram Business")}</p><p><strong>Página:</strong> ${escapeHtml(pageWithIg.name || "Página vinculada")}</p><p><strong>IG ID:</strong> ${escapeHtml(igBusinessId)}</p><p>Tokens salvos com segurança. Esta janela fecha em instantes…</p>`,
           );
         } catch (e) {
-          return htmlPage("Erro", `<h1>❌ Erro inesperado</h1><p>${escapeHtml(e instanceof Error ? e.message : String(e))}</p>`);
+          return htmlPage("Erro", `<h1>❌ Erro inesperado</h1><p>${"Não foi possível concluir a autorização. A conexão anterior foi preservada."}</p>`);
         }
       },
     },

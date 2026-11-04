@@ -1,3 +1,4 @@
+import { PROFILE_PUBLIC_COLUMNS } from "@/lib/instagram-connection";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthedUserId } from "@/lib/auth-utils";
@@ -27,8 +28,6 @@ export type Perfil = {
   instagram_webhook_url?: string;
   linkedin_webhook_url?: string;
   make_webhook_url?: string;
-  instagram_access_token?: string;
-  instagram_business_account_id?: string;
   linkedin_access_token?: string;
   linkedin_urn?: string;
   buffer_access_token?: string;
@@ -162,7 +161,7 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
       }
       const { data } = await supabase
         .from("perfil_usuario")
-        .select("*")
+        .select(PROFILE_PUBLIC_COLUMNS)
         .eq("user_id", uid)
         .order("created_at", { ascending: true })
         .limit(1)
@@ -219,9 +218,9 @@ export function ProfileSettings({ onSaved }: { onSaved?: (p: Perfil) => void }) 
     };
     let result;
     if (id) {
-      result = await supabase.from("perfil_usuario").update(payload).eq("id", id).select().single();
+      result = await supabase.from("perfil_usuario").update(payload).eq("id", id).select(PROFILE_PUBLIC_COLUMNS).single();
     } else {
-      result = await supabase.from("perfil_usuario").insert(payload).select().single();
+      result = await supabase.from("perfil_usuario").insert(payload).select(PROFILE_PUBLIC_COLUMNS).single();
     }
     setSaving(false);
     if (result.error) return toast.error(result.error.message);

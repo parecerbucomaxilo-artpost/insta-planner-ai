@@ -13,6 +13,7 @@ import { ensurePerfil } from "@/lib/perfil.functions";
 import { createMetaOAuthStartUrl } from "@/lib/meta-oauth.functions";
 import { LinkedInConnectionNotice } from "@/components/LinkedInConnectionNotice";
 import { useLinkedInStatus } from "@/hooks/use-linkedin-status";
+import { useInstagramStatus } from "@/hooks/use-instagram-status";
 // import { getLinkedInStatus, publishToLinkedIn } from "@/lib/social/linkedin-publish.functions";
 
 type LiStatus =
@@ -22,6 +23,7 @@ type LiStatus =
 
 export function SocialConnections() {
   const linkedIn = useLinkedInStatus();
+  const instagram = useInstagramStatus();
   // const fetchStatus = useServerFn(getLinkedInStatus);
   // const sendLinkedIn = useServerFn(publishToLinkedIn);
   const fetchStatus = async () => ({ connected: false });
@@ -195,6 +197,18 @@ export function SocialConnections() {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* OAuth direto Meta */}
+          <div aria-live="polite" className="space-y-2">
+            {instagram.loading && <p className="text-sm text-muted-foreground">Restaurando contas Instagram…</p>}
+            {instagram.error && <p role="alert" className="text-sm text-destructive">{instagram.error}</p>}
+            {instagram.contas.filter(c => c.conta).map(c => <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2">
+              <div><p className="text-sm font-semibold">@{c.conta}</p><p className="text-xs text-muted-foreground">{c.state === "connected" ? "Instagram conectado" : c.message}</p></div>
+              {c.state === "reconnect" && <Button size="sm" variant="outline" onClick={async () => {
+                try { const r = await startMetaOAuth({ data: { perfilId: c.id, targetAccount: c.conta } }); window.open(r.url, "_blank", "noopener,noreferrer"); }
+                catch { toast.error("Não foi possível iniciar a reconexão. Conta salva preservada."); }
+              }}>Reconectar @{c.conta}</Button>}
+            </div>)}
+            <Button size="sm" variant="ghost" disabled={instagram.loading} onClick={() => void instagram.refresh()}>Verificar conexão</Button>
+          </div>
           <div className="p-4 rounded-lg border-2 border-primary/30 bg-primary/5 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -241,7 +255,7 @@ export function SocialConnections() {
                   const win = window.open(oauthUrl, "_blank", "noopener,noreferrer");
                   if (!win) {
                     // Fallback: força navegação no topo da janela
-                    try { window.top!.location.href = oauthUrl; } catch { window.location.href = oauthUrl; }
+                    try { if (window.top) window.top.location.href = oauthUrl; else window.location.href = oauthUrl; } catch { window.location.href = oauthUrl; }
                   }
                 }}
               >

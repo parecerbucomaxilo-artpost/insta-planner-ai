@@ -1,3 +1,4 @@
+import { lifecycleFromOAuth, validOAuthNonce } from "@/lib/instagram-connection";
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 
@@ -28,7 +29,7 @@ function htmlPage(title: string, body: string) {
 .card{max-width:520px;background:#1e293b;padding:32px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 h1{margin:0 0 12px;font-size:22px}p{color:#cbd5e1;line-height:1.5}a{color:#60a5fa}</style></head>
 <body><div class="card">${body}<p style="margin-top:24px"><a href="/settings">← Voltar para Configurações</a></p>
-<script>setTimeout(()=>{try{window.opener&&window.opener.postMessage({type:'instagram-oauth-done'},'*');window.close()}catch(e){}}, 1500)</script>
+<script>setTimeout(()=>{try{window.opener&&window.opener.postMessage({type:'instagram-oauth-done'},'https://insta-planner-ai.lovable.app');window.close()}catch(e){}}, 1500)</script>
 </div></body></html>`,
     { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
@@ -52,6 +53,7 @@ export const Route = createFileRoute("/api/public/instagram-oauth/callback")({
         const parts = state.split(".");
         if (parts.length !== 5 || parts[3] !== "ig") return htmlPage("Erro", `<h1>❌ State inválido</h1>`);
         const [perfilId, nonce, targetEncoded, marker, sig] = parts;
+        if (!validOAuthNonce(nonce)) return htmlPage("Erro", "<h1>Autorização expirada</h1><p>Inicie novamente a conexão. A conta salva foi preservada.</p>");
         const signedPayload = `${perfilId}.${nonce}.${targetEncoded}.${marker}`;
         const expectedSig = createHmac("sha256", appSecret).update(signedPayload).digest("hex").slice(0, 32);
         const sigBuf = Buffer.from(sig);
@@ -75,7 +77,7 @@ export const Route = createFileRoute("/api/public/instagram-oauth/callback")({
           const shortData = Array.isArray(shortJson?.data) ? shortJson.data[0] : shortJson;
           const shortToken = shortData?.access_token;
           if (!shortRes.ok || !shortToken) {
-            return htmlPage("Erro", `<h1>❌ Falha ao trocar código Instagram</h1><p>${escapeHtml(JSON.stringify(shortJson))}</p>`);
+            return htmlPage("Erro", `<h1>❌ Falha ao trocar código Instagram</h1><p>${"Não foi possível concluir a autorização. Tente reconectar."}</p>`);
           }
 
           const longUrl = new URL("https://graph.instagram.com/access_token");
@@ -84,9 +86,9 @@ export const Route = createFileRoute("/api/public/instagram-oauth/callback")({
           longUrl.searchParams.set("access_token", shortToken);
           const longRes = await fetch(longUrl);
           const longJson = await longRes.json().catch(() => ({}));
-          const longToken = longJson?.access_token || shortToken;
+          const longToken = longJson?.access_token;
           if (!longRes.ok || !longToken) {
-            return htmlPage("Erro", `<h1>❌ Falha no token longo Instagram</h1><p>${escapeHtml(JSON.stringify(longJson))}</p>`);
+            return htmlPage("Erro", `<h1>❌ Falha no token longo Instagram</h1><p>${"Não foi possível concluir a autorização. Tente reconectar."}</p>`);
           }
 
           const meUrl = new URL("https://graph.instagram.com/me");
@@ -98,7 +100,7 @@ export const Route = createFileRoute("/api/public/instagram-oauth/callback")({
           const igBusinessId = String(meData?.user_id || meData?.id || "");
           const igUsername = normalizeInstagramAccount(meData?.username);
           if (!meRes.ok || !igBusinessId || !igUsername) {
-            return htmlPage("Erro", `<h1>❌ Não foi possível identificar o Instagram</h1><p>${escapeHtml(JSON.stringify(meJson))}</p>`);
+            return htmlPage("Erro", `<h1>❌ Não foi possível identificar o Instagram</h1><p>${"Não foi possível concluir a autorização. Tente reconectar."}</p>`);
           }
           if (targetAccount && igUsername !== targetAccount) {
             return htmlPage(
@@ -108,16 +110,10 @@ export const Route = createFileRoute("/api/public/instagram-oauth/callback")({
           }
 
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { error } = await supabaseAdmin
-            .from("perfil_usuario")
-            .update({
-              instagram_access_token: longToken,
-              instagram_business_account_id: igBusinessId,
-              arroba_usuario: igUsername,
-              instagram_arroba: igUsername,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", perfilId);
+          const { error } = await supabaseAdmin.rpc("save_instagram_connection", {
+            p_perfil: perfilId, p_account: igUsername || "", p_ig_id: igBusinessId, p_token: longToken,
+            p_metadata: lifecycleFromOAuth("instagram", Number(longJson.expires_in)),
+          });
 
           if (error) return htmlPage("Erro", `<h1>❌ Erro ao salvar</h1><p>${escapeHtml(error.message)}</p>`);
 
@@ -126,7 +122,7 @@ export const Route = createFileRoute("/api/public/instagram-oauth/callback")({
             `<h1>✅ Instagram conectado diretamente</h1><p><strong>Conta:</strong> @${escapeHtml(igUsername)}</p><p><strong>IG ID:</strong> ${escapeHtml(igBusinessId)}</p><p>Agora a Liga pode publicar sem reutilizar a sessão Facebook do Francisco.</p>`,
           );
         } catch (e) {
-          return htmlPage("Erro", `<h1>❌ Erro inesperado</h1><p>${escapeHtml(e instanceof Error ? e.message : String(e))}</p>`);
+          return htmlPage("Erro", `<h1>❌ Erro inesperado</h1><p>${"Não foi possível concluir a autorização. A conexão anterior foi preservada."}</p>`);
         }
       },
     },
