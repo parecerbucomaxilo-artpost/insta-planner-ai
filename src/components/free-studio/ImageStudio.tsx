@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { carregarLogoStudio } from "@/lib/studio-logo";
+import { carregarLogoManual } from "@/lib/post-logo";
 import { PERFIS, type PerfilId } from "@/lib/studio-profiles";
 import { StudioPublishActions } from "./StudioPublishActions";
 import type { StudioContent } from "@/lib/studio-publication";
@@ -73,15 +74,15 @@ export function ImageStudio({ perfil, tema = "" }: { perfil: PerfilId; tema?: st
   const [selecionada, setSelecionada] = useRascunhoStudio<StudioContent | null>("imagem.selecionada", null);
   const P = PERFIS[perfil];
   const CORES_MARCA = Array.from(new Set([P.paleta.texto, P.paleta.destaque, P.paleta.fundo1, P.paleta.fundo2]));
-  const [comLogo, setComLogo] = useRascunhoStudio("imagem.logo", true);
+  const [comLogo, setComLogo] = useRascunhoStudio("imagem.logoManual", false);
   const [logo, setLogo] = useState<HTMLImageElement | null>(null);
   useEffect(() => {
     setLogo(null);
     let ativo = true;
-    carregarLogoStudio(P.logo).then(image => { if (ativo) setLogo(image); })
+    carregarLogoManual(comLogo, () => carregarLogoStudio(P.logo)).then(image => { if (ativo) setLogo(image); })
       .catch(() => { if (ativo) toast.error("Não foi possível carregar os logos oficiais."); });
     return () => { ativo = false; };
-  }, [P.logo]);
+  }, [P.logo, comLogo]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);

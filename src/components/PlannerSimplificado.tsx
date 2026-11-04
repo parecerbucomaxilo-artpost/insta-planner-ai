@@ -113,8 +113,7 @@ export function PlannerSimplificado({
   const [especialidade, setEspecialidade] = useState<
     "CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos"
   >("CTBMF");
-  const defaultLogoKey: LogoKey = audiencia === "estudantes-graduacao" ? "liga-ctbmf" : "planner";
-  const [logoKeys, setLogoKeys] = useState<LogoKey[]>([defaultLogoKey]);
+  const [logoKeys, setLogoKeys] = useState<LogoKey[]>(["nenhuma"]);
   const [tema, setTema] = useState("");
   const [quando, setQuando] = useState<Quando>("agora");
   const [data, setData] = useState<string>("");

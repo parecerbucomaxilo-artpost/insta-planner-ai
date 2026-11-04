@@ -1,3 +1,12 @@
+# Logos somente mediante escolha manual — Post Planner Pro
+
+- Novos posts sem seleção explícita não recebem logo em nenhum planner; seleção vazia não herda logo legado. Seletores iniciam em “nenhuma”.
+- Estúdio de Imagem, gerador local e IA Avançada iniciam desativados; opções manuais preservadas. Novas chaves de consentimento não herdam o antigo padrão automático do editor.
+- Arquivos alterados: src/components/PlannerSimplificado.tsx, PlannerAgendamentoTratamento.tsx, free-studio/ImageStudio.tsx, free-studio/GeradorLocal.tsx, advanced-ai/IAAvancada.tsx; src/lib/ai-post.functions.ts, contextual-image.ts, strategy-prompt.ts, brand-book.ts. Novos: post-logo.ts e post-logo.test.ts.
+- Prompts não exigem logo, espaço reservado ou texto literal “LOGO”. Paletas, assinaturas, catálogo, assets e publicações existentes preservados. Prévia explicitamente intitulada “com logo” permanece ação manual, sem gravar alteração em posts.
+- 35 testes mockados passaram. Editor real com identidade simulada: logo começa desativado, habilitar altera canvas, desabilitar restaura pixels; quatro perfis em 1280 e 390 px, sem erros. Compilação automática OK. Hashes de todos os assets de logo idênticos antes/depois.
+- Sem chamadas de geração de IA, banco, publicação, agendamento ou deploy. Custo de geração/envio: zero; custo do trabalho Lovable não consultado. Pendências anteriores abaixo não fazem parte desta solicitação.
+
 # Instagram persistente — Post Planner Pro
 
 ## Ajustes desta solicitação

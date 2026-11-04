@@ -791,9 +791,9 @@ function diverseImagePrompt(
       : `PALETA: fundo azul marinho #0c2340 dominante (leve gradiente para ciano #2dd4ff nos cantos), texto branco puro, destaques em ciano #2dd4ff. Sem outras cores fortes.`;
   const logoReserva =
     brand === "student"
-      ? `\n- LOGO: NÃO desenhe nenhum logo/marca/monograma e NÃO reserve faixa, canto, bloco vazio, moldura ou placeholder. O sistema aplica apenas a logo real por cima, sem fundo.`
+      ? `\n- LOGOTIPOS: NÃO desenhe nenhum logo/marca/monograma, não escreva "LOGO" como substituto e NÃO reserve faixa, canto, bloco vazio, moldura ou placeholder.`
       : brand === "chico"
-        ? `\n- LOGO: NÃO desenhe nenhum logo e NÃO reserve canto, bloco vazio, moldura ou placeholder. O sistema aplica apenas a logo real por cima, sem fundo.`
+        ? `\n- LOGOTIPOS: NÃO desenhe nenhum logo, não escreva "LOGO" como substituto e NÃO reserve canto, bloco vazio, moldura ou placeholder.`
         : "";
   return `IMAGEM EDITORIAL PREMIUM sobre o tema "${tema}" — pode estar TOTALMENTE FORA da área médica/odontológica (data comemorativa, evento, curiosidade, hobby, cotidiano, cultura, esporte, natureza, tecnologia, comida, música, etc.).
 - ${dimensoes}
@@ -838,7 +838,7 @@ function studentImagePrompt(
 - ANATOMIA CORRETA: estruturas bucomaxilofaciais (mandíbula, maxila, ATM, dentes, nervos, músculos, seios) com proporção, posição, lado (direito/esquerdo) e relação topográfica cientificamente exatas, conforme Terminologia Anatômica oficial (TA2/SBA) e atlas (Netter, Sobotta, Madeira). Instrumental cirúrgico apenas em uso clinicamente correto para o tema (ex.: fórceps nº 18L só em molar inferior esquerdo). Proibido: dentes em posição errada, número de raízes incorreto, nervo cruzando estrutura errada, instrumento aplicado fora da indicação.
 - IDENTIDADE VISUAL: ${ORANGE_REFERENCE_STYLE}
  - TEXTO NA IMAGEM — REGRA ABSOLUTA: NÃO renderize NENHUMA letra, palavra, número, sigla, símbolo tipográfico, legenda, rótulo, watermark, headline, badge ou cartaz com escrita dentro da imagem. ZERO texto. Nem em primeiro plano, nem em fundo, nem em jalecos, crachás, placas, livros, telas, monitores, radiografias, embalagens, etiquetas, instrumentos, paredes. A composição deve ser PURAMENTE VISUAL (cena clínica/anatômica). Todo e qualquer texto (headline, enquete, dica) será aplicado depois pelo sistema como overlay tipográfico — você NÃO precisa e NÃO deve tentar escrever nada. Se a cena naturalmente teria texto (ex.: tela de tomografia), substitua por formas abstratas, gráficos sem letras ou borrão suave. Qualquer letra renderizada será considerada erro grave.
-- LOGO: NÃO desenhe, redesenhe, parafraseie ou invente logos, marcas, escudos, brasões, monogramas ou siglas. NÃO reserve faixa inferior, canto limpo, bloco vazio, moldura, quadrado ou placeholder. A arte deve ocupar a composição normalmente; a logo REAL da LACTBMF será sobreposta pelo sistema, sem fundo.
+- LOGOTIPOS: NÃO desenhe, redesenhe, parafraseie ou invente logos, marcas, escudos, brasões, monogramas ou siglas, nem escreva "LOGO" como substituto. NÃO reserve faixa inferior, canto limpo, bloco vazio, moldura, quadrado ou placeholder. A arte deve ocupar a composição normalmente, sem logo automático.
 - Iluminação editorial premium, hierarquia limpa, espaço negativo generoso na cor de fundo, sem ruído visual.
 - PROIBIDO: rostos reconhecíveis de pessoas reais, watermark de IA, anatomia errada, mãos com dedos a mais, texto em inglês, palavras inventadas, palavras duplicadas, letras embaralhadas, caracteres tipográficos estranhos, glifos decorativos no meio de palavras, CTA comercial ("agende", "promoção", "desconto"), WhatsApp, visual de banco de imagens, clipart, flat design infantil, gradientes arco-íris, paleta fora do especificado.${slideInfo}
 - Variação obrigatória (seed ${Math.random().toString(36).slice(2, 10)}): ângulo, enquadramento e composição inéditos em relação aos posts anteriores.`
@@ -902,7 +902,7 @@ MENSAGENS-CHAVE RECORRENTES:
 - "Não deixe de procurar um especialista se…"
 
 IDENTIDADE VISUAL (para orientar a arte):
-- Sempre usar a logo oficial (aplicada como overlay pelo sistema no canto inferior direito).
+- Sem logo automático; arquivo oficial somente mediante escolha manual explícita.
 - Paleta extraída da logo: azul petróleo #0c2340, branco puro #ffffff, ciano #2dd4ff.
 - Estilo profissional, limpo, confiável, acolhedor. Tipografia legível, alto contraste, ótimo em mobile.
 - Texto curto e legível na imagem: título ("Cirurgia Bucomaxilofacial", "Avalie seus sisos", "Lesão na boca?"), frase de benefício ("Mais segurança ao mastigar", "Melhora da respiração e do sono"). Em posts de agendamento, destacar WhatsApp (11) 94768-4004.
@@ -1031,7 +1031,7 @@ function chicoImagePrompt(
 - TIPOGRAFIA: sans-serif moderna bold (Montserrat / Inter). Headline curto de 3-8 palavras em PT-BR impecável ("DOR NO SISO?", "ATM TRAVADA AO ACORDAR", "FERIDA QUE NÃO CICATRIZA"). Headline em branco com 1 palavra-chave em ciano ${CHICO_CIANO}. Sem parágrafos, sem listas longas, sem números fictícios.
 - COMPOSIÇÃO: limpa, hierarquia clara, muito espaço negativo navy, linhas finas em ciano como elementos gráficos (separadores, ícones, silhuetas de perfil facial).
 - ROSTOS: se houver pessoa, expressão de ALÍVIO/CONFIANÇA (nunca dor exposta, nunca cena invasiva, nunca procedimento real). Plano fechado, foco em emoção. Sem rostos reconhecíveis de pessoas reais.
-- LOGO DA CLÍNICA: NÃO desenhe, NÃO redesenhe, NÃO invente nenhum logo, monograma, escudo ou marca. NÃO reserve canto, área limpa, bloco vazio, moldura, quadrado ou placeholder; componha a arte normalmente. O sistema sobrepõe apenas a logo real depois, sem fundo.${ctaForte}${slideInfo}
+- LOGOTIPOS: NÃO desenhe, NÃO redesenhe, NÃO invente nenhum logo, monograma, escudo ou marca, nem escreva "LOGO" como substituto. NÃO reserve canto, área limpa, bloco vazio, moldura, quadrado ou placeholder; componha a arte normalmente, sem logo automático.${ctaForte}${slideInfo}
 - TEXTO NA IMAGEM — REGRA: o ÚNICO texto permitido é o HEADLINE-GANCHO de 3-6 palavras definido no bloco "TEXTO OBRIGATÓRIO NA IMAGEM" do NEXO acima (capa do carrossel ou imagem única). Renderize-o como tipografia bold sans-serif condensada gigante, BRANCO ou CIANO ${CHICO_CIANO} sobre o navy, centralizado, com acentuação PT-BR perfeita. NENHUM outro texto, número, sigla, parágrafo, lista, watermark, rótulo, marca, telefone ou URL pode aparecer em qualquer lugar da imagem (jaleco, crachá, placa, tela, radiografia, instrumento). Se a cena naturalmente teria texto secundário (tela, livro, radiografia), substitua por formas abstratas/borrão. Em slides intermediários do carrossel (não-capa, não-último) NÃO escreva nenhum texto — só ilustração.
 - PROIBIDO: imagens de procedimentos invasivos, sangue, bisturi cortando, anatomia interna exposta de forma agressiva, watermark de IA, mãos deformadas, dedos a mais, texto em inglês, palavras inventadas, palavras duplicadas, hashtags na imagem, números de telefone, URLs, CTAs comerciais ("agende", "promoção", "desconto"). NÃO MISTURAR ASSUNTOS: a imagem inteira (e todos os slides do carrossel) tratam APENAS do tema "${tema}" — nunca introduzir outra patologia, instrumento ou cena de outro tema.
 - Iluminação editorial premium estilo capa de revista de saúde sofisticada (Harvard Health / Mayo Clinic), atmosfera arejada e luminosa, qualidade 8K.
@@ -1948,10 +1948,9 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const applyOverlay = async (b64: string) => {
       const logoPosition = isChico ? "top-right" : "bottom-right";
       // Seleção manual do usuário tem prioridade absoluta.
-      const selectedLogoKeys = data.logoKeys?.length
-        ? data.logoKeys
-        : [data.logoKey || (isEstudantes ? "liga-ctbmf" : "planner")];
-      if (selectedLogoKeys.includes("nenhuma")) return b64;
+      const { logosEscolhidos } = await import("@/lib/post-logo");
+      const selectedLogoKeys = logosEscolhidos(data.logoKeys, data.logoKey);
+      if (!selectedLogoKeys.length) return b64;
       const { getLogoOptions } = await import("@/lib/logos-catalog");
       const opts = getLogoOptions(selectedLogoKeys);
       if (opts.length) {
@@ -1965,15 +1964,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           throw new Error("A logo escolhida não foi aplicada. Publicação bloqueada.");
         return stamped;
       }
-      // Chico/geral: SEMPRE canto inferior direito, sem escolha inteligente.
-      const stamped = await overlayLogo(b64, undefined, 10, {
-        withLogo: true,
-        position: logoPosition,
-        smart: false,
-      });
-      if (stamped === b64)
-        throw new Error("A logo oficial não foi aplicada. Publicação bloqueada.");
-      return stamped;
+      throw new Error("O arquivo da logo escolhida não está disponível.");
     };
 
     // IMPORTANTE: para geração de IMAGEM, NÃO enviamos o brand book/estratégia
@@ -1985,7 +1976,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const brandKeyImg = pickBrandImg(data.audiencia);
     const BRAND_STYLE_IMG = BRAND_IMAGE_STYLE[brandKeyImg];
     const b = BRAND_BOOK_IMG[brandKeyImg];
-    const brandOneLiner = `MARCA (${b.instagram}): paleta ${b.paleta.primary} · ${b.paleta.secondary} · ${b.paleta.bg} · ${b.paleta.text}. Estilo: ${b.estilo} Nunca desenhar/imitar logo — o sistema aplica overlay real.`;
+    const brandOneLiner = `MARCA (${b.instagram}): paleta ${b.paleta.primary} · ${b.paleta.secondary} · ${b.paleta.bg} · ${b.paleta.text}. Estilo: ${b.estilo} Não desenhar/imitar logotipos nem escrever "LOGO" como substituto. Sem placeholders de marca.`;
     const genAndUpload = (prompt: string, slideIndex = 0) => {
       const safe = `${prompt}\n\n${brandOneLiner}`;
       return generateImageWithRetry(safe)
