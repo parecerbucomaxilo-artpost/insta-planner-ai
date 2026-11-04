@@ -75,17 +75,6 @@ export const ensurePublicationDestinationProfile = createServerFn({ method: "POS
     const existing = await findProfileByAccount(context.supabase, conta, "id,user_id", context.userId);
 
     if (existing?.id) {
-      const { error } = await supabaseAdmin
-        .from("perfil_usuario")
-        .update({
-          user_id: context.userId,
-          nome_profissional: conta,
-          arroba_usuario: conta,
-          instagram_arroba: conta,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", existing.id);
-      if (error) throw new Error(`DB: ${error.message}`);
       return { id: existing.id as string, conta };
     }
 
