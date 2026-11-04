@@ -22,4 +22,18 @@ export const PAUTAS_CHICO = EIXOS_CHICO.flatMap((eixo, i) => eixo.temas.map((tem
   texto: eixo.texto, visual: eixo.visual,
   abordagem: ["Pergunta do paciente", "Ciência em linguagem simples", "Percurso do cuidado"][j],
 })));
-export const TEMAS_CT BMF = [];
+export const TEMAS_CTBMF_CHICO = PAUTAS_CHICO.map(p => p.tema);
+
+export function conteudoEditorialChico(tema: string, formato: FormatoEditorial): string | null {
+  const p = PAUTAS_CHICO.find(item => item.tema === tema);
+  if (!p) return null;
+  const fechamento = `Informação educativa; não substitui avaliação individual.\n\nSaiba mais pelo link da bio\n\n${ASSINATURA_CHICO}`;
+  if (formato === "Carrossel") return `Slide 1: ${p.tema}\n\nSlide 2: ${p.texto}\n\nSlide 3: A avaliação considera história, exame clínico e exames complementares quando indicados.\n\nSlide 4: Evite concluir o diagnóstico por imagens ou relatos na internet. A conduta é individual.\n\nSlide 5: ${fechamento}`;
+  if (formato === "Roteiro de reel") return `Abertura — fala e texto: ${p.tema}\n\nDesenvolvimento — fala: ${p.texto}\n\nCena de apoio: ${p.visual}\n\nEncerramento — fala: Informação educativa; procure avaliação individual quando necessário.\nTexto final: ${ASSINATURA_CHICO}\n\nLegenda: ${p.texto}\n\nSaiba mais pelo link da bio`;
+  if (formato === "Stories") return `Story 1 — Pergunta: ${p.tema}\n\nStory 2 — Informação: ${p.texto}\n\nStory 3 — Encerramento: ${fechamento}`;
+  return `${p.tema}\n\n${p.texto}\n\n${fechamento}`;
+}
+
+export function diretrizEditorialChico(): string {
+  return `LINHA EDITORIAL CHICO — CTBMF: alternar pergunta do paciente, ciência traduzida, prevenção, diagnóstico e percurso do cuidado; variar os eixos ${EIXOS_CHICO.map(e => e.nome).join(", ")}. Criatividade na narrativa e composição, nunca nos fatos. Não inventar evidências, estatísticas, referências, resultados, promessas ou condutas individualizadas. Não orientar automedicação nem manobras em casa. Sem sensacionalismo, antes/depois ou exposição de pacientes. Linguagem acessível e tecnicamente precisa. Usar somente a assinatura textual "${ASSINATURA_CHICO}" em uma posição discreta (legenda, rodapé ou encerramento), sem títulos, especializações ou outras credenciais; não repetir em todos os slides. Nenhum logo automático ou placeholder. Preservar azul petróleo, ciano, branco e preto do Chico; vermelho somente para dor/inflamação. Roteiro de reel é texto, nunca fingir que um vídeo foi gerado.`;
+}
