@@ -350,7 +350,7 @@ export async function overlayLogo(
   imageB64: string,
   origin?: string,
   sizePct = 14,
-  opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean; position?: Pos; smart?: boolean; logoUrl?: string; logoUrls?: string[] },
+  opts?: { withAvatar?: boolean; avatarUrl?: string; withLogo?: boolean; position?: Pos; smart?: boolean; logoUrl?: string; logoUrls?: string[]; prominent?: boolean },
 ): Promise<string> {
   try {
     const base = decodeImage(base64ToBytes(imageB64));
@@ -358,7 +358,7 @@ export async function overlayLogo(
     const h = base.height;
     // Watermark discreto: logo pequena (~7% da largura), sem placa/chip, semi-transparente.
     const WATERMARK_PCT = 7;
-    sizePct = Math.min(sizePct, WATERMARK_PCT);
+    sizePct = Math.min(sizePct, opts?.prominent ? 18 : WATERMARK_PCT);
     const margin = Math.round(w * 0.028);
     const requested = opts?.position ?? "bottom-right";
 
@@ -366,7 +366,7 @@ export async function overlayLogo(
     let pos: Pos = requested;
     let targetBox = Math.max(56, Math.round((w * sizePct) / 100));
     // Opacidade base do watermark (bem discreto).
-    let alpha = 0.42;
+    let alpha = opts?.prominent ? 1 : 0.42;
 
     if (opts?.smart && opts?.withLogo !== false) {
       try {
@@ -388,7 +388,7 @@ export async function overlayLogo(
           pos = best.pos;
           // Watermark: sobe um pouco em fundo escuro (branco fica visível),
           // desce em fundo claro (evita "logo apagando" a arte).
-          alpha = best.mean > 180 ? 0.38 : best.mean < 60 ? 0.5 : 0.42;
+          alpha = opts?.prominent ? 1 : best.mean > 180 ? 0.38 : best.mean < 60 ? 0.5 : 0.42;
         }
       } catch (e) {
         console.warn("[overlayLogo] smart-mode falhou, usando padrão:", e);

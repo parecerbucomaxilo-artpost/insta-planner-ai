@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Adicionar botão CTBMF acima de Hospitalar e ampliar logos manuais da Liga; validar sem geração ou envio.
 - [x] Guardas Instagram e approvePost exigem aprovação/horário; 29 testes passaram. Programação existente ativa a cada cinco minutos; alterações aguardam deploy, não houve envio real.
 - [x] Linha editorial Chico: 36 pautas/12 eixos, quatro formatos por pauta, biblioteca com filtro/cópia/uso de tema; catálogo exclusivo no Estúdio e semana, assinatura exata; 44 testes e desktop/mobile verificados, sem gerar/salvar/publicar posts.
 - [x] Desativar logos automáticos em novos posts/planners: gerador compartilhado sem fallback, seletores nenhuma, Estúdio manual opt-in; 35 testes passaram, editor verificado nos quatro perfis desktop/mobile, assets com hashes intactos; sem geração/envio/deploy.
