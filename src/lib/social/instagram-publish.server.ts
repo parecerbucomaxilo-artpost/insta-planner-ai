@@ -285,14 +285,16 @@ async function publishViaMeta({ igBusinessId, token, caption, imageUrls, isStory
 }
 
 export async function publishInstagramPostById({ supabaseAdmin, postId, userId }: PublishPostInput) {
+  const { assertPublicationAllowed } = await import("@/lib/publication-policy");
   const { data: post, error: postError } = await supabaseAdmin
     .from("posts")
-    .select("id,user_id,tipo_post,formato_midia,legenda,legenda_instagram,postar_instagram,url_imagem,url_imagem_cache,url_imagem_cache_expires_at,imagens_carrossel,imagens_carrossel_cache,imagens_carrossel_cache_expires_at,instagram_conta")
+    .select("id,user_id,status,data_agendamento,tipo_post,formato_midia,legenda,legenda_instagram,postar_instagram,url_imagem,url_imagem_cache,url_imagem_cache_expires_at,imagens_carrossel,imagens_carrossel_cache,imagens_carrossel_cache_expires_at,instagram_conta")
     .eq("id", postId)
     .maybeSingle();
 
   if (postError) throw new Error(`DB: ${postError.message}`);
   if (!post) throw new Error("Post não encontrado.");
+  assertPublicationAllowed(post.status, post.data_agendamento);
   if (post.user_id && post.user_id !== userId && post.user_id !== TEMP_USER_ID) throw new Error("Este post pertence a outro usuário.");
   if (post.postar_instagram === false) throw new Error("Este post não está marcado para Instagram.");
 
