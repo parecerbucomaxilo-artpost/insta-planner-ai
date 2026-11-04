@@ -43,7 +43,7 @@ CONTEXTO: ${b.contexto}
 DEVE APARECER: o sujeito, a estrutura anatômica ou o objeto EXPLICITAMENTE citado no texto acima, em uma cena literal que mostre a ação, condição ou relação descrita. Se o texto descreve mecanismo, mostrar esse mecanismo; se descreve cuidado, mostrar esse cuidado específico; se descreve sinais, mostrar esses sinais sem afirmar diagnóstico. A chamada de fechamento deve continuar ilustrando o assunto, não substituir a cena por publicidade.
 NÃO DEVE APARECER: outra doença, outro procedimento, anatomia ou instrumento sem relação com este texto; paciente sorrindo genérico; radiografia aleatória; decoração como assunto; gradiente sem cena; imagem de demonstração; sangue, exposição invasiva, anatomia deformada, antes/depois ou promessa de resultado. Não escolher aleatoriamente a cena ou usar um roteiro clínico padrão no lugar deste texto.
 IDENTIDADE VISUAL (somente aparência, nunca substitui o assunto): ${b.identidade}
-LOGO: não desenhar nem imitar marcas. Reservar canto superior direito limpo; a logo original é aplicada pelo sistema após a geração. Referências visuais, se presentes, orientam só identidade, nunca o assunto.
+LOGOTIPOS: não desenhar nem imitar marcas, não escrever "LOGO" como substituto e não reservar espaços ou placeholders de marca. Referências visuais, se presentes, orientam só identidade, nunca o assunto.
 TEXTO NA ARTE: português brasileiro correto. ${b.slideIndex === 0 ? `Renderizar somente o título exato: "${b.titulo}".` : b.slideIndex === b.total - 1 ? 'Somente "Link na Bio", sem telefone ou promessa.' : "Sem texto embutido; a mensagem está no texto final do slide."}
 Não inventar credenciais, informações clínicas, dados científicos ou símbolos de marca.`;
 }

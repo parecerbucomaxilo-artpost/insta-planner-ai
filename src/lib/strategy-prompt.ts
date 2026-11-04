@@ -31,7 +31,7 @@ FORMATO:
 - Legenda com estrutura: gancho → contexto → desenvolvimento → reflexão → fechamento → 1 CTA.
 - Reels priorizados para topo de funil (descoberta).
 
-LOGO: SEMPRE aplicar a logo oficial (Prof. Francisco Menezes | CROSP 53318) no canto inferior direito de TODAS as artes — feed, stories, carrossel (1º e último slide), estilo X. Sem exceção.
+LOGOTIPOS: não inserir automaticamente em nenhuma arte. Somente escolha manual explícita permite aplicar o arquivo original pelo editor. Não desenhar marcas, reservar espaços ou escrever "LOGO" como substituto.
 === FIM DA ESTRATÉGIA ===
 `;
 }
