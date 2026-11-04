@@ -1,5 +1,16 @@
 import type { RunSalvo } from "./week-run";
 
+export const PERIODO_EXCLUSAO = { inicio: "2026-11-09T00:00:00-03:00", fim: "2026-11-16T00:00:00-03:00" };
+
+export function noPeriodoExclusao(quando: string) {
+  const t = Date.parse(quando);
+  return t >= Date.parse(PERIODO_EXCLUSAO.inicio) && t < Date.parse(PERIODO_EXCLUSAO.fim);
+}
+
+export function semanaNoPeriodo(run: RunSalvo): RunSalvo {
+  return { ...run, plano: run.plano.filter(item => noPeriodoExclusao(item.quando)) };
+}
+
 export function postsDaSemana(run: RunSalvo): string[] {
   return [...new Set(run.plano.flatMap(item => {
     const id = run.estados[item.key]?.res?.id;

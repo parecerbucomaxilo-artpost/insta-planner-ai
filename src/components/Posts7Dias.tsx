@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { CalendarDays, Loader2, Check, X, Clock, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { postsDaSemana, semanasSalvas } from "@/lib/week-delete";
+import { postsDaSemana, semanasSalvas, semanaNoPeriodo, noPeriodoExclusao } from "@/lib/week-delete";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -335,13 +335,13 @@ export function Posts7Dias(props: {
 
   const apagarSemanas = async () => {
     if (travaRef.current || apagando) return;
-    if (!window.confirm("Apagar todos os planos de 7 dias deste navegador, de todos os planners, e os posts vinculados? Outros posts e publicações nas redes não serão removidos.")) return;
+    if (!window.confirm("Apagar os itens de 09/11 a 15/11/2026 de todos os planners, incluindo agendados, aprovados, pendentes e rascunhos vinculados às listas? Outras datas e publicações nas redes serão preservadas.")) return;
     travaRef.current = true;
     setApagando(true);
     try {
       const runs = semanasSalvas(window.localStorage);
       const atual = plano ? { plano, estados, operacaoId: operacaoRef.current, salvoEm: Date.now() } : null;
-      const ids = [...new Set([...runs.flatMap(r => postsDaSemana(r.run)), ...(atual ? postsDaSemana(atual) : [])])];
+      const ids = [...new Set([...runs.flatMap(r => postsDaSemana(semanaNoPeriodo(r.run))), ...(atual ? postsDaSemana(semanaNoPeriodo(atual)) : [])])];
       let removidos = 0;
       if (ids.length) {
         const { data: existentes, error: leitura } = await supabase.from("posts").select("id").in("id", ids);
@@ -353,13 +353,17 @@ export function Posts7Dias(props: {
         const { data: restantes, error: verificacao } = await supabase.from("posts").select("id").in("id", ids);
         if (verificacao || restantes?.length) throw new Error("Não foi possível confirmar a exclusão. A lista foi preservada.");
       }
-      runs.forEach(r => window.localStorage.removeItem(r.chave));
-      window.localStorage.removeItem(chave);
-      setPlano(null);
-      setEstados({});
+      runs.forEach(r => {
+        const restante = r.run.plano.filter(item => !noPeriodoExclusao(item.quando));
+        if (restante.length) window.localStorage.setItem(r.chave, JSON.stringify({ ...r.run, plano: restante }));
+        else window.localStorage.removeItem(r.chave);
+      });
+      const restanteAtual = plano?.filter(item => !noPeriodoExclusao(item.quando)) ?? [];
+      setPlano(restanteAtual.length ? restanteAtual : null);
+      if (!restanteAtual.length) setEstados({});
       setUltimoGerado(null);
-      operacaoRef.current = novaOperacao();
-      toast.success(`${removidos} posts removidos. Listas de 7 dias apagadas deste navegador.`);
+      if (!restanteAtual.length) operacaoRef.current = novaOperacao();
+      toast.success(`${removidos} posts removidos. Itens de 09/11 a 15/11 apagados das listas deste navegador.`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível apagar os posts da semana.");
     } finally {
@@ -438,7 +442,7 @@ export function Posts7Dias(props: {
         {plano && (
           <Button size="sm" variant="destructive" disabled={busy || apagando} onClick={() => void apagarSemanas()}>
             {apagando ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
-            Apagar todas as semanas
+            Apagar 09/11 a 15/11
           </Button>
         )}
       </div>
