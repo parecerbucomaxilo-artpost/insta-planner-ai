@@ -11,10 +11,10 @@ describe("perfis do Estúdio", () => {
   });
   it("isola logo, paleta, assinatura e telefone", () => {
     expect(PERFIS.liga.logo).toBe("liga-ctbmf");
-    expect(PERFIS.liga.paleta.destaque).toBe("#c92e28");
+    expect(PERFIS.liga.paleta.destaque).toBe("#FF5A00");
     expect(PERFIS.liga.audiencia).toBe("estudantes-graduacao");
     expect(PERFIS.chico.logo).toBe("planner");
-    expect(new Set(PERFIS_IDS.map((id) => PERFIS[id].paleta.destaque)).size).toBe(4);
+    expect(new Set(PERFIS_IDS.map((id) => PERFIS[id].paleta.destaque)).size).toBe(2);
     expect(new Set(PERFIS_IDS.map((id) => PERFIS[id].assinatura)).size).toBe(4);
     expect(PERFIS.liga.telefone).toBe("");
   });

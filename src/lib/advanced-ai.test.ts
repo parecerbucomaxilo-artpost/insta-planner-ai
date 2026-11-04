@@ -10,14 +10,14 @@ describe("advanced-ai", () => {
     expect(MARCAS.chico.audiencia).toBe("chico-drfm");
     expect(MARCAS.chico.logo).toBe("planner");
     expect(MARCAS["cirurgia-biopsias"].telefone).toBe("(19) 99018-0802");
-    expect(MARCAS["cirurgia-biopsias"].paleta.destaque).toBe("#dd8e3c");
+    expect(MARCAS["cirurgia-biopsias"].paleta.destaque).toBe("#FF5A00");
     expect(MARCAS["clinica-escola"].telefone).toBe("");
-    expect(MARCAS["clinica-escola"].paleta.destaque).not.toBe("#dd8e3c");
+    expect(MARCAS["clinica-escola"].paleta.destaque).toBe("#FF5A00");
   });
   it("briefing e imagem levam o perfil escolhido sem misturar", () => {
     const c = BriefingSchema.parse({ marca: "cirurgia-biopsias", tema: "biópsia bucal", rede: "instagram", nivel: "leigo", telefone: "(19) 99018-0802" });
     expect(montarPromptTexto(c, ["media"])).toContain("(19) 99018-0802");
-    expect(montarPromptImagem(c, "feed", "capa")).toContain("#dd8e3c");
+    expect(montarPromptImagem(c, "feed", "capa")).toContain("#FF5A00");
     expect(montarPromptImagem(c, "feed", "capa")).not.toContain("#2dd4ff");
   });
   it("pede só as variantes selecionadas e proíbe referências inventadas", () => {
