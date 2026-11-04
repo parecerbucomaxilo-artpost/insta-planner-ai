@@ -1,5 +1,9 @@
 # CTBMF e logos da Liga
 
+## Exclusão das listas de sete dias
+- Posts7Dias.tsx oferece “Apagar todas as semanas”, com confirmação. Lê somente planos posts7dias, seleciona IDs por slot e exclui pelo cliente autenticado/RLS, verifica a exclusão antes de limpar planos. IDs já ausentes permitem limpar prévias antigas; erros preservam lista para retry. Não remove mídias nem publicações nas redes.
+- Novos week-delete.ts e week-delete.test.ts. 11 testes passaram; botão e limpeza de plano local sem IDs reais verificados no navegador; compilação automática OK. O navegador do solicitante contém a lista do print e exige seu clique; nenhum dos três posts reais foi removido aqui.
+
 - Botão “Gerar tema — CTBMF” acima de Hospitalar, reutilizando a geração existente e sua confirmação de créditos.
 - Logos manualmente selecionados na Liga: tamanho de referência 18% em vez do limite anterior de 7%, opacidade plena em vez de 42%. Múltiplos logos mantêm proporções e limite de largura; demais planners e arquivos originais preservados. Não ativa logos automaticamente.
 - Arquivos: PlannerSimplificado.tsx, post-logo.ts, post-logo.test.ts, logo-overlay.server.ts, ai-post.functions.ts; memória e roadmap.

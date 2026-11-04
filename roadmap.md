@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Exclusão de semanas do navegador: botão apaga planos de todos os planners e apenas IDs vinculados sob RLS; 11 testes e lista local de teste verificados, compilação OK. Lista real do usuário depende de clicar no botão no seu navegador.
 - [x] Botão CTBMF acima de Hospitalar validado em sessão real desktop/mobile; logos manuais Liga maiores/opacos; 12 testes e compilação automática OK, sem geração ou envio.
 - [x] Guardas Instagram e approvePost exigem aprovação/horário; 29 testes passaram. Programação existente ativa a cada cinco minutos; alterações aguardam deploy, não houve envio real.
 - [x] Linha editorial Chico: 36 pautas/12 eixos, quatro formatos por pauta, biblioteca com filtro/cópia/uso de tema; catálogo exclusivo no Estúdio e semana, assinatura exata; 44 testes e desktop/mobile verificados, sem gerar/salvar/publicar posts.
