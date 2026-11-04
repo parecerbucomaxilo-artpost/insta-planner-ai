@@ -72,7 +72,7 @@ export const PERFIS: Record<PerfilId, Perfil> = {
     nome: "Clínica Escola",
     audiencia: "geral",
     temas: "clinica-escola",
-    logo: "nenhuma",
+    logo: "anhanguera",
     publico: "Pacientes da Clínica Escola",
     nivel: "leigo",
     paleta: { fundo1: EDITORIAL_ORANGE.black, fundo2: EDITORIAL_ORANGE.graphite, destaque: EDITORIAL_ORANGE.accent, texto: EDITORIAL_ORANGE.white, confirmada: true },
@@ -85,7 +85,7 @@ export const PERFIS: Record<PerfilId, Perfil> = {
       "Não invente telefone, endereço, horários ou CTA: use apenas os informados no briefing. Se não houver, termine sem telefone.",
       "NÃO use assinatura, CROSP, cidades, link da bio ou WhatsApp do Prof. Francisco Menezes, nem o telefone/serviço do perfil Cirurgia e Biópsias, nem a identidade da Liga.",
     ].join("\n"),
-    visual: `${ORANGE_REFERENCE_STYLE} Ambiente institucional de clínica-escola odontológica, acolhedor. Sem qualquer logo ou substituto e sem reservar espaço para logo.`,
+    visual: `${ORANGE_REFERENCE_STYLE} Ambiente institucional de clínica-escola odontológica, acolhedor. Logos reais aplicados pelo sistema, nunca pela IA.`,
     faltando: ["telefone de contato", "chamada (CTA) padrão"],
   },
   liga: {
