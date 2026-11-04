@@ -59,6 +59,7 @@ export function Posts7Dias(props: {
   gerar: (item: ItemSemana, formato: FormatoSemana, ctx: ContextoSlot) => Promise<ResultadoPost>;
   especialidade?: "CTBMF" | "Odontologia Hospitalar" | "Ambas" | "Temas Diversos";
   temaGuia?: string;
+  perfilEditorial?: "chico";
   /** Temas próprios do planner (ex.: tratamentos). Se ausente, usa o banco de temas do app. */
   temasFixos?: string[];
   formatos?: FormatoSemana[];
@@ -103,6 +104,7 @@ export function Posts7Dias(props: {
         const r = await fetchTopics({
           data: {
             especialidade: props.especialidade ?? "Ambas",
+            perfilEditorial: props.perfilEditorial,
             temaGuia: props.temaGuia ?? "",
             // Folga de 4 temas: permite espalhar assuntos sem cair dois iguais no mesmo dia.
             quantidade: Math.min(60, qtd + (temCronograma ? 4 : 0)),
@@ -116,6 +118,7 @@ export function Posts7Dias(props: {
           const r2 = await fetchTopics({
             data: {
               especialidade: props.especialidade ?? "Ambas",
+              perfilEditorial: props.perfilEditorial,
               temaGuia: "",
               quantidade: 60,
               inicioSemana: proximaSegunda().toISOString(),
@@ -193,6 +196,7 @@ export function Posts7Dias(props: {
           await fetchTopics({
             data: {
               especialidade: props.especialidade ?? "Ambas",
+              perfilEditorial: props.perfilEditorial,
               temaGuia: "",
               quantidade: Math.min(60, n + 8),
               inicioSemana: proximaSegunda().toISOString(),

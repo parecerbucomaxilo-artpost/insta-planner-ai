@@ -86,6 +86,7 @@ const SingleInput = z.object({
 });
 
 const WeekInput = z.object({
+  perfilEditorial: z.enum(["chico"]).optional(),
   especialidade: z
     .enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"])
     .default("Ambas"),
@@ -986,7 +987,7 @@ function chooseLocalTema(
       ? TEMAS_DIVERSOS
       : audiencia === "estudantes-graduacao"
         ? TEMAS_ESTUDANTES
-        : audiencia === "chico-drfm" ? [...TEMAS_CTBMF_CHICO, ...TEMAS_GERAIS] : TEMAS_GERAIS;
+        : audiencia === "chico-drfm" ? TEMAS_CTBMF_CHICO : TEMAS_GERAIS;
   const usadosNorm = new Set(usados.map(normalizeTema));
   const start =
     Math.abs(seedText.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), Date.now())) %
@@ -2616,7 +2617,7 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
           ]
         : data.especialidade === "Temas Diversos"
           ? TEMAS_DIVERSOS
-          : TEMAS_GERAIS;
+          : data.perfilEditorial === "chico" ? TEMAS_CTBMF_CHICO : TEMAS_GERAIS;
 
     // Um tema inédito por slot (todas as redes); stories NÃO herdam o tema do feed.
     const { distribuirTemas } = await import("@/lib/week-themes");
@@ -2649,6 +2650,7 @@ export const getWeekTopics = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
       .object({
+        perfilEditorial: z.enum(["chico"]).optional(),
         especialidade: z
           .enum(["CTBMF", "Odontologia Hospitalar", "Ambas", "Temas Diversos"])
           .default("Ambas"),
@@ -2674,7 +2676,7 @@ export const getWeekTopics = createServerFn({ method: "POST" })
     ];
     const lista = guia
       ? [...angulos, ...ANGULOS_EDITORIAIS].map((a) => `${guia}: ${a}`)
-      : [...(data.especialidade === "Temas Diversos" ? TEMAS_DIVERSOS : TEMAS_GERAIS)];
+      : [...(data.especialidade === "Temas Diversos" ? TEMAS_DIVERSOS : data.perfilEditorial === "chico" && data.especialidade !== "Odontologia Hospitalar" ? TEMAS_CTBMF_CHICO : TEMAS_GERAIS)];
     if (!guia && data.escritorLocal && data.especialidade !== "Temas Diversos") {
       const comGuia = lista.filter((t) => !isGenericGuidance(topicGuidance(t)));
       lista.splice(0, lista.length, ...comGuia);
@@ -2730,7 +2732,7 @@ export const getWeekTopics = createServerFn({ method: "POST" })
           assuntosBloqueados,
         });
     if (temas.length < data.quantidade) {
-      const extra = [...(data.especialidade === "Temas Diversos" ? TEMAS_DIVERSOS : TEMAS_GERAIS)];
+      const extra = [...(data.especialidade === "Temas Diversos" ? TEMAS_DIVERSOS : data.perfilEditorial === "chico" && data.especialidade !== "Odontologia Hospitalar" ? TEMAS_CTBMF_CHICO : TEMAS_GERAIS)];
       temas = [
         ...temas,
         ...planDistinctTopics(
