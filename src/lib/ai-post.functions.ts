@@ -2433,6 +2433,7 @@ export const approvePost = createServerFn({ method: "POST" })
     const { data: owned, error: ownershipError } = await context.supabase.from("posts").select("id,user_id,status,instagram_conta,postar_instagram,postar_linkedin,postar_google,tipo_post,formato_midia,legenda,legenda_instagram,legenda_linkedin,url_imagem,imagens_carrossel").eq("id", data.id).eq("user_id", context.userId).maybeSingle();
     if (ownershipError || !owned) throw new Error("Publicação não autorizada: post ausente ou de outra conta.");
     if (!["Rascunho", "PendenteAprovacao", "Erro"].includes(owned.status)) throw new Error("Este post já foi enviado/agendado ou não pode ser alterado nesta ação.");
+    if ((data.acao === "publicar" || data.acao === "agendar") && owned.status !== "Rascunho") throw new Error("Aprove o post antes de publicar ou agendar.");
     if (data.acao === "publicar" || data.acao === "agendar") {
       if (owned.postar_google) throw new Error("Use o fluxo existente do Google Business; este serviço não publica nesse canal.");
       const images = Array.isArray(owned.imagens_carrossel) ? owned.imagens_carrossel.filter((s): s is string => typeof s === "string") : [];

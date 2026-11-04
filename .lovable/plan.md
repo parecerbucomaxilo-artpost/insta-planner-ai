@@ -1,3 +1,10 @@
+# Publicação após aprovação
+
+- Aprovar continua sendo revisão interna. Publicar agora envia aprovados; Agendado só envia quando chega a data/hora escolhida.
+- Guardas compartilhadas em publication-policy.ts nos publicadores Instagram/LinkedIn; approvePost exige aprovação antes de publicar/agendar. Testes mockados, sem envio real nesta alteração.
+- Programação existente verificada: trabalho publicar-posts-agendados ativo a cada cinco minutos; não foi criada nova rotina. Esse intervalo pode atrasar o envio em até cinco minutos, além do processamento da plataforma.
+- Não publicar o aplicativo nesta alteração; alterações de código precisam de publicação do app para chegar ao site publicado. Nenhuma credencial ou conexão modificada.
+
 # Linha editorial CTBMF — Planner Chico
 
 - Criadas 36 pautas originais em 12 eixos com conteúdo educativo e direção visual; quatro modelos por pauta: carrossel, post único, roteiro de reel (texto, não vídeo) e stories. Biblioteca exclusiva do Chico com filtros, prévia, copiar e usar como tema, sem gerar/salvar posts.
