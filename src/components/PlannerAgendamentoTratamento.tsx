@@ -94,7 +94,7 @@ export function PlannerAgendamentoTratamento() {
     useState<(typeof MODELOS_IMAGEM)[number]["id"]>(DEFAULT_IMAGE_MODEL);
   const [assunto, setAssunto] = useState("");
   const [legendaGerada, setLegendaGerada] = useState("");
-  const [logoKeys, setLogoKeys] = useState<LogoKey[]>(["clinica-escola"]);
+  const [logoKeys, setLogoKeys] = useState<LogoKey[]>(["nenhuma"]);
   const [gerandoLegenda, setGerandoLegenda] = useState(false);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<PreviewState | null>(null);

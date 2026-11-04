@@ -1948,10 +1948,9 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const applyOverlay = async (b64: string) => {
       const logoPosition = isChico ? "top-right" : "bottom-right";
       // Seleção manual do usuário tem prioridade absoluta.
-      const selectedLogoKeys = data.logoKeys?.length
-        ? data.logoKeys
-        : [data.logoKey || (isEstudantes ? "liga-ctbmf" : "planner")];
-      if (selectedLogoKeys.includes("nenhuma")) return b64;
+      const { logosEscolhidos } = await import("@/lib/post-logo");
+      const selectedLogoKeys = logosEscolhidos(data.logoKeys, data.logoKey);
+      if (!selectedLogoKeys.length) return b64;
       const { getLogoOptions } = await import("@/lib/logos-catalog");
       const opts = getLogoOptions(selectedLogoKeys);
       if (opts.length) {
@@ -1965,15 +1964,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
           throw new Error("A logo escolhida não foi aplicada. Publicação bloqueada.");
         return stamped;
       }
-      // Chico/geral: SEMPRE canto inferior direito, sem escolha inteligente.
-      const stamped = await overlayLogo(b64, undefined, 10, {
-        withLogo: true,
-        position: logoPosition,
-        smart: false,
-      });
-      if (stamped === b64)
-        throw new Error("A logo oficial não foi aplicada. Publicação bloqueada.");
-      return stamped;
+      throw new Error("O arquivo da logo escolhida não está disponível.");
     };
 
     // IMPORTANTE: para geração de IMAGEM, NÃO enviamos o brand book/estratégia
@@ -1985,7 +1976,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const brandKeyImg = pickBrandImg(data.audiencia);
     const BRAND_STYLE_IMG = BRAND_IMAGE_STYLE[brandKeyImg];
     const b = BRAND_BOOK_IMG[brandKeyImg];
-    const brandOneLiner = `MARCA (${b.instagram}): paleta ${b.paleta.primary} · ${b.paleta.secondary} · ${b.paleta.bg} · ${b.paleta.text}. Estilo: ${b.estilo} Nunca desenhar/imitar logo — o sistema aplica overlay real.`;
+    const brandOneLiner = `MARCA (${b.instagram}): paleta ${b.paleta.primary} · ${b.paleta.secondary} · ${b.paleta.bg} · ${b.paleta.text}. Estilo: ${b.estilo} Não desenhar/imitar logotipos nem escrever "LOGO" como substituto. Sem placeholders de marca.`;
     const genAndUpload = (prompt: string, slideIndex = 0) => {
       const safe = `${prompt}\n\n${brandOneLiner}`;
       return generateImageWithRetry(safe)

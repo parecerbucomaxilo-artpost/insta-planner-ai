@@ -16,6 +16,7 @@ import {
 import { PROVEDORES_IA, modelosDoProvedor, padraoDoProvedor, provedorDoModelo, type ProvedorIA } from "@/lib/ai-models";
 import { montarPacote, type PacoteCriacao } from "@/lib/advanced-ai";
 import { carregarLogoStudio } from "@/lib/studio-logo";
+import { carregarLogoManual } from "@/lib/post-logo";
 import {
   MARCAS, REDES_IA, VARIANTES, AJUSTES, FORMATOS_IA, LIMITE_REDE,
   type Marca, type RedeIA, type Variante, type Ajuste, type FormatoIA, type Briefing, type Resultado,
@@ -51,8 +52,8 @@ function linhas(ctx: CanvasRenderingContext2D, t: string, max: number) {
   return out;
 }
 
-/** Compõe imagem da IA + headline real (camada editável) + logo oficial do perfil. */
-async function compor(img: Img, formato: FormatoIA, marca: Marca): Promise<string> {
+/** Compõe imagem e headline; logo somente mediante escolha manual. */
+async function compor(img: Img, formato: FormatoIA, marca: Marca, comLogo: boolean): Promise<string> {
   const f = FORMATOS_IA[formato];
   const c = document.createElement("canvas"); c.width = f.w; c.height = f.h;
   const ctx = c.getContext("2d");
@@ -77,7 +78,7 @@ async function compor(img: Img, formato: FormatoIA, marca: Marca): Promise<strin
     ctx.fillStyle = cor.texto; ctx.textBaseline = "top";
     for (const l of ls) { ctx.fillText(l, m, y); y += tam * 1.15; }
   }
-  const logo = await carregarLogoStudio(MARCAS[marca].logo);
+  const logo = await carregarLogoManual(comLogo, () => carregarLogoStudio(MARCAS[marca].logo));
   if (logo) {
     const lh = Math.min(f.w, f.h) * 0.13;
     ctx.drawImage(logo, f.w - m - (logo.width / logo.height) * lh, m, (logo.width / logo.height) * lh, lh);
@@ -118,6 +119,7 @@ export function IAAvancada({ perfil, tema, objetivo }: { perfil: Marca; tema: st
   const [slides, setSlides] = useRascunhoStudio("ia.slides", 5);
   const [imgs, setImgs] = useRascunhoStudio<Record<string, Img>>("ia.imagens", {});
   const [prontas, setProntas] = useState<Record<string, string>>({});
+  const [comLogo, setComLogo] = useRascunhoStudio("ia.logoManual", false);
   const [varianteEnvio, setVarianteEnvio] = useRascunhoStudio<string>("ia.varianteEnvio", "media");
   const [midiaEnvio, setMidiaEnvioRaw] = useState<MidiaEnvio>("nenhuma");
   const midiaEscolhida = useRef(false);
@@ -154,11 +156,11 @@ export function IAAvancada({ perfil, tema, objetivo }: { perfil: Marca; tema: st
     let vivo = true;
     (async () => {
       const out: Record<string, string> = {};
-      for (const i of Object.values(imgs)) out[i.chave] = await compor(i, formato, b.marca);
+      for (const i of Object.values(imgs)) out[i.chave] = await compor(i, formato, b.marca, comLogo);
       if (vivo) setProntas(out);
     })();
     return () => { vivo = false; };
-  }, [imgs, formato, b.marca]);
+  }, [imgs, formato, b.marca, comLogo]);
 
   const confirmar = (titulo: string, acao: () => Promise<void>) => setPendente({ titulo, acao });
 
@@ -232,7 +234,7 @@ export function IAAvancada({ perfil, tema, objetivo }: { perfil: Marca; tema: st
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
             <Label>Perfil ativo: {MARCAS[b.marca].nome}</Label>
-            <p className="text-xs text-muted-foreground">Público: {MARCAS[b.marca].publico}. Paleta, {MARCAS[b.marca].logo !== "nenhuma" && "logo oficial, "}assinatura e chamadas seguem este perfil (troque no seletor de perfil acima).</p>
+            <p className="text-xs text-muted-foreground">Público: {MARCAS[b.marca].publico}. Paleta, assinatura e chamadas seguem este perfil (troque no seletor de perfil acima).</p>
             {b.marca !== "chico" && (
               <div className="space-y-1">
                 <Label htmlFor="ia-tel">Telefone do perfil</Label>
@@ -332,7 +334,7 @@ export function IAAvancada({ perfil, tema, objetivo }: { perfil: Marca; tema: st
                 <p><strong>Texto da arte:</strong> {pacote.textoArte}</p>
                 <p><strong>CTA:</strong> {pacote.cta || "incluída na legenda"}</p>
                 <p><strong>Hashtags:</strong> {pacote.hashtags.join(" ") || "—"}</p>
-                <p className="text-muted-foreground">A legenda está abaixo. A imagem não foi gerada: use “Gerar imagem com OpenAI” (pede confirmação de créditos). O texto da arte e a logo entram como camada por cima da imagem.</p>
+                <p className="text-muted-foreground">A legenda está abaixo. A imagem não foi gerada: use “Gerar imagem com OpenAI” (pede confirmação de créditos). O texto da arte entra como camada por cima da imagem.</p>
                 <Button size="sm" disabled={ocupado} onClick={() => gerarImagem("unico")}>Gerar imagem com {PROVEDORES_IA[provedorDoModelo(modeloImagem)]}</Button>
               </div>
             )}
@@ -398,7 +400,8 @@ export function IAAvancada({ perfil, tema, objetivo }: { perfil: Marca; tema: st
               <Button key={n} size="sm" variant="outline" disabled={ocupado} onClick={() => gerarImagem("slide", n)}>Slide {n}</Button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">A IA gera a imagem sem texto e sem logo. A headline abaixo{MARCAS[b.marca].logo !== "nenhuma" && " e a logo oficial do perfil"} é aplicada pelo app como camada, então o texto sai exatamente como você escreveu.</p>
+          {MARCAS[b.marca].logo !== "nenhuma" && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={comLogo} onChange={e => setComLogo(e.target.checked)} /> Aplicar logo oficial do perfil {MARCAS[b.marca].nome}</label>}
+          <p className="text-xs text-muted-foreground">A IA gera a imagem sem texto e sem logo. A headline abaixo é aplicada pelo app como camada, então o texto sai exatamente como você escreveu.</p>
           <div className="grid gap-4 sm:grid-cols-2">
             {Object.values(imgs).map((i) => (
               <div key={i.chave} className="space-y-2 rounded-md border p-2">

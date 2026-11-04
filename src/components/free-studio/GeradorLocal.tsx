@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type LogoKey } from "@/lib/logos-catalog";
 import { carregarLogoStudio } from "@/lib/studio-logo";
+import { carregarLogoManual } from "@/lib/post-logo";
 import { PERFIS, legendaDoPerfil, type PerfilId } from "@/lib/studio-profiles";
 import {
   OBJETIVOS, modeloLegenda, gerarGanchos, sugerirHashtags,
@@ -101,6 +102,7 @@ function desenhar(w: number, h: number, cor: Ident, titulo: string, sub: string,
 
 export function GeradorLocal({ perfil, tema, objetivo }: { perfil: PerfilId; tema: string; objetivo: string }) {
   const [tipo, setTipo] = useRascunhoStudio<Tipo>("local.tipo", "ig-feed");
+  const [comLogo, setComLogo] = useRascunhoStudio("local.logoManual", false);
 
   const [legenda, setLegenda] = useRascunhoStudio("local.legenda", "");
   const [imagens, setImagens] = useRascunhoStudio<string[]>("local.imagens", []);
@@ -119,7 +121,7 @@ export function GeradorLocal({ perfil, tema, objetivo }: { perfil: PerfilId; tem
     setLegenda(legendaDoPerfil(modeloLegenda(o, t, cfg.rede), perfil) + (tags.length && cfg.rede !== "google" ? `\n\n${tags.join(" ")}` : ""));
     const ganchos = gerarGanchos(t);
     let logo: HTMLImageElement | null;
-    try { logo = await carregarLogoStudio(id.logo); }
+    try { logo = await carregarLogoManual(comLogo, () => carregarLogoStudio(id.logo)); }
     catch { setGerando(false); toast.error("Não foi possível carregar os logos oficiais."); return; }
     const slides = cfg.slides === 1 ? [{ t: ganchos[0], s: "" }] : [
       { t: ganchos[0], s: "Arraste para o lado →" },
@@ -165,7 +167,8 @@ export function GeradorLocal({ perfil, tema, objetivo }: { perfil: PerfilId; tem
             ))}
           </div>
         </div>
-        <p className="text-sm">Perfil: <strong>{PERFIS[perfil].nome}</strong> — cores, {PERFIS[perfil].logo !== "nenhuma" && "logo oficial, "}assinatura e temas deste perfil.</p>
+        <p className="text-sm">Perfil: <strong>{PERFIS[perfil].nome}</strong> — cores, assinatura e temas deste perfil.</p>
+        {PERFIS[perfil].logo !== "nenhuma" && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={comLogo} onChange={e => setComLogo(e.target.checked)} /> Aplicar logo oficial do perfil {PERFIS[perfil].nome}</label>}
         <div className="space-y-1.5">
           <Label htmlFor="gl-foto">Foto de fundo (opcional, fica só no seu navegador)</Label>
           <div className="flex gap-2">
@@ -174,7 +177,7 @@ export function GeradorLocal({ perfil, tema, objetivo }: { perfil: PerfilId; tem
           </div>
         </div>
         <Button className="w-full" disabled={gerando || !tema || !objetivoLocal(objetivo)} onClick={gerar}><Wand2 className="mr-1.5 h-4 w-4" /> Gerar imagens e legendas</Button>
-        <p className="text-xs text-muted-foreground">Gerado por modelos fixos no seu navegador, sem IA e sem créditos. Carrossel do feed = 5 slides. Cores, {PERFIS[perfil].logo !== "nenhuma" && "logo real e "}assinatura seguem o planner escolhido; complete os trechos entre colchetes.</p>
+        <p className="text-xs text-muted-foreground">Gerado por modelos fixos no seu navegador, sem IA e sem créditos. Carrossel do feed = 5 slides. Cores e assinatura seguem o planner escolhido; complete os trechos entre colchetes.</p>
 
         {imagens.length > 0 && (
           <div className="space-y-4">
