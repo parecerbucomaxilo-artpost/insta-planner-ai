@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Preservar Instagram por usuário/conta: armazenamento protegido, status restaurado, refresh suportado, testes sem Meta e sem publicação.
 - [x] Centralizar tema/objetivo do Estúdio por usuário, perfil e material; rascunhos locais e mídia isolados, campos duplicados removidos, 60 testes e interface desktop/mobile simulada sem IA/publicação.
 - [ ] Corrigir autorização dos planners — problema confirmado; requer separar identidade autenticada, automação e posts compartilhados sem ampliar permissões; plano para aprovação.
 - [x] Corrigir descrição visual opcional — texto final real alimenta imagens sem inferência auxiliar nem parser JSON; testes mockados e compilação automática OK, sem geração paga.

@@ -1,4 +1,17 @@
-# Contexto único por material — Estúdio
+# Instagram persistente — Post Planner Pro
+
+## Ajustes desta solicitação
+- Reutilizar token storage de perfil_usuario, com proteção de colunas sensíveis e metadados de validade/fluxo/status.
+- Corrigir busca global e reassociação de proprietário; resolver destinos estritamente por usuário + conta.
+- Remover exclusão automática de token/ID em erro de publicação; somente erro comprovado de autorização marca requer reconexão.
+- Restaurar status do servidor em navegação/recarga/foco; falha de carregamento não equivale a desconexão.
+- OAuth salva conta separada sem substituir outra conta; Instagram Login registra expires_in e permite refresh do token longo válido. Facebook Page token não usa refresh Instagram.
+- Testes mockados, sem Meta/IA/publicação. Compilação e typecheck pelo ambiente, sem execução manual conforme regras do projeto.
+- Causa confirmada: regex ampla apagava token/ID; busca global podia reatribuir user_id; status baseado só em presença de token, UI sem sincronização; expires_in ignorado. SELECT * de perfil era armazenado em localStorage e expunha tokens.
+- Validações e lista final de arquivos serão registradas abaixo. Custo de chamadas externas nesta tarefa: zero.
+
+---
+# Contexto único por material — Estúdio (registro anterior)
 
 ## Comportamento implementado
 - Tema e Objetivo escolhidos e alterados somente no contexto central, com resumo sempre visível.
