@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CalendarDays, Loader2, Check, X, Clock } from "lucide-react";
+import { CalendarDays, Loader2, Check, X, Clock, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { postsDaSemana, semanasSalvas } from "@/lib/week-delete";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,6 +86,7 @@ export function Posts7Dias(props: {
   const [estados, setEstados] = useState<Record<string, Estado>>({});
   const [ultimoGerado, setUltimoGerado] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [apagando, setApagando] = useState(false);
   // Trava síncrona: o estado `busy` só muda no próximo render, então um duplo clique rápido
   // disparava duas gerações completas da semana (causa de posts duplicados/triplicados).
   const travaRef = useRef(false);
@@ -330,6 +333,41 @@ export function Posts7Dias(props: {
   const prog = plano ? progresso(plano, estados) : null;
   const temPendente = plano ? slotsPendentes(plano, estados).length > 0 : false;
 
+  const apagarSemanas = async () => {
+    if (travaRef.current || apagando) return;
+    if (!window.confirm("Apagar todos os planos de 7 dias deste navegador, de todos os planners, e os posts vinculados? Outros posts e publicações nas redes não serão removidos.")) return;
+    travaRef.current = true;
+    setApagando(true);
+    try {
+      const runs = semanasSalvas(window.localStorage);
+      const atual = plano ? { plano, estados, operacaoId: operacaoRef.current, salvoEm: Date.now() } : null;
+      const ids = [...new Set([...runs.flatMap(r => postsDaSemana(r.run)), ...(atual ? postsDaSemana(atual) : [])])];
+      let removidos = 0;
+      if (ids.length) {
+        const { data: existentes, error: leitura } = await supabase.from("posts").select("id").in("id", ids);
+        if (leitura) throw leitura;
+        const { data: apagados, error } = await supabase.from("posts").delete().in("id", ids).select("id");
+        if (error) throw error;
+        removidos = apagados?.length ?? 0;
+        if (removidos !== (existentes?.length ?? 0)) throw new Error("Nem todos os posts vinculados puderam ser apagados. A lista foi preservada para nova tentativa.");
+        const { data: restantes, error: verificacao } = await supabase.from("posts").select("id").in("id", ids);
+        if (verificacao || restantes?.length) throw new Error("Não foi possível confirmar a exclusão. A lista foi preservada.");
+      }
+      runs.forEach(r => window.localStorage.removeItem(r.chave));
+      window.localStorage.removeItem(chave);
+      setPlano(null);
+      setEstados({});
+      setUltimoGerado(null);
+      operacaoRef.current = novaOperacao();
+      toast.success(`${removidos} posts removidos. Listas de 7 dias apagadas deste navegador.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível apagar os posts da semana.");
+    } finally {
+      travaRef.current = false;
+      setApagando(false);
+    }
+  };
+
   return (
     <Card className="p-5 space-y-3">
       <div className="flex items-center gap-2">
@@ -384,17 +422,23 @@ export function Posts7Dias(props: {
             </div>
           </>
         )}
-        <Button size="sm" variant="outline" onClick={planejar} disabled={busy}>
+        <Button size="sm" variant="outline" onClick={planejar} disabled={busy || apagando}>
           Planejar semana
         </Button>
         {plano && !busy && temPendente && (
-          <Button size="sm" onClick={() => void gerarSemana()}>
+          <Button size="sm" disabled={apagando} onClick={() => void gerarSemana()}>
             Continuar geração
           </Button>
         )}
         {busy && (
           <Button size="sm" variant="secondary" onClick={() => (pararRef.current = true)}>
             <Loader2 className="h-4 w-4 animate-spin mr-1" /> Pausar
+          </Button>
+        )}
+        {plano && (
+          <Button size="sm" variant="destructive" disabled={busy || apagando} onClick={() => void apagarSemanas()}>
+            {apagando ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
+            Apagar todas as semanas
           </Button>
         )}
       </div>
