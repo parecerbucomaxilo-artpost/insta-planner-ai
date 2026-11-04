@@ -1,7 +1,7 @@
 # Publicação após aprovação
 
 - Aprovar continua sendo revisão interna. Publicar agora envia aprovados; Agendado só envia quando chega a data/hora escolhida.
-- Guardas compartilhadas em publication-policy.ts nos publicadores Instagram/LinkedIn; approvePost exige aprovação antes de publicar/agendar. Testes mockados, sem envio real nesta alteração.
+- Guardas em publication-policy.ts no publicador Instagram; approvePost exige aprovação antes de publicar/agendar. LinkedIn preservado para não interromper envios multicanal existentes. 29 testes passaram, sem envio real nesta alteração.
 - Programação existente verificada: trabalho publicar-posts-agendados ativo a cada cinco minutos; não foi criada nova rotina. Esse intervalo pode atrasar o envio em até cinco minutos, além do processamento da plataforma.
 - Não publicar o aplicativo nesta alteração; alterações de código precisam de publicação do app para chegar ao site publicado. Nenhuma credencial ou conexão modificada.
 

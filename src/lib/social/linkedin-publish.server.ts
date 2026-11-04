@@ -84,15 +84,13 @@ async function uploadImageAsset(ownerUrn: string, bytes: Uint8Array, contentType
 }
 
 export async function publishLinkedInPostById({ supabaseAdmin, postId }: PublishInput) {
-  const { assertPublicationAllowed } = await import("@/lib/publication-policy");
   const { data: post, error } = await supabaseAdmin
     .from("posts")
-    .select("id,legenda,legenda_linkedin,url_imagem,imagens_carrossel,postar_linkedin,status,data_agendamento")
+    .select("id,legenda,legenda_linkedin,url_imagem,imagens_carrossel,postar_linkedin,status")
     .eq("id", postId)
     .maybeSingle();
   if (error) throw new Error(`DB: ${error.message}`);
   if (!post) throw new Error("Post não encontrado.");
-  assertPublicationAllowed(post.status, post.data_agendamento);
   if (!post.postar_linkedin) throw new Error("Post não está marcado para LinkedIn.");
 
   const text: string = (post.legenda_linkedin || post.legenda || "").trim();
