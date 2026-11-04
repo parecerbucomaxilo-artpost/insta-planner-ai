@@ -6,6 +6,16 @@
 
 export type BrandKey = "drfranciscomenezes" | "lactbmf";
 
+/** Cores das referências odontológicas enviadas; não recolore logos reais. */
+export const EDITORIAL_ORANGE = {
+  accent: "#FF5A00",
+  black: "#000000",
+  graphite: "#545454",
+  white: "#FFFFFF",
+} as const;
+
+export const ORANGE_REFERENCE_STYLE = `Paleta institucional das referências: laranja vivo ${EDITORIAL_ORANGE.accent}, preto ${EDITORIAL_ORANGE.black}, grafite ${EDITORIAL_ORANGE.graphite} e branco ${EDITORIAL_ORANGE.white}. Alternar composição clara (branco com títulos pretos e destaques laranja) e escura (preto/grafite com títulos brancos e destaques laranja). Hierarquia forte, títulos sans-serif bold condensados aplicados pelo sistema, linhas finas e faixas geométricas discretas laranja nas bordas, margens seguras e boa leitura no celular. Fotografia odontológica realista quando pertinente, iluminação clínica natural, sem tingir pele, dentes, jalecos ou anatomia de laranja. Não copiar marcas, logos, pessoas, telefone, datas, horários, ofertas ou textos das referências. Sem azul/ciano decorativo nem vermelho como cor de identidade; preservar cores naturais clinicamente necessárias.`;
+
 export interface BrandSpec {
   instagram: string;
   posicionamento: string;
@@ -76,7 +86,7 @@ export const BRAND_BOOK: Record<BrandKey, BrandSpec> = {
     publico: "Acadêmicos, professores, residentes, cirurgiões-dentistas.",
     paleta: {
       primary: "#000000", // preto
-      secondary: "#C92E28", // vermelho anatômico profundo (destaque)
+      secondary: EDITORIAL_ORANGE.accent,
       support: "#545454", // cinza grafite (apoio)
       bg: "#000000",
       text: "#FFFFFF",
@@ -84,7 +94,7 @@ export const BRAND_BOOK: Record<BrandKey, BrandSpec> = {
     },
     logo: { file: "logo-liga-ctbmf.png", position: "bottom_right" },
     tipografia: { title: "Sans-serif bold condensada", body: "Sans-serif regular" },
-    estilo: "Institucional · universitário · científico · sóbrio.",
+    estilo: `Institucional · universitário · científico · sóbrio. ${ORANGE_REFERENCE_STYLE}`,
     imagens: [
       "Laboratórios",
       "Estudantes em atividade acadêmica",
@@ -117,9 +127,9 @@ export const BRAND_IMAGE_STYLE: Record<BrandKey, { headline: string; identidade:
       "azul petróleo, ciano, branco e preto. Vermelho apenas para dor. Sans-serif bold, padrão hospitalar premium.",
   },
   lactbmf: {
-    headline: "BRANCO #FFFFFF com palavra-chave em VERMELHO #C92E28 sobre fundo preto #000000 ou grafite #545454",
+    headline: `BRANCO ${EDITORIAL_ORANGE.white} em fundo preto/grafite ou PRETO em fundo branco, com palavra-chave em LARANJA ${EDITORIAL_ORANGE.accent}`,
     identidade:
-      "preto #000000 e branco #FFFFFF para contraste, cinza grafite #545454 de apoio, vermelho anatômico #C92E28 como destaque. Sem azul/ciano (salvo sinalização científica indispensável). Sans-serif bold, padrão acadêmico científico.",
+      ORANGE_REFERENCE_STYLE,
   },
 };
 

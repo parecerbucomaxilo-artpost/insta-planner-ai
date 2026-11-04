@@ -182,14 +182,14 @@ export function PlannerAgendamentoTratamento() {
       const tipo = formato === "Story" ? "stories" : "feed";
       const assuntoTxt = assunto.trim();
       const capaBrief = `CAPA (1º slide) — IDENTIDADE FIXA OBRIGATÓRIA da Liga LACTBMF:
-• Fundo sólido GRAFITE #2D2C32 (sem gradiente, sem textura).
-• Faixa/bloco de destaque ÂMBAR #DD8E3C na diagonal ou lateral esquerda.
-• HEADLINE gigante: nome do tratamento "${tratObj.label.toUpperCase()}" em caixa-alta, sans-serif bold pesado, cor off-white #FBFBFB, ocupando o terço superior.
-• Subtítulo curto em âmbar #DD8E3C: "AGENDA ABERTA — CLÍNICA ESCOLA".
-• Telefone impresso no card em bloco âmbar com número off-white: "📞 ${telefone.trim()}".
+• Fundo PRETO #000000 ou BRANCO #FFFFFF, com grafite #545454 de apoio, conforme as referências institucionais.
+• Faixa/bloco de destaque LARANJA VIVO #FF5A00 na diagonal ou lateral, sem invadir texto.
+• HEADLINE gigante: nome do tratamento "${tratObj.label.toUpperCase()}" em caixa-alta, sans-serif bold pesado, branco sobre preto ou preto sobre branco, ocupando o terço superior.
+• Subtítulo curto em laranja #FF5A00: "AGENDA ABERTA — CLÍNICA ESCOLA".
+• Telefone impresso no card em bloco preto com número branco e destaque laranja: "📞 ${telefone.trim()}".
 • PROIBIDO desenhar QUALQUER rodapé, texto institucional, nome de faculdade, "Clínica Escola", "Anhanguera", selo ou logotipo. NÃO reservar canto, faixa, bloco vazio, moldura ou placeholder para logo; a arte deve ocupar a composição normalmente. O sistema aplica por cima apenas a logo real escolhida no dashboard, sem fundo.
-• PERMITIDO usar cores contextuais coerentes com o tema (ex.: tons de pele naturais em rostos, verde clínico em ambiente hospitalar, vermelho suave para alerta de dor) MISTURANDO à paleta institucional grafite/âmbar/off-white — desde que grafite e âmbar continuem dominantes. NÃO usar fundo branco liso, nem ciano, roxo ou rosa.
-TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em português-BR claro, linguagem simples para leigo (evite termos técnicos; se usar, explique em 1 linha). Cada slide traz 1 frase-chave curta em destaque + 2 a 4 bullets objetivos. Ícones simples e pictogramas quando ajudarem o entendimento. Paleta grafite/âmbar/off-white dominante com toques de cor contextual permitidos, tipografia bold, alto contraste. Não crie espaço reservado para logo em nenhum slide; o overlay real será aplicado pelo sistema.`;
+• Preservar cores naturais da fotografia clínica, sem tingir pessoas, dentes ou anatomia de laranja. Identidade laranja/preto/branco, sem ciano, roxo ou rosa decorativos. Não copiar marcas, textos, datas, horários ou ofertas das referências.
+TODOS OS SLIDES (obrigatório): TEXTO GRANDE E LEGÍVEL IMPRESSO NA IMAGEM em português-BR claro, linguagem simples para leigo (evite termos técnicos; se usar, explique em 1 linha). Cada slide traz 1 frase-chave curta em destaque + 2 a 4 bullets objetivos. Ícones simples e pictogramas quando ajudarem o entendimento. Paleta laranja/preto/grafite/branco, tipografia bold, alto contraste e margens seguras. Não crie espaço reservado para logo em nenhum slide; o overlay real será aplicado pelo sistema.`;
       const assuntoBlock = assuntoTxt
         ? `\n\nASSUNTO/ÂNGULO ESPECÍFICO desta postagem (priorize sobre o padrão): ${assuntoTxt}`
         : "";

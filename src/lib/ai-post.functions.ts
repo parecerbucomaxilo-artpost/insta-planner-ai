@@ -1,4 +1,5 @@
 import { plainLanguageRule } from "@/lib/plain-language";
+import { ORANGE_REFERENCE_STYLE } from "./brand-book";
 import { visualReferences } from "./visual-references";
 import { checkLinkedInConnection } from "@/lib/social/linkedin-status";
 import { createServerFn } from "@tanstack/react-start";
@@ -737,7 +738,7 @@ function imageSystemPrompt(
 // === PLANNER SIMPLIFICADO — AUDIÊNCIA: ESTUDANTES DE GRADUAÇÃO EM ODONTOLOGIA ===
 // Tom didático e simples sobre cirurgia bucal básica; inclui enquetes, curiosidades,
 // dicas de técnica e mitos x verdades. Sem CTA comercial. Cores das logos da
-// Liga (grafite + âmbar), SEM fundo branco. A logo escolhida no dashboard é
+// Liga (laranja + preto/grafite + branco). A logo escolhida no dashboard é
 // aplicada como overlay real pelo pipeline — a IA NÃO desenha logos e NÃO
 // cria espaço reservado/placeholder para elas.
 function studentCaptionSystem() {
@@ -786,7 +787,7 @@ function diverseImagePrompt(
     : "";
   const brandPalette =
     brand === "student"
-      ? `PALETA: fundo preto #000000 ou grafite #545454 dominante, texto branco #FFFFFF, destaque vermelho anatômico #C92E28. Sem azul/ciano nem outras cores fortes.`
+      ? ORANGE_REFERENCE_STYLE
       : `PALETA: fundo azul marinho #0c2340 dominante (leve gradiente para ciano #2dd4ff nos cantos), texto branco puro, destaques em ciano #2dd4ff. Sem outras cores fortes.`;
   const logoReserva =
     brand === "student"
@@ -835,7 +836,7 @@ function studentImagePrompt(
 - TEMA LITERAL "${tema}": represente a cena clínica exata — exodontia → fórceps + dente no alvéolo; anestesia → seringa carpule + ponto de punção anatômico; sutura → porta-agulhas + ponto em mucosa; frenectomia → freio labial/lingual + bisturi; biópsia → bisturi + tecido; alveoloplastia → lima/cinzel de osso; fratura mandibular → linha de fratura + fixação com placa de titânio.
 - QUALIDADE TÉCNICA: fotografia real em alta resolução, equivalente a Canon EOS R5 + macro 100mm f/2.8 ISO 100, texturas reais, sem aparência de render 3D/CGI.
 - ANATOMIA CORRETA: estruturas bucomaxilofaciais (mandíbula, maxila, ATM, dentes, nervos, músculos, seios) com proporção, posição, lado (direito/esquerdo) e relação topográfica cientificamente exatas, conforme Terminologia Anatômica oficial (TA2/SBA) e atlas (Netter, Sobotta, Madeira). Instrumental cirúrgico apenas em uso clinicamente correto para o tema (ex.: fórceps nº 18L só em molar inferior esquerdo). Proibido: dentes em posição errada, número de raízes incorreto, nervo cruzando estrutura errada, instrumento aplicado fora da indicação.
-- PALETA RIGOROSA (identidade da logo da Liga): fundo dominante #000000 preto OU #545454 cinza grafite. Tipografia e contraste em #FFFFFF branco. Destaque/CTA/ponto de interesse (linha de fratura, seta, contorno) em VERMELHO ANATÔMICO PROFUNDO #C92E28. Grafite #545454 para elementos de apoio. PROIBIDO azul, ciano, navy, verde, roxo, rosa, laranja, âmbar — exceto cor de sinalização científica indispensável ao conteúdo.
+- IDENTIDADE VISUAL: ${ORANGE_REFERENCE_STYLE}
  - TEXTO NA IMAGEM — REGRA ABSOLUTA: NÃO renderize NENHUMA letra, palavra, número, sigla, símbolo tipográfico, legenda, rótulo, watermark, headline, badge ou cartaz com escrita dentro da imagem. ZERO texto. Nem em primeiro plano, nem em fundo, nem em jalecos, crachás, placas, livros, telas, monitores, radiografias, embalagens, etiquetas, instrumentos, paredes. A composição deve ser PURAMENTE VISUAL (cena clínica/anatômica). Todo e qualquer texto (headline, enquete, dica) será aplicado depois pelo sistema como overlay tipográfico — você NÃO precisa e NÃO deve tentar escrever nada. Se a cena naturalmente teria texto (ex.: tela de tomografia), substitua por formas abstratas, gráficos sem letras ou borrão suave. Qualquer letra renderizada será considerada erro grave.
 - LOGO: NÃO desenhe, redesenhe, parafraseie ou invente logos, marcas, escudos, brasões, monogramas ou siglas. NÃO reserve faixa inferior, canto limpo, bloco vazio, moldura, quadrado ou placeholder. A arte deve ocupar a composição normalmente; a logo REAL da LACTBMF será sobreposta pelo sistema, sem fundo.
 - Iluminação editorial premium, hierarquia limpa, espaço negativo generoso na cor de fundo, sem ruído visual.

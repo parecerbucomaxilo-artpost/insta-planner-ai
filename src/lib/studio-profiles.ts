@@ -1,5 +1,6 @@
 import type { LogoKey } from "@/lib/logos-catalog";
 import type { PlannerTemas } from "@/lib/free-studio";
+import { EDITORIAL_ORANGE, ORANGE_REFERENCE_STYLE } from "./brand-book";
 
 /**
  * Perfis do Estúdio (Gratuito e IA Avançada). Cada perfil carrega SOMENTE os dados
@@ -52,7 +53,7 @@ export const PERFIS: Record<PerfilId, Perfil> = {
     logo: "clinica-escola",
     publico: "Pacientes leigos de Santa Bárbara d'Oeste e cidades vizinhas",
     nivel: "leigo",
-    paleta: { fundo1: "#2d2c32", fundo2: "#2d2c32", destaque: "#dd8e3c", texto: "#fbfbfb", confirmada: true },
+    paleta: { fundo1: EDITORIAL_ORANGE.black, fundo2: EDITORIAL_ORANGE.graphite, destaque: EDITORIAL_ORANGE.accent, texto: EDITORIAL_ORANGE.white, confirmada: true },
     assinatura: "Clínica Escola – Cirurgia Bucal e Biópsias · Faculdade Anhanguera de Santa Bárbara",
     telefone: "(19) 99018-0802",
     ctaPadrao: "Agende sua avaliação pelo telefone (19) 99018-0802",
@@ -63,7 +64,7 @@ export const PERFIS: Record<PerfilId, Perfil> = {
       "TOM: acolhedor, tranquilo, confiável, linguagem simples. Evitar palavras que assustem.",
       "NÃO use assinatura, CROSP, cidades, link da bio, WhatsApp ou CTA do perfil do Prof. Francisco Menezes, nem paleta/linguagem da Liga.",
     ].join("\n"),
-    visual: "Paleta exclusiva: grafite #2d2c32, âmbar #dd8e3c e off-white #fbfbfb. Atmosfera acolhedora de clínica-escola, sem sangue nem instrumentos agressivos. Não usar azul petróleo/ciano nem vermelho da Liga.",
+    visual: `${ORANGE_REFERENCE_STYLE} Atmosfera acolhedora de clínica-escola, sem sangue nem instrumentos agressivos.`,
     faltando: [],
   },
   "clinica-escola": {
@@ -74,8 +75,7 @@ export const PERFIS: Record<PerfilId, Perfil> = {
     logo: "nenhuma",
     publico: "Pacientes da Clínica Escola",
     nivel: "leigo",
-    // Paleta própria não está configurada no projeto: neutro preto/branco, sem copiar outro perfil.
-    paleta: { fundo1: "#1a1a1a", fundo2: "#3a3a3a", destaque: "#ffffff", texto: "#ffffff", confirmada: false },
+    paleta: { fundo1: EDITORIAL_ORANGE.black, fundo2: EDITORIAL_ORANGE.graphite, destaque: EDITORIAL_ORANGE.accent, texto: EDITORIAL_ORANGE.white, confirmada: true },
     assinatura: "Clínica Escola",
     telefone: "",
     ctaPadrao: "",
@@ -85,8 +85,8 @@ export const PERFIS: Record<PerfilId, Perfil> = {
       "Não invente telefone, endereço, horários ou CTA: use apenas os informados no briefing. Se não houver, termine sem telefone.",
       "NÃO use assinatura, CROSP, cidades, link da bio ou WhatsApp do Prof. Francisco Menezes, nem o telefone/serviço do perfil Cirurgia e Biópsias, nem a identidade da Liga.",
     ].join("\n"),
-    visual: "Paleta neutra preto, grafite e branco (paleta própria ainda não configurada). Ambiente institucional de clínica-escola odontológica, acolhedor. Não usar azul petróleo/ciano, âmbar nem vermelho de outros perfis.",
-    faltando: ["paleta de cores própria", "telefone de contato", "chamada (CTA) padrão"],
+    visual: `${ORANGE_REFERENCE_STYLE} Ambiente institucional de clínica-escola odontológica, acolhedor. Sem qualquer logo ou substituto e sem reservar espaço para logo.`,
+    faltando: ["telefone de contato", "chamada (CTA) padrão"],
   },
   liga: {
     id: "liga",
@@ -96,12 +96,12 @@ export const PERFIS: Record<PerfilId, Perfil> = {
     logo: "liga-ctbmf",
     publico: "Estudantes e profissionais de Odontologia (@lactbmf.anhanguerasbo)",
     nivel: "tecnico",
-    paleta: { fundo1: "#000000", fundo2: "#545454", destaque: "#c92e28", texto: "#ffffff", confirmada: true },
+    paleta: { fundo1: EDITORIAL_ORANGE.black, fundo2: EDITORIAL_ORANGE.graphite, destaque: EDITORIAL_ORANGE.accent, texto: EDITORIAL_ORANGE.white, confirmada: true },
     assinatura: "Liga Acadêmica de CTBMF",
     telefone: "",
     ctaPadrao: "",
     regras: "LIGA",
-    visual: "LIGA",
+    visual: ORANGE_REFERENCE_STYLE,
     faltando: [],
   },
 };
