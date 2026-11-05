@@ -27,6 +27,7 @@ import { extractFinalSlides, generateBoundImage, validateImageBindings } from ".
 import {
   TextModelInput as ModeloLocalInput,
   ImageModelInput as ModeloImagemLocalInput,
+  GEMINI_FREE_TEXT_MODEL,
 } from "./ai-models";
 export { MODELOS_IA, MODELOS_IMAGEM } from "./ai-models";
 
@@ -2566,8 +2567,8 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
     const captionModel = data.modelo;
     const isChico = data.audiencia === "chico-drfm";
     const isEstudantes = data.audiencia === "estudantes-graduacao";
-    if (!process.env.LOVABLE_API_KEY) {
-      throw new Error("IA não configurada. Nenhum texto simulado foi gerado.");
+    if (captionModel !== GEMINI_FREE_TEXT_MODEL && !process.env.LOVABLE_API_KEY) {
+      throw new Error("IA via Lovable não configurada. Selecione Gemini gratuito ou configure a chave do Lovable; nenhum texto simulado foi gerado.");
     }
     const { generateTextAI } = await import("@/lib/ai-gateway.server");
     const { brandBookPrompt } = await import("@/lib/brand-book");
