@@ -307,7 +307,13 @@ Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
         </p>
       </div>
 
-      <AiGenerationPanel onCreated={onCreated} />
+      {modoGeracao === "ia" ? (
+        <AiGenerationPanel onCreated={onCreated} />
+      ) : (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 text-sm text-emerald-900">
+          <strong>Modo Gratuito ativo.</strong> A geração automática de imagem e post por IA está desativada para evitar consumo de créditos. Use o formulário abaixo: monte a legenda-base, envie sua imagem e salve ou agende.
+        </div>
+      )}
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
