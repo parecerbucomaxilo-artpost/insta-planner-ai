@@ -16,6 +16,8 @@ export const MODELOS_IMAGEM = [
   { id: "openai/gpt-image-2.5-sunburst", label: "GPT Image 2.5 Sunburst" },
 ] as const;
 export const DEFAULT_TEXT_MODEL = "openai/gpt-6-luna";
+// Modelo de texto da faixa gratuita do Google AI Studio (não gera imagens).
+export const GEMINI_FREE_TEXT_MODEL = "gemini-free/gemini-3.1-flash-lite";
 export const DEFAULT_IMAGE_MODEL = "google/gemini-3.1-flash-lite-image";
 export const CLAUDE_REFERENCE_MODEL = "anthropic/claude-sonnet-5";
 
@@ -56,6 +58,7 @@ export function nomeOficialOpenAI(id: string): string {
 }
 
 export function validateModel(value: string, kind: "text" | "image"): string {
+  if (kind === "text" && value === GEMINI_FREE_TEXT_MODEL) return value;
   if (value.startsWith(PREFIXO_OPENAI_DIRETO)) {
     const lista = kind === "text" ? MODELOS_IA_OPENAI_DIRETO : MODELOS_IMAGEM_OPENAI_DIRETO;
     if (lista.some((m) => m.id === value)) return value;
