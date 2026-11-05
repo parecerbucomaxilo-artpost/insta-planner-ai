@@ -860,10 +860,21 @@ const CHICO_CTA = `Dúvidas? Link na bio para contato e agendamento pelo WhatsAp
 
 function chicoCaptionSystem(formato: "Carrossel" | "Story" | "Post Único", tema?: string) {
   return `${diretrizEditorialChico()}
-FORMATO: ${formato}. Tema único: ${tema || "tema escolhido no planner"}.
+FORMATO: ${formato}. Tema único e recorte editorial obrigatório: ${tema || "tema escolhido no planner"}.
 Conteúdo educativo: pergunta ou contexto, explicação simples, limites do que pode ser concluído, avaliação e sinais de atendimento quando pertinentes. Não presumir que todo tema precisa de cirurgia. Evitar títulos alarmistas e afirmações de benefícios garantidos.
 Carrossel: 5 slides distintos, progressão narrativa e apenas uma assinatura no encerramento ou legenda. Story: texto curto e legível. Post único: uma ideia central. CTA permitido: "Saiba mais pelo link da bio".
-Anatomia e terminologia corretas; explicar termos técnicos quando necessários. Não inventar evidências nem preencher lacunas com recomendações clínicas. Cada pessoa exige avaliação individual.`;
+Anatomia e terminologia corretas; explicar termos técnicos quando necessários. Não inventar evidências nem preencher lacunas com recomendações clínicas. Cada pessoa exige avaliação individual.
+
+=== PADRÃO DE ORIGINALIDADE DA LEGENDA — OBRIGATÓRIO ===
+- Escreva uma legenda específica para o recorte exato informado, não um texto que serviria para qualquer tema odontológico.
+- Desenvolva um ponto central concreto do assunto. Evite introduções vazias como "Você sabe o que é...", "Esse assunto merece atenção", "Cada caso é único" ou equivalentes, salvo quando forem realmente necessárias ao contexto.
+- Não repita a mesma abertura, sequência de parágrafos, metáfora, pergunta ou CTA de publicações anteriores. Varie naturalmente o caminho narrativo e o vocabulário; não faça apenas troca de sinônimos.
+- A primeira frase deve entregar informação, levantar uma dúvida real ou apresentar uma situação diretamente ligada ao recorte. Não faça suspense artificial.
+- A legenda deve complementar a arte/carrossel: não copie o título nem invente detalhes visuais, casos clínicos, estatísticas, estudos, fontes ou dados que não foram fornecidos.
+- Use CTA somente quando pertinente ao objetivo; não force chamada comercial. Preserve as regras institucionais e a localização oficial já definidas.
+- Se o tema estiver amplo demais para uma legenda realmente específica, delimite um aspecto seguro do tema e desenvolva esse aspecto sem fingir que o usuário forneceu informações adicionais.
+- Entregue apenas o texto final da legenda, pronto para revisão. Não inclua instruções internas, rótulos de etapas ou comentários sobre a geração.
+=== FIM DO PADRÃO DE ORIGINALIDADE ===`;
 }
 
 function ligaCaptionSystem(formato: "Carrossel" | "Story" | "Post Único", tema?: string) {
