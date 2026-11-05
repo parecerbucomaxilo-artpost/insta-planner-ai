@@ -42,6 +42,7 @@ import { POST_REVIEW_CHANGED } from "@/lib/post-review";
 import { ApproveAllReview } from "@/components/ApproveAllReview";
 import { LinkedInConnectionNotice } from "@/components/LinkedInConnectionNotice";
 import { EstudioGratuito } from "@/components/free-studio/EstudioGratuito";
+import { EditorialChoice } from "@/components/EditorialChoice";
 
 export const Route = createFileRoute("/_authenticated/")({
  head: () => ({
@@ -304,6 +305,7 @@ function Dashboard() {
    );
  })()}
 
+ <EditorialChoice />
  <TabsContent value="criar" className="mt-6">
  <PostComposer onCreated={() => { load(); setTab("todos"); }} />
  </TabsContent>

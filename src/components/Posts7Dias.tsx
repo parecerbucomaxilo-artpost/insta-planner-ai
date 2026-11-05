@@ -71,6 +71,9 @@ export function Posts7Dias(props: {
   postsPorDiaInicial?: number;
   /** Identifica o planner para retomar a semana após recarregar a página. */
   idRetomada?: string;
+  planoInicial?: ItemSemana[];
+  titulo?: string;
+  antesGerar?: () => void;
 }) {
   const fetchTopics = useServerFn(getWeekTopics);
   const discardPostFn = useServerFn(discardPost);
@@ -333,6 +336,16 @@ export function Posts7Dias(props: {
   const prog = plano ? progresso(plano, estados) : null;
   const temPendente = plano ? slotsPendentes(plano, estados).length > 0 : false;
 
+  const prepararPeriodo = () => {
+    if (busy || apagando || !props.planoInicial) return;
+    if (plano?.length && !window.confirm("Substituir somente a lista atual? Posts já salvos serão preservados.")) return;
+    setPlano(props.planoInicial);
+    setEstados({});
+    setUltimoGerado(null);
+    operacaoRef.current = novaOperacao();
+    props.antesGerar?.();
+  };
+
   const apagarSemanas = async () => {
     if (travaRef.current || apagando) return;
     if (!window.confirm("Apagar os itens de 09/11 a 15/11/2026 de todos os planners, incluindo agendados, aprovados, pendentes e rascunhos vinculados às listas? Outras datas e publicações nas redes serão preservadas.")) return;
@@ -376,7 +389,7 @@ export function Posts7Dias(props: {
     <Card className="p-5 space-y-3">
       <div className="flex items-center gap-2">
         <CalendarDays className="h-5 w-5 text-primary" />
-        <h3 className="font-bold text-sm">Posts 7 dias — semana completa (segunda a domingo)</h3>
+        <h3 className="font-bold text-sm">{props.titulo ?? "Posts 7 dias — semana completa (segunda a domingo)"}</h3>
       </div>
       <div className="flex flex-wrap items-end gap-3">
         {/* Planners de conteúdo seguem o cronograma global: sem escolha de quantidade/formato aqui. */}
@@ -426,12 +439,12 @@ export function Posts7Dias(props: {
             </div>
           </>
         )}
-        <Button size="sm" variant="outline" onClick={planejar} disabled={busy || apagando}>
-          Planejar semana
+        <Button size="sm" variant="outline" onClick={props.planoInicial ? prepararPeriodo : planejar} disabled={busy || apagando}>
+          {props.planoInicial ? "Preparar 04/11 a 07/11" : "Planejar semana"}
         </Button>
         {plano && !busy && temPendente && (
           <Button size="sm" disabled={apagando} onClick={() => void gerarSemana()}>
-            Continuar geração
+            {props.planoInicial ? "Gerar posts do período" : "Continuar geração"}
           </Button>
         )}
         {busy && (

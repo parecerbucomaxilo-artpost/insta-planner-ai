@@ -1,6 +1,9 @@
 import { useGuardaIA } from "@/components/GenerationMode";
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { Posts7Dias } from "@/components/Posts7Dias";
+import { useTipoEditorial } from "@/components/EditorialChoice";
+import { objetivoEditorial } from "@/lib/editorial-choice";
+import { planoLigaAteDia7 } from "@/lib/liga-three-days";
 import { ChicoEditorial } from "@/components/ChicoEditorial";
 import { salvarPostInedito } from "@/lib/post-guard";
 import { PostReviewActions } from "@/components/PostReviewActions";
@@ -84,6 +87,7 @@ export function PlannerSimplificado({
   audiencia = "estudantes-graduacao",
   permiteTipoLiga = false,
 }: PlannerSimplificadoProps = {}) {
+  const tipoEditorial = useTipoEditorial();
   const genSingle = useGuardaIA("Gerar publicação", useServerFn(generateSinglePost));
   const genWeek = useGuardaIA("Gerar temas da semana", useServerFn(generateWeekThemes));
   const genCaption = useGuardaIA("Gerar legenda", useServerFn(generateCaptionOnly));
@@ -423,6 +427,7 @@ export function PlannerSimplificado({
       const out = await genSingle({
         data: {
           tema: temaReq,
+          objetivo: objetivoEditorial(tipoEditorial),
           status: GENERATED_POST_STATUS,
           especialidade: especialidadeReq,
           rede: "instagram",
@@ -1040,7 +1045,10 @@ export function PlannerSimplificado({
             </div>
 
             <Posts7Dias
-              idRetomada="chico"
+              idRetomada={effectiveAudiencia === "estudantes-graduacao" ? "liga" : "chico"}
+              planoInicial={effectiveAudiencia === "estudantes-graduacao" ? planoLigaAteDia7() : undefined}
+              titulo={effectiveAudiencia === "estudantes-graduacao" ? "Liga — 04/11 a 07/11 · 13 posts" : undefined}
+              antesGerar={() => setLogoKeys(["liga-ctbmf", "anhanguera"])}
             perfilEditorial={effectiveAudiencia === "chico-drfm" ? "chico" : undefined}
               especialidade={especialidade}
               temaGuia={tema}
@@ -1050,7 +1058,7 @@ export function PlannerSimplificado({
                   data: {
                     operacaoId: ctx.operacaoId,
                     slotKey: ctx.slotKey,
-                    objetivo: ctx.objetivo,
+                    objetivo: objetivoEditorial(tipoEditorial, ctx.objetivo),
                     assuntoGuiado: ctx.assuntoGuiado,
                     salvarTextoSeImagemFalhar: ctx.salvarTextoSeImagemFalhar,
                     tema: item.tema,
