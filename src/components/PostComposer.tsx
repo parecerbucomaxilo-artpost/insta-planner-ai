@@ -250,22 +250,36 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
     setGerandoLegenda(true);
     const tid = "post-composer-caption";
     if (modoGeracao === "gratuito") {
-      toast.loading("Montando uma legenda-base editável, sem IA...", { id: tid });
-      const legendaBase = `Você sabe o que é ${tema} e por que esse assunto merece atenção?
-
-Cada caso precisa ser compreendido de forma individual. Os sinais, o histórico e uma avaliação profissional ajudam a identificar o que pode estar acontecendo e quais cuidados fazem sentido.
-
-A conduta depende da causa e das características de cada pessoa. Evite conclusões ou tratamentos por conta própria: informação de qualidade é o primeiro passo para uma decisão segura.
-
-Este conteúdo é informativo e não substitui uma avaliação profissional.
-
-Saiba mais pelo link da bio.
-Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
-
-#bucomaxilofacial #CTBMF #saudebucal #odontologia`;
-      setLegenda(legendaBase);
-      toast.success("Legenda-base criada. Revise e personalize antes de publicar.", { id: tid });
-      setGerandoLegenda(false);
+      toast.loading("Gemini criando uma legenda original para este tema...", { id: tid });
+      try {
+        const rede =
+          formato === "Estilo X"
+            ? "estilo-x"
+            : networks.includes("linkedin") && !networks.includes("instagram")
+              ? "linkedin"
+              : networks.includes("google") && !networks.includes("instagram")
+                ? "google"
+                : "instagram";
+        const out = await genCaptionFree({
+          data: {
+            tema,
+            rede,
+            formato: formato === "Carrossel" || formato === "Estilo X" ? "Carrossel" : "Post Único",
+            especialidade: "CTBMF",
+            audiencia: "chico-drfm",
+            modelo: GEMINI_FREE_TEXT_MODEL,
+          },
+        });
+        if (!out?.legenda?.trim() || out.legenda.trim().length < 80) {
+          throw new Error("O Gemini retornou uma legenda vazia ou curta demais. Tente novamente com um recorte mais específico.");
+        }
+        setLegenda(out.legenda.trim());
+        toast.success("Legenda original gerada pelo Gemini. Revise e edite antes de aprovar.", { id: tid });
+      } catch (e: any) {
+        toast.error(e?.message || "Falha na geração gratuita do Gemini. Nenhum texto genérico foi inserido.", { id: tid });
+      } finally {
+        setGerandoLegenda(false);
+      }
       return;
     }
     toast.loading("IA escrevendo a legenda...", { id: tid });
@@ -538,7 +552,7 @@ Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="space-y-2 rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
-            <Label>{modoGeracao === "gratuito" ? "Tema para montar uma legenda-base" : "Tema para a IA escrever a legenda"}</Label>
+            <Label>{modoGeracao === "gratuito" ? "Tema e recorte específico da publicação" : "Tema para a IA escrever a legenda"}</Label>
             <div className="flex gap-2 flex-wrap">
               <Input
                 value={temaLegenda}
@@ -557,7 +571,7 @@ Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
                 ) : (
                   <Sparkles className="w-4 h-4 mr-1" />
                 )}
-                {modoGeracao === "gratuito" ? "Gerar legenda-base" : "Gerar com IA"}
+                {modoGeracao === "gratuito" ? "Gerar legenda com Gemini" : "Gerar com IA"}
               </Button>
               {modoGeracao === "gratuito" && (
                 <Button
