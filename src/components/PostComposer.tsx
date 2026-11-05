@@ -1,5 +1,5 @@
 import { useGuardaIA, useModoGeracao } from "@/components/GenerationMode";
-import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
+import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL, GEMINI_FREE_TEXT_MODEL } from "@/lib/ai-models";
 import { useLinkedInStatus } from "@/hooks/use-linkedin-status";
 import { Posts7Dias } from "@/components/Posts7Dias";
 import { useTipoEditorial } from "@/components/EditorialChoice";
@@ -96,6 +96,8 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const linkedIn = useLinkedInStatus();
   const publishIg = useServerFn(publishInstagramNow);
   const genCaption = useGuardaIA("Gerar legenda", useServerFn(generateCaptionOnly));
+  // Chamada direta ao provedor Gemini gratuito: não passa pela confirmação de créditos Lovable.
+  const genCaptionFree = useServerFn(generateCaptionOnly);
   const [modoGeracao] = useModoGeracao();
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
   const [formato, setFormato] = useState<Formato>("Post Único");
@@ -294,6 +296,40 @@ Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
       setGerandoLegenda(false);
     }
   }, [formato, genCaption, modoGeracao, networks, temaLegenda]);
+
+  const handleGenerateCaptionFree = useCallback(async () => {
+    const tema = temaLegenda.trim();
+    if (!tema) return toast.error("Informe o tema para gerar a legenda.");
+    setGerandoLegenda(true);
+    const tid = "post-composer-gemini-free";
+    toast.loading("Gemini criando a legenda pela cota gratuita do Google...", { id: tid });
+    try {
+      const rede =
+        formato === "Estilo X"
+          ? "estilo-x"
+          : networks.includes("linkedin") && !networks.includes("instagram")
+            ? "linkedin"
+            : networks.includes("google") && !networks.includes("instagram")
+              ? "google"
+              : "instagram";
+      const out = await genCaptionFree({
+        data: {
+          tema,
+          rede,
+          formato: formato === "Carrossel" || formato === "Estilo X" ? "Carrossel" : "Post Único",
+          especialidade: "CTBMF",
+          audiencia: "chico-drfm",
+          modelo: GEMINI_FREE_TEXT_MODEL,
+        },
+      });
+      setLegenda(out.legenda);
+      toast.success("Legenda gerada pelo Gemini. Revise antes de publicar.", { id: tid });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha na geração gratuita do Gemini.", { id: tid });
+    } finally {
+      setGerandoLegenda(false);
+    }
+  }, [formato, genCaptionFree, networks, temaLegenda]);
 
   return (
     <Card className="p-6 space-y-6 max-w-4xl mx-auto border-zinc-200 shadow-sm">
@@ -503,7 +539,7 @@ Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
         <div className="space-y-4">
           <div className="space-y-2 rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
             <Label>{modoGeracao === "gratuito" ? "Tema para montar uma legenda-base" : "Tema para a IA escrever a legenda"}</Label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Input
                 value={temaLegenda}
                 onChange={(e) => setTemaLegenda(e.target.value)}
@@ -523,10 +559,22 @@ Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
                 )}
                 {modoGeracao === "gratuito" ? "Gerar post gratuito" : "Gerar com IA"}
               </Button>
+              {modoGeracao === "gratuito" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleGenerateCaptionFree}
+                  disabled={gerandoLegenda || !temaLegenda.trim()}
+                  className="border-indigo-300 text-indigo-700 whitespace-nowrap"
+                >
+                  {gerandoLegenda ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />}
+                  Gemini gratuito
+                </Button>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               {modoGeracao === "gratuito"
-                ? "Sem consumir créditos: cria um texto-base editável. Envie sua própria imagem e revise o conteúdo antes de publicar."
+                ? "Verde: texto-base local. Gemini: usa a cota gratuita do Google (sujeita a limites). A faixa gratuita pode usar o conteúdo para melhorar os produtos; não envie dados identificáveis de pacientes. A imagem deve ser enviada por você."
                 : "A geração por IA pode consumir créditos do workspace."}
             </p>
           </div>
