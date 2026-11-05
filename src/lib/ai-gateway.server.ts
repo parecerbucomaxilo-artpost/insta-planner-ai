@@ -29,7 +29,7 @@ async function gatewayErrorMessage(res: Response, operation: "texto" | "imagem")
   return `Lovable AI ${operation} HTTP ${res.status}: ${detail}`;
 }
 
-import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL, modelRoute, validateModel, PREFIXO_OPENAI_DIRETO } from "./ai-models";
+import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL, GEMINI_FREE_TEXT_MODEL, modelRoute, validateModel, PREFIXO_OPENAI_DIRETO } from "./ai-models";
 export { MODELOS_IA, MODELOS_IMAGEM } from "./ai-models";
 
 // ---------------- Texto: GPT-5 mini via Lovable Gateway ----------------
@@ -42,6 +42,14 @@ export async function generateTextAI(opts: {
   maxTokens?: number;
 }): Promise<string> {
   const model = validateModel(opts.model || DEFAULT_TEXT_MODEL, "text");
+  if (model === GEMINI_FREE_TEXT_MODEL) {
+    const { generateGeminiFreeText } = await import("./gemini-free.server");
+    return generateGeminiFreeText({
+      system: opts.system,
+      prompt: opts.prompt,
+      maxTokens: opts.maxTokens,
+    });
+  }
   if (model.startsWith(PREFIXO_OPENAI_DIRETO)) {
     const { openaiDiretoTexto } = await import("./openai-direct.server");
     return openaiDiretoTexto({ model, system: opts.system, prompt: opts.prompt });
