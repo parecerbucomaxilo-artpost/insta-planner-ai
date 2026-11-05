@@ -47,10 +47,10 @@ import { EditorialChoice } from "@/components/EditorialChoice";
 export const Route = createFileRoute("/_authenticated/")({
  head: () => ({
  meta: [
- { title: "Planner Chico — Agendamento de Posts" },
- { name: "description", content: "Planner Chico: crie, agende e publique posts para Odontologia (CTBMF e Hospitalar), Cirurgia Bucal, Biópsias e Clínica Escola." },
- { property: "og:title", content: "Planner Chico — Agendamento de Posts" },
- { property: "og:description", content: "Planner Chico: crie, agende e publique posts para Odontologia (CTBMF e Hospitalar), Cirurgia Bucal, Biópsias e Clínica Escola." },
+ { title: "Planner Total — Planejamento de Conteúdo" },
+ { name: "description", content: "Planner Total: crie, organize e agende suas publicações." },
+ { property: "og:title", content: "Planner Total — Planejamento de Conteúdo" },
+ { property: "og:description", content: "Planner Total: crie, organize e agende suas publicações." },
  { property: "og:type", content: "website" },
  { name: "twitter:card", content: "summary" },
  ],
@@ -159,7 +159,7 @@ function Dashboard() {
  <div className="flex min-w-0 items-center gap-3">
  <div className="h-10 w-10 shrink-0 invisible" aria-hidden="true" />
  <div className="min-w-0">
- <h1 className="truncate text-base sm:text-lg font-bold leading-tight">Planner Chico</h1>
+ <h1 className="truncate text-base sm:text-lg font-bold leading-tight">Planner Total</h1>
  <p className="hidden sm:block text-xs text-muted-foreground truncate">
  Planner de conteúdo para Odontologia: Cirurgia Bucal, Biópsias e Clínica Escola
  </p>
