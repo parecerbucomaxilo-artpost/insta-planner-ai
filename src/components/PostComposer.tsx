@@ -511,18 +511,17 @@ Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
               />
               <Button
                 type="button"
-                variant="secondary"
+                variant={modoGeracao === "gratuito" ? "default" : "secondary"}
                 onClick={handleGenerateCaption}
                 disabled={gerandoLegenda || !temaLegenda.trim()}
+                className={modoGeracao === "gratuito" ? "bg-emerald-600 hover:bg-emerald-700 text-white whitespace-nowrap" : ""}
               >
                 {gerandoLegenda ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
                 ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-1" />
-                    {modoGeracao === "gratuito" ? "Modelo grátis" : "IA"}
-                  </>
+                  <Sparkles className="w-4 h-4 mr-1" />
                 )}
+                {modoGeracao === "gratuito" ? "Gerar post gratuito" : "Gerar com IA"}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
