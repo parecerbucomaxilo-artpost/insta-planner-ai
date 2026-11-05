@@ -12,9 +12,9 @@ import { AnthropicKeySettings } from "@/components/AnthropicKeySettings";
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
-      { title: "Configurações — Planner Chico" },
-      { property: "og:title", content: "Configurações — Planner Chico" },
-      { property: "og:description", content: "Conexões sociais, perfil e automações do Planner Chico." },
+      { title: "Configurações — Planner Total" },
+      { property: "og:title", content: "Configurações — Planner Total" },
+      { property: "og:description", content: "Conexões sociais, perfil e automações do Planner Total." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "description", content: "Conecte LinkedIn e Instagram, gerencie perfil e chaves de automação." },
