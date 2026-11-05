@@ -13,10 +13,10 @@ function normalizeRedirect(value: unknown) {
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [
-    { title: "Entrar — Planner Chico" },
-    { name: "description", content: "Acesse o Planner Chico para planejar conteúdo profissional." },
-    { property: "og:title", content: "Entrar — Planner Chico" },
-    { property: "og:description", content: "Acesso ao planejamento de conteúdo do Planner Chico." },
+    { title: "Entrar — Planner Total" },
+    { name: "description", content: "Acesse o Planner Total para planejar conteúdo profissional." },
+    { property: "og:title", content: "Entrar — Planner Total" },
+    { property: "og:description", content: "Acesso ao planejamento de conteúdo do Planner Total." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
@@ -50,10 +50,10 @@ function AuthPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3">
           <div className="mx-auto h-16 w-16 rounded-2xl bg-white ring-1 ring-primary/20 overflow-hidden flex items-center justify-center">
-            <img src={logoAsset.url} alt="Planner Chico" className="h-full w-full object-contain" />
+            <img src={logoAsset.url} alt="Planner Total" className="h-full w-full object-contain" />
           </div>
           <div>
-            <CardTitle>Entrar no Planner Chico</CardTitle>
+            <CardTitle>Entrar no Planner Total</CardTitle>
             <CardDescription>Faça login para conectar o Instagram oficial com segurança.</CardDescription>
           </div>
         </CardHeader>
