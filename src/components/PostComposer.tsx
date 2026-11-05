@@ -496,7 +496,7 @@ Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="space-y-2 rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
-            <Label>Tema para a IA escrever a legenda</Label>
+            <Label>{modoGeracao === "gratuito" ? "Tema para montar uma legenda-base" : "Tema para a IA escrever a legenda"}</Label>
             <div className="flex gap-2">
               <Input
                 value={temaLegenda}
@@ -514,11 +514,16 @@ Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-1" />
-                    IA
+                    {modoGeracao === "gratuito" ? "Modelo grátis" : "IA"}
                   </>
                 )}
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              {modoGeracao === "gratuito"
+                ? "Sem consumir créditos: cria um texto-base editável. Envie sua própria imagem e revise o conteúdo antes de publicar."
+                : "A geração por IA pode consumir créditos do workspace."}
+            </p>
           </div>
           <div className="space-y-2">
             <Label>Legenda</Label>
