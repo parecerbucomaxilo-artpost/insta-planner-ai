@@ -1,4 +1,4 @@
-import { useGuardaIA } from "@/components/GenerationMode";
+import { useGuardaIA, useModoGeracao } from "@/components/GenerationMode";
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { useLinkedInStatus } from "@/hooks/use-linkedin-status";
 import { Posts7Dias } from "@/components/Posts7Dias";
@@ -96,6 +96,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
   const linkedIn = useLinkedInStatus();
   const publishIg = useServerFn(publishInstagramNow);
   const genCaption = useGuardaIA("Gerar legenda", useServerFn(generateCaptionOnly));
+  const [modoGeracao] = useModoGeracao();
   const [networks, setNetworks] = useState<Network[]>(["instagram"]);
   const [formato, setFormato] = useState<Formato>("Post Único");
   const [quando, setQuando] = useState<Quando>("agora");
@@ -243,9 +244,28 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 
   const handleGenerateCaption = useCallback(async () => {
     const tema = temaLegenda.trim();
-    if (!tema) return toast.error("Informe o tema para a IA escrever a legenda.");
+    if (!tema) return toast.error("Informe o tema para montar a legenda.");
     setGerandoLegenda(true);
     const tid = "post-composer-caption";
+    if (modoGeracao === "gratuito") {
+      toast.loading("Montando uma legenda-base editável, sem IA...", { id: tid });
+      const legendaBase = `Você sabe o que é ${tema} e por que esse assunto merece atenção?
+
+Cada caso precisa ser compreendido de forma individual. Os sinais, o histórico e uma avaliação profissional ajudam a identificar o que pode estar acontecendo e quais cuidados fazem sentido.
+
+A conduta depende da causa e das características de cada pessoa. Evite conclusões ou tratamentos por conta própria: informação de qualidade é o primeiro passo para uma decisão segura.
+
+Este conteúdo é informativo e não substitui uma avaliação profissional.
+
+Saiba mais pelo link da bio.
+Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
+
+#bucomaxilofacial #CTBMF #saudebucal #odontologia`;
+      setLegenda(legendaBase);
+      toast.success("Legenda-base criada. Revise e personalize antes de publicar.", { id: tid });
+      setGerandoLegenda(false);
+      return;
+    }
     toast.loading("IA escrevendo a legenda...", { id: tid });
     try {
       const rede =
@@ -267,16 +287,13 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
         },
       });
       setLegenda(out.legenda);
-      toast.success(
-        out.via === "ia" ? "Legenda criada pela IA." : "Legenda criada pelo gerador local.",
-        { id: tid },
-      );
+      toast.success("Legenda criada pela IA.", { id: tid });
     } catch (e: any) {
       toast.error(e?.message || "Falha ao criar legenda.", { id: tid });
     } finally {
       setGerandoLegenda(false);
     }
-  }, [formato, genCaption, networks, temaLegenda]);
+  }, [formato, genCaption, modoGeracao, networks, temaLegenda]);
 
   return (
     <Card className="p-6 space-y-6 max-w-4xl mx-auto border-zinc-200 shadow-sm">
