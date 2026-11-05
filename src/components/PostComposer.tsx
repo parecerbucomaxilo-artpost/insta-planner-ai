@@ -557,7 +557,7 @@ Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
                 ) : (
                   <Sparkles className="w-4 h-4 mr-1" />
                 )}
-                {modoGeracao === "gratuito" ? "Gerar post gratuito" : "Gerar com IA"}
+                {modoGeracao === "gratuito" ? "Gerar legenda-base" : "Gerar com IA"}
               </Button>
               {modoGeracao === "gratuito" && (
                 <Button
@@ -568,7 +568,7 @@ Atendimento em São Paulo, Santa Bárbara d'Oeste e Americana.
                   className="border-indigo-300 text-indigo-700 whitespace-nowrap"
                 >
                   {gerandoLegenda ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />}
-                  Gemini gratuito
+                  Gerar com Gemini
                 </Button>
               )}
             </div>
