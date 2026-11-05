@@ -5,7 +5,7 @@ export const CHAVE_MODO = "estudio-modo";
 export const JANELA_CONFIRMACAO_MS = 10 * 60 * 1000;
 
 type Ouvinte = (m: ModoGeracao) => void;
-let modoAtual: ModoGeracao = "ia";
+let modoAtual: ModoGeracao = "gratuito";
 const ouvintes = new Set<Ouvinte>();
 
 export function lerModo(): ModoGeracao {
@@ -14,6 +14,7 @@ export function lerModo(): ModoGeracao {
 export function carregarModoSalvo(storage: Pick<Storage, "getItem"> | undefined) {
   const v = storage?.getItem(CHAVE_MODO);
   if (v === "gratuito" || v === "ia") definirModo(v, undefined);
+  else definirModo("gratuito", storage as Pick<Storage, "setItem"> | undefined);
 }
 export function definirModo(m: ModoGeracao, storage: Pick<Storage, "setItem"> | undefined) {
   modoAtual = m;
