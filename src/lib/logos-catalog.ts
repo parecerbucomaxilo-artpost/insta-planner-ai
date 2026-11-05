@@ -40,7 +40,7 @@ export const LOGOS_DISPONIVEIS: LogoOption[] = [
   {
     key: "planner",
     label: "Prof. Francisco Menezes",
-    description: "Logo oficial Planner Chico — símbolo Σ branco e quadrado ciano.",
+    description: "Logo oficial Planner Total — símbolo Σ branco e quadrado ciano.",
     url: logoDrFranciscoAsset.url,
   },
   {
