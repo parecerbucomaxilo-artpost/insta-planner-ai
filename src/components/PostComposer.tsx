@@ -2,6 +2,8 @@ import { useGuardaIA } from "@/components/GenerationMode";
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL } from "@/lib/ai-models";
 import { useLinkedInStatus } from "@/hooks/use-linkedin-status";
 import { Posts7Dias } from "@/components/Posts7Dias";
+import { useTipoEditorial } from "@/components/EditorialChoice";
+import { objetivoEditorial } from "@/lib/editorial-choice";
 import { salvarPostInedito } from "@/lib/post-guard";
 import { PostReviewActions } from "@/components/PostReviewActions";
 import { startGenerationProgress } from "@/lib/generation-progress";
@@ -569,6 +571,7 @@ export function PostComposer({ onCreated }: { onCreated: () => void }) {
 }
 
 function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
+  const tipoEditorial = useTipoEditorial();
   const linkedIn = useLinkedInStatus();
   const [tema, setTema] = useState("");
   const [especialidade, setEspecialidade] = useState<
@@ -635,6 +638,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
       const out = await genSingle({
         data: {
           tema: temaTrim,
+          objetivo: objetivoEditorial(tipoEditorial),
           especialidade,
           rede: "instagram",
           tipo: config.tipo,
@@ -859,7 +863,7 @@ function AiGenerationPanel({ onCreated }: { onCreated: () => void }) {
               ambasRedes: item.rede ? false : ambasRedes,
               operacaoId: ctx.operacaoId,
               slotKey: ctx.slotKey,
-              objetivo: ctx.objetivo,
+              objetivo: objetivoEditorial(tipoEditorial, ctx.objetivo),
               assuntoGuiado: ctx.assuntoGuiado,
               salvarTextoSeImagemFalhar: ctx.salvarTextoSeImagemFalhar,
             },

@@ -1777,6 +1777,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     if (!process.env.LOVABLE_API_KEY)
       throw new Error("IA não configurada. Nenhum texto simulado foi gerado.");
     const objetivoLinha = data.objetivo ? `\nObjetivo editorial deste post: ${data.objetivo}` : "";
+    const ligaMediaRule = isEstudantes ? "\nImagens: fotografia clínica ou imagem de IA plausível, anatomia e instrumentos reais e coerentes. Nunca inventar caso clínico, paciente real, estatística, radiografia ou patologia. Não apresentar IA como documentação real. Sem telefone ou WhatsApp nas artes e legendas." : "";
     const escreverLegenda = async (novaAbordagem = ""): Promise<string> => {
       // TEMAS DIVERSOS: prompt totalmente fora da saúde.
       if (isDiverso) {
@@ -1801,7 +1802,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
       const { brandBookPrompt } = await import("@/lib/brand-book");
       const { hooksLibraryPrompt } = await import("@/lib/hooks-library");
       const { strategyPrompt } = await import("@/lib/strategy-prompt");
-      const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}${isChico ? `\n\n${diretrizEditorialChico()}` : ""}`;
+      const system = `${CONSTITUICAO_AGENTE}\n\n${MOTOR_GERACAO}\n\n${strategyPrompt()}\n\n${brandBookPrompt(data.audiencia)}\n\n${hooksLibraryPrompt()}\n\n${systemBase}${ligaMediaRule}${isChico ? `\n\n${diretrizEditorialChico()}` : ""}`;
       const contrato = clinicalContract(tema, data.audiencia);
       const roteiroCarrossel =
         formato === "Carrossel"
@@ -1903,7 +1904,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
     const brandKeyImg = pickBrandImg(data.audiencia);
     const BRAND_STYLE_IMG = BRAND_IMAGE_STYLE[brandKeyImg];
     const b = BRAND_BOOK_IMG[brandKeyImg];
-    const brandOneLiner = `MARCA (${b.instagram}): paleta ${b.paleta.primary} · ${b.paleta.secondary} · ${b.paleta.bg} · ${b.paleta.text}. Estilo: ${b.estilo} Não desenhar/imitar logotipos nem escrever "LOGO" como substituto. Sem placeholders de marca.`;
+    const brandOneLiner = `MARCA (${b.instagram}): paleta ${b.paleta.primary} · ${b.paleta.secondary} · ${b.paleta.bg} · ${b.paleta.text}. Estilo: ${b.estilo} Não desenhar/imitar logotipos nem escrever "LOGO" como substituto. Sem placeholders de marca.${ligaMediaRule}`;
     const genAndUpload = (prompt: string, slideIndex = 0) => {
       const safe = `${prompt}\n\n${brandOneLiner}${isChico ? '\nREGRA FINAL DE ASSINATURA: se houver identificação textual nesta arte, usar somente "Francisco Menezes — CROSP 53318", sem título, subtítulo profissional ou credenciais extras. Preferir assinatura na legenda; não repetir em cada slide.' : ""}`;
       return generateImageWithRetry(safe)
