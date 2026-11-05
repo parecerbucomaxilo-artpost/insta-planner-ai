@@ -185,36 +185,36 @@ function Dashboard() {
  <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-7">
  <h2 id="planner-anuncios-titulo" className="sr-only">Anúncios dos planners</h2>
  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
- <article className="planner-card">
+ <article className="planner-card rounded-xl border border-blue-200/70 bg-blue-50/70 p-4 shadow-sm dark:border-blue-900/60 dark:bg-blue-950/20">
  <div className="flex items-center gap-2 mb-1.5">
- <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
+ <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" aria-hidden="true" />
  <h3 className="text-sm font-bold">Planners simplificados</h3>
  </div>
  <p className="text-xs text-muted-foreground leading-relaxed">
  Um clique para gerar o post: tema pronto, texto e imagem em minutos.
  </p>
  </article>
- <article className="planner-card">
+ <article className="planner-card rounded-xl border border-emerald-200/70 bg-emerald-50/70 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/20">
  <div className="flex items-center gap-2 mb-1.5">
- <Stethoscope className="h-4 w-4 text-primary" aria-hidden="true" />
+ <Stethoscope className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
  <h3 className="text-sm font-bold">Cirurgia e biópsias</h3>
  </div>
  <p className="text-xs text-muted-foreground leading-relaxed">
  Convites com linguagem acessível e foco em converter paciente em agendamento.
  </p>
  </article>
- <article className="planner-card">
+ <article className="planner-card rounded-xl border border-violet-200/70 bg-violet-50/70 p-4 shadow-sm dark:border-violet-900/60 dark:bg-violet-950/20">
  <div className="flex items-center gap-2 mb-1.5">
- <CalendarCheck className="h-4 w-4 text-primary" aria-hidden="true" />
+ <CalendarCheck className="h-4 w-4 text-violet-600 dark:text-violet-400" aria-hidden="true" />
  <h3 className="text-sm font-bold">Clínica Escola</h3>
  </div>
  <p className="text-xs text-muted-foreground leading-relaxed">
  Grade semanal de reserva, com status e estatísticas de cada atendimento.
  </p>
  </article>
- <article className="planner-card">
+ <article className="planner-card rounded-xl border border-amber-200/70 bg-amber-50/70 p-4 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/20">
  <div className="flex items-center gap-2 mb-1.5">
- <PencilRuler className="h-4 w-4 text-primary" aria-hidden="true" />
+ <PencilRuler className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
  <h3 className="text-sm font-bold">Criação sem custo</h3>
  </div>
  <p className="text-xs text-muted-foreground leading-relaxed">
@@ -290,7 +290,7 @@ function Dashboard() {
                <Button
                  key={i.v}
                  variant={tab === i.v ? "secondary" : "ghost"}
-                 className="justify-start gap-2"
+                 className={`justify-start gap-2 ${tab === i.v ? "bg-primary/10 font-semibold text-primary hover:bg-primary/15" : ""}`}
                  tabIndex={menuAberto ? 0 : -1}
                  aria-current={tab === i.v ? "page" : undefined}
                  onClick={() => { setTab(i.v); i.onSel?.(); setMenuAberto(false); }}
