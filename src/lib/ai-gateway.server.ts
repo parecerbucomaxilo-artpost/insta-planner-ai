@@ -4,6 +4,31 @@ import { withRealism } from "@/lib/image-realism";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
 
+/** Converte recusas do Gateway em mensagens acionáveis sem fingir que consultamos o saldo.
+ * O Gateway não oferece neste fluxo uma consulta prévia de créditos; o status real
+ * só é conhecido quando a chamada de geração é respondida.
+ */
+async function gatewayErrorMessage(res: Response, operation: "texto" | "imagem"): Promise<string> {
+  const body = await res.text().catch(() => "");
+  let detail = body.slice(0, 240);
+  try {
+    const parsed = JSON.parse(body);
+    detail = String(parsed?.error?.message || parsed?.message || parsed?.error || detail).slice(0, 240);
+  } catch {
+    // Mantém o trecho textual retornado pelo Gateway.
+  }
+  if (res.status === 402) {
+    return `Lovable AI recusou a geração de ${operation} (HTTP 402): possível saldo/créditos insuficientes ou cobrança não habilitada no workspace. Confira o uso e o faturamento do Lovable AI. Nenhum conteúdo substituto foi criado.`;
+  }
+  if (res.status === 429) {
+    return `Lovable AI limitou a geração de ${operation} (HTTP 429): limite de uso ou de requisições atingido. Aguarde e confira os limites do workspace. Nenhum conteúdo substituto foi criado.`;
+  }
+  if (res.status === 401 || res.status === 403) {
+    return `Lovable AI não autorizou a geração de ${operation} (HTTP ${res.status}): confira a chave e as permissões do workspace. Nenhum conteúdo substituto foi criado.`;
+  }
+  return `Lovable AI ${operation} HTTP ${res.status}: ${detail}`;
+}
+
 import { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL, modelRoute, validateModel, PREFIXO_OPENAI_DIRETO } from "./ai-models";
 export { MODELOS_IA, MODELOS_IMAGEM } from "./ai-models";
 
@@ -51,8 +76,7 @@ export async function generateTextAI(opts: {
   });
 
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Lovable AI texto ${res.status}: ${body.slice(0, 240)}`);
+    throw new Error(await gatewayErrorMessage(res, "texto"));
   }
   const json: any = await res.json();
   if (
@@ -129,8 +153,7 @@ async function generateImageGateway(opts: {
       }),
     });
     if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new Error(`Lovable AI imagem ${res.status}: ${body.slice(0, 240)}`);
+      throw new Error(await gatewayErrorMessage(res, "imagem"));
     }
     const json: any = await res.json();
     return extractImageB64(json);
@@ -166,8 +189,7 @@ async function generateImageGateway(opts: {
     }),
   });
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Lovable AI imagem ${res.status}: ${body.slice(0, 240)}`);
+    throw new Error(await gatewayErrorMessage(res, "imagem"));
   }
   const json: any = await res.json();
   return extractImageB64(json);
