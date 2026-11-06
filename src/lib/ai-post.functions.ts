@@ -1583,7 +1583,7 @@ export const generateSinglePost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SingleInput.parse(d))
   .handler(async ({ data, context: authContext }) => {
-    const context = { userId: authContext.userId };
+    const context = authContext;
     if (data.status === "Agendado" && data.rede === "linkedin") {
       const connection = await checkLinkedInConnection(process.env['LOVABLE_API_KEY'], process.env['LINKEDIN_API_KEY']);
       if (!connection.connected) throw new Error(connection.message);
@@ -2469,6 +2469,7 @@ export const approvePost = createServerFn({ method: "POST" })
         .from("posts")
         .select("user_id,postar_instagram,postar_linkedin")
         .eq("id", data.id)
+        .eq("user_id", context.userId)
         .maybeSingle();
       if (post?.postar_linkedin) {
         const connection = await checkLinkedInConnection(process.env['LOVABLE_API_KEY'], process.env['LINKEDIN_API_KEY']);
@@ -2517,15 +2518,17 @@ export const approvePost = createServerFn({ method: "POST" })
       if (!results.linkedin && !results.instagram) {
         await supabaseAdmin
           .from("posts")
-          .update({ status: "Erro", user_id: publishUserId })
-          .eq("id", data.id);
+          .update({ status: "Erro" })
+          .eq("id", data.id)
+          .eq("user_id", context.userId);
         results.status = "Erro";
       } else {
         const nextStatus = "Publicado";
         await supabaseAdmin
           .from("posts")
-          .update({ status: nextStatus, user_id: publishUserId })
-          .eq("id", data.id);
+          .update({ status: nextStatus })
+          .eq("id", data.id)
+          .eq("user_id", context.userId);
         results.status = nextStatus;
       }
 
