@@ -4,8 +4,6 @@ import { visualReferences } from "./visual-references";
 import { checkLinkedInConnection } from "@/lib/social/linkedin-status";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-// Auth desativada no projeto — usamos um user_id temporário fixo.
-const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000";
 import { z } from "zod";
 import {
   ANGULOS_EDITORIAIS,
@@ -1582,14 +1580,14 @@ function buildLocalCaption(params: {
 }
 
 export const generateSinglePost = createServerFn({ method: "POST" })
-  .middleware([])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SingleInput.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context: authContext }) => {
+    const context = { userId: authContext.userId };
     if (data.status === "Agendado" && data.rede === "linkedin") {
       const connection = await checkLinkedInConnection(process.env['LOVABLE_API_KEY'], process.env['LINKEDIN_API_KEY']);
       if (!connection.connected) throw new Error(connection.message);
     }
-    const context = { userId: TEMP_USER_ID };
     const postId = crypto.randomUUID();
 
     const { generateImageBase64 } = await import("@/lib/ai-gateway.server");
@@ -2424,11 +2422,13 @@ export const generateSinglePost = createServerFn({ method: "POST" })
 
 // Descarta (deleta) um post — usado no preview quando o usuário rejeita o resultado gerado.
 export const discardPost = createServerFn({ method: "POST" })
-  .middleware([])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { data: owned, error: ownershipError } = await context.supabase.from("posts").select("id").eq("id", data.id).eq("user_id", context.userId).maybeSingle();
+    if (ownershipError || !owned) throw new Error("Publicação não autorizada: post ausente ou de outra conta.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("posts").delete().eq("id", data.id);
+    const { error } = await supabaseAdmin.from("posts").delete().eq("id", data.id).eq("user_id", context.userId);
     if (error) throw new Error(`DB: ${error.message}`);
     return { ok: true };
   });
@@ -2474,7 +2474,7 @@ export const approvePost = createServerFn({ method: "POST" })
         const connection = await checkLinkedInConnection(process.env['LOVABLE_API_KEY'], process.env['LINKEDIN_API_KEY']);
         if (!connection.connected) throw new Error(connection.message);
       }
-      const publishUserId = (post as any)?.user_id || TEMP_USER_ID;
+      const publishUserId = context.userId;
 
       const results: any = { ok: true, status: "Publicado" };
       const warnings: string[] = [];
@@ -2570,7 +2570,7 @@ const CaptionOnlyInput = z.object({
 });
 
 export const generateCaptionOnly = createServerFn({ method: "POST" })
-  .middleware([])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => CaptionOnlyInput.parse(d))
   .handler(async ({ data }) => {
     const nivel = resolveNivel(data.nivel, data.rede);
@@ -2603,9 +2603,9 @@ export const generateCaptionOnly = createServerFn({ method: "POST" })
   });
 
 export const generateWeekThemes = createServerFn({ method: "POST" })
-  .middleware([])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => WeekInput.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { buildScheduleSlots } = await import("@/lib/schedule-config");
 
     // Slots reais dos próximos 7 dias
@@ -2643,7 +2643,7 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
       const { data: rec } = await supabaseAdmin
         .from("posts")
         .select("prompt_ia")
-        .eq("user_id", TEMP_USER_ID)
+        .eq("user_id", context.userId)
         .neq("status", "Erro")
         .or(filtroHistorico())
         .limit(400);
@@ -2663,6 +2663,7 @@ export const generateWeekThemes = createServerFn({ method: "POST" })
 // "Posts 7 dias": devolve temas distintos para a semana (sem chamar IA — a IA é usada
 // depois, uma vez por post, para legenda e imagens).
 export const getWeekTopics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -2679,7 +2680,7 @@ export const getWeekTopics = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const guia = data.temaGuia.trim();
     const angulos = [
       "visão geral",
@@ -2714,7 +2715,7 @@ export const getWeekTopics = createServerFn({ method: "POST" })
       const { data: rec, error } = await supabaseAdmin
         .from("posts")
         .select("prompt_ia, created_at, data_agendamento, status")
-        .eq("user_id", TEMP_USER_ID)
+        .eq("user_id", context.userId)
         .neq("status", "Erro")
         .or(`created_at.gte.${desde},data_agendamento.gte.${desdeAgenda}`)
         .not("prompt_ia", "is", null)
