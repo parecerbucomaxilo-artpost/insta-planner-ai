@@ -30,7 +30,7 @@ O projeto já tem proteção importante: falha/recusa não deve ser convertida e
 ### CRÍTICO — fallback de autenticação para usuário temporário
 `src/integrations/supabase/auth-middleware.ts` aceita requisição sem Bearer token e atribui o usuário fixo `00000000-0000-0000-0000-000000000000`. Também converte token inválido em identidade temporária, em vez de negar acesso.
 
-`src/lib/ai-post.functions.ts` contém `generateSinglePost` sem middleware de autenticação visível na declaração analisada e define o mesmo `TEMP_USER_ID`. Isso pode misturar dados de diferentes sessões e permitir chamadas sem identidade validada. É bloqueador para uma migração segura e deve ser corrigido primeiro, com testes de isolamento por usuário.
+`src/lib/ai-post.functions.ts` declara `generateSinglePost` com `.middleware([])` e define o mesmo `TEMP_USER_ID`. Isso pode misturar dados de diferentes sessões e permitir chamadas sem identidade validada. É bloqueador para uma migração segura e deve ser corrigido primeiro, com testes de isolamento por usuário.
 
 ### ALTO — arquivo .env versionado
 O arquivo `.env` está presente no Git. Na versão atual, foram encontrados somente nomes de variáveis Supabase de projeto/URL e publishable key; os valores não foram reproduzidos neste relatório. Não foi identificado nome de variável tipicamente secreta no arquivo atual analisado. Ainda assim, o arquivo não deve permanecer versionado. É necessário remover o arquivo do controle de versão em branch de migração, adicionar padrões adequados ao `.gitignore` e verificar histórico completo antes de concluir que nunca houve segredo exposto. Rotação só é indicada se a inspeção do histórico/contas identificar credencial sensível.
